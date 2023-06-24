@@ -1,4 +1,4 @@
-package io.silv.amadeus.network.requests
+package io.silv.amadeus.network.mangadex.requests.util
 
 import kotlin.text.StringBuilder
 

@@ -1,4 +1,4 @@
-package io.silv.amadeus.network.models.common
+package io.silv.amadeus.network.mangadex.models.common
 
 
 import kotlinx.serialization.Serializable

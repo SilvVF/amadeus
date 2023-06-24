@@ -1,4 +1,6 @@
-package io.silv.amadeus.network.models
+@file:Suppress("unused")
+
+package io.silv.amadeus.network.mangadex.models
 
 enum class Result {
     ok, error
@@ -26,4 +28,8 @@ enum class Related {
 
 enum class PublicationDemographic {
     shounen, shoujo, josei, seinen
+}
+
+enum class CoverIncludesFilter {
+    manga, user
 }

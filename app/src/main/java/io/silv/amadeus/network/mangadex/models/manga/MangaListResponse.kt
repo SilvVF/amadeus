@@ -1,10 +1,10 @@
-package io.silv.amadeus.network.models.manga
+package io.silv.amadeus.network.mangadex.models.manga
 
-import io.silv.amadeus.network.models.Result
+import io.silv.amadeus.network.mangadex.models.Result
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MangaResponse(
+data class MangaListResponse(
     val result: Result,
     val response: String,
     val data: List<Manga>,

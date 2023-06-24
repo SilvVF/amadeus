@@ -1,4 +1,4 @@
-package io.silv.amadeus.network.requests
+package io.silv.amadeus.network.mangadex.requests.util
 
 import kotlin.reflect.full.memberProperties
 
@@ -30,12 +30,11 @@ fun QueryParams.createQueryParams(): List<QueryParam> {
     val instance = this
     return buildList {
         instance::class.members.forEach {  member ->
+            val fieldValue = instance.getField<Any?>(member.name) ?: return@forEach
             add(
                 QueryParam(
                     member.name,
-                    instance
-                        .getField<Any?>(member.name)
-                        .toString()
+                    fieldValue.toString()
                 )
             )
         }

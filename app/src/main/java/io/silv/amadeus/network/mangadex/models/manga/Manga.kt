@@ -1,6 +1,6 @@
-package io.silv.amadeus.network.models.manga
+package io.silv.amadeus.network.mangadex.models.manga
 
-import io.silv.amadeus.network.models.common.Relationship
+import io.silv.amadeus.network.mangadex.models.common.Relationship
 import kotlinx.serialization.Serializable
 
 @Serializable

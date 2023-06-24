@@ -1,11 +1,11 @@
-package io.silv.amadeus.network.models.manga
+package io.silv.amadeus.network.mangadex.models.manga
 
-import io.silv.amadeus.network.models.ContentRating
-import io.silv.amadeus.network.models.PublicationDemographic
-import io.silv.amadeus.network.models.State
-import io.silv.amadeus.network.models.Status
-import io.silv.amadeus.network.models.common.LocalizedString
-import io.silv.amadeus.network.models.common.Tag
+import io.silv.amadeus.network.mangadex.models.ContentRating
+import io.silv.amadeus.network.mangadex.models.PublicationDemographic
+import io.silv.amadeus.network.mangadex.models.State
+import io.silv.amadeus.network.mangadex.models.Status
+import io.silv.amadeus.network.mangadex.models.LocalizedString
+import io.silv.amadeus.network.mangadex.models.common.Tag
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -23,7 +23,7 @@ data class MangaAttributes(
     val year: Int? = null,
     val contentRating: ContentRating,
     val chapterNumbersResetOnNewVolume: Boolean,
-    val availableTranslatedLanguages: List<String>,
+    val availableTranslatedLanguages: List<String> = emptyList(),
     val latestUploadedChapter: String,
     val tags: List<Tag>,
     val state: State,

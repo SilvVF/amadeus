@@ -1,4 +1,8 @@
-package io.silv.amadeus.network.requests
+@file:Suppress("unused")
+
+package io.silv.amadeus.network.mangadex.requests
+
+import io.silv.amadeus.network.mangadex.requests.util.QueryParams
 
 
 data class MangaRequest(

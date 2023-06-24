@@ -1,6 +1,7 @@
-package io.silv.amadeus.network.models.common
+package io.silv.amadeus.network.mangadex.models.common
 
-import io.silv.amadeus.network.models.Group
+import io.silv.amadeus.network.mangadex.models.Group
+import io.silv.amadeus.network.mangadex.models.LocalizedString
 import kotlinx.serialization.Serializable
 
 @Serializable

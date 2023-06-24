@@ -5,9 +5,9 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
-import io.silv.amadeus.appModule
+import io.silv.amadeus.network.mangadex.MangaDexApi
+import io.silv.amadeus.network.mangadex.MangaDexTestApi
 import kotlinx.serialization.json.Json
-import org.koin.core.scope.get
 import org.koin.dsl.module
 
 val networkModule = module {
@@ -32,6 +32,10 @@ val networkModule = module {
     }
 
     single {
-        MangaApi(get(), get())
+        MangaDexTestApi(get(), get())
+    }
+
+    single {
+        MangaDexApi(get(), get())
     }
 }

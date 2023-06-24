@@ -1,0 +1,70 @@
+[versions]
+androidxComposeBom = "2023.05.01"
+androidxCoreKtx = "1.10.1"
+androidxTestEspressoCore = "3.5.1"
+testJunit = "1.1.5"
+junit= "4.13.2"
+firebase="32.0.0"
+lottie = "6.0.0"
+koinVersion="3.4.0"
+koinCompose="3.3.0"
+appyx="1.2.0"
+coil = "2.4.0"
+apollo="3.8.2"
+voyager="1.0.0-rc06"
+ktor="2.3.1"
+kotlinserialization="1.5.1"
+kotlinxdatetime="0.4.0"
+
+[libraries]
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "androidxComposeBom" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+androidx-core-ktx = { module ="androidx.core:core-ktx", version.ref="androidxCoreKtx" }
+androidx-compose-ui = { module="androidx.compose.ui:ui" }
+androidx-compose-ui-graphics= { module="androidx.compose.ui:ui-graphics" }
+androidx-compose-ui-tooling= { module ="androidx.compose.ui:ui-tooling-preview" }
+androidx-compose-material3= { module="androidx.compose.material3:material3" }
+androidx-compose-ui-manifest={module="androidx.compose.ui:ui-test-manifest"}
+androidx-compose-ui-test-junit={module="androidx.compose.ui:ui-test-junit4"}
+coil-svg={module="io.coil-kt:coil-svg", version.ref="coil"}
+
+kotlinx-datetime={module="org.jetbrains.kotlinx:kotlinx-datetime", version.ref="kotlinxdatetime"}
+
+apollo={module="com.apollographql.apollo3:apollo-runtime", version.ref="apollo"}
+
+koin-core={module="io.insert-koin:koin-core", version.ref="koinVersion"}
+koin-android={module="io.insert-koin:koin-android", version.ref="koinVersion"}
+koin-compose={module="io.insert-koin:koin-androidx-compose", version.ref="koinCompose"}
+koin-navigation={module="io.insert-koin:koin-androidx-navigation", version.ref="koinVersion"}
+
+
+androidx-test-espresso-core= { module="androidx.test.espresso:espresso-core", version.ref="androidxTestEspressoCore"}
+androidx-test-junit = {module = "androidx.test.ext:junit", version.ref="testJunit"}
+junit={module = "junit:junit", version.ref ="junit"}
+
+firebase-bom= { module="com.google.firebase:firebase-bom", version.ref="firebase"}
+firebase-analytics= {module="com.google.firebase:firebase-analytics-ktx"}
+
+voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyager" }
+voyager-bottomSheetNavigator = { module = "cafe.adriel.voyager:voyager-bottom-sheet-navigator", version.ref = "voyager" }
+voyager-tabNavigator = { module = "cafe.adriel.voyager:voyager-tab-navigator", version.ref = "voyager" }
+voyager-transitions = { module = "cafe.adriel.voyager:voyager-transitions", version.ref = "voyager" }
+voyager-androidx = { module = "cafe.adriel.voyager:voyager-androidx", version.ref = "voyager" }
+voyager-koin = { module = "cafe.adriel.voyager:voyager-koin", version.ref = "voyager" }
+voyager-hilt = { module = "cafe.adriel.voyager:voyager-hilt", version.ref = "voyager" }
+voyager-kodein = { module = "cafe.adriel.voyager:voyager-kodein", version.ref = "voyager" }
+voyager-rxjava = { module = "cafe.adriel.voyager:voyager-rxjava", version.ref = "voyager" }
+coil = {module ="io.coil-kt:coil", version.ref="coil" }
+coil-compose = {module="io.coil-kt:coil-compose", version.ref="coil" }
+
+ktor-core={module="io.ktor:ktor-client-core", version.ref="ktor" }
+ktor-cio={module="io.ktor:ktor-client-cio", version.ref="ktor"}
+ktor-websockets={module="io.ktor:ktor-client-websockets", version.ref="ktor"}
+ktor-serialization-json={module="io.ktor:ktor-serialization-kotlinx-json", version.ref="ktor"}
+kotlin-serialization={module="org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref="kotlinserialization"}
+
+lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref="lottie" }
+
+appyx = { module="com.bumble.appyx:core", version.ref="appyx"}
+
+[plugins]

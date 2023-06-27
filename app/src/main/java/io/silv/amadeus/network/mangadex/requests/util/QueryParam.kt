@@ -36,9 +36,20 @@ fun List<QueryParam>.createQuery(base: String): String {
         if (params.isNotEmpty()) {
             append('?')
             params.forEachIndexed { index, (name, value) ->
-                append(name)
-                append('=')
-                append(value)
+                if (value.startsWith("[")) {
+                    val list = value.drop(1).dropLast(1).split(',', ignoreCase = true)
+                    list.forEachIndexed { i, it ->
+                        append(name)
+                        append("[]=")
+                        append(it)
+                        if (i != list.lastIndex)
+                            append('&')
+                    }
+                } else {
+                    append(name)
+                    append('=')
+                    append(value)
+                }
                 if (index != params.lastIndex) {
                     append('&')
                 }

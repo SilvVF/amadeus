@@ -9,5 +9,5 @@ data class Relationship(
     val id : String,
     val type: String,
     val related: Related? = null,
-    val attributes: Map<String, String> = emptyMap()
+    val attributes: Map<String, String?> = emptyMap()
 )

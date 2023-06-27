@@ -28,7 +28,7 @@ data class MangaRequest(
     val order: Map<String, String>?  = null,
     val includes: List<String>? = null,
     val hasAvailableChapter: Boolean? = null,
-    val group: String? = ""
+    val group: String? = null
 ): QueryParams {
 
 

@@ -8,7 +8,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 
 abstract class AmadeusScreenModel<EVENT, STATE>(
     initialState: STATE
@@ -16,7 +16,7 @@ abstract class AmadeusScreenModel<EVENT, STATE>(
 
     protected val mutableEvents = Channel<EVENT>()
 
-    val events = mutableEvents.consumeAsFlow()
+    val events = mutableEvents.receiveAsFlow()
 }
 
 /**

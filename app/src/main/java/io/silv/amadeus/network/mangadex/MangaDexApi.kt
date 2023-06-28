@@ -1,5 +1,6 @@
 package io.silv.amadeus.network.mangadex
 
+import io.ktor.client.plugins.timeout
 import io.silv.amadeus.AmadeusDispatchers
 import io.silv.amadeus.network.mangadex.models.cover.CoverArtListResponse
 import io.silv.amadeus.network.mangadex.models.cover.CoverResponse
@@ -74,5 +75,8 @@ class MangaDexApi(
             .createQuery("$mangaDexUrl/manga")
         println(request)
         client.get<MangaListResponse>(request)
+            .also {
+                println(it)
+            }
     }
 }

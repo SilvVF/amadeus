@@ -8,6 +8,7 @@ import io.ktor.http.Headers
 import io.silv.ktor_response_mapper.operators.ApiResponseOperator
 import io.silv.ktor_response_mapper.operators.ApiResponseSuspendOperator
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 
 sealed class ApiResponse<out T> {

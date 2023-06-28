@@ -1,14 +1,19 @@
 package io.silv.amadeus.ui.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,7 +33,9 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.domain.models.Manga
 import io.silv.amadeus.domain.repos.MangaRepo
+import io.silv.amadeus.filterUnique
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
+import io.silv.ktor_response_mapper.suspendOnFailure
 import io.silv.ktor_response_mapper.suspendOnSuccess
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -39,30 +46,44 @@ class HomeSM(
 
     init {
         coroutineScope.launch {
+            mutableState.value = HomeState(loadingNextPage = true)
             mangaRepo.getMangaWithArt()
                 .suspendOnSuccess {
                     mutableState.emit(
                         HomeState(
-                            data = this.data
+                            data = this.data,
+                            loadingNextPage = false
                         )
+                    )
+                }
+                .suspendOnFailure {
+                    mutableState.emit(
+                        HomeState(loadingNextPage = false)
                     )
                 }
         }
     }
 
-    var nextPageJob: Job? = null
+    private var nextPageJob: Job? = null
 
     fun nextPage() {
         if (nextPageJob != null) {
             return
         }
+        mutableState.value = mutableState.value.copy(loadingNextPage = true)
         nextPageJob = coroutineScope.launch {
             mangaRepo.getMangaWithArt()
                 .suspendOnSuccess {
                     mutableState.emit(
                         HomeState(
-                            data = mutableState.value.data + this.data
+                            data = (mutableState.value.data + this.data).filterUnique { it.id },
+                            loadingNextPage = false
                         )
+                    )
+                }
+                .suspendOnFailure {
+                    mutableState.emit(
+                        HomeState(loadingNextPage = false)
                     )
                 }
             nextPageJob = null
@@ -73,7 +94,8 @@ class HomeSM(
 sealed interface HomeEvent
 
 data class HomeState(
-    val data: List<Manga> = emptyList()
+    val data: List<Manga> = emptyList(),
+    val loadingNextPage: Boolean = false,
 )
 
 class HomeScreen: Screen {
@@ -97,50 +119,62 @@ class HomeScreen: Screen {
             }
         }
 
-        LazyVerticalGrid(
-            modifier = Modifier.fillMaxSize(),
-            state = gridState,
-            columns = GridCells.Fixed(2)
-        ) {
-                items(
-                    items = state.data,
-                    key = { item -> item.id }
-                ) { manga ->
-                    Column {
-                        AsyncImage(
-                            model = ImageRequest.Builder(ctx)
-                                .data(manga.imageUrl)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(280.dp)
-                        )
-                        Text(
-                            text = manga.title
-                        )
-                        Text(
-                            text = manga.altTitle
-                        )
+        Scaffold { paddingValues ->
+            Column(Modifier.padding(paddingValues)) {
+                LazyVerticalGrid(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    state = gridState,
+                    columns = GridCells.Fixed(2)
+                ) {
+                    items(
+                        items = state.data,
+                        key = { m: Manga -> m.id }
+                    ) { manga ->
+                        Column {
+                            AsyncImage(
+                                model = ImageRequest.Builder(ctx)
+                                    .data(manga.imageUrl)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(280.dp)
+                            )
+                            Text(
+                                text = manga.title
+                            )
+                            Text(
+                                text = manga.altTitle
+                            )
 
-                        val mangaText by remember {
-                            derivedStateOf {
-                                if (manga.description.length <= 50)
-                                    manga.description
-                                else
-                                    manga.description.split(" ").take(50).joinToString()
+                            val mangaText by remember {
+                                derivedStateOf {
+                                    val s = if (manga.description.length <= 15)
+                                        manga.description
+                                    else
+                                        manga.description.split(" ").take(15).joinToString()
+                                    "$s..."
+                                }
                             }
-                        }
 
-                        Text(
-                            text = mangaText
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = mangaText
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
                     }
                 }
+                if (state.loadingNextPage) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        Text(text = "Loading next page")
+                        CircularProgressIndicator()
+                    }
+                }
+            }
         }
-
     }
 }
 

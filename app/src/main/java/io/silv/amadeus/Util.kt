@@ -7,7 +7,9 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
 @OptIn(ExperimentalContracts::class)
-suspend fun <T, R> Iterable<T>.pmap(transform: suspend (T) -> R): List<R> {
+suspend inline fun <T, R> Iterable<T>.pmap(
+    crossinline transform: suspend (T) -> R
+): List<R> {
     contract { callsInPlace(transform) }
     val list = this
     return buildList {
@@ -22,13 +24,13 @@ suspend fun <T, R> Iterable<T>.pmap(transform: suspend (T) -> R): List<R> {
         .awaitAll()
 }
 
-
-fun <A, B> List<Pair<A, B>>.filterBothNotNull(): List<Pair<A, B>> {
-    return this.mapNotNull { p ->
-        if (p.first == null)
-            return@mapNotNull null
-        if (p.second == null)
-            return@mapNotNull null
-        return@mapNotNull p
+fun <T, R> Iterable<T>.filterUnique(item: (T) -> R): List<T> {
+    val seen = mutableSetOf<R>()
+    return buildList {
+        for (e in this@filterUnique) {
+            if (seen.add(item(e))) {
+                add(e)
+            }
+        }
     }
 }

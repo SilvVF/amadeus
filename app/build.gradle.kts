@@ -104,4 +104,5 @@ dependencies {
     implementation(libs.kotlin.serialization)
     implementation(kotlin("reflect"))
 
+    implementation(project(":ktor-response-mapper"))
 }

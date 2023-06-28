@@ -5,13 +5,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,14 +28,9 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.domain.models.Manga
 import io.silv.amadeus.domain.repos.MangaRepo
-import io.silv.amadeus.filterBothNotNull
-import io.silv.amadeus.network.mangadex.MangaDexApi
-import io.silv.amadeus.network.mangadex.models.cover.Cover
-import io.silv.amadeus.network.mangadex.requests.MangaRequest
-import io.silv.amadeus.pmap
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
+import io.silv.ktor_response_mapper.suspendOnSuccess
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class HomeSM(
@@ -48,10 +40,10 @@ class HomeSM(
     init {
         coroutineScope.launch {
             mangaRepo.getMangaWithArt()
-                .onSuccess {
+                .suspendOnSuccess {
                     mutableState.emit(
                         HomeState(
-                            data = it
+                            data = this.data
                         )
                     )
                 }
@@ -66,10 +58,10 @@ class HomeSM(
         }
         nextPageJob = coroutineScope.launch {
             mangaRepo.getMangaWithArt()
-                .onSuccess {
+                .suspendOnSuccess {
                     mutableState.emit(
                         HomeState(
-                            data = mutableState.value.data + it
+                            data = mutableState.value.data + this.data
                         )
                     )
                 }

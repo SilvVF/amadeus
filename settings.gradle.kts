@@ -16,3 +16,5 @@ dependencyResolutionManagement {
 
 rootProject.name = ("amadeus")
 include(":app")
+include(":app:ktor-response-mapper")
+include(":ktor-response-mapper")

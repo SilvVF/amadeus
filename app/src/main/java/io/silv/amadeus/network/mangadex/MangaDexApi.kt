@@ -1,11 +1,8 @@
 package io.silv.amadeus.network.mangadex
 
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.get
 import io.silv.amadeus.AmadeusDispatchers
-import io.silv.amadeus.network.mangadex.models.cover.CoverResponse
 import io.silv.amadeus.network.mangadex.models.cover.CoverArtListResponse
+import io.silv.amadeus.network.mangadex.models.cover.CoverResponse
 import io.silv.amadeus.network.mangadex.models.manga.MangaAggregateResponse
 import io.silv.amadeus.network.mangadex.models.manga.MangaByIdResponse
 import io.silv.amadeus.network.mangadex.models.manga.MangaListResponse
@@ -16,10 +13,12 @@ import io.silv.amadeus.network.mangadex.requests.MangaByIdRequest
 import io.silv.amadeus.network.mangadex.requests.MangaRequest
 import io.silv.amadeus.network.mangadex.requests.util.createQuery
 import io.silv.amadeus.network.mangadex.requests.util.createQueryParams
+import io.silv.ktor_response_mapper.client.KSandwichClient
+import io.silv.ktor_response_mapper.client.get
 import kotlinx.coroutines.withContext
 
 class MangaDexApi(
-    private val client: HttpClient,
+    private val client: KSandwichClient,
     private val dispatchers: AmadeusDispatchers
 ) {
     private val mangaDexUrl = "https://api.mangadex.org"
@@ -30,10 +29,9 @@ class MangaDexApi(
         val request = coverArtListRequest
             .createQueryParams()
             .createQuery("$mangaDexUrl/cover")
-        client.get(
+        client.get<CoverArtListResponse>(
             urlString = request
         )
-            .body<CoverArtListResponse>()
     }
 
     suspend fun getCoverArtById(
@@ -44,8 +42,7 @@ class MangaDexApi(
             .createQueryParams().also { println(it) }
             .createQuery("$mangaDexUrl/cover/$mangaOrCoverId").also { println(it) }
 
-        client.get(request)
-            .body<CoverResponse>()
+        client.get<CoverResponse>(request)
     }
 
     suspend fun getMangaAggregate(
@@ -56,8 +53,7 @@ class MangaDexApi(
             .createQueryParams()
             .createQuery("$mangaDexUrl/manga/$mangaId/aggregate")
 
-        client.get(request)
-            .body<MangaAggregateResponse>()
+        client.get<MangaAggregateResponse>(request)
     }
 
     suspend fun getMangaById(
@@ -67,8 +63,7 @@ class MangaDexApi(
         val request = mangaByIdRequest
             .createQueryParams()
             .createQuery("$mangaDexUrl/manga/$id")
-        client.get(request)
-            .body<MangaByIdResponse>()
+        client.get<MangaByIdResponse>(request)
     }
 
     suspend fun getMangaList(
@@ -78,7 +73,6 @@ class MangaDexApi(
             .createQueryParams().also { println(it) }
             .createQuery("$mangaDexUrl/manga")
         println(request)
-        client.get(request)
-            .body<MangaListResponse>()
+        client.get<MangaListResponse>(request)
     }
 }

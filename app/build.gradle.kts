@@ -4,6 +4,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     kotlin("plugin.serialization") version "1.8.20"
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -74,6 +75,12 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.compose.material:material-icons-extended:1.4.3")
 
+    //ROOM
+    ksp(libs.room.ksp)
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
+    implementation(libs.room.coroutines)
+    testImplementation(libs.room.test)
 
     //VOYAGER
     implementation(libs.voyager.androidx)
@@ -86,6 +93,7 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.core)
     implementation(libs.koin.navigation)
+    implementation(libs.koin.workmanager)
 
     // COIL
     implementation(libs.coil.compose)
@@ -96,7 +104,9 @@ dependencies {
     implementation(libs.ktor.core)
     implementation(libs.ktor.cio)
     implementation(libs.ktor.serialization.json)
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.1")
+    implementation(libs.ktor.logging)
+    implementation(libs.ktor.contentnegotiation)
+
 
     implementation(kotlin("reflect"))
     // KOTLIN

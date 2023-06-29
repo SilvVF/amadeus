@@ -29,6 +29,7 @@ val networkModule = module {
                 )
             }
         }
+
     }
 
     single {

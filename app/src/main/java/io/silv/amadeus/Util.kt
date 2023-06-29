@@ -23,6 +23,24 @@ suspend inline fun <T, R> Iterable<T>.pmap(
     }
         .awaitAll()
 }
+@OptIn(ExperimentalContracts::class)
+suspend inline fun <T, R> Array<T>.pmapIndexed(
+    crossinline transform: suspend (Int, T) -> R
+): List<R> {
+    contract { callsInPlace(transform) }
+    val list = this
+    return buildList {
+        coroutineScope {
+            for ((i, item) in list.withIndex()) {
+                add(
+                    async { transform(i, item) }
+                )
+            }
+        }
+    }
+        .awaitAll()
+}
+
 
 fun <T, R> Iterable<T>.filterUnique(item: (T) -> R): List<T> {
     val seen = mutableSetOf<R>()

@@ -1,5 +1,6 @@
 package io.silv.amadeus.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,10 +9,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -22,15 +25,20 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.lifecycle.LifecycleOwner
 import cafe.adriel.voyager.core.model.coroutineScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import io.silv.amadeus.domain.models.ChapterImages
 import io.silv.amadeus.domain.models.Manga
 import io.silv.amadeus.domain.repos.MangaRepo
 import io.silv.amadeus.filterUnique
@@ -61,6 +69,19 @@ class HomeSM(
                         HomeState(loadingNextPage = false)
                     )
                 }
+        }
+    }
+
+
+    fun loadImages(mangaId: String, lifecycleOwner: LifecycleOwner) = coroutineScope.launch {
+        mangaRepo.getChapterImages(mangaId, 1, 1, lifecycleOwner)
+            .collect {
+                it.also { println("zzz" + it) }
+                mutableState.emit(
+                    mutableState.value.copy(
+                        chapterImages = it
+                    )
+                )
         }
     }
 
@@ -96,6 +117,7 @@ sealed interface HomeEvent
 data class HomeState(
     val data: List<Manga> = emptyList(),
     val loadingNextPage: Boolean = false,
+    val chapterImages: ChapterImages? = null
 )
 
 class HomeScreen: Screen {
@@ -111,10 +133,29 @@ class HomeScreen: Screen {
 
         val gridState = rememberLazyGridState()
 
+        val lifecycleOwner = LocalLifecycleOwner.current
+
         LaunchedEffect(Unit) {
             snapshotFlow { gridState.firstVisibleItemIndex }.collect {
                 if (it == gridState.layoutInfo.totalItemsCount - gridState.layoutInfo.visibleItemsInfo.size) {
                     sm.nextPage()
+                }
+            }
+        }
+
+        state.chapterImages?.let {
+            Popup(alignment = Alignment.Center) {
+                LazyRow {
+                    items(it.images) { img ->
+                        AsyncImage(
+                            model = ImageRequest.Builder(ctx)
+                                .data(img.uri)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = null,
+                            modifier = Modifier.size(420.dp)
+                        )
+                    }
                 }
             }
         }
@@ -132,7 +173,11 @@ class HomeScreen: Screen {
                         items = state.data,
                         key = { m: Manga -> m.id }
                     ) { manga ->
-                        Column {
+                        Column(
+                            Modifier.clickable {
+                                sm.loadImages(manga.id, lifecycleOwner)
+                            }
+                        ) {
                             AsyncImage(
                                 model = ImageRequest.Builder(ctx)
                                     .data(manga.imageUrl)

@@ -1,7 +1,7 @@
 package io.silv.amadeus.network.mangadex
 
-import io.ktor.client.plugins.timeout
 import io.silv.amadeus.AmadeusDispatchers
+import io.silv.amadeus.network.mangadex.models.chapter.ChapterImageResponse
 import io.silv.amadeus.network.mangadex.models.cover.CoverArtListResponse
 import io.silv.amadeus.network.mangadex.models.cover.CoverResponse
 import io.silv.amadeus.network.mangadex.models.manga.MangaAggregateResponse
@@ -30,6 +30,7 @@ class MangaDexApi(
         val request = coverArtListRequest
             .createQueryParams()
             .createQuery("$mangaDexUrl/cover")
+        println(request)
         client.get<CoverArtListResponse>(
             urlString = request
         )
@@ -42,7 +43,7 @@ class MangaDexApi(
         val request = coverArtByIdRequest
             .createQueryParams().also { println(it) }
             .createQuery("$mangaDexUrl/cover/$mangaOrCoverId").also { println(it) }
-
+        println(request)
         client.get<CoverResponse>(request)
     }
 
@@ -53,7 +54,7 @@ class MangaDexApi(
         val request = mangaAggregateRequest
             .createQueryParams()
             .createQuery("$mangaDexUrl/manga/$mangaId/aggregate")
-
+        println(request)
         client.get<MangaAggregateResponse>(request)
     }
 
@@ -64,6 +65,7 @@ class MangaDexApi(
         val request = mangaByIdRequest
             .createQueryParams()
             .createQuery("$mangaDexUrl/manga/$id")
+        println(request)
         client.get<MangaByIdResponse>(request)
     }
 
@@ -75,8 +77,10 @@ class MangaDexApi(
             .createQuery("$mangaDexUrl/manga")
         println(request)
         client.get<MangaListResponse>(request)
-            .also {
-                println(it)
-            }
+    }
+
+    suspend fun getChapterImages(chapterId: String) = withContext(dispatchers.io) {
+        client.get<ChapterImageResponse>(urlString = "$mangaDexUrl/at-home/server/$chapterId")
     }
 }
+

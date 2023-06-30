@@ -1,10 +1,9 @@
-import com.android.build.api.dsl.Packaging
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     kotlin("plugin.serialization") version "1.8.20"
     id("com.google.devtools.ksp")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -72,8 +71,13 @@ dependencies {
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
     implementation("androidx.activity:activity-compose:1.7.2")
+    implementation("com.github.skydoves:orbital:0.2.4")
+    implementation("androidx.compose.ui:ui-graphics")
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.compose.material:material-icons-extended:1.4.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.1")
+
+
 
     //ROOM
     ksp(libs.room.ksp)
@@ -108,7 +112,6 @@ dependencies {
     implementation(libs.ktor.contentnegotiation)
 
 
-    implementation(kotlin("reflect"))
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)

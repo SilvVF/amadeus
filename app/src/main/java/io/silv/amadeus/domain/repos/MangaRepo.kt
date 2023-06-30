@@ -1,115 +1,61 @@
 package io.silv.amadeus.domain.repos
 
-import android.content.Context
-import androidx.lifecycle.LifecycleOwner
-import androidx.work.Data
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import io.silv.amadeus.domain.models.ChapterImages
-import io.silv.amadeus.domain.models.Manga
-import io.silv.amadeus.domain.models.Volume
-import io.silv.amadeus.local.workers.ChapterDownloadWorker
+import io.silv.amadeus.domain.models.DomainChapter
+import io.silv.amadeus.domain.models.DomainManga
 import io.silv.amadeus.network.mangadex.MangaDexApi
 import io.silv.amadeus.network.mangadex.models.Group
-import io.silv.amadeus.network.mangadex.models.chapter.ChapterImageResponse
-import io.silv.amadeus.network.mangadex.models.manga.MangaAggregateResponse
+import io.silv.amadeus.network.mangadex.models.chapter.Chapter
+import io.silv.amadeus.network.mangadex.requests.MangaFeedRequest
 import io.silv.amadeus.network.mangadex.requests.MangaRequest
+import io.silv.amadeus.network.mangadex.requests.Order
+import io.silv.amadeus.network.mangadex.requests.OrderBy
 import io.silv.ktor_response_mapper.ApiResponse
-import io.silv.ktor_response_mapper.ApiSuccessModelMapper
 import io.silv.ktor_response_mapper.mapSuccess
 import io.silv.ktor_response_mapper.onSuccess
-import io.silv.ktor_response_mapper.suspendOnSuccess
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.withContext
-import java.util.UUID
+import io.silv.ktor_response_mapper.suspendMapSuccess
 
 
 class MangaRepo(
     private val mangaDexApi: MangaDexApi,
-    private val context: Context
 ) {
 
     private var mangaListOffset: Int = 0
 
     suspend fun getChapterImages(
-        mangaId: String,
-        volume: Int,
-        chapter: Int,
-        lifecycleOwner: LifecycleOwner
-    ): Flow<ChapterImages> = channelFlow {
-       getMangaChapters(mangaId).suspendOnSuccess {
-
-           val mangaResponse = this
-
-           val chapterId = mangaResponse.data.random().chapters.random().id
-
-           mangaDexApi.getChapterImages(chapterId)
-               .suspendOnSuccess(MangaImageSuccessMapper) {
-                   send(this)
-
-                   val workId = UUID.randomUUID()
-                   val workRequest = OneTimeWorkRequestBuilder<ChapterDownloadWorker>()
-                       .setId(workId)
-                       .setInputData(
-                           Data.Builder()
-                               .putStringArray(ChapterDownloadWorker.imageUrlsKey, images.map { it.uri }.toTypedArray())
-                               .putString(ChapterDownloadWorker.chapterIdKey, chapterId)
-                               .putString(ChapterDownloadWorker.mangaIdKey, mangaId)
-                               .putString(ChapterDownloadWorker.volumeNumberKey, volume.toString())
-                               .build()
-                       )
-                       .build()
-
-                   val worker = WorkManager.getInstance(context)
-
-                   worker.enqueue(workRequest)
-
-                   withContext(Dispatchers.Main) {
-                       worker.getWorkInfoByIdLiveData(workId)
-                           .observe(lifecycleOwner) { info ->
-                               info.outputData.getStringArray("uris")?.let { uris ->
-                                   println("urisssssss ${uris.toList()}")
-                                   trySend(
-                                       ChapterImages(
-                                           images = uris.toList().map { ChapterImages.Image(it) },
-                                           dataSaverImages = emptyList()
-                                       )
-                                   )
-                               }
-                           }
-                   }
+        chapterId: String
+    ): ApiResponse<ChapterImages>  {
+       return mangaDexApi.getChapterImages(chapterId).suspendMapSuccess {
+           ChapterImages(
+               images = chapter.data.map { imgFile ->
+                   ChapterImages.Image("${baseUrl}/data/${chapter.hash}/$imgFile")
+               },
+               dataSaverImages = chapter.dataSaver.map { imgFile ->
+                   ChapterImages.Image("${baseUrl}/dataSaver/${chapter.hash}/$imgFile")
                }
-           awaitClose()
-        }
+           )
+       }
     }
-        .flowOn(Dispatchers.IO)
 
-    private object MangaImageSuccessMapper: ApiSuccessModelMapper<ChapterImageResponse, ChapterImages> {
-        override fun map(apiSuccessResponse: ApiResponse.Success<ChapterImageResponse>): ChapterImages {
-            val data = apiSuccessResponse.data
-            return ChapterImages(
-                images = data.chapter.data.map { imgFile ->
-                    ChapterImages.Image("${data.baseUrl}/data/${data.chapter.hash}/$imgFile")
-                },
-                dataSaverImages = data.chapter.dataSaver.map { imgFile ->
-                    ChapterImages.Image("${data.baseUrl}/dataSaver/${data.chapter.hash}/$imgFile")
-                }
+    suspend fun getMangaFeed(
+        mangaId: String,
+        offset: Int = 0,
+        orderBy: OrderBy = OrderBy.asc,
+        translatedLanguage: String = "en"
+    ) = mangaDexApi.getMangaFeed(
+            mangaId = mangaId,
+            mangaFeedRequest = MangaFeedRequest(
+                order = mapOf(
+                    Order.chapter to orderBy
+                ),
+                translatedLanguage = listOf(translatedLanguage),
+                offset = offset
             )
+        ).mapSuccess {
+            data.map(::toDomainChapter)
         }
-    }
 
-    suspend fun getMangaChapters(mangaId: String): ApiResponse<List<Volume>> {
-        return mangaDexApi.getMangaAggregate(mangaId)
-            .mapSuccess {
-                volumes.map(::toDomainVolume)
-            }
-    }
-
-    suspend fun getMangaWithArt(amount: Int = 50): ApiResponse<List<Manga>> {
+    suspend fun getMangaWithArt(amount: Int = 50): ApiResponse<List<DomainManga>> {
         return mangaDexApi.getMangaList(
                 MangaRequest(
                     limit = amount,
@@ -127,20 +73,7 @@ class MangaRepo(
     }
 
 
-    private fun toDomainVolume(volume: Map.Entry<String, MangaAggregateResponse.MangaAggregateData>): Volume {
-        return Volume(
-            number = volume.value.volume.toIntOrNull() ?: 0,
-            count = volume.value.count,
-            chapters = volume.value.chapters.values.map {
-                Volume.Chapter(
-                    id = it.id,
-                    others = it.others
-                )
-            }
-        )
-    }
-
-    private fun toDomainManga(networkManga: io.silv.amadeus.network.mangadex.models.manga.Manga): Manga {
+    private fun toDomainManga(networkManga: io.silv.amadeus.network.mangadex.models.manga.Manga): DomainManga {
 
         val fileName = networkManga.relationships.find {
             it.type == "cover_art"
@@ -160,7 +93,7 @@ class MangaRepo(
             }
         }
 
-        return Manga(
+        return DomainManga(
             id = networkManga.id,
             description = networkManga.attributes.description.getOrDefault("en", ""),
             title = networkManga.attributes.title.getOrDefault("en", ""),
@@ -177,10 +110,24 @@ class MangaRepo(
             contentRating = networkManga.attributes.contentRating,
         )
     }
+}
 
-    private fun List<Volume>.chapterIdOrNull(
-        volume: Int,
-        chapter: Int,
-    ) = this.getOrNull(volume)?.chapters?.getOrNull(chapter)?.id
-
+fun toDomainChapter(chapter: Chapter): DomainChapter {
+    val it = chapter
+    return DomainChapter(
+        title = it.attributes.title,
+        volume = it.attributes.volume,
+        chapter = it.attributes.chapter,
+        pages = it.attributes.pages,
+        translatedLanguage = it.attributes.translatedLanguage,
+        updatedAt = it.attributes.updatedAt,
+        uploader = it.attributes.uploader ?: "",
+        externalUrl = it.attributes.externalUrl,
+        version = it.attributes.version,
+        createdAt = it.attributes.createdAt,
+        readableAt = it.attributes.readableAt,
+        mangaId = it.attributes.relationships.find {
+            it.type == "manga"
+        }?.id ?: ""
+    )
 }

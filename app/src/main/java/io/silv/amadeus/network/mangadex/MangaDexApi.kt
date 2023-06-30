@@ -1,6 +1,8 @@
 package io.silv.amadeus.network.mangadex
 
+import ChapterListResponse
 import io.silv.amadeus.AmadeusDispatchers
+import io.silv.amadeus.network.mangadex.models.chapter.Chapter
 import io.silv.amadeus.network.mangadex.models.chapter.ChapterImageResponse
 import io.silv.amadeus.network.mangadex.models.cover.CoverArtListResponse
 import io.silv.amadeus.network.mangadex.models.cover.CoverResponse
@@ -11,9 +13,10 @@ import io.silv.amadeus.network.mangadex.requests.CoverArtByIdRequest
 import io.silv.amadeus.network.mangadex.requests.CoverArtListRequest
 import io.silv.amadeus.network.mangadex.requests.MangaAggregateRequest
 import io.silv.amadeus.network.mangadex.requests.MangaByIdRequest
+import io.silv.amadeus.network.mangadex.requests.MangaFeedRequest
 import io.silv.amadeus.network.mangadex.requests.MangaRequest
-import io.silv.amadeus.network.mangadex.requests.util.createQuery
-import io.silv.amadeus.network.mangadex.requests.util.createQueryParams
+import io.silv.amadeus.network.mangadex.requests.query.createQuery
+import io.silv.amadeus.network.mangadex.requests.query.createQueryParams
 import io.silv.ktor_response_mapper.client.KSandwichClient
 import io.silv.ktor_response_mapper.client.get
 import kotlinx.coroutines.withContext
@@ -34,6 +37,21 @@ class MangaDexApi(
         client.get<CoverArtListResponse>(
             urlString = request
         )
+    }
+
+    suspend fun getChapterData(chapterId: String) = withContext(dispatchers.io) {
+        client.get<Chapter>("$mangaDexUrl/chapter/$chapterId")
+    }
+
+    suspend fun getMangaFeed(
+        mangaId: String,
+        mangaFeedRequest: MangaFeedRequest = MangaFeedRequest()
+    ) = withContext(dispatchers.io) {
+        val request = mangaFeedRequest
+            .createQueryParams()
+            .createQuery("$mangaDexUrl/manga/$mangaId/feed")
+
+        client.get<ChapterListResponse>(request)
     }
 
     suspend fun getCoverArtById(

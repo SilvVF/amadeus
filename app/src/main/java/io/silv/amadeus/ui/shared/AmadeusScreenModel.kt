@@ -26,7 +26,7 @@ abstract class AmadeusScreenModel<EVENT, STATE>(
  */
 @SuppressLint("ComposableNaming")
 @Composable
-fun <EVENT : Any> AmadeusScreenModel<EVENT, Any>.collectSideEffect(
+fun <EVENT> AmadeusScreenModel<EVENT, *>.collectEvents(
     lifecycleState: Lifecycle.State = Lifecycle.State.STARTED,
     event: (suspend (event: EVENT) -> Unit)
 ) {

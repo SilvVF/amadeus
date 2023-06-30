@@ -1,9 +1,12 @@
 package io.silv.amadeus.domain.models
 
+import android.os.Parcelable
 import io.silv.amadeus.network.mangadex.models.ContentRating
 import io.silv.amadeus.network.mangadex.models.Status
+import kotlinx.parcelize.Parcelize
 
-data class Manga(
+@Parcelize
+data class DomainManga(
     val id: String,
     val title: String,
     val altTitle: String,
@@ -18,4 +21,4 @@ data class Manga(
     val year: Int,
     val contentRating: ContentRating,
     val genres: List<String>
-)
+): Parcelable

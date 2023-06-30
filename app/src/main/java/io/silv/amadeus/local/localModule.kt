@@ -1,5 +1,6 @@
 package io.silv.amadeus.local
 
+import androidx.work.WorkManager
 import io.silv.amadeus.local.cache.ChapterImageCache
 import io.silv.amadeus.local.dao.daosModule
 import io.silv.amadeus.local.workers.ChapterDownloadWorker
@@ -13,6 +14,10 @@ val localModule = module {
     includes(databaseModule)
 
     single { ChapterImageCache(androidContext(), get()) }
+
+    single {
+        WorkManager.getInstance(androidContext())
+    }
 
     worker {
         ChapterDownloadWorker(androidContext(), get())

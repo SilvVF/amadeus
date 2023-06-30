@@ -2,7 +2,7 @@
 
 package io.silv.amadeus.network.mangadex.requests
 
-import io.silv.amadeus.network.mangadex.requests.util.QueryParams
+import io.silv.amadeus.network.mangadex.requests.query.QueryParams
 
 
 data class MangaRequest(
@@ -25,7 +25,7 @@ data class MangaRequest(
     val contentRating: List<String>?  = null,
     val createdAtSince: String? = null,
     val updatedAtSince: String?  = null,
-    val order: Map<String, String>?  = null,
+    val order: Map<Order, OrderBy>? = null,
     val includes: List<String>? = null,
     val hasAvailableChapter: Boolean? = null,
     val group: String? = null

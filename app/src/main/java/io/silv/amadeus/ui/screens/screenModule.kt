@@ -5,5 +5,7 @@ import org.koin.dsl.module
 
 val screenModule = module {
 
+    factoryOf(::MangaViewSM)
+
     factoryOf(::HomeSM)
 }

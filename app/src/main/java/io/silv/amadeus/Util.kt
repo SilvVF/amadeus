@@ -41,6 +41,18 @@ suspend inline fun <T, R> Array<T>.pmapIndexed(
         .awaitAll()
 }
 
+suspend inline fun <K, V, R, C : MutableCollection<in R>> Map<out K, V>.mapToSuspend(destination: C, transform: suspend (Map.Entry<K, V>) -> R): C {
+    for (item in this)
+        destination.add(transform(item))
+    return destination
+}
+
+suspend inline fun <K, V, R> Map<out K, V>.mapSuspend(
+    crossinline transform: suspend (Map.Entry<K, V>) -> R
+): List<R> {
+    return mapToSuspend(ArrayList(size), transform)
+}
+
 
 fun <T, R> Iterable<T>.filterUnique(item: (T) -> R): List<T> {
     val seen = mutableSetOf<R>()

@@ -6,6 +6,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import androidx.core.net.toUri
 import io.silv.amadeus.AmadeusDispatchers
 import kotlinx.coroutines.withContext
@@ -39,6 +40,8 @@ class ChapterImageCache(
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
         }
 
-        file.toUri().also { println("ttt" + it) }
+        file.toUri().also {
+            Log.d("ImageCache", "[URI Created] from $url -> $it")
+        }
     }
 }

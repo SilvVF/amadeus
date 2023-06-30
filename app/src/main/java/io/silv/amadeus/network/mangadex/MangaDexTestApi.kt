@@ -1,7 +1,7 @@
 package io.silv.amadeus.network.mangadex
 
+import ChapterListResponse
 import io.silv.amadeus.AmadeusDispatchers
-import io.silv.amadeus.network.mangadex.models.chapter.ChapterListResponse
 import io.silv.amadeus.network.mangadex.models.chapter.ChapterResponse
 import io.silv.amadeus.network.mangadex.models.manga.MangaAggregateResponse
 import io.silv.amadeus.network.mangadex.models.manga.MangaByIdResponse
@@ -14,6 +14,13 @@ class MangaDexTestApi(
     private val json: Json,
     private val dispatchers: AmadeusDispatchers
 ) {
+
+    private suspend fun getMangaFeed(): ChapterListResponse = withContext(dispatchers.io) {
+        json.decodeFromString(
+            ChapterListResponse.serializer(),
+            MangaDexTestJson.manga_id_feed
+        )
+    }
 
     private suspend fun getMangaAggregate(): MangaAggregateResponse =
         withContext(dispatchers.io) { json.decodeFromString(MangaDexTestJson.manga_id_aggregate) }

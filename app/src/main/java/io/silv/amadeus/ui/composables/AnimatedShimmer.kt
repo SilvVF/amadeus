@@ -30,7 +30,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AnimatedBoxShimmer() {
+fun AnimatedBoxShimmer(
+    modifier: Modifier = Modifier
+) {
     val shimmerColors = listOf(
         Color.LightGray.copy(alpha = 0.6f),
         Color.LightGray.copy(alpha = 0.2f),
@@ -57,9 +59,8 @@ fun AnimatedBoxShimmer() {
     )
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .padding(all = 10.dp)
-            .fillMaxSize()
             .clip(RoundedCornerShape(10.dp))
             .background(brush),
 

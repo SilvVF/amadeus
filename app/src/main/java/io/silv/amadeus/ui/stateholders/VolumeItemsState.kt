@@ -11,9 +11,9 @@ import androidx.compose.runtime.setValue
 import io.silv.amadeus.domain.models.DomainChapter
 
 class VolumeItemsState(
-    private val chapters: List<DomainChapter>,
-    private val sortBy: SortBy,
-    private val groupBy: GroupBy,
+    chapters: List<DomainChapter>,
+    val sortBy: SortBy,
+    val groupBy: GroupBy,
     private val onGroupByChange: (GroupBy) -> Unit,
     private val onSortByChange: (SortBy) -> Unit,
 ) {
@@ -35,35 +35,38 @@ class VolumeItemsState(
     private fun List<DomainChapter>.groupByVolumeSorted(
         sortBy: SortBy
     ) = when(sortBy){
-        SortBy.Asc -> this.groupBy { it.volume }.values.toList()
-        SortBy.Dsc -> this.groupBy { it.volume }.values.reversed()
+        SortBy.Asc -> this.groupBy { it.volume?.toDoubleOrNull()?: 0 }.values.toList()
+        SortBy.Dsc -> this.groupBy { it.volume?.toDoubleOrNull()?: 0 }.values.reversed()
     }
 
-    val items: VolumeItems by derivedStateOf {
-        when(groupBy) {
-            GroupBy.Volume -> {
-                Volumes(
-                    items = chapters.groupByVolumeSorted(sortBy).map { volume ->
-                        when (sortBy) {
-                            SortBy.Dsc -> volume.sortedByDescending { it.chapter }
-                            SortBy.Asc -> volume.sortedBy { it.chapter }
-                        }
+    val items: VolumeItems = when(groupBy) {
+        GroupBy.Volume -> {
+            Volumes(
+                items = chapters.groupByVolumeSorted(sortBy).map { volume ->
+                    when (sortBy) {
+                        SortBy.Dsc -> volume.sortedByDescending { it.chapter?.toDoubleOrNull() ?: 0.0 }
+                        SortBy.Asc -> volume.sortedBy { it.chapter?.toDoubleOrNull() ?: 0.0  }
                     }
-                )
-            }
-            GroupBy.Chapter -> {
-                Chapters(
-                    items = when(sortBy) {
-                        SortBy.Asc -> chapters.sortedBy { it.chapter }
-                        SortBy.Dsc -> chapters.sortedByDescending { it.chapter }
-                    }
-                )
-            }
+                }
+            )
+        }
+        GroupBy.Chapter -> {
+            Chapters(
+                items = when(sortBy) {
+                    SortBy.Asc -> chapters.sortedBy { it.chapter?.toDoubleOrNull() ?: 0.0 }
+                    SortBy.Dsc -> chapters.sortedByDescending { it.chapter?.toDoubleOrNull() ?: 0.0 }
+                }
+            )
         }
     }
 
     fun sortBy(sortBy: SortBy) {
         onSortByChange(sortBy)
+    }
+
+    fun groupByOpposite() {
+        if (groupBy == GroupBy.Volume) groupBy(GroupBy.Chapter)
+        if (groupBy == GroupBy.Chapter) groupBy(GroupBy.Volume)
     }
 
     fun groupBy(groupBy: GroupBy) {

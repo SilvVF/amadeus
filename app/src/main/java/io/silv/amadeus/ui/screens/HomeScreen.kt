@@ -34,6 +34,7 @@ import io.silv.amadeus.domain.repos.MangaRepo
 import io.silv.amadeus.filterUnique
 import io.silv.amadeus.ui.composables.HomeTopBar
 import io.silv.amadeus.ui.composables.MangaListItem
+import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.ktor_response_mapper.suspendOnFailure

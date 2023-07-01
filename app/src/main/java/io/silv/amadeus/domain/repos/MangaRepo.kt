@@ -64,7 +64,8 @@ class MangaRepo(
         mangaId: String,
         offset: Int = 0,
         orderBy: OrderBy = OrderBy.asc,
-        translatedLanguage: String = "en"
+        translatedLanguage: String = "en",
+        limit: Int = 1000
     ) = mangaDexApi.getMangaFeed(
             mangaId = mangaId,
             mangaFeedRequest = MangaFeedRequest(
@@ -72,7 +73,8 @@ class MangaRepo(
                     Order.chapter to orderBy
                 ),
                 translatedLanguage = listOf(translatedLanguage),
-                offset = offset
+                offset = offset,
+                limit = limit
             )
         ).mapSuccess {
             data.map(::toDomainChapter)

@@ -3,6 +3,7 @@ package io.silv.amadeus.network.mangadex
 import ChapterListResponse
 import io.silv.amadeus.AmadeusDispatchers
 import io.silv.amadeus.network.mangadex.models.chapter.ChapterResponse
+import io.silv.amadeus.network.mangadex.models.cover.CoverArtListResponse
 import io.silv.amadeus.network.mangadex.models.manga.MangaAggregateResponse
 import io.silv.amadeus.network.mangadex.models.manga.MangaByIdResponse
 import io.silv.amadeus.network.mangadex.models.manga.MangaListResponse
@@ -15,10 +16,17 @@ class MangaDexTestApi(
     private val dispatchers: AmadeusDispatchers
 ) {
 
-    private suspend fun getMangaFeed(): ChapterListResponse = withContext(dispatchers.io) {
+    suspend fun getMangaFeed(): ChapterListResponse = withContext(dispatchers.io) {
         json.decodeFromString(
             ChapterListResponse.serializer(),
             MangaDexTestJson.manga_id_feed
+        )
+    }
+
+    suspend fun getMangaCoverArt(): CoverArtListResponse = withContext(dispatchers.io) {
+        json.decodeFromString(
+            CoverArtListResponse.serializer(),
+            MangaDexTestJson.cover_art_list
         )
     }
 
@@ -37,5 +45,5 @@ class MangaDexTestApi(
         withContext(dispatchers.io) {  json.decodeFromString(MangaDexTestJson.chapter_id) }
 
     suspend fun getChapterList(): ChapterListResponse =
-        withContext(dispatchers.io) {  json.decodeFromString(MangaDexTestJson.chapter) }
+        withContext(dispatchers.io) {  json.decodeFromString(MangaDexTestJson.manga_id_feed) }
 }

@@ -4,6 +4,12 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 
+data class DomainCoverArt(
+    val volume: String?,
+    val mangaId: String,
+    val coverArtUrl: String
+)
+
 @Parcelize
 data class DomainVolume(
     val mangaId: String,

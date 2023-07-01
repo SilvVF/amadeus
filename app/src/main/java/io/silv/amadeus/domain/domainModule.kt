@@ -10,6 +10,6 @@ val domainModule = module {
     includes(networkModule)
 
     single {
-        MangaRepo(get(), androidContext())
+        MangaRepo(get())
     }
 }

@@ -2,10 +2,12 @@ package io.silv.amadeus.domain.repos
 
 import io.silv.amadeus.domain.models.ChapterImages
 import io.silv.amadeus.domain.models.DomainChapter
+import io.silv.amadeus.domain.models.DomainCoverArt
 import io.silv.amadeus.domain.models.DomainManga
 import io.silv.amadeus.network.mangadex.MangaDexApi
 import io.silv.amadeus.network.mangadex.models.Group
 import io.silv.amadeus.network.mangadex.models.chapter.Chapter
+import io.silv.amadeus.network.mangadex.requests.CoverArtRequest
 import io.silv.amadeus.network.mangadex.requests.MangaFeedRequest
 import io.silv.amadeus.network.mangadex.requests.MangaRequest
 import io.silv.amadeus.network.mangadex.requests.Order
@@ -35,6 +37,27 @@ class MangaRepo(
                }
            )
        }
+    }
+
+    suspend fun getVolumeImages(
+        mangaId: String,
+        limit: Int,
+        offset: Int
+    ) = mangaDexApi.getCoverArtList(
+            CoverArtRequest(
+                limit = limit,
+                offset = offset,
+                manga = listOf(mangaId),
+                order = mapOf(Order.volume to OrderBy.asc)
+            )
+    ).mapSuccess {
+        data.map {
+            DomainCoverArt(
+                volume = it.attributes.volume,
+                mangaId = mangaId,
+                coverArtUrl = "https://uploads.mangadex.org/covers/$mangaId/${it.attributes.fileName}"
+            )
+        }
     }
 
     suspend fun getMangaFeed(

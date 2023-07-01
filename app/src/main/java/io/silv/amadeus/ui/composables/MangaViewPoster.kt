@@ -3,6 +3,9 @@ package io.silv.amadeus.ui.composables
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -138,7 +141,11 @@ fun MangaViewPoster(
                 }
             }
         }
-        AnimatedVisibility(visible = !isTransformed) {
+        AnimatedVisibility(
+            visible = !isTransformed,
+            enter = slideInHorizontally(animationSpec = spring()) { it },
+            exit = slideOutHorizontally(animationSpec = spring()) { it }
+        ) {
             Column(
                 Modifier
                     .fillMaxWidth(0.6f)

@@ -140,6 +140,7 @@ class MangaRepo(
 fun toDomainChapter(chapter: Chapter): DomainChapter {
     val it = chapter
     return DomainChapter(
+        id = it.id,
         title = it.attributes.title,
         volume = it.attributes.volume,
         chapter = it.attributes.chapter,

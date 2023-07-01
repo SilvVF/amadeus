@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,6 +25,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -34,6 +36,7 @@ import cafe.adriel.voyager.koin.getScreenModel
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
+import io.silv.amadeus.domain.models.DomainChapter
 import io.silv.amadeus.domain.models.DomainManga
 import io.silv.amadeus.ui.composables.AnimatedShimmer
 import io.silv.amadeus.ui.composables.MangaViewPoster
@@ -56,6 +59,7 @@ class MangaViewScreen(
         val sm = getScreenModel<MangaViewSM>()
 
         val mangaViewState by sm.state.collectAsStateWithLifecycle()
+        val lifecycle = LocalLifecycleOwner.current
 
         LaunchedEffect(Unit) {
             sm.loadMangaInfo(manga.id, manga.lastChapter)
@@ -79,6 +83,12 @@ class MangaViewScreen(
                    coverArtState = mangaViewState.coverArtState,
                    retryLoadCoverArt = {
                        sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
+                   },
+                   retryLoadChapterList = {
+                       sm.loadMangaInfo(manga.id, manga.lastChapter)
+                   },
+                   downloadChapter = {
+                        sm.downloadChapter(it, lifecycle)
                    }
                )
             }
@@ -90,7 +100,9 @@ class MangaViewScreen(
 fun MangaView(
     state: ChapterListState,
     coverArtState: CoverArtState,
-    retryLoadCoverArt: () -> Unit
+    retryLoadCoverArt: () -> Unit,
+    retryLoadChapterList: () -> Unit,
+    downloadChapter: (DomainChapter) -> Unit,
 ) {
 
     val space = LocalSpacing.current
@@ -99,6 +111,9 @@ fun MangaView(
         is ChapterListState.Failure -> {
             CenterBox(Modifier.fillMaxSize()) {
                 Text(state.message)
+                Button(onClick = retryLoadChapterList) {
+                    Text(text = "Try again")
+                }
             }
         }
         ChapterListState.Loading -> {
@@ -120,7 +135,10 @@ fun MangaView(
                         .height(40.dp))
                 when (volumeItemsState.items) {
                     is VolumeItemsState.Chapters -> {
-                        ChapterList(volumeItemsState.items)
+                        ChapterList(volumeItemsState.items, volumeItemsState.sortBy,
+                            sortByChange = { volumeItemsState.sortByOpposite() },
+                            downloadChapterClicked = downloadChapter
+                        )
                     }
                     is VolumeItemsState.Volumes -> {
                         VolumeList(volumeItemsState.items, coverArtState) {

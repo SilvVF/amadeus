@@ -1,11 +1,21 @@
 package io.silv.amadeus.ui.screens.manga_view
 
 import androidx.compose.runtime.Immutable
+import androidx.lifecycle.LifecycleOwner
+import androidx.work.Constraints
+import androidx.work.Data
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequest
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
+import com.skydoves.whatif.whatIfNotNull
 import io.silv.amadeus.domain.models.DomainChapter
 import io.silv.amadeus.domain.models.DomainCoverArt
 import io.silv.amadeus.domain.repos.MangaRepo
 import io.silv.amadeus.filterUnique
+import io.silv.amadeus.local.workers.ChapterDownloadWorker
 import io.silv.amadeus.network.mangadex.MangaDexTestApi
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.ktor_response_mapper.message
@@ -13,36 +23,13 @@ import io.silv.ktor_response_mapper.suspendOnFailure
 import io.silv.ktor_response_mapper.suspendOnSuccess
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class MangaViewSM(
     private val mangaRepo: MangaRepo,
+    private val workManager: WorkManager,
     mangaDexTestApi: MangaDexTestApi,
 ): AmadeusScreenModel<MangaViewEvent, MangaViewState>(MangaViewState()) {
-
-    init {
-//        coroutineScope.launch {
-//            delay(3000)
-//            mutableState.value = MangaViewState(
-//                chapterListState = ChapterListState.Success(
-//                    mangaDexTestApi.getChapterList().data.map(::toDomainChapter)
-//                ),
-//                coverArtState = CoverArtState.Success(
-//                    buildMap {
-//                        mangaDexTestApi.getMangaCoverArt(
-//
-//                        ).data.forEach {
-//                            put(it.attributes.volume,
-//                                DomainCoverArt(
-//                                volume = it.attributes.volume,
-//                                mangaId = "a93959d7-4a4a-4f80-88f7-921af3ca9ade",
-//                                coverArtUrl = "https://uploads.mangadex.org/covers/a93959d7-4a4a-4f80-88f7-921af3ca9ade/${it.attributes.fileName}"
-//                            ))
-//                        }
-//                    }
-//                )
-//            )
-//        }
-    }
 
     fun loadVolumeCoverArt(
         mangaId: String,
@@ -94,12 +81,72 @@ class MangaViewSM(
                 }
             }
     }
+
+    fun downloadChapter(chapter: DomainChapter, lifecycleOwner: LifecycleOwner) {
+        val id = UUID.randomUUID()
+        workManager.enqueue(buildDownloadWorkRequest(chapter, id))
+        mutableState.update { state ->
+            state.copy(downloadingIds = state.downloadingIds + chapter.id)
+        }
+        workManager.getWorkInfoByIdLiveData(id).observe(lifecycleOwner) { workInfo ->
+            when(workInfo.state) {
+                WorkInfo.State.SUCCEEDED -> {
+                    workInfo.outputData.getStringArray("uris").whatIfNotNull {
+                        mutableState.update {state ->
+                            state.copy(
+                                downloadingIds = state.downloadingIds.filter { it != chapter.id }
+                            )
+                        }
+                    }
+                    mutableEvents.trySend(MangaViewEvent.DownloadSuccess)
+                }
+                WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> {
+                    mutableState.update {state ->
+                        state.copy(
+                            downloadingIds = state.downloadingIds.filter { it != chapter.id }
+                        )
+                    }
+                    mutableEvents.trySend(MangaViewEvent.DownloadFailure)
+                }
+                WorkInfo.State.BLOCKED,
+                WorkInfo.State.ENQUEUED ,
+                WorkInfo.State.RUNNING -> Unit
+            }
+         }
+    }
+
+
+    fun buildDownloadWorkRequest(
+        chapter: DomainChapter,
+        id: UUID
+    ): OneTimeWorkRequest {
+        return OneTimeWorkRequestBuilder<ChapterDownloadWorker>()
+            .setConstraints(
+                Constraints(
+                    requiredNetworkType = NetworkType.CONNECTED,
+                    requiresStorageNotLow = true,
+                )
+            )
+            .setId(id)
+            .setInputData(
+                Data.Builder()
+                    .putBoolean(ChapterDownloadWorker.fetchImagesKey, true)
+                    .putString(ChapterDownloadWorker.volumeNumberKey, chapter.volume ?: "0")
+                    .putString(ChapterDownloadWorker.chapterIdKey, chapter.id)
+                    .putString(ChapterDownloadWorker.mangaIdKey, chapter.mangaId)
+                    .build()
+            )
+            .build()
+    }
 }
 
-sealed interface MangaViewEvent
+sealed interface MangaViewEvent {
+    object DownloadFailure: MangaViewEvent
+    object DownloadSuccess: MangaViewEvent
+}
 
 sealed class ChapterListState(
-    open val chapters: List<DomainChapter> = emptyList()
+    open val chapters: List<DomainChapter> = emptyList(),
 ) {
     object Loading: ChapterListState()
     data class Success(override val chapters: List<DomainChapter>): ChapterListState(chapters)
@@ -117,5 +164,6 @@ sealed class CoverArtState(
 @Immutable
 data class MangaViewState(
     val coverArtState: CoverArtState = CoverArtState.Loading,
-    val chapterListState: ChapterListState = ChapterListState.Loading
+    val chapterListState: ChapterListState = ChapterListState.Loading,
+    val downloadingIds: List<String> = emptyList()
 )

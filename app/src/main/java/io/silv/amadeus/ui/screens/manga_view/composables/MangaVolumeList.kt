@@ -1,11 +1,15 @@
 package io.silv.amadeus.ui.screens.manga_view.composables
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -32,6 +36,7 @@ import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.screens.manga_view.CoverArtState
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.stateholders.VolumeItemsState
+import io.silv.amadeus.ui.theme.LocalSpacing
 
 
 @Composable
@@ -59,15 +64,17 @@ fun VolumeList(
                 selectedVolume = null
             }
 
-            selectedVolume?.let { VolumeView(it) }
-                ?: VolumeImageGrid(
-                    coverArtState = coverArtState,
-                    volumeItems = volumeItems.items,
-                    onRetryLoadCoverArt = onRetryLoadCoverArt,
-                    onVolumeSelected = {
-                        selectedVolume = it
-                    }
-                )
+            AnimatedVisibility(visible = selectedVolume != null) {
+                selectedVolume?.let { VolumeView(Modifier.fillMaxSize(), it) }
+            }
+            VolumeImageGrid(
+                coverArtState = coverArtState,
+                volumeItems = volumeItems.items,
+                onRetryLoadCoverArt = onRetryLoadCoverArt,
+                onVolumeSelected = {
+                    selectedVolume = it
+                }
+            )
         }
         else -> Unit
     }
@@ -75,9 +82,12 @@ fun VolumeList(
 
 @Composable
 private fun VolumeView(
+    modifier: Modifier = Modifier,
     volume: List<DomainChapter>
 ) {
-    Text(volume.toString())
+    CenterBox(modifier) {
+        Text(volume.toString())
+    }
 }
 
 @Composable
@@ -88,7 +98,7 @@ private fun VolumeImageGrid(
     onVolumeSelected: (List<DomainChapter>) -> Unit
 ) {
     val ctx = LocalContext.current
-
+    val space = LocalSpacing.current
     LazyVerticalGrid(
         modifier = Modifier.fillMaxSize(),
         columns = GridCells.Fixed(2)
@@ -104,15 +114,6 @@ private fun VolumeImageGrid(
                 CoverArtState.Loading -> AnimatedBoxShimmer(Modifier.size(120.dp))
                 is CoverArtState.Success -> {
                     Column {
-                        Row {
-                            Column {
-                                Text(text ="Volume #${volume.first().volume}")
-                                Text(text ="Chapters: ${volume.size}")
-                            }
-                            IconButton(onClick = { onVolumeSelected(volume) }) {
-                                Icon(imageVector = Icons.Filled.Info, contentDescription = null)
-                            }
-                        }
                         coverArtState.art[volume.first().volume]?.coverArtUrl?.let {
                             SubcomposeAsyncImage(
                                 model = ImageRequest.Builder(ctx)
@@ -124,7 +125,7 @@ private fun VolumeImageGrid(
                                 error = {
                                     CenterBox(
                                         Modifier
-                                            .size(200.dp)
+                                            .size(120.dp)
                                             .border(
                                                 width = 2.dp,
                                                 MaterialTheme.colorScheme.primary
@@ -138,6 +139,20 @@ private fun VolumeImageGrid(
                                 },
                                 modifier = Modifier.size(200.dp)
                             )
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(space.large)
+                        ) {
+                            Column {
+                                Text(text ="Volume #${volume.first().volume}")
+                                Text(text ="Chapters: ${volume.size}")
+                            }
+                            IconButton(onClick = { onVolumeSelected(volume) }) {
+                                Icon(imageVector = Icons.Filled.Info, contentDescription = null)
+                            }
                         }
                     }
                 }

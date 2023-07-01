@@ -20,6 +20,7 @@ data class DomainVolume(
 
 @Parcelize
 data class DomainChapter(
+    val id: String,
     val mangaId: String,
     val title: String? = null,
     val volume: String? = null,

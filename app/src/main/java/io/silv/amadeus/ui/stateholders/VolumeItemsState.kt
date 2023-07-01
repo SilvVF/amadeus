@@ -64,6 +64,11 @@ class VolumeItemsState(
         onSortByChange(sortBy)
     }
 
+    fun sortByOpposite() {
+        if (sortBy == SortBy.Asc) sortBy(SortBy.Dsc)
+        if (sortBy == SortBy.Dsc) sortBy(SortBy.Asc)
+    }
+
     fun groupByOpposite() {
         if (groupBy == GroupBy.Volume) groupBy(GroupBy.Chapter)
         if (groupBy == GroupBy.Chapter) groupBy(GroupBy.Volume)

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
+import io.silv.amadeus.domain.repos.MangaRepo
 import io.silv.amadeus.local.cache.ChapterImageCache
 import io.silv.amadeus.local.dao.ChapterDao
 import io.silv.amadeus.local.dao.MangaDao
@@ -12,6 +13,10 @@ import io.silv.amadeus.local.entity.ChapterEntity
 import io.silv.amadeus.local.entity.MangaEntity
 import io.silv.amadeus.local.entity.VolumeEntity
 import io.silv.amadeus.pmapIndexed
+import io.silv.ktor_response_mapper.ApiResponse
+import io.silv.ktor_response_mapper.mapSuccess
+import io.silv.ktor_response_mapper.onError
+import io.silv.ktor_response_mapper.suspendMapSuccess
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -24,14 +29,33 @@ class ChapterDownloadWorker(
     private val volumeDao by inject<VolumeDao>()
     private val chapterDao by inject<ChapterDao>()
     private val chapterImageCache by inject<ChapterImageCache>()
+    private val mangaRepo by inject<MangaRepo>()
+
+    private suspend fun fetchImages(
+        chapterId: String
+    )= mangaRepo.getChapterImages(chapterId)
+            .suspendMapSuccess { images.map { it.uri }.toTypedArray() }
+
 
     override suspend fun doWork(): Result {
 
-        val images = inputData.getStringArray(imageUrlsKey) ?: return Result.failure()
+        val fetchImages = inputData.getBoolean(fetchImagesKey, true)
+
         val mangaId = inputData.getString(mangaIdKey) ?: return Result.failure()
         val chapterId = inputData.getString(chapterIdKey) ?: return Result.failure()
         val volumeNumber = inputData.getString(volumeNumberKey) ?: return Result.failure()
+
         val savePermanent = inputData.getBoolean(savePermanentKey, false)
+
+        val images = if (!fetchImages) {
+            inputData.getStringArray(imageUrlsKey) ?:  return Result.failure()
+        } else  {
+            when(val result = fetchImages(chapterId)) {
+                is ApiResponse.Failure.Error -> return Result.failure()
+                is ApiResponse.Failure.Exception -> return Result.failure()
+                is ApiResponse.Success -> result.data
+            }
+        }
 
         val prevManga = mangaDao.getMangaById(mangaId)
         val volumeId = volumeNumber + mangaId
@@ -80,6 +104,7 @@ class ChapterDownloadWorker(
     }
 
     companion object {
+        const val fetchImagesKey = "fetch_images"
         const val volumeNumberKey = "volume_number"
         const val chapterIdKey = "chapter_id"
         const val mangaIdKey = "chapter_id"

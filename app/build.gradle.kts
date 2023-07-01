@@ -118,4 +118,5 @@ dependencies {
     implementation(kotlin("reflect"))
 
     implementation(project(":ktor-response-mapper"))
+    implementation("com.github.skydoves:whatif:1.1.2")
 }

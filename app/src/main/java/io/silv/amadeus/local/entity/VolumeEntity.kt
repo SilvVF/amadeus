@@ -8,5 +8,6 @@ import androidx.room.PrimaryKey
 data class VolumeEntity(
     @PrimaryKey val vid: String,
     @ColumnInfo("manga_id") val mangaId: String,
+    @ColumnInfo("progress_state") val progressState: ProgressState = ProgressState.NotStarted,
     @ColumnInfo("chapter_ids") val chapterIds: List<String>
 )

@@ -3,7 +3,6 @@ package io.silv.amadeus.ui.screens.manga_view
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,11 +15,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -31,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.work.WorkInfo
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import com.skydoves.orbital.Orbital
@@ -43,10 +49,13 @@ import io.silv.amadeus.ui.composables.MangaViewPoster
 import io.silv.amadeus.ui.screens.manga_view.composables.ChapterList
 import io.silv.amadeus.ui.screens.manga_view.composables.VolumeList
 import io.silv.amadeus.ui.shared.CenterBox
+import io.silv.amadeus.ui.shared.StringStateListSaver
+import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.stateholders.VolumeItemsState
 import io.silv.amadeus.ui.stateholders.rememberVolumeItemsState
 import io.silv.amadeus.ui.theme.LocalSpacing
+import kotlinx.coroutines.launch
 
 
 class MangaViewScreen(
@@ -58,15 +67,58 @@ class MangaViewScreen(
 
         val sm = getScreenModel<MangaViewSM>()
 
+        val lifecycleOwner = LocalLifecycleOwner.current
+        val scope = rememberCoroutineScope()
+
         val mangaViewState by sm.state.collectAsStateWithLifecycle()
-        val lifecycle = LocalLifecycleOwner.current
+        val snackbarHostState = remember { SnackbarHostState() }
+
+        val downloads = rememberSaveable(saver = StringStateListSaver) {
+                mutableStateListOf()
+        }
 
         LaunchedEffect(Unit) {
             sm.loadMangaInfo(manga.id, manga.lastChapter)
             sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
         }
 
-        Scaffold { paddingValues ->
+        sm.collectEvents { event ->
+            when (event) {
+                is MangaViewEvent.DownloadStart -> {
+                    downloads.add(event.chapterId)
+                    event.observable.observe(lifecycleOwner) {
+                        when (it.state) {
+                            WorkInfo.State.SUCCEEDED -> {
+                                downloads.remove(event.chapterId)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = "downloaded chapter ${event.chapterId}",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                            }
+                            WorkInfo.State.FAILED,
+                            WorkInfo.State.CANCELLED -> {
+                                downloads.remove(event.chapterId)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = "downloaded chapter ${event.chapterId}",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                            }
+                            else -> Unit
+                        }
+                    }
+                }
+            }
+        }
+
+        Scaffold(
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState)
+            }
+        ) { paddingValues ->
             Column(Modifier
                 .padding(paddingValues)
             ) {
@@ -81,6 +133,7 @@ class MangaViewScreen(
                MangaView(
                    state = mangaViewState.chapterListState,
                    coverArtState = mangaViewState.coverArtState,
+                   downloads = downloads,
                    retryLoadCoverArt = {
                        sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
                    },
@@ -88,7 +141,7 @@ class MangaViewScreen(
                        sm.loadMangaInfo(manga.id, manga.lastChapter)
                    },
                    downloadChapter = {
-                        sm.downloadChapter(it, lifecycle)
+                        sm.downloadChapter(it)
                    }
                )
             }
@@ -100,6 +153,7 @@ class MangaViewScreen(
 fun MangaView(
     state: ChapterListState,
     coverArtState: CoverArtState,
+    downloads: List<String>,
     retryLoadCoverArt: () -> Unit,
     retryLoadChapterList: () -> Unit,
     downloadChapter: (DomainChapter) -> Unit,
@@ -135,7 +189,10 @@ fun MangaView(
                         .height(40.dp))
                 when (volumeItemsState.items) {
                     is VolumeItemsState.Chapters -> {
-                        ChapterList(volumeItemsState.items, volumeItemsState.sortBy,
+                        ChapterList(
+                            volumeItemsState.items,
+                            volumeItemsState.sortBy,
+                            downloads,
                             sortByChange = { volumeItemsState.sortByOpposite() },
                             downloadChapterClicked = downloadChapter
                         )

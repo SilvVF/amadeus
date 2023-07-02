@@ -5,25 +5,21 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FormatAlignLeft
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,7 +39,6 @@ import io.silv.amadeus.domain.models.DomainChapter
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.stateholders.VolumeItemsState
 import io.silv.amadeus.ui.theme.LocalSpacing
-import kotlinx.datetime.LocalDate
 
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -51,6 +46,7 @@ import kotlinx.datetime.LocalDate
 fun ChapterList(
     volumeItems: VolumeItemsState.VolumeItems,
     sortBy: VolumeItemsState.SortBy,
+    downloads: List<String>,
     sortByChange: () -> Unit,
     downloadChapterClicked: (DomainChapter) -> Unit
 ) {
@@ -103,8 +99,9 @@ fun ChapterList(
                        Modifier
                            .fillMaxWidth()
                            .padding(vertical = space.med),
+                       downloading =  chapter.id in downloads,
                        downloadChapterClicked = {
-
+                           downloadChapterClicked(chapter)
                        },
                        readButtonClick = {
 
@@ -122,6 +119,7 @@ fun ChapterList(
 private fun ChapterListItem(
     chapter: DomainChapter,
     modifier: Modifier = Modifier,
+    downloading: Boolean,
     readButtonClick: () -> Unit,
     downloadChapterClicked: () -> Unit
 ) {
@@ -149,11 +147,20 @@ private fun ChapterListItem(
                     Text(text = it)
                 }
             }
-            IconButton(onClick = downloadChapterClicked) {
-                Icon(
-                    imageVector = Icons.Filled.Download,
-                    contentDescription = null
+            if (downloading) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(horizontal = space.med)
+                        .size(24.dp),
+                    strokeWidth = 4.dp,
                 )
+            } else {
+                IconButton(onClick = downloadChapterClicked) {
+                    Icon(
+                        imageVector = Icons.Filled.Download,
+                        contentDescription = null
+                    )
+                }
             }
             Button(onClick = readButtonClick) {
                 Text(text = "Read")

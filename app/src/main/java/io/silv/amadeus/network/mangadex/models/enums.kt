@@ -2,6 +2,10 @@
 
 package io.silv.amadeus.network.mangadex.models
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+import java.io.Serializable
+
 enum class Result {
     ok, error
 }
@@ -14,7 +18,8 @@ enum class Group {
     content, format, genre, theme
 }
 
-enum class ContentRating {
+@Parcelize
+enum class ContentRating : Parcelable, Serializable {
     safe, suggestive, erotica, pornographic
 }
 

@@ -1,6 +1,7 @@
 package io.silv.amadeus
 
 import android.app.Application
+import io.silv.amadeus.local.workers.CleanupInitializer
 import io.silv.amadeus.network.MangaDexApiLogger
 import io.silv.ktor_response_mapper.KSandwichInitializer
 import org.koin.android.ext.koin.androidContext
@@ -22,5 +23,7 @@ class AmadeusApp: Application() {
             workManagerFactory()
             modules(appModule)
         }
+
+        CleanupInitializer.init(this)
     }
 }

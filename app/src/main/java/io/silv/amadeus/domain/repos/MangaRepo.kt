@@ -1,17 +1,21 @@
 package io.silv.amadeus.domain.repos
 
+import com.skydoves.whatif.whatIfNotNullWith
+import io.silv.amadeus.domain.mappers.toDomainChapter
+import io.silv.amadeus.domain.mappers.toDomainManga
 import io.silv.amadeus.domain.models.ChapterImages
-import io.silv.amadeus.domain.models.DomainChapter
 import io.silv.amadeus.domain.models.DomainCoverArt
 import io.silv.amadeus.domain.models.DomainManga
+import io.silv.amadeus.local.dao.ChapterDao
+import io.silv.amadeus.local.dao.MangaDao
+import io.silv.amadeus.local.dao.VolumeDao
 import io.silv.amadeus.network.mangadex.MangaDexApi
-import io.silv.amadeus.network.mangadex.models.Group
-import io.silv.amadeus.network.mangadex.models.chapter.Chapter
 import io.silv.amadeus.network.mangadex.requests.CoverArtRequest
 import io.silv.amadeus.network.mangadex.requests.MangaFeedRequest
 import io.silv.amadeus.network.mangadex.requests.MangaRequest
 import io.silv.amadeus.network.mangadex.requests.Order
 import io.silv.amadeus.network.mangadex.requests.OrderBy
+import io.silv.amadeus.pmap
 import io.silv.ktor_response_mapper.ApiResponse
 import io.silv.ktor_response_mapper.mapSuccess
 import io.silv.ktor_response_mapper.onSuccess
@@ -20,6 +24,9 @@ import io.silv.ktor_response_mapper.suspendMapSuccess
 
 class MangaRepo(
     private val mangaDexApi: MangaDexApi,
+    private val mangaDao: MangaDao,
+    private val chapterDao: ChapterDao,
+    private val volumeDao: VolumeDao,
 ) {
 
     private var mangaListOffset: Int = 0
@@ -77,7 +84,20 @@ class MangaRepo(
                 limit = limit
             )
         ).mapSuccess {
-            data.map(::toDomainChapter)
+            data.pmap { networkChapter ->
+                val chapter = toDomainChapter(networkChapter)
+                chapterDao.getChapterById(networkChapter.id)
+                    .whatIfNotNullWith(
+                        whatIfNot = { _ -> chapter },
+                        whatIf = { entity ->
+                            chapter.copy(
+                                progress = entity.progressState,
+                                downloaded = entity.uris.isNotEmpty(),
+                                imageUris = entity.uris
+                            )
+                        }
+                    )
+            }
         }
 
     suspend fun getMangaWithArt(amount: Int = 50): ApiResponse<List<DomainManga>> {
@@ -92,68 +112,8 @@ class MangaRepo(
                 data.map(::toDomainManga)
             }
             .onSuccess { mangaListOffset += amount }
-            .also {
-                println(it)
-            }
+            .also { println(it) }
     }
 
-
-    private fun toDomainManga(networkManga: io.silv.amadeus.network.mangadex.models.manga.Manga): DomainManga {
-
-        val fileName = networkManga.relationships.find {
-            it.type == "cover_art"
-        }?.attributes?.get("fileName")
-
-        val genres = networkManga.attributes.tags.filter {
-            it.attributes.group == Group.genre
-        }.map {
-            it.attributes.name["en"] ?: ""
-        }
-
-        val titles = buildMap {
-            networkManga.attributes.altTitles.forEach {
-                for ((k, v) in it) {
-                    put(k, v)
-                }
-            }
-        }
-
-        return DomainManga(
-            id = networkManga.id,
-            description = networkManga.attributes.description.getOrDefault("en", ""),
-            title = networkManga.attributes.title.getOrDefault("en", ""),
-            imageUrl = "https://uploads.mangadex.org/covers/${networkManga.id}/$fileName",
-            genres = genres,
-            altTitle = networkManga.attributes.altTitles.find { it.containsKey("en") }?.getOrDefault("en", "") ?: "",
-            availableTranslatedLanguages = networkManga.attributes.availableTranslatedLanguages.filterNotNull(),
-            allDescriptions = networkManga.attributes.description,
-            allTitles = titles,
-            lastChapter = networkManga.attributes.lastChapter?.toIntOrNull() ?: 0,
-            lastVolume = networkManga.attributes.lastVolume?.toIntOrNull() ?: 0,
-            status = networkManga.attributes.status,
-            year = networkManga.attributes.year ?: 0,
-            contentRating = networkManga.attributes.contentRating,
-        )
-    }
 }
 
-fun toDomainChapter(chapter: Chapter): DomainChapter {
-    val it = chapter
-    return DomainChapter(
-        id = it.id,
-        title = it.attributes.title,
-        volume = it.attributes.volume,
-        chapter = it.attributes.chapter,
-        pages = it.attributes.pages,
-        translatedLanguage = it.attributes.translatedLanguage,
-        updatedAt = it.attributes.updatedAt,
-        uploader = it.attributes.uploader ?: "",
-        externalUrl = it.attributes.externalUrl,
-        version = it.attributes.version,
-        createdAt = it.attributes.createdAt,
-        readableAt = it.attributes.readableAt,
-        mangaId = it.attributes.relationships.find {
-            it.type == "manga"
-        }?.id ?: ""
-    )
-}

@@ -22,6 +22,11 @@ interface ChapterDao {
     """)
     suspend fun getChapterById(id: String): ChapterEntity?
 
+    @Query("""
+        SELECT * FROM chapterentity
+    """)
+    suspend fun getAll(): List<ChapterEntity>
+
     @Delete
     suspend fun deleteChapter(chapterEntity: ChapterEntity)
 }

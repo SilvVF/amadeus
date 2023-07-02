@@ -4,6 +4,7 @@ import androidx.work.WorkManager
 import io.silv.amadeus.local.cache.ChapterImageCache
 import io.silv.amadeus.local.dao.daosModule
 import io.silv.amadeus.local.workers.ChapterDownloadWorker
+import io.silv.amadeus.local.workers.CleanupWorker
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.dsl.module
@@ -21,5 +22,9 @@ val localModule = module {
 
     worker {
         ChapterDownloadWorker(androidContext(), get())
+    }
+
+    worker {
+        CleanupWorker(androidContext(), get())
     }
 }

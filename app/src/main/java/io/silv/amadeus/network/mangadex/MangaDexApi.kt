@@ -90,7 +90,7 @@ class MangaDexApi(
     }
 
     suspend fun getChapterImages(chapterId: String) = withContext(dispatchers.io) {
-        client.get<ChapterImageResponse>(urlString = "$mangaDexUrl/at-home/server/$chapterId")
+        client.get<ChapterImageResponse>(urlString = "$mangaDexUrl/at-home/server/$chapterId".also { println(it) })
     }
 }
 

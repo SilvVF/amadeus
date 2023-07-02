@@ -6,7 +6,11 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.SaverScope
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -48,6 +52,20 @@ fun Modifier.shadow(
         }
     }
 )
+
+object StringStateListSaver: Saver<SnapshotStateList<String>, String> {
+    override fun restore(value: String): SnapshotStateList<String> {
+        return mutableStateListOf<String>().also { list ->
+            list.addAll(
+                value.split(",")
+            )
+        }
+    }
+
+    override fun SaverScope.save(value: SnapshotStateList<String>): String {
+        return value.joinToString()
+    }
+}
 
 inline fun Modifier.noRippleClickable(
     crossinline onClick: () -> Unit

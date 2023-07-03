@@ -1,18 +1,17 @@
 package io.silv.amadeus
 
-import io.silv.amadeus.domain.domainModule
-import io.silv.amadeus.local.localModule
-import io.silv.amadeus.network.networkModule
 import io.silv.amadeus.ui.screens.screenModule
+import io.silv.core.AmadeusDispatchers
+import io.silv.manga.domain.di.domainModule
+import io.silv.manga.domain.di.mangaModule
 import org.koin.dsl.module
 
 val appModule = module {
 
     includes(
-        networkModule,
         screenModule,
         domainModule,
-        localModule,
+        mangaModule
     )
 
     single<AmadeusDispatchers> {

@@ -8,7 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import io.silv.amadeus.domain.models.DomainChapter
+import io.silv.manga.domain.models.DomainChapter
 
 class VolumeItemsState(
     chapters: List<DomainChapter>,

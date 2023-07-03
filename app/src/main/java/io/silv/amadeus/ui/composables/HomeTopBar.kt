@@ -29,7 +29,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.silv.amadeus.domain.models.DomainManga
+import io.silv.manga.domain.models.DomainManga
 import io.silv.amadeus.ui.theme.LocalSpacing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -49,14 +49,14 @@ class HomeTopBarState(
     init {
         scope?.launch {
             snapshotFlow { query }.collect { q ->
-                val filteredResults =  mangaList.filter {
-                    q.lowercase() in it.title.lowercase()
-                }
-                suggestions = if (filteredResults.size > 5) {
-                   filteredResults.take(5).map { it.title }
-                } else {
-                    filteredResults.map { it.title }
-                }
+//                val filteredResults =  mangaList.filter {
+//                    q.lowercase() in it.titleEnglish.lowercase()
+//                }
+//                suggestions = if (filteredResults.size > 5) {
+//                   filteredResults.take(5).map { it.title }
+//                } else {
+//                    filteredResults.map { it.title }
+//                }
             }
         }
     }

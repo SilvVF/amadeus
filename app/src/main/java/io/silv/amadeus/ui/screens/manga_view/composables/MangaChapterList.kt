@@ -35,7 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import io.silv.amadeus.domain.models.DomainChapter
+import io.silv.manga.domain.models.DomainChapter
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.stateholders.VolumeItemsState
 import io.silv.amadeus.ui.theme.LocalSpacing

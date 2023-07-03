@@ -54,6 +54,10 @@ android {
 }
 dependencies {
 
+    implementation(project(":ktor-response-mapper"))
+    implementation(project(":manga"))
+    implementation(project(":core"))
+
     implementation(libs.androidx.core.ktx)
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
     androidTestImplementation(libs.androidx.test.junit)
@@ -77,6 +81,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.4.3")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.1")
 
+    val navVersion = "2.6.0"
+
+    implementation("androidx.navigation:navigation-compose:$navVersion")
 
 
     //ROOM
@@ -91,6 +98,7 @@ dependencies {
     implementation(libs.voyager.koin)
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)
+    implementation(libs.voyager.tabNavigator)
 
     //KOIN
     implementation(libs.koin.compose)
@@ -116,7 +124,6 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
     implementation(kotlin("reflect"))
-
-    implementation(project(":ktor-response-mapper"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.7.2")
     implementation("com.github.skydoves:whatif:1.1.2")
 }

@@ -8,6 +8,9 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
@@ -79,6 +82,10 @@ private val DarkColors = darkColorScheme(
     scrim = md_theme_dark_scrim,
 )
 
+val LocalBottomBarVisibility = compositionLocalOf {
+   mutableStateOf(true)
+}
+
 @Composable
 fun AmadeusTheme(
   useDarkTheme: Boolean = isSystemInDarkTheme(),
@@ -100,7 +107,8 @@ fun AmadeusTheme(
     }
 
  CompositionLocalProvider(
-     LocalSpacing provides Spacing()
+     LocalSpacing providesDefault Spacing(),
+     LocalBottomBarVisibility providesDefault remember { mutableStateOf(true) }
  ) {
      MaterialTheme(
          colorScheme = colors,

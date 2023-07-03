@@ -7,14 +7,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -42,8 +48,8 @@ import cafe.adriel.voyager.koin.getScreenModel
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
-import io.silv.amadeus.domain.models.DomainChapter
-import io.silv.amadeus.domain.models.DomainManga
+import io.silv.manga.domain.models.DomainChapter
+import io.silv.manga.domain.models.DomainManga
 import io.silv.amadeus.ui.composables.AnimatedShimmer
 import io.silv.amadeus.ui.composables.MangaViewPoster
 import io.silv.amadeus.ui.screens.manga_view.composables.ChapterList
@@ -54,6 +60,7 @@ import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.stateholders.VolumeItemsState
 import io.silv.amadeus.ui.stateholders.rememberVolumeItemsState
+import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
 
@@ -70,6 +77,8 @@ class MangaViewScreen(
         val lifecycleOwner = LocalLifecycleOwner.current
         val scope = rememberCoroutineScope()
 
+        var bottomBarVisible by LocalBottomBarVisibility.current
+
         val mangaViewState by sm.state.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }
 
@@ -78,8 +87,9 @@ class MangaViewScreen(
         }
 
         LaunchedEffect(Unit) {
-            sm.loadMangaInfo(manga.id, manga.lastChapter)
-            sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
+            bottomBarVisible = false
+//            sm.loadMangaInfo(manga.id, manga.lastChapter)
+//            sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
         }
 
         sm.collectEvents { event ->
@@ -135,13 +145,13 @@ class MangaViewScreen(
                    coverArtState = mangaViewState.coverArtState,
                    downloads = downloads,
                    retryLoadCoverArt = {
-                       sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
+                     //  sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
                    },
                    retryLoadChapterList = {
-                       sm.loadMangaInfo(manga.id, manga.lastChapter)
+                   //    sm.loadMangaInfo(manga.id, manga.lastChapter)
                    },
                    downloadChapter = {
-                        sm.downloadChapter(it)
+//                        sm.downloadChapter(it)
                    }
                )
             }

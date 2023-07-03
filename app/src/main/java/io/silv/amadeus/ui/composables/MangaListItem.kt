@@ -21,7 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.silv.amadeus.domain.models.DomainManga
+import io.silv.manga.domain.models.DomainManga
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.shadow
 import io.silv.amadeus.ui.theme.LocalSpacing
@@ -47,7 +47,7 @@ fun MangaListItem(
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(context)
-                    .data(manga.imageUrl)
+                    .data(manga.coverArt)
                     .build(),
                 contentDescription = null,
                 modifier = Modifier
@@ -65,7 +65,7 @@ fun MangaListItem(
         )
         Spacer(modifier = Modifier.height(space.small))
         Text(
-            text = manga.title,
+            text = manga.titleEnglish,
             style = MaterialTheme.typography.titleMedium
         )
     }

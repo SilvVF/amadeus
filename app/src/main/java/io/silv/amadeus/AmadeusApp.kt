@@ -1,9 +1,9 @@
 package io.silv.amadeus
 
 import android.app.Application
-import io.silv.amadeus.local.workers.CleanupInitializer
-import io.silv.amadeus.network.MangaDexApiLogger
 import io.silv.ktor_response_mapper.KSandwichInitializer
+import io.silv.manga.local.workers.CleanupInitializer
+import io.silv.manga.network.MangaDexApiLogger
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.workmanager.koin.workManagerFactory

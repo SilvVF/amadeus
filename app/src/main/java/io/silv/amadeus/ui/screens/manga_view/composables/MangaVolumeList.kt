@@ -31,7 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import io.silv.amadeus.domain.models.DomainChapter
+import io.silv.manga.domain.models.DomainChapter
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.screens.manga_view.CoverArtState
 import io.silv.amadeus.ui.shared.CenterBox

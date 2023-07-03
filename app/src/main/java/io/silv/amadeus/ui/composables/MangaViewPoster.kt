@@ -47,7 +47,7 @@ import coil.request.ImageRequest
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
-import io.silv.amadeus.domain.models.DomainManga
+import io.silv.manga.domain.models.DomainManga
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
 
@@ -72,7 +72,7 @@ fun MangaViewPoster(
     val poster = rememberContentWithOrbitalScope {
         Column {
             Text(
-                text = manga.title,
+                text = manga.titleEnglish,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .align(CenterHorizontally)
@@ -92,7 +92,7 @@ fun MangaViewPoster(
             )
             AsyncImage(
                 model = ImageRequest.Builder(ctx)
-                    .data(manga.imageUrl)
+                    .data(manga.coverArt)
                     .crossfade(true)
                     .build(),
                 contentDescription = null,
@@ -185,7 +185,9 @@ fun MangaViewPoster(
                     }
                 }
                 LazyRow {
-                    items(manga.genres) {
+                    items(
+                        emptyList<String>()// TODO()
+                    ) {
                         SuggestionChip(
                             onClick = {},
                             label = { Text(it) },
@@ -202,8 +204,7 @@ fun MangaViewPoster(
                     }
                     item {
                         Text(
-                            text = manga.description +
-                                    manga.description + manga.description,
+                            text = "manga."  // TODO(//Description)
                         )
                     }
                 }

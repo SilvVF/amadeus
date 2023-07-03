@@ -6,7 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import io.silv.manga.local.cache.ChapterImageCache
 import io.silv.manga.local.dao.ChapterDao
-import io.silv.manga.local.dao.MangaDao
+import io.silv.manga.local.dao.SavedMangaDao
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -17,7 +17,7 @@ class ChapterDownloadWorker(
 
     private val tag = "ChapterDownloadWorker"
 
-    private val mangaDao by inject<MangaDao>()
+    private val mangaDao by inject<SavedMangaDao>()
     private val chapterDao by inject<ChapterDao>()
     private val chapterImageCache by inject<ChapterImageCache>()
 

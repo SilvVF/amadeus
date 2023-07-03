@@ -1,13 +1,16 @@
 package io.silv.manga.network.mangadex.models.manga
 
+import android.os.Parcelable
 import io.silv.manga.network.mangadex.models.ContentRating
 import io.silv.manga.network.mangadex.models.LocalizedString
 import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.State
 import io.silv.manga.network.mangadex.models.Status
 import io.silv.manga.network.mangadex.models.common.Tag
+import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
+@Parcelize
 @Serializable
 data class MangaAttributes(
     val title: LocalizedString,
@@ -30,4 +33,4 @@ data class MangaAttributes(
     val version: Int,
     val createdAt: String,
     val updatedAt: String
-)
+): Parcelable

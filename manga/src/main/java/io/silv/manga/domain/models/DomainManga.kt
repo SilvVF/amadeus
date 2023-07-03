@@ -9,8 +9,9 @@ import kotlinx.parcelize.Parcelize
 import java.io.Serializable
 
 @Parcelize
-data class DomainManga(
+data class DomainSavedManga(
     val id: String,
+    val description: String,
     val progressState: ProgressState = ProgressState.NotStarted,
     val coverArt: String,
     val titleEnglish: String,
@@ -28,5 +29,26 @@ data class DomainManga(
     val updatedAt: String,
     val chaptersIds: List<String>,
     val volumeToCoverArt: Map<String, String>,
+    val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
+): Parcelable, Serializable
+
+@Parcelize
+data class DomainManga(
+    val id: String,
+    val bookmarked: Boolean = false,
+    val description: String,
+    val progressState: ProgressState = ProgressState.NotStarted,
+    val coverArt: String,
+    val titleEnglish: String,
+    val alternateTitles: Map<String, String>,
+    val originalLanguage: String,
+    val availableTranslatedLanguages: List<String>,
+    val status: Status,
+    val contentRating: ContentRating,
+    val lastVolume: String? = null,
+    val lastChapter: String? = null,
+    val version: Int,
+    val createdAt: String,
+    val updatedAt: String,
     val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
 ): Parcelable, Serializable

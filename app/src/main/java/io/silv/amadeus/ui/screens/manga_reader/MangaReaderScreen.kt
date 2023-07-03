@@ -9,9 +9,7 @@ import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
-import com.skydoves.whatif.whatIfNotNull
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.workers.ChapterDownloadWorker
 import kotlinx.coroutines.guava.asDeferred
 import kotlinx.coroutines.launch
@@ -19,8 +17,7 @@ import java.util.UUID
 
 class MangaReaderSM(
     private val workManager: WorkManager,
-    private val chapterDao: ChapterDao,
-): AmadeusScreenModel<MangaReaderEvent, MangaReaderState>(MangaReaderState.Loading) {
+): AmadeusScreenModel<MangaReaderEvent>() {
 
     fun loadMangaImages(
         chapterId: String,

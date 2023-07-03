@@ -1,9 +1,12 @@
 package io.silv.manga.network.mangadex.models.common
 
+import android.os.Parcelable
 import io.silv.manga.network.mangadex.models.Related
+import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
 
+@Parcelize
 @Serializable
 data class Relationship(
     val id : String,
@@ -18,4 +21,4 @@ data class Relationship(
     If Reference Expansion is applied, contains objects attributes
      */
     val attributes: Map<String, String?> = emptyMap()
-)
+): Parcelable

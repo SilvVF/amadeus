@@ -2,27 +2,16 @@ package io.silv.amadeus.ui.screens.manga_view
 
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.LiveData
-import androidx.work.Data
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import cafe.adriel.voyager.core.model.coroutineScope
-import com.skydoves.whatif.whatIfNotNull
+import cafe.adriel.voyager.core.model.ScreenModel
+import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.DomainChapter
 import io.silv.manga.domain.models.DomainCoverArt
-import io.silv.manga.domain.repos.MangaRepo
-import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.ktor_response_mapper.message
-import io.silv.ktor_response_mapper.suspendOnFailure
-import io.silv.ktor_response_mapper.suspendOnSuccess
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import java.util.UUID
 
 class MangaViewSM(
-    private val mangaRepo: MangaRepo,
     private val workManager: WorkManager,
-): AmadeusScreenModel<MangaViewEvent, MangaViewState>(MangaViewState()) {
+): ScreenModel {
 
 //    fun loadVolumeCoverArt(
 //        mangaId: String,

@@ -1,5 +1,6 @@
 package io.silv.amadeus.ui.composables
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,6 +10,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
@@ -25,11 +30,13 @@ import io.silv.manga.domain.models.DomainManga
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.shadow
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.manga.local.entity.MangaResource
 
 @Composable
 fun MangaListItem(
     modifier: Modifier = Modifier,
-    manga: DomainManga
+    manga: MangaResource,
+    onBookmarkClick: () -> Unit
 ) {
 
     val context = LocalContext.current
@@ -37,12 +44,13 @@ fun MangaListItem(
 
     Column(modifier) {
         CenterBox(
-            modifier = Modifier.shadow(
-                color = Color.DarkGray,
-                blurRadius = 12.dp,
-                offsetY = space.xs,
-                offsetX = space.xs
-            )
+            modifier = Modifier
+                .shadow(
+                    color = Color.DarkGray,
+                    blurRadius = 12.dp,
+                    offsetY = space.xs,
+                    offsetX = space.xs
+                )
                 .padding(space.xs)
         ) {
             AsyncImage(
@@ -61,6 +69,7 @@ fun MangaListItem(
         Spacer(modifier = Modifier.height(space.small))
         TranslatedLanguageTags(
             tags = manga.availableTranslatedLanguages,
+            onBookmarkClick = onBookmarkClick,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(space.small))
@@ -75,6 +84,7 @@ fun MangaListItem(
 fun TranslatedLanguageTags(
     modifier: Modifier = Modifier,
     tags: List<String>,
+    onBookmarkClick: () -> Unit,
     onLanguageClick: (language: String) -> Unit = {}
 ) {
     val space = LocalSpacing.current

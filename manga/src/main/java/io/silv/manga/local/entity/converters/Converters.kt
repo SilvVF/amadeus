@@ -1,4 +1,4 @@
-package io.silv.manga.local.converters
+package io.silv.manga.local.entity.converters
 
 import androidx.room.TypeConverter
 import java.util.TreeMap

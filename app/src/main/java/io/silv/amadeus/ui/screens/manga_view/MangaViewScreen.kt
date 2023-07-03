@@ -79,7 +79,7 @@ class MangaViewScreen(
 
         var bottomBarVisible by LocalBottomBarVisibility.current
 
-        val mangaViewState by sm.state.collectAsStateWithLifecycle()
+
         val snackbarHostState = remember { SnackbarHostState() }
 
         val downloads = rememberSaveable(saver = StringStateListSaver) {
@@ -92,37 +92,7 @@ class MangaViewScreen(
 //            sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
         }
 
-        sm.collectEvents { event ->
-            when (event) {
-                is MangaViewEvent.DownloadStart -> {
-                    downloads.add(event.chapterId)
-                    event.observable.observe(lifecycleOwner) {
-                        when (it.state) {
-                            WorkInfo.State.SUCCEEDED -> {
-                                downloads.remove(event.chapterId)
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        message = "downloaded chapter ${event.chapterId}",
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
-                            }
-                            WorkInfo.State.FAILED,
-                            WorkInfo.State.CANCELLED -> {
-                                downloads.remove(event.chapterId)
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        message = "downloaded chapter ${event.chapterId}",
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
-                            }
-                            else -> Unit
-                        }
-                    }
-                }
-            }
-        }
+//
 
         Scaffold(
             snackbarHost = {
@@ -140,20 +110,20 @@ class MangaViewScreen(
                    onReadNowClick = {},
                    onBookMarkClick = {}
                )
-               MangaView(
-                   state = mangaViewState.chapterListState,
-                   coverArtState = mangaViewState.coverArtState,
-                   downloads = downloads,
-                   retryLoadCoverArt = {
-                     //  sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
-                   },
-                   retryLoadChapterList = {
-                   //    sm.loadMangaInfo(manga.id, manga.lastChapter)
-                   },
-                   downloadChapter = {
-//                        sm.downloadChapter(it)
-                   }
-               )
+//               MangaView(
+//                   state = mangaViewState.chapterListState,
+//                   coverArtState = mangaViewState.coverArtState,
+//                   downloads = downloads,
+//                   retryLoadCoverArt = {
+//                     //  sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
+//                   },
+//                   retryLoadChapterList = {
+//                   //    sm.loadMangaInfo(manga.id, manga.lastChapter)
+//                   },
+//                   downloadChapter = {
+////                        sm.downloadChapter(it)
+//                   }
+//               )
             }
         }
     }

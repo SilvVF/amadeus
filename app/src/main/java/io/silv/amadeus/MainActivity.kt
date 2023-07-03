@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -56,7 +57,7 @@ class MainActivity : ComponentActivity() {
                             bottomBar = {
                                 val visible by LocalBottomBarVisibility.current
                                 if (visible) {
-                                    BottomAppBar {
+                                    NavigationBar {
                                         TabNavigationItem(HomeTab)
                                         TabNavigationItem(LibraryTab)
                                     }

@@ -6,17 +6,27 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.StateScreenModel
+import cafe.adriel.voyager.core.model.coroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 
-abstract class AmadeusScreenModel<EVENT, STATE>(
-    initialState: STATE
-): StateScreenModel<STATE>(initialState) {
+abstract class AmadeusScreenModel<EVENT>: ScreenModel {
 
     protected val mutableEvents = Channel<EVENT>()
 
     val events = mutableEvents.receiveAsFlow()
+
+    protected fun <T> Flow<T>.stateInUi(
+        initialValue: T
+    ) = this.stateIn(
+        coroutineScope,
+        SharingStarted.WhileSubscribed(5000), initialValue
+    )
 }
 
 /**
@@ -26,7 +36,7 @@ abstract class AmadeusScreenModel<EVENT, STATE>(
  */
 @SuppressLint("ComposableNaming")
 @Composable
-fun <EVENT> AmadeusScreenModel<EVENT, *>.collectEvents(
+fun <EVENT> AmadeusScreenModel<EVENT>.collectEvents(
     lifecycleState: Lifecycle.State = Lifecycle.State.STARTED,
     event: (suspend (event: EVENT) -> Unit)
 ) {

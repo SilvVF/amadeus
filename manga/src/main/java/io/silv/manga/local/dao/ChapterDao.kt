@@ -9,7 +9,7 @@ import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.sync.SyncableDao
 
 @Dao
-interface ChapterDao: SyncableDao<ChapterEntity> {
+internal interface ChapterDao: SyncableDao<ChapterEntity> {
 
     @Insert(
         onConflict = OnConflictStrategy.REPLACE

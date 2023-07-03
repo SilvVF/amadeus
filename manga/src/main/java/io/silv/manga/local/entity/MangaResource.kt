@@ -1,6 +1,5 @@
 package io.silv.manga.local.entity
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import io.silv.manga.network.mangadex.models.ContentRating
@@ -9,15 +8,13 @@ import io.silv.manga.sync.AmadeusEntity
 import kotlinx.datetime.Clock
 
 @Entity
-data class MangaEntity(
+data class MangaResource(
 
     @PrimaryKey override val id: String,
 
-    val forList: Boolean = false,
-
-    val progressState: ProgressState = ProgressState.NotStarted,
-
     val coverArt: String,
+
+    val description: String,
 
     val titleEnglish: String,
 
@@ -37,17 +34,9 @@ data class MangaEntity(
 
     val version: Int,
 
-    val bookmarked: Boolean,
-
-    val volumesIds: List<String>,
-
     val createdAt: String,
 
     val updatedAt: String,
-
-    val chaptersIds: List<String>,
-
-    val volumeToCoverArt: Map<String, String>,
 
     val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
 ): AmadeusEntity

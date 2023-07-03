@@ -1,13 +1,13 @@
-package io.silv.manga.local.relations
+package io.silv.manga.local.entity.relations
 
 import androidx.room.Embedded
 import androidx.room.Relation
 import io.silv.manga.local.entity.ChapterEntity
-import io.silv.manga.local.entity.MangaEntity
+import io.silv.manga.local.entity.SavedMangaEntity
 
 data class MangaWithChapters(
 
-    @Embedded val manga: MangaEntity,
+    @Embedded val manga: SavedMangaEntity,
 
     @Relation(
         parentColumn = "id",

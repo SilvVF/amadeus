@@ -81,6 +81,15 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.4.3")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.1")
 
+    val paging_version = "3.1.1"
+
+    implementation("androidx.paging:paging-runtime:$paging_version")
+
+    // alternatively - without Android dependencies for tests
+    testImplementation("androidx.paging:paging-common:$paging_version")
+    // optional - Jetpack Compose integration
+    implementation("androidx.paging:paging-compose:3.2.0-rc01")
+
     val navVersion = "2.6.0"
 
     implementation("androidx.navigation:navigation-compose:$navVersion")

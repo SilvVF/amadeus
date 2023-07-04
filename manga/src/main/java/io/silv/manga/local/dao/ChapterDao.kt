@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.sync.SyncableDao
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 internal interface ChapterDao: SyncableDao<ChapterEntity> {
@@ -16,12 +17,13 @@ internal interface ChapterDao: SyncableDao<ChapterEntity> {
     )
     suspend fun upsertChapter(chapterEntity: ChapterEntity)
 
+
+
     @Query("""
         SELECT * FROM chapterentity 
-        WHERE id = :id
-        LIMIT 1
+        WHERE manga_id = :mangaId
     """)
-    suspend fun getChapterById(id: String): ChapterEntity?
+    fun getChaptersByMangaId(mangaId: String): Flow<List<ChapterEntity>>
 
     @Query("""
         SELECT * FROM chapterentity

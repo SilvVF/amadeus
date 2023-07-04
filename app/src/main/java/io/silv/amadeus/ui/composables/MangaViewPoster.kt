@@ -204,7 +204,7 @@ fun MangaViewPoster(
                     }
                     item {
                         Text(
-                            text = "manga."  // TODO(//Description)
+                            text = manga.description
                         )
                     }
                 }

@@ -3,15 +3,15 @@
 package io.silv.manga.domain.repositorys
 
 import io.silv.manga.local.dao.SavedMangaDao
+import io.silv.manga.local.entity.MangaResource
+import io.silv.manga.local.entity.SavedMangaEntity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.mapLatest
 
-internal class SavedMangaRepo(
-    private val mangaDao: SavedMangaDao
-) {
+interface SavedMangaRepository {
 
-    fun getSavedMangaIds(): Flow<List<String>> =
-        mangaDao.getAllAsFlow()
-            .mapLatest { list -> list.map { it.id } }
+    suspend fun bookmarkManga(id: String)
+
+    fun getSavedManga(): Flow<List<SavedMangaEntity>>
 }

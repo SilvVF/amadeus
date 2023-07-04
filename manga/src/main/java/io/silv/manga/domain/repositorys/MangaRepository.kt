@@ -5,7 +5,7 @@ import io.silv.manga.sync.Syncable
 import kotlinx.coroutines.flow.Flow
 
 
-interface MangaRepository : Syncable {
+interface MangaRepository : Syncable<Nothing> {
     /**
      * Returns available news resources that match the specified [query].
      */

@@ -63,36 +63,25 @@ import io.silv.amadeus.ui.stateholders.rememberVolumeItemsState
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
+import org.koin.core.parameter.parametersOf
 
 
 class MangaViewScreen(
-  val manga: DomainManga
+  private val manga: DomainManga
 ): Screen {
 
     @Composable
     override fun Content() {
 
-        val sm = getScreenModel<MangaViewSM>()
-
-        val lifecycleOwner = LocalLifecycleOwner.current
-        val scope = rememberCoroutineScope()
+        val sm = getScreenModel<MangaViewSM> { parametersOf(manga) }
 
         var bottomBarVisible by LocalBottomBarVisibility.current
 
+        val state by sm.chapterInfoUiState.collectAsStateWithLifecycle()
 
         val snackbarHostState = remember { SnackbarHostState() }
 
-        val downloads = rememberSaveable(saver = StringStateListSaver) {
-                mutableStateListOf()
-        }
-
-        LaunchedEffect(Unit) {
-            bottomBarVisible = false
-//            sm.loadMangaInfo(manga.id, manga.lastChapter)
-//            sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
-        }
-
-//
+        LaunchedEffect(Unit) { bottomBarVisible = false }
 
         Scaffold(
             snackbarHost = {
@@ -106,24 +95,24 @@ class MangaViewScreen(
                    Modifier
                        .fillMaxHeight(0.4f)
                        .fillMaxWidth(),
-                   manga = manga,
+                   manga = state.manga,
                    onReadNowClick = {},
                    onBookMarkClick = {}
                )
-//               MangaView(
-//                   state = mangaViewState.chapterListState,
-//                   coverArtState = mangaViewState.coverArtState,
-//                   downloads = downloads,
-//                   retryLoadCoverArt = {
-//                     //  sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
-//                   },
-//                   retryLoadChapterList = {
-//                   //    sm.loadMangaInfo(manga.id, manga.lastChapter)
-//                   },
-//                   downloadChapter = {
-////                        sm.downloadChapter(it)
-//                   }
-//               )
+               MangaView(
+                   state = state.chapterListState,
+                   coverArtState = state.coverArtState,
+                   downloads = emptyList(),
+                   retryLoadCoverArt = {
+                     //  sm.loadVolumeCoverArt(manga.id, manga.lastVolume)
+                   },
+                   retryLoadChapterList = {
+                   //    sm.loadMangaInfo(manga.id, manga.lastChapter)
+                   },
+                   downloadChapter = {
+//                        sm.downloadChapter(it)
+                   }
+               )
             }
         }
     }

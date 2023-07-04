@@ -1,6 +1,7 @@
 package io.silv.manga.domain.models
 
 import android.os.Parcelable
+import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.ProgressState
 import kotlinx.parcelize.Parcelize
 import java.io.Serializable
@@ -23,4 +24,24 @@ data class DomainChapter(
     val createdAt: String,
     val updatedAt: String,
     val readableAt: String,
-): Parcelable, Serializable
+): Parcelable, Serializable {
+
+    constructor(entity: ChapterEntity): this(
+        id = entity.id,
+        downloaded = false,
+        progress = entity.progressState,
+        mangaId = entity.mangaId,
+        imageUris = emptyList(),
+        title = entity.title,
+        volume = entity.volume,
+        chapter = entity.chapterNumber.toString(),
+        pages = entity.pages,
+        translatedLanguage = "en",
+        uploader = "",
+        externalUrl = null,
+        version = 0,
+        createdAt = entity.createdAt,
+        updatedAt = entity.updatedAt,
+        readableAt = ""
+    )
+}

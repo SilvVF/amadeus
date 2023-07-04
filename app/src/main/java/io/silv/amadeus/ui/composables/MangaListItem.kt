@@ -12,6 +12,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkRemove
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.BookmarkAdd
+import androidx.compose.material.icons.outlined.BookmarkRemove
+import androidx.compose.material.icons.outlined.Stadium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,7 +40,7 @@ import io.silv.manga.local.entity.MangaResource
 @Composable
 fun MangaListItem(
     modifier: Modifier = Modifier,
-    manga: MangaResource,
+    manga: DomainManga,
     onBookmarkClick: () -> Unit
 ) {
 
@@ -70,6 +75,7 @@ fun MangaListItem(
         TranslatedLanguageTags(
             tags = manga.availableTranslatedLanguages,
             onBookmarkClick = onBookmarkClick,
+            bookmarked = manga.bookmarked,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(space.small))
@@ -84,12 +90,25 @@ fun MangaListItem(
 fun TranslatedLanguageTags(
     modifier: Modifier = Modifier,
     tags: List<String>,
+    bookmarked: Boolean,
     onBookmarkClick: () -> Unit,
     onLanguageClick: (language: String) -> Unit = {}
 ) {
     val space = LocalSpacing.current
 
     LazyRow(modifier) {
+        item {
+            IconButton(onClick = onBookmarkClick) {
+                if (bookmarked) Icon(
+                    imageVector = Icons.Filled.BookmarkRemove,
+                    contentDescription = null
+                )
+                else Icon(
+                    imageVector = Icons.Outlined.BookmarkAdd,
+                    contentDescription = null
+                )
+            }
+        }
         items(
             items = tags,
             key = { item -> item }

@@ -1,4 +1,4 @@
-package io.silv.amadeus.ui.screens
+package io.silv.amadeus.ui.screens.home
 
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.clickable
@@ -36,10 +36,10 @@ import cafe.adriel.voyager.transitions.FadeTransition
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.HomeTopBar
 import io.silv.amadeus.ui.composables.MangaListItem
-import io.silv.amadeus.ui.screens.home.HomeSM
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.manga.domain.models.DomainManga
 
 object HomeTab: Tab {
 
@@ -107,15 +107,18 @@ class HomeScreen: Screen {
             ) {
                 items(
                     items = state,
+                    key = {item: DomainManga -> item.id }
                 ) { manga ->
                     MangaListItem(
                         manga = manga,
                         modifier = Modifier
                             .padding(space.large)
                             .clickable {
-
+                                navigator?.push(
+                                    MangaViewScreen(manga)
+                                )
                             },
-                        onBookmarkClick = {  }
+                        onBookmarkClick = { sm.bookmarkManga(manga.id) }
                     )
                 }
                 if (isSyncing) {

@@ -38,8 +38,6 @@ data class SavedMangaEntity(
 
     val bookmarked: Boolean,
 
-    val volumesIds: List<String>,
-
     val createdAt: String,
 
     val updatedAt: String,
@@ -49,4 +47,26 @@ data class SavedMangaEntity(
     val volumeToCoverArt: Map<String, String>,
 
     val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
-): AmadeusEntity
+): AmadeusEntity {
+
+    constructor(mangaResource: MangaResource): this(
+        id = mangaResource.id,
+        progressState = ProgressState.NotStarted,
+        coverArt = mangaResource.coverArt,
+        description = mangaResource.description,
+        titleEnglish = mangaResource.titleEnglish,
+        alternateTitles = mangaResource.alternateTitles,
+        originalLanguage = mangaResource.originalLanguage,
+        availableTranslatedLanguages = mangaResource.availableTranslatedLanguages,
+        status = mangaResource.status,
+        contentRating = mangaResource.contentRating,
+        lastVolume = mangaResource.lastVolume,
+        lastChapter = mangaResource.lastChapter,
+        version = mangaResource.version,
+        bookmarked = false,
+        createdAt = mangaResource.createdAt,
+        updatedAt = mangaResource.updatedAt,
+        chaptersIds = emptyList(),
+        volumeToCoverArt = emptyMap(),
+    )
+}

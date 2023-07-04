@@ -1,98 +1,63 @@
 package io.silv.amadeus.ui.screens.manga_view
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.LiveData
+import androidx.work.Data
 import androidx.work.WorkInfo
-import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.ScreenModel
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.DomainChapter
 import io.silv.manga.domain.models.DomainCoverArt
+import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.repositorys.CombinedMangaChapterInfoVolumeImagesRepository
+import io.silv.manga.sync.ChapterInfoSyncWorker
+import io.silv.manga.sync.SyncManager
+import kotlinx.coroutines.flow.map
 
 class MangaViewSM(
-    private val workManager: WorkManager,
-): ScreenModel {
+    private val syncManager: SyncManager,
+    private val combinedSavedMangaChapterRepository: CombinedMangaChapterInfoVolumeImagesRepository,
+    private val initialManga: DomainManga
+): AmadeusScreenModel<MangaViewEvent>() {
 
-//    fun loadVolumeCoverArt(
-//        mangaId: String,
-//        volumeCount: Int,
-//        offset: Int = 0
-//    ) = coroutineScope.launch {
-//        mangaRepo.getVolumeImages(mangaId, 100, offset)
-//            .suspendOnSuccess {
-//                mutableState.update { state ->
-//                    state.copy(
-//                        coverArtState = CoverArtState.Success(
-//                            art = buildMap {
-//                                state.coverArtState.art.forEach { put(it.key, it.value) }
-//                                data.forEach { put(it.volume, it) }
-//                            }
-//                        )
-//                    )
-//                }
-//            }
-//            .suspendOnFailure {
-//                mutableState.update { state ->
-//                    state.copy(
-//                        coverArtState = CoverArtState.Failure(message())
-//                    )
-//                }
-//            }
-//    }
-//
-//    fun loadMangaInfo(
-//        mangaId: String,
-//        chapterCount: Int,
-//    ) = coroutineScope.launch {
-//        mangaRepo.getMangaFeed(mangaId, limit = 500)
-//            .suspendOnSuccess {
-//                mutableState.update { state ->
-//                    state.copy(
-//                        chapterListState = ChapterListState.Success(
-//                            chapters = data.filterUnique { it.chapter }
-//                                .filter { it.chapter != null }
-//                        )
-//                    )
-//                }
-//            }
-//            .suspendOnFailure {
-//                mutableState.update { state ->
-//                    state.copy(
-//                        chapterListState = ChapterListState.Failure(message())
-//                    )
-//                }
-//            }
-//    }
-//
-//    fun downloadChapter(
-//        chapter: DomainChapter,
-//    ) = coroutineScope.launch {
-//        val id = UUID.randomUUID()
-//        val request = OneTimeWorkRequestBuilder<ChapterDownloadWorker>()
-//            .setId(id)
-//            .setInputData(
-//                Data.Builder()
-//                    .putBoolean(ChapterDownloadWorker.fetchImagesKey, true)
-//                    .putString(ChapterDownloadWorker.volumeNumberKey, chapter.volume ?: "0")
-//                    .putString(ChapterDownloadWorker.chapterIdKey, chapter.id.also { println("chapter id ${chapter.id}") })
-//                    .putString(ChapterDownloadWorker.mangaIdKey, chapter.mangaId)
-//                    .build()
-//            )
-//            .build()
-//        workManager.enqueue(request)
-//        workManager.getWorkInfoByIdLiveData(id).whatIfNotNull {
-//            mutableEvents.send(
-//                MangaViewEvent.DownloadStart(chapter.id, it)
-//            )
-//        }
-//    }
+    val loading = syncManager.isSyncing
+
+    init {
+        loadInfo(initialManga.id)
+    }
+
+    val chapterInfoUiState = combinedSavedMangaChapterRepository
+        .observeManga(initialManga.id)
+        .map { state ->
+            MangaViewState(
+                coverArtState = state.volumeImages?.let { CoverArtState.Success(it) }
+                    ?: CoverArtState.Loading,
+                chapterListState = state.chapterInfo?.let { ChapterListState.Success(it) }
+                    ?: ChapterListState.Loading,
+                manga = state.domainManga
+            )
+        }
+        .stateInUi(
+            MangaViewState(
+                manga = initialManga,
+                coverArtState = CoverArtState.Loading,
+                chapterListState = ChapterListState.Loading
+            )
+        )
+
+    fun loadInfo(mangaId: String) {
+        syncManager.requestSync(
+            Data.Builder()
+                .putString(ChapterInfoSyncWorker.MANGA_ID_KEY, mangaId)
+                .build()
+        )
+    }
 }
 
-sealed interface MangaViewEvent {
-    data class DownloadStart(
-        val chapterId: String,
-        val observable: LiveData<WorkInfo>): MangaViewEvent
-}
+sealed interface MangaViewEvent
 
 sealed class ChapterListState(
     open val chapters: List<DomainChapter> = emptyList(),
@@ -103,15 +68,16 @@ sealed class ChapterListState(
 }
 
 sealed class CoverArtState(
-    open val art: Map<String?, DomainCoverArt> = emptyMap()
+    open val art: Map<String,String> = emptyMap()
 ) {
     object Loading: CoverArtState()
-    data class Success(override val art: Map<String?, DomainCoverArt>): CoverArtState(art)
+    data class Success(override val art: Map<String, String>): CoverArtState(art)
     data class Failure(val message: String): CoverArtState()
 }
 
 @Immutable
 data class MangaViewState(
+    val manga: DomainManga,
     val coverArtState: CoverArtState = CoverArtState.Loading,
     val chapterListState: ChapterListState = ChapterListState.Loading,
 )

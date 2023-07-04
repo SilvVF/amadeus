@@ -2,6 +2,7 @@ package io.silv.manga.domain.repositorys
 
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.ApiResponse
+import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.ktor_response_mapper.message
 import io.silv.manga.local.dao.MangaResourceDao
 import io.silv.manga.local.entity.MangaResource
@@ -18,7 +19,6 @@ import kotlinx.coroutines.flow.Flow
 internal class OfflineFirstMangaRepository(
     private val mangaDexApi: MangaDexApi,
     private val mangaResourceDao: MangaResourceDao,
-    private val dispatchers: AmadeusDispatchers,
 ): MangaRepository {
 
     private val MANGA_PAGE_LIMIT = 50
@@ -36,30 +36,27 @@ internal class OfflineFirstMangaRepository(
         query: MangaQuery
     ): Flow<List<MangaResource>> = mangaResourceDao.getMangaResources()
 
-    override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
+    override suspend fun syncWith(synchronizer: Synchronizer, params: Nothing?): Boolean {
         return synchronizer.syncWithSyncer(
             syncer = syncer,
             getCurrent = {
                 mangaResourceDao.getAll()
             },
             getNetwork = {
-                val networkResponse = mangaDexApi.getMangaList(
+                mangaDexApi.getMangaList(
                     MangaRequest(
                         offset = currentOffset,
                         limit = MANGA_PAGE_LIMIT,
                         includes = listOf("cover_art")
                     )
                 )
-                when (networkResponse) {
-                    is ApiResponse.Failure.Error -> throw Exception(networkResponse.message())
-                    is ApiResponse.Failure.Exception -> throw networkResponse.exception
-                    is ApiResponse.Success ->  networkResponse.data.data
-                }
+                    .getOrThrow()
+                    .data
             },
             onComplete = { result ->
                 // Initial sync delete previous paging data
-                if (currentOffset == 0) {
-                    for(unhandled in result.unhandled) {
+                if (currentOffset == 0 && result.unhandled.size > 200) {
+                    for(unhandled in result.unhandled.subList(100, 200)) {
                         mangaResourceDao.delete(unhandled)
                     }
                 }

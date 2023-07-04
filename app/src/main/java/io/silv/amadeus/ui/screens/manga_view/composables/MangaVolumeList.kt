@@ -114,7 +114,7 @@ private fun VolumeImageGrid(
                 CoverArtState.Loading -> AnimatedBoxShimmer(Modifier.size(120.dp))
                 is CoverArtState.Success -> {
                     Column {
-                        coverArtState.art[volume.first().volume]?.coverArtUrl?.let {
+                        coverArtState.art[volume.first().volume]?.let {
                             SubcomposeAsyncImage(
                                 model = ImageRequest.Builder(ctx)
                                     .data(it)

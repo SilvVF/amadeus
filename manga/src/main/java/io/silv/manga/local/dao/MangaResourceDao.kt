@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import io.silv.manga.local.entity.MangaResource
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.sync.SyncableDao
@@ -29,6 +30,8 @@ internal interface MangaResourceDao: SyncableDao<MangaResource> {
     @Query("SELECT * FROM mangaresource")
     suspend fun getAll(): List<MangaResource>
 
+    @Update
+    suspend fun update(mangaResource: MangaResource)
 
 
     @Query("SELECT * FROM mangaresource WHERE id = :id LIMIT 1")

@@ -38,5 +38,7 @@ data class MangaResource(
 
     val updatedAt: String,
 
+    val volumeToCoverArt: Map<String, String> = emptyMap(),
+
     val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
 ): AmadeusEntity

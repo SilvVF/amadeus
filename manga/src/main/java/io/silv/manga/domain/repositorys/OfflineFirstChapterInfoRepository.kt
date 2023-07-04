@@ -5,12 +5,14 @@ import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.ktor_response_mapper.suspendOnSuccess
 import io.silv.manga.domain.models.DomainChapter
 import io.silv.manga.local.dao.ChapterDao
+import io.silv.manga.local.dao.MangaResourceDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.ProgressState
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.models.chapter.Chapter
 import io.silv.manga.network.mangadex.models.cover.Cover
+import io.silv.manga.network.mangadex.requests.CoverArtRequest
 import io.silv.manga.sync.Mapper
 import io.silv.manga.sync.Synchronizer
 import io.silv.manga.sync.syncWithSyncer
@@ -26,11 +28,14 @@ private typealias ChapterWithPrevEntity = Pair<Chapter, ChapterEntity?>
 internal class OfflineFirstChapterInfoRepository(
     private val chapterDao: ChapterDao,
     private val mangaDexApi: MangaDexApi,
-    private val savedMangaRepository: SavedMangaDao,
-    private val dispatchers: AmadeusDispatchers,
+    private val savedMangaDao: SavedMangaDao,
+    private val mangaResourceDao: MangaResourceDao,
+    dispatchers: AmadeusDispatchers,
 ): ChapterInfoRepository {
 
-    private val scope = CoroutineScope(dispatchers.io) + CoroutineName("OfflineFirstChapterInfoRepository")
+    private val scope = CoroutineScope(dispatchers.io) +
+            CoroutineName("OfflineFirstChapterInfoRepository")
+
     private val mapper = ChapterToChapterEntityMapper()
 
     private val chapterSyncer = syncerForEntity<ChapterEntity, Chapter, String>(
@@ -55,12 +60,16 @@ internal class OfflineFirstChapterInfoRepository(
                     .data
             },
             onComplete = { result ->
-                result.added.groupBy { it.mangaId }.forEach { (mangaId, chapterList) ->
+                result.added.groupBy { it.mangaId }.forEach { (mangaId) ->
                     scope.launch {
-                        mangaDexApi.getCoverArtById(mangaId)
+                        mangaDexApi.getCoverArtList(
+                            CoverArtRequest(
+                                manga = listOf(mangaId),
+                                limit = 100,
+                            )
+                        )
                             .suspendOnSuccess {
-                                val volume = chapterList.firstOrNull()?.volume ?: "0"
-                                updateSavedMangaCoverArt(mangaId, data, volume)
+                                updateSavedMangaCoverArt(mangaId, data.data)
                         }
                     }
                 }
@@ -68,14 +77,28 @@ internal class OfflineFirstChapterInfoRepository(
         )
     }
 
-    private suspend fun updateSavedMangaCoverArt(mangaId: String, cover: Cover, volume: String) {
-        savedMangaRepository.getMangaById(mangaId)?.let { manga ->
-            val coverArtUrl = "https://uploads.mangadex.org/covers/$mangaId/${cover.attributes.fileName}"
-            savedMangaRepository.updateSavedManga(
+    private suspend fun updateSavedMangaCoverArt(mangaId: String, covers: List<Cover>) {
+        fun getImgUrl(fileName: String) = "https://uploads.mangadex.org/covers/$mangaId/${fileName}"
+        savedMangaDao.getMangaById(mangaId)?.let { manga ->
+            savedMangaDao.updateSavedManga(
                 manga.copy(
                     volumeToCoverArt = buildMap {
                         putAll(manga.volumeToCoverArt)
-                        put(volume, coverArtUrl)
+                        covers.forEach {
+                            put(it.attributes.volume ?: "null", getImgUrl(it.attributes.fileName))
+                        }
+                    }
+                )
+            )
+        } ?:
+        mangaResourceDao.getMangaById(mangaId)?.let { manga ->
+            mangaResourceDao.update(
+                manga.copy(
+                    volumeToCoverArt = buildMap {
+                        putAll(manga.volumeToCoverArt)
+                        covers.forEach {
+                            put(it.attributes.volume ?: "null", getImgUrl(it.attributes.fileName))
+                        }
                     }
                 )
             )

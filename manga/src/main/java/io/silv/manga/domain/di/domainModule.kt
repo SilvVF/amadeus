@@ -34,7 +34,7 @@ val domainModule = module {
     }
 
     single {
-        OfflineFirstChapterInfoRepository(get(), get(), get(), get())
+        OfflineFirstChapterInfoRepository(get(), get(), get(), get(), get())
     } withOptions {
         bind<ChapterInfoRepository>()
     }

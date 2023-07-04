@@ -16,6 +16,7 @@ import io.silv.manga.domain.repositorys.CombinedMangaChapterInfoVolumeImagesRepo
 import io.silv.manga.sync.ChapterInfoSyncWorker
 import io.silv.manga.sync.SyncManager
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 
 class MangaViewSM(
     private val syncManager: SyncManager,
@@ -23,7 +24,8 @@ class MangaViewSM(
     private val initialManga: DomainManga
 ): AmadeusScreenModel<MangaViewEvent>() {
 
-    val loading = syncManager.isSyncing
+    private val loading = syncManager.isSyncing
+        .stateInUi(false)
 
     init {
         loadInfo(initialManga.id)
@@ -34,12 +36,13 @@ class MangaViewSM(
         .map { state ->
             MangaViewState(
                 coverArtState = state.volumeImages?.let { CoverArtState.Success(it) }
-                    ?: CoverArtState.Loading,
+                    ?: if (loading.value) CoverArtState.Loading else CoverArtState.Failure("Failed To Load"),
                 chapterListState = state.chapterInfo?.let { ChapterListState.Success(it) }
-                    ?: ChapterListState.Loading,
+                    ?: if (loading.value) ChapterListState.Loading else ChapterListState.Failure("Failed To Load"),
                 manga = state.domainManga
             )
         }
+        .onEach { println(it.coverArtState) }
         .stateInUi(
             MangaViewState(
                 manga = initialManga,

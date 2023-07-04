@@ -33,7 +33,7 @@ internal class CombinedMangaChapterInfoVolumeImagesRepositoryImpl(
                 println("CombinedMangaChapterInfoVolumeImagesRepositoryImpl new MANGA FULL")
                 MangaFull(
                     domainManga = DomainManga(mangaResource, savedManga),
-                    volumeImages = savedManga?.volumeToCoverArt,
+                    volumeImages = savedManga?.volumeToCoverArt ?: mangaResource.volumeToCoverArt,
                     chapterInfo = chapterInfo.map { DomainChapter(it) }
                 )
             }

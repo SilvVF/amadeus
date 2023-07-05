@@ -16,8 +16,11 @@ const val ChapterInfoSyncWorkName = "ChapterSyncWorkName"
 interface SyncManager {
     val isSyncing: Flow<Boolean>
     fun requestSync(data: Data)
-}
 
+    companion object {
+        const val MANGA_ID_KEY = "MANGA_ID_KEY"
+    }
+}
 
 internal class ChapterInfoSyncManager(
     private val context: Context
@@ -30,7 +33,6 @@ internal class ChapterInfoSyncManager(
 
     override fun requestSync(data: Data) {
         val workManager = WorkManager.getInstance(context)
-        // Run sync on app startup and ensure only one sync worker runs at any time
         workManager.enqueueUniqueWork(
             ChapterInfoSyncWorkName,
             ExistingWorkPolicy.KEEP,
@@ -52,7 +54,6 @@ internal class MangaSyncManger (
 
     override fun requestSync(data: Data) {
         val workManager = WorkManager.getInstance(context)
-        // Run sync on app startup and ensure only one sync worker runs at any time
         workManager.enqueueUniqueWork(
             MagnaSyncWorkName,
             ExistingWorkPolicy.KEEP,

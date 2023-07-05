@@ -1,4 +1,4 @@
-package io.silv.amadeus.ui.screens
+package io.silv.amadeus.ui.screens.library
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -26,7 +26,7 @@ object LibraryTab: Tab {
 
             return remember {
                 TabOptions(
-                    index = 1u,
+                    index = 2u,
                     title = title,
                     icon = icon
                 )

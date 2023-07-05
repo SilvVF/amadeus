@@ -14,7 +14,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Duration
 
-class MangaSyncWorker(
+internal class MangaSyncWorker(
     private val appContext: Context,
     workerParams: WorkerParameters,
 ): CoroutineWorker(appContext, workerParams), Synchronizer, KoinComponent {

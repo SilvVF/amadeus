@@ -11,11 +11,12 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.manga.domain.repositorys.ChapterInfoRepository
+import io.silv.manga.sync.SyncManager.Companion.MANGA_ID_KEY
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Duration
 
-class ChapterInfoSyncWorker(
+internal class ChapterInfoSyncWorker(
     private val appContext: Context,
     workerParameters: WorkerParameters
 ): CoroutineWorker(appContext, workerParameters), Synchronizer, KoinComponent {
@@ -60,6 +61,6 @@ class ChapterInfoSyncWorker(
                 .setConstraints(SyncConstraints)
                 .build()
         }
-        const val MANGA_ID_KEY = "MANGA_ID_KEY"
     }
 }
+

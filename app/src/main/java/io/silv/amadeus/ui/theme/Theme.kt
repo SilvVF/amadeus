@@ -2,6 +2,8 @@ package io.silv.amadeus.ui.theme
 
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
@@ -86,6 +88,10 @@ val LocalBottomBarVisibility = compositionLocalOf {
    mutableStateOf(true)
 }
 
+val LocalPaddingValues = compositionLocalOf {
+    mutableStateOf(PaddingValues())
+}
+
 @Composable
 fun AmadeusTheme(
   useDarkTheme: Boolean = isSystemInDarkTheme(),
@@ -108,7 +114,8 @@ fun AmadeusTheme(
 
  CompositionLocalProvider(
      LocalSpacing providesDefault Spacing(),
-     LocalBottomBarVisibility providesDefault remember { mutableStateOf(true) }
+     LocalBottomBarVisibility providesDefault remember { mutableStateOf(true) },
+     LocalPaddingValues providesDefault remember { mutableStateOf(PaddingValues()) }
  ) {
      MaterialTheme(
          colorScheme = colors,

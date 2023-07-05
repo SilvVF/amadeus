@@ -14,12 +14,19 @@ import io.silv.manga.sync.Mapper
 import io.silv.manga.sync.Synchronizer
 import io.silv.manga.sync.syncWithSyncer
 import io.silv.manga.sync.syncerForEntity
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.plus
+import kotlinx.coroutines.withContext
 
 internal class OfflineFirstMangaRepository(
     private val mangaDexApi: MangaDexApi,
     private val mangaResourceDao: MangaResourceDao,
+    private val dispatchers: AmadeusDispatchers
 ): MangaRepository {
+
+    private val scope = CoroutineScope(dispatchers.io) + CoroutineName("OfflineFirstMangaRepository")
 
     private val MANGA_PAGE_LIMIT = 50
     private var currentOffset: Int = 0
@@ -36,35 +43,36 @@ internal class OfflineFirstMangaRepository(
         query: MangaQuery
     ): Flow<List<MangaResource>> = mangaResourceDao.getMangaResources()
 
-    override suspend fun syncWith(synchronizer: Synchronizer, params: Nothing?): Boolean {
-        return synchronizer.syncWithSyncer(
-            syncer = syncer,
-            getCurrent = {
-                mangaResourceDao.getAll()
-            },
-            getNetwork = {
-                mangaDexApi.getMangaList(
-                    MangaRequest(
-                        offset = currentOffset,
-                        limit = MANGA_PAGE_LIMIT,
-                        includes = listOf("cover_art")
+    override suspend fun loadNextPage(): Boolean =
+        withContext(scope.coroutineContext) {
+            syncWithSyncer(
+                syncer = syncer,
+                getCurrent = {
+                    mangaResourceDao.getAll()
+                },
+                getNetwork = {
+                    mangaDexApi.getMangaList(
+                        MangaRequest(
+                            offset = currentOffset,
+                            limit = MANGA_PAGE_LIMIT,
+                            includes = listOf("cover_art")
+                        )
                     )
-                )
-                    .getOrThrow()
-                    .data
-            },
-            onComplete = { result ->
-                // Initial sync delete previous paging data
-                if (currentOffset == 0 && result.unhandled.size > 200) {
-                    for(unhandled in result.unhandled.subList(100, 200)) {
-                        mangaResourceDao.delete(unhandled)
+                        .getOrThrow()
+                        .data
+                },
+                onComplete = { result ->
+                    // Initial sync delete previous paging data
+                    if (currentOffset == 0 && result.unhandled.size > 200) {
+                        for(unhandled in result.unhandled.subList(100, 200)) {
+                            mangaResourceDao.delete(unhandled)
+                        }
                     }
+                    // Increase offset after successful sync
+                    currentOffset += MANGA_PAGE_LIMIT
                 }
-                // Increase offset after successful sync
-                currentOffset += MANGA_PAGE_LIMIT
-            }
-        )
-    }
+            )
+        }
 
     private class MangaToMangaResourceMapper: Mapper<Pair<Manga, MangaResource?>, MangaResource> {
 

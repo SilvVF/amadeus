@@ -23,23 +23,17 @@ val domainModule = module {
         bind<MangaRepository>()
     }
 
-    single { CombinedMangaChapterInfoVolumeImagesRepositoryImpl(get(), get(), get()) } withOptions {
+    singleOf(::CombinedMangaChapterInfoVolumeImagesRepositoryImpl) withOptions {
         bind<CombinedMangaChapterInfoVolumeImagesRepository>()
     }
 
-    single { CombinedResourceSavedMangaRepository(get(), get()) }
+    singleOf(::CombinedResourceSavedMangaRepository)
 
-    single { SavedMangaRepositoryImpl(get(), get(), get()) } withOptions {
+    singleOf(::SavedMangaRepositoryImpl) withOptions {
         bind<SavedMangaRepository>()
     }
 
-    single {
-        OfflineFirstChapterInfoRepository(get(), get(), get(), get(), get())
-    } withOptions {
+    singleOf(::OfflineFirstChapterInfoRepository) withOptions {
         bind<ChapterInfoRepository>()
-    }
-
-    single {
-        CombinedResourceSavedMangaRepository(get(), get())
     }
 }

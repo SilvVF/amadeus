@@ -22,7 +22,7 @@ internal class MangaSyncWorker(
     private val mangaRepository by inject<MangaRepository>()
 
     override suspend fun doWork(): Result {
-        val synced = mangaRepository.sync()
+        val synced = false
         return if (synced) {
             Result.success()
         } else {

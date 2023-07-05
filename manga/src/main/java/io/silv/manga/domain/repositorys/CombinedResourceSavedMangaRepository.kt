@@ -9,6 +9,8 @@ class CombinedResourceSavedMangaRepository(
     private val savedMangaRepository: SavedMangaRepository
 ) {
 
+    suspend fun loadNextPage() = mangaRepository.loadNextPage()
+
     fun observeAll(
         mangaQuery: MangaQuery
     ) = savedMangaRepository.getSavedManga()

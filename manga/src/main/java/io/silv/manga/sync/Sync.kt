@@ -1,5 +1,9 @@
 package io.silv.manga.sync
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
 
 interface Synchronizer {
 
@@ -19,6 +23,22 @@ interface Syncable<T> {
      * Returns if the sync was successful or not.
      */
     suspend fun syncWith(synchronizer: Synchronizer, params: T?): Boolean
+}
+
+internal suspend fun <Type : AmadeusEntity, NetworkType, Key> syncWithSyncer(
+    syncer: Syncer<Type, NetworkType, Key>,
+    getCurrent: suspend () -> List<Type>,
+    getNetwork: suspend () -> List<NetworkType>,
+    onComplete: suspend (SyncResult<Type>) -> Unit
+): Boolean {
+        return kotlin.runCatching {
+            val result = syncer.sync(
+                current = getCurrent(),
+                networkResponse = getNetwork()
+            )
+            onComplete(result)
+        }
+            .isSuccess
 }
 
 internal suspend fun <Type : AmadeusEntity, NetworkType, Key> Synchronizer.syncWithSyncer(

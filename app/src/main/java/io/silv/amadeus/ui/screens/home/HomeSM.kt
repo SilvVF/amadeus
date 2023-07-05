@@ -7,16 +7,15 @@ import io.silv.manga.domain.repositorys.CombinedResourceSavedMangaRepository
 import io.silv.manga.domain.repositorys.MangaQuery
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.sync.SyncManager
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class HomeSM(
-    combinedResourceSavedMangaRepository: CombinedResourceSavedMangaRepository,
+    private val combinedResourceSavedMangaRepository: CombinedResourceSavedMangaRepository,
     private val mangaRepository: SavedMangaRepository,
-    private val syncManager: SyncManager,
 ): AmadeusScreenModel<HomeEvent>() {
 
-    val isSyncing = syncManager.isSyncing
-        .stateInUi(false)
+    val isSyncing = MutableStateFlow(false)
 
     val mangaUiState = combinedResourceSavedMangaRepository.observeAll(
         MangaQuery(emptyList())
@@ -30,7 +29,9 @@ class HomeSM(
 
     fun goToNextPage() {
         coroutineScope.launch {
-           syncManager.requestSync(Data.EMPTY)
+            isSyncing.emit(true)
+            combinedResourceSavedMangaRepository.loadNextPage()
+            isSyncing.emit(false)
         }
     }
 }

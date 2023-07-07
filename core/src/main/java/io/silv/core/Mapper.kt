@@ -1,4 +1,4 @@
-package io.silv.manga.sync
+package io.silv.core
 
 
 fun interface Mapper<F, T> {

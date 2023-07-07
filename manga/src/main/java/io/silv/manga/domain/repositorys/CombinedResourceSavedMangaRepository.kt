@@ -13,9 +13,9 @@ class CombinedResourceSavedMangaRepository(
 
     fun observeAll(
         mangaQuery: MangaQuery
-    ) = savedMangaRepository.getSavedManga()
+    ) = savedMangaRepository.getSavedMangas()
         .combine(
-            mangaRepository.getMagnaResources(mangaQuery)
+            mangaRepository.getMangaResources(mangaQuery)
         ) { savedManga, mangaResource ->
             mangaResource.map { resource ->
                 resource.mapToDomainManga(
@@ -25,7 +25,7 @@ class CombinedResourceSavedMangaRepository(
         }
 
     fun observeAllBookmarked() =
-        savedMangaRepository.getSavedManga().map { saved ->
+        savedMangaRepository.getSavedMangas().map { saved ->
             saved.filter { manga ->
                 manga.bookmarked
             }

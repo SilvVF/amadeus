@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import io.silv.manga.network.mangadex.models.ContentRating
 import io.silv.manga.network.mangadex.models.Status
-import io.silv.manga.sync.AmadeusEntity
 import kotlinx.datetime.Clock
 
 @Entity

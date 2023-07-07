@@ -17,7 +17,8 @@ internal interface ChapterDao: SyncableDao<ChapterEntity> {
     )
     suspend fun upsertChapter(chapterEntity: ChapterEntity)
 
-
+    @Query("SELECT * FROM chapterentity WHERE id = :id")
+    suspend fun getById(id: String): ChapterEntity?
 
     @Query("""
         SELECT * FROM chapterentity 

@@ -25,6 +25,9 @@ internal interface SavedMangaDao: SyncableDao<SavedMangaEntity> {
     fun getAllAsFlow(): Flow<List<SavedMangaEntity>>
 
 
+    @Query("SELECT * FROM savedmangaentity")
+    fun getAll(): List<SavedMangaEntity>
+
     @Query("""
        SELECT * FROM savedmangaentity
        WHERE id = :id

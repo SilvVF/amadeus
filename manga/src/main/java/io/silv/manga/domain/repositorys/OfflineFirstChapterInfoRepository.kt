@@ -1,9 +1,12 @@
 package io.silv.manga.domain.repositorys
 
 import io.silv.core.AmadeusDispatchers
+import io.silv.core.pForEachKey
+import io.silv.ktor_response_mapper.getOrNull
 import io.silv.ktor_response_mapper.getOrThrow
+import io.silv.ktor_response_mapper.mapSuccess
 import io.silv.ktor_response_mapper.suspendOnSuccess
-import io.silv.manga.domain.models.DomainChapter
+import io.silv.manga.domain.coverArtUrl
 import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.MangaResourceDao
 import io.silv.manga.local.dao.SavedMangaDao
@@ -13,13 +16,15 @@ import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.models.chapter.Chapter
 import io.silv.manga.network.mangadex.models.cover.Cover
 import io.silv.manga.network.mangadex.requests.CoverArtRequest
-import io.silv.manga.sync.Mapper
+import io.silv.core.Mapper
 import io.silv.manga.sync.Synchronizer
 import io.silv.manga.sync.syncWithSyncer
-import io.silv.manga.sync.syncerForEntity
+import io.silv.manga.local.entity.syncerForEntity
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 
@@ -44,60 +49,122 @@ internal class OfflineFirstChapterInfoRepository(
         upsert = { chapterDao.upsertChapter(it) }
     )
 
+    override val loading = MutableStateFlow(false)
+
     override fun getChapters(mangaId: String): Flow<List<ChapterEntity>> {
-        return chapterDao.getChaptersByMangaId(mangaId)
+        return chapterDao.getChaptersByMangaId(mangaId).onEach { entities ->
+            if (entities.isEmpty()) {
+               updateChapterList(mangaId)
+            }
+        }
     }
 
-    override suspend fun syncWith(synchronizer: Synchronizer, params: String?): Boolean {
+    private fun updateChapterList(mangaId: String) = scope.launch {
+        loading.emit(true)
+        suspend fun getMangaFeed() = mangaDexApi.getMangaFeed(mangaId).mapSuccess {
+            data.map { chapter ->
+                mapper.map(chapter to null)
+            }
+        }
+
+        val savedManga = savedMangaDao.getMangaById(mangaId)
+        val mangaResource = mangaResourceDao.getMangaById(mangaId)
+
+        if (savedManga == null && mangaResource == null) { return@launch }
+
+        getMangaFeed().getOrNull()?.let { chapterEntities ->
+            chapterEntities.forEach { chapterDao.upsertChapter(it) }
+            mangaDexApi.getCoverArtList(
+                CoverArtRequest(
+                    manga = listOf(mangaId),
+                    limit = 100,
+                   )
+            ).suspendOnSuccess {
+                if (savedManga != null) {
+                    updateMangaCoverArt(
+                        mangaId,
+                        covers = data.data,
+                        manga = savedManga,
+                        new = { old, coverList ->
+                            old.copy(volumeToCoverArt = old.volumeToCoverArt + coverList)
+                        },
+                        update = { savedMangaDao.updateSavedManga(it) }
+                    )
+                } else {
+                    updateMangaCoverArt(
+                        mangaId,
+                        covers = data.data,
+                        manga = mangaResource,
+                        new = { old, coverList ->
+                            old.copy(volumeToCoverArt = old.volumeToCoverArt + coverList)
+                        },
+                        update = { mangaResourceDao.update(it) }
+                    )
+                }
+            }
+        }
+    }
+        .invokeOnCompletion { loading.tryEmit(false) }
+
+
+    override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
+        val savedChapters = chapterDao.getAll()
         return synchronizer.syncWithSyncer(
             syncer = chapterSyncer,
-            getCurrent = { chapterDao.getAll() },
+            getCurrent = { savedChapters },
             getNetwork = {
-                mangaDexApi.getMangaFeed(
-                    params ?: throw IllegalArgumentException()
-                )
-                    .getOrThrow()
-                    .data
+               savedChapters.groupBy { it.mangaId }
+                     .flatMap { (mangaId, _) ->
+                         mangaDexApi.getMangaFeed(mangaId)
+                             .getOrThrow()
+                             .data
+                     }
             },
             onComplete = { result ->
-                result.added.groupBy { it.mangaId }.forEach { (mangaId) ->
-                    scope.launch {
+                val allChanged = result.added + result.updated
+                allChanged
+                    .groupBy { it.mangaId }
+                    .pForEachKey(scope) { (mangaId) ->
                         mangaDexApi.getCoverArtList(
                             CoverArtRequest(
                                 manga = listOf(mangaId),
                                 limit = 100,
                             )
-                        )
-                            .suspendOnSuccess {
-                                updateSavedMangaCoverArt(mangaId, data.data)
+                        ).suspendOnSuccess {
+                            updateMangaCoverArt(
+                                mangaId,
+                                covers = data.data,
+                                manga = savedMangaDao.getMangaById(mangaId),
+                                update = {savedMangaDao.updateSavedManga(it)},
+                                new = { entity, covers ->
+                                    entity.copy(
+                                        volumeToCoverArt = entity.volumeToCoverArt + covers
+                                    )
+                                }
+                            )
                         }
-                    }
                 }
             }
         )
     }
 
-    private suspend fun updateSavedMangaCoverArt(mangaId: String, covers: List<Cover>) {
-        fun getImgUrl(fileName: String) = "https://uploads.mangadex.org/covers/$mangaId/${fileName}"
-        savedMangaDao.getMangaById(mangaId)?.let { manga ->
-            savedMangaDao.updateSavedManga(
-                manga.copy(
-                    volumeToCoverArt = buildMap {
-                        putAll(manga.volumeToCoverArt)
+    private suspend fun <ENTITY> updateMangaCoverArt(
+        mangaId: String,
+        covers: List<Cover>,
+        manga: ENTITY?,
+        update: suspend (ENTITY) -> Unit,
+        new: (ENTITY, Map<String, String>) -> ENTITY
+    ) {
+       manga?.let { manga ->
+           update(
+                new(
+                    manga,
+                    buildMap {
                         covers.forEach {
-                            put(it.attributes.volume ?: "null", getImgUrl(it.attributes.fileName))
-                        }
-                    }
-                )
-            )
-        } ?:
-        mangaResourceDao.getMangaById(mangaId)?.let { manga ->
-            mangaResourceDao.update(
-                manga.copy(
-                    volumeToCoverArt = buildMap {
-                        putAll(manga.volumeToCoverArt)
-                        covers.forEach {
-                            put(it.attributes.volume ?: "null", getImgUrl(it.attributes.fileName))
+                            put(
+                                it.attributes.volume ?: "0",
+                                coverArtUrl(it.attributes.fileName, mangaId)
+                            )
                         }
                     }
                 )

@@ -1,58 +1,15 @@
 package io.silv.manga.sync
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import org.koin.core.qualifier.qualifier
 
+object Sync: KoinComponent {
 
-interface Synchronizer {
+    private val syncManger by inject<SyncManager>(qualifier("Manga"))
 
-    /**
-     * Syntactic sugar to call [Syncable.syncWith] while omitting the synchronizer argument
-     */
-    suspend fun Syncable<*>.sync() = this@sync.syncWith(this@Synchronizer, null)
-}
-
-/**
- * Interface marker for a class that is synchronized with a remote source. Syncing must not be
- * performed concurrently and it is the [Synchronizer]'s responsibility to ensure this.
- */
-interface Syncable<T> {
-    /**
-     * Synchronizes the local database backing the repository with the network.
-     * Returns if the sync was successful or not.
-     */
-    suspend fun syncWith(synchronizer: Synchronizer, params: T?): Boolean
-}
-
-internal suspend fun <Type : AmadeusEntity, NetworkType, Key> syncWithSyncer(
-    syncer: Syncer<Type, NetworkType, Key>,
-    getCurrent: suspend () -> List<Type>,
-    getNetwork: suspend () -> List<NetworkType>,
-    onComplete: suspend (SyncResult<Type>) -> Unit
-): Boolean {
-        return kotlin.runCatching {
-            val result = syncer.sync(
-                current = getCurrent(),
-                networkResponse = getNetwork()
-            )
-            onComplete(result)
-        }
-            .isSuccess
-}
-
-internal suspend fun <Type : AmadeusEntity, NetworkType, Key> Synchronizer.syncWithSyncer(
-    syncer: Syncer<Type, NetworkType, Key>,
-    getCurrent: suspend () -> List<Type>,
-    getNetwork: suspend () -> List<NetworkType>,
-    onComplete: suspend (SyncResult<Type>) -> Unit
-): Boolean {
-    return kotlin.runCatching {
-        val result = syncer.sync(
-            current = getCurrent(),
-            networkResponse = getNetwork()
-        )
-        onComplete(result)
+    fun init() {
+        syncManger.requestSync()
     }
-        .isSuccess
 }
+

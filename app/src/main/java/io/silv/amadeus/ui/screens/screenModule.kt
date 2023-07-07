@@ -13,7 +13,6 @@ val screenModule = module {
 
     factory { (manga: DomainManga) ->
         MangaViewSM(
-            get(qualifier("ChapterInfo")),
             get(),
             manga
         )
@@ -23,7 +22,6 @@ val screenModule = module {
         HomeSM(
             get(),
             get(),
-            get(qualifier("Manga"))
         )
     }
 }

@@ -28,19 +28,6 @@ class MangaReaderSM(
 
     }
 
-    private fun buildWorkRequest(chapterId: String, workId: UUID, mangaId: String, volume: String?): OneTimeWorkRequest {
-        return OneTimeWorkRequestBuilder<ChapterDownloadWorker>()
-            .setId(workId)
-            .setInputData(
-                Data.Builder()
-                    .putBoolean(ChapterDownloadWorker.fetchImagesKey, true)
-                    .putString(ChapterDownloadWorker.volumeNumberKey, volume ?: "0")
-                    .putString(ChapterDownloadWorker.chapterIdKey, chapterId)
-                    .putString(ChapterDownloadWorker.mangaIdKey, mangaId)
-                    .build()
-            )
-            .build()
-    }
 }
 
 sealed interface MangaReaderEvent

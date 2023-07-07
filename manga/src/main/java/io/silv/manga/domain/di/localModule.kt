@@ -3,9 +3,8 @@ package io.silv.manga.domain.di
 import androidx.work.WorkManager
 import io.silv.manga.local.cache.ChapterImageCache
 import io.silv.manga.local.workers.ChapterDownloadWorker
-import io.silv.manga.sync.ChapterInfoSyncManager
-import io.silv.manga.sync.MangaSyncManger
-import io.silv.manga.sync.MangaSyncWorker
+import io.silv.manga.sync.SavedMangaSyncManager
+import io.silv.manga.local.workers.MangaSyncWorker
 import io.silv.manga.sync.SyncManager
 import io.silv.manga.sync.Synchronizer
 import org.koin.android.ext.koin.androidContext
@@ -21,15 +20,9 @@ val localModule = module {
 
     single { ChapterImageCache(androidContext(), get()) }
 
-    single {
-        ChapterInfoSyncManager(androidContext())
-    } withOptions {
-        bind<SyncManager>()
-        named("ChapterInfo")
-    }
 
     single {
-        MangaSyncManger(androidContext())
+        SavedMangaSyncManager(androidContext())
     } withOptions {
         bind<SyncManager>()
         named("Manga")

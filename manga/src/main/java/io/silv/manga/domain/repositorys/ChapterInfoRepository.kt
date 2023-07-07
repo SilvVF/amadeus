@@ -5,7 +5,9 @@ import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.sync.Syncable
 import kotlinx.coroutines.flow.Flow
 
-interface ChapterInfoRepository: Syncable<String> {
+interface ChapterInfoRepository: Syncable {
+
+    val loading: Flow<Boolean>
 
     fun getChapters(mangaId: String): Flow<List<ChapterEntity>>
 }

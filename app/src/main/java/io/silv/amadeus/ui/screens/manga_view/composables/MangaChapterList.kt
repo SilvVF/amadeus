@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FormatAlignLeft
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -48,7 +49,8 @@ fun ChapterList(
     sortBy: VolumeItemsState.SortBy,
     downloads: List<String>,
     sortByChange: () -> Unit,
-    downloadChapterClicked: (DomainChapter) -> Unit
+    downloadChapterClicked: (DomainChapter) -> Unit,
+    deleteChapterClicked: (DomainChapter) -> Unit
 ) {
     val space = LocalSpacing.current
     when (volumeItems) {
@@ -93,9 +95,10 @@ fun ChapterList(
                 }
                 items(
                     volumeItems.items,
-                    key = { item -> item.chapter + item.createdAt }
+                    key = { item -> item.id }
                 ) { chapter ->
-                   ChapterListItem(chapter,
+                   ChapterListItem(
+                       chapter,
                        Modifier
                            .fillMaxWidth()
                            .padding(vertical = space.med),
@@ -105,6 +108,9 @@ fun ChapterList(
                        },
                        readButtonClick = {
 
+                       },
+                       deleteChapterClicked = {
+                            deleteChapterClicked(chapter)
                        }
                    )
                    Divider()
@@ -121,7 +127,8 @@ private fun ChapterListItem(
     modifier: Modifier = Modifier,
     downloading: Boolean,
     readButtonClick: () -> Unit,
-    downloadChapterClicked: () -> Unit
+    downloadChapterClicked: () -> Unit,
+    deleteChapterClicked: () -> Unit
 ) {
     val space = LocalSpacing.current
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -155,9 +162,19 @@ private fun ChapterListItem(
                     strokeWidth = 4.dp,
                 )
             } else {
-                IconButton(onClick = downloadChapterClicked) {
+                IconButton(
+                    onClick = if (chapter.downloaded) {
+                        deleteChapterClicked
+                    } else {
+                        downloadChapterClicked
+                    }
+                ) {
                     Icon(
-                        imageVector = Icons.Filled.Download,
+                        imageVector = if (chapter.downloaded) {
+                            Icons.Filled.Delete
+                        } else {
+                            Icons.Filled.Download
+                        },
                         contentDescription = null
                     )
                 }

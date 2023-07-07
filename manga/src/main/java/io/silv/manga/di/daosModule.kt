@@ -1,4 +1,4 @@
-package io.silv.manga.domain.di
+package io.silv.manga.di
 
 import io.silv.manga.local.AmadeusDatabase
 import org.koin.dsl.module

@@ -24,6 +24,6 @@ class AmadeusApp: Application() {
             modules(appModule)
         }
 
-        Sync.init()
+        Sync.init(this)
     }
 }

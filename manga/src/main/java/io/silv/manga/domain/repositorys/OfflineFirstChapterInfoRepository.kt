@@ -78,7 +78,7 @@ internal class OfflineFirstChapterInfoRepository(
                 CoverArtRequest(
                     manga = listOf(mangaId),
                     limit = 100,
-                   )
+                )
             ).suspendOnSuccess {
                 if (savedManga != null) {
                     updateMangaCoverArt(
@@ -108,7 +108,15 @@ internal class OfflineFirstChapterInfoRepository(
 
 
     override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
+        val savedManga = savedMangaDao.getAll()
         val savedChapters = chapterDao.getAll()
+
+        savedChapters.forEach { chapter ->
+            if (savedManga.none { it.id == chapter.id } && chapter.chapterImages.isEmpty()) {
+                chapterDao.deleteChapter(chapter)
+            }
+        }
+
         return synchronizer.syncWithSyncer(
             syncer = chapterSyncer,
             getCurrent = { savedChapters },
@@ -185,7 +193,7 @@ internal class OfflineFirstChapterInfoRepository(
                 title = chapter.attributes.title ?: "no title",
                 pages = chapter.attributes.pages,
                 chapterNumber = chapter.attributes.chapter?.toIntOrNull() ?: 0,
-                chapterImages = prev?.chapterImages,
+                chapterImages = prev?.chapterImages ?: emptyList(),
                 createdAt = chapter.attributes.createdAt,
                 updatedAt = chapter.attributes.updatedAt,
             )

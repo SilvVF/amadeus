@@ -50,6 +50,18 @@ internal interface SavedMangaDao: SyncableDao<SavedMangaEntity> {
     """)
     suspend fun getMangaWithChapters(id: String): MangaWithChapters?
 
+    @Transaction
+    @Query("""
+      SELECT * FROM savedmangaentity
+      WHERE id = :id
+      LIMIT 1
+    """)
+    fun getMangaWithChaptersAsFlow(id: String): Flow<MangaWithChapters?>
+
+    @Transaction
+    @Query("SELECT * FROM savedmangaentity")
+    fun getAllMangaWithChaptersAsFlow(): Flow<List<MangaWithChapters>>
+
     @Delete
     suspend fun delete(mangaEntity: SavedMangaEntity)
 }

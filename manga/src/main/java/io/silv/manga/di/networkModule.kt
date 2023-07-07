@@ -1,4 +1,4 @@
-package io.silv.manga.domain.di
+package io.silv.manga.di
 
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation

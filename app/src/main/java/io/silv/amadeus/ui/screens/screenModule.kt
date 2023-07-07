@@ -13,7 +13,7 @@ val screenModule = module {
 
     factory { (manga: DomainManga) ->
         MangaViewSM(
-            get(),
+            get(), get(),
             manga
         )
     }

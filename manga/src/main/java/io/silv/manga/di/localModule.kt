@@ -1,7 +1,7 @@
-package io.silv.manga.domain.di
+package io.silv.manga.di
 
 import androidx.work.WorkManager
-import io.silv.manga.local.cache.ChapterImageCache
+import io.silv.manga.local.workers.ChapterDeletionWorker
 import io.silv.manga.local.workers.ChapterDownloadWorker
 import io.silv.manga.sync.SavedMangaSyncManager
 import io.silv.manga.local.workers.MangaSyncWorker
@@ -18,8 +18,6 @@ val localModule = module {
 
     includes(daosModule)
 
-    single { ChapterImageCache(androidContext(), get()) }
-
 
     single {
         SavedMangaSyncManager(androidContext())
@@ -30,6 +28,14 @@ val localModule = module {
 
     single {
         WorkManager.getInstance(androidContext())
+    }
+
+    worker {
+        ChapterDownloadWorker(androidContext(), get())
+    }
+
+    worker {
+        ChapterDeletionWorker(androidContext(), get())
     }
 
     worker {

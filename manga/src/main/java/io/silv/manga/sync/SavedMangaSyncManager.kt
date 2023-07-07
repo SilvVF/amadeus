@@ -17,14 +17,14 @@ internal class SavedMangaSyncManager (
 ) : SyncManager {
 
     override val isSyncing: Flow<Boolean> =
-        WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(MagnaSyncWorkName)
+        WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(MangaSyncWorkName)
             .map(List<WorkInfo>::anyRunning)
             .conflate()
 
     override fun requestSync() {
         val workManager = WorkManager.getInstance(context)
         workManager.enqueueUniqueWork(
-            MagnaSyncWorkName,
+            MangaSyncWorkName,
             ExistingWorkPolicy.KEEP,
             MangaSyncWorker.syncWorkRequest(),
         )

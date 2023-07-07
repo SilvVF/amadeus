@@ -1,4 +1,4 @@
-package io.silv.manga.domain.di
+package io.silv.manga.di
 
 import androidx.room.Room
 import io.silv.manga.local.AmadeusDatabase

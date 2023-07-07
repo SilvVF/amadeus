@@ -35,8 +35,13 @@ class VolumeItemsState(
     private fun List<DomainChapter>.groupByVolumeSorted(
         sortBy: SortBy
     ) = when(sortBy){
-        SortBy.Asc -> this.groupBy { it.volume?.toDoubleOrNull()?: 0 }.values.toList()
-        SortBy.Dsc -> this.groupBy { it.volume?.toDoubleOrNull()?: 0 }.values.reversed()
+        SortBy.Asc -> this.groupBy {
+            it.volume?.toDoubleOrNull()?: 0
+        }.values.toList().also { println("volumes $it") }
+
+        SortBy.Dsc -> this.groupBy {
+            it.volume?.toDoubleOrNull()?: 0
+        }.values.reversed().also { println("volumes $it") }
     }
 
     val items: VolumeItems = when(groupBy) {

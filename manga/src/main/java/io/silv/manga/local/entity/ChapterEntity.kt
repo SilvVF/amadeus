@@ -23,7 +23,7 @@ data class ChapterEntity(
 
     val chapterNumber: Int = 0,
 
-    val chapterImages: List<String>?,
+    val chapterImages: List<String> = emptyList(),
 
     val createdAt: String,
 

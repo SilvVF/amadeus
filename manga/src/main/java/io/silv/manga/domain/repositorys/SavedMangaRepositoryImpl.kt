@@ -2,6 +2,7 @@ package io.silv.manga.domain.repositorys
 
 import android.util.Log
 import io.silv.core.AmadeusDispatchers
+import io.silv.core.Mapper
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.alternateTitles
 import io.silv.manga.domain.coverArtUrl
@@ -11,12 +12,11 @@ import io.silv.manga.local.dao.MangaResourceDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.ProgressState
 import io.silv.manga.local.entity.SavedMangaEntity
+import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.models.manga.Manga
-import io.silv.core.Mapper
 import io.silv.manga.sync.Synchronizer
 import io.silv.manga.sync.syncWithSyncer
-import io.silv.manga.local.entity.syncerForEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -39,24 +39,29 @@ internal class SavedMangaRepositoryImpl(
         upsert = { savedMangaDao.upsertManga(it) }
     )
 
-
     override suspend fun bookmarkManga(id: String) {
         CoroutineScope(dispatchers.io).launch {
-            savedMangaDao.getMangaById(id)?.let { saved ->
-                val bookmarked = !saved.bookmarked
-                log("found saved manga $id updating bookmarked from ${!bookmarked} to $bookmarked")
-                if (bookmarked) {
-                    savedMangaDao.updateSavedManga(saved.copy(bookmarked = true))
+            savedMangaDao.getMangaWithChapters(id)?.let { (manga, chapters) ->
+                if (!manga.bookmarked) {
+                    savedMangaDao.updateSavedManga(
+                        manga.copy(bookmarked = true)
+                    )
                 } else {
-                    if (hasBeenStartedOrDataDownloaded(saved)) {
-                        savedMangaDao.updateSavedManga(saved.copy(bookmarked = false))
+                    // Check if any images are downloaded or the progress state needs to be tracked
+                    if (
+                        chapters.all { it.chapterImages.isNullOrEmpty() } &&
+                        manga.progressState == ProgressState.NotStarted
+                    ) {
+                        // delete if above is true
+                        savedMangaDao.delete(manga)
                     } else {
-                        log("deleted unused saved manga $id")
-                        savedMangaDao.delete(saved)
+                        // need the saved manga to track progress and save the images
+                        savedMangaDao.updateSavedManga(
+                            manga.copy(bookmarked = false)
+                        )
                     }
                 }
-            } ?:
-            mangaDao.getMangaById(id)?.let { resource ->
+            } ?: mangaDao.getMangaById(id)?.let { resource ->
                 log("No Saved found using resource $id")
                 savedMangaDao.upsertManga(
                     SavedMangaEntity(resource).copy(
@@ -66,14 +71,6 @@ internal class SavedMangaRepositoryImpl(
                 log("Inserted Saved manga using resource $id and set bookmarked true")
             }
         }
-    }
-
-    private fun hasBeenStartedOrDataDownloaded(saved: SavedMangaEntity): Boolean {
-        return (
-                saved.chaptersIds.isNotEmpty() &&
-                saved.progressState != ProgressState.NotStarted
-        )
-            .also { log("Manga ${saved.id} has been hasBeenStartedOrDataDownloaded = $it") }
     }
 
     override fun getSavedMangas(): Flow<List<SavedMangaEntity>> {
@@ -129,7 +126,6 @@ internal class SavedMangaRepositoryImpl(
                 volumeToCoverArt = saved?.volumeToCoverArt ?: emptyMap(),
                 createdAt = network.attributes.createdAt,
                 updatedAt = network.attributes.updatedAt,
-                chaptersIds = saved?.chaptersIds ?: emptyList(),
             )
         }
     }

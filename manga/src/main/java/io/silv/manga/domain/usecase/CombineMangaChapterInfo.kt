@@ -25,7 +25,9 @@ class CombineMangaChapterInfo(
             MangaFull(
                 domainManga = DomainManga(mangaResource, savedManga),
                 volumeImages = savedManga?.volumeToCoverArt ?: mangaResource.volumeToCoverArt,
-                chapterInfo = chapterInfo.map { DomainChapter(it) }
+                chapterInfo = chapterInfo.map {
+                    DomainChapter(it)
+                }
             )
         }
     }

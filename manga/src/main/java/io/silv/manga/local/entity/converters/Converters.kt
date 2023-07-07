@@ -12,7 +12,7 @@ class Converters {
 
     @TypeConverter
     fun strToStrList(string: String): List<String> {
-        return string.split(",")
+        return string.ifEmpty { return emptyList() }.split(",")
     }
 
     @TypeConverter

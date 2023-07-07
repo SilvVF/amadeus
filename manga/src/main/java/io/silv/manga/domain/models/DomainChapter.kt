@@ -28,10 +28,10 @@ data class DomainChapter(
 
     constructor(entity: ChapterEntity): this(
         id = entity.id,
-        downloaded = false,
+        downloaded = entity.chapterImages.isNotEmpty(),
         progress = entity.progressState,
         mangaId = entity.mangaId,
-        imageUris = emptyList(),
+        imageUris = entity.chapterImages,
         title = entity.title,
         volume = entity.volume,
         chapter = entity.chapterNumber.toString(),

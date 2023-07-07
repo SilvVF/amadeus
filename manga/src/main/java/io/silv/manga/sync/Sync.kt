@@ -1,15 +1,22 @@
 package io.silv.manga.sync
 
+import android.content.Context
+import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkManager
+import io.silv.manga.local.workers.MangaSyncWorker
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.qualifier.qualifier
 
-object Sync: KoinComponent {
+object Sync {
 
-    private val syncManger by inject<SyncManager>(qualifier("Manga"))
-
-    fun init() {
-        syncManger.requestSync()
+    fun init(context: Context) {
+        WorkManager.getInstance(context).apply {
+            // Run sync on app startup and ensure only one sync worker runs at any time
+            enqueueUniqueWork(
+                MangaSyncWorkName,
+                ExistingWorkPolicy.KEEP,
+                MangaSyncWorker.syncWorkRequest(),
+            )
+        }
     }
 }
 

@@ -41,8 +41,6 @@ data class SavedMangaEntity(
 
     val updatedAt: String,
 
-    val chaptersIds: List<String>,
-
     val volumeToCoverArt: Map<String, String>,
 
     val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
@@ -65,7 +63,6 @@ data class SavedMangaEntity(
         bookmarked = false,
         createdAt = mangaResource.createdAt,
         updatedAt = mangaResource.updatedAt,
-        chaptersIds = emptyList(),
         volumeToCoverArt = emptyMap(),
     )
 }

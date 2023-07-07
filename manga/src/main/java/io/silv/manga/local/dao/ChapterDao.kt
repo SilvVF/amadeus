@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.sync.SyncableDao
 import kotlinx.coroutines.flow.Flow
@@ -33,4 +34,7 @@ internal interface ChapterDao: SyncableDao<ChapterEntity> {
 
     @Delete
     suspend fun deleteChapter(chapterEntity: ChapterEntity)
+
+    @Update
+    suspend fun updateChapter(chapterEntity: ChapterEntity)
 }

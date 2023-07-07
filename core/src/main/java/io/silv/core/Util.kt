@@ -81,6 +81,20 @@ fun <T> Iterable<T>.pForEach(
     }
 }
 
+@OptIn(ExperimentalContracts::class)
+suspend fun <T> Iterable<T>.pForEach(
+    action: suspend (T) -> Unit
+) {
+    contract { callsInPlace(action) }
+    coroutineScope {
+        for (item in this@pForEach) {
+            launch {
+                action(item)
+            }
+        }
+    }
+}
+
 
 @OptIn(ExperimentalContracts::class)
 fun <K, T> Map<K, List<T>>.pForEachKey(

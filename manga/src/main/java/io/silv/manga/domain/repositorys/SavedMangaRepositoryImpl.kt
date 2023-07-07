@@ -12,9 +12,11 @@ import io.silv.manga.local.dao.MangaResourceDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.ProgressState
 import io.silv.manga.local.entity.SavedMangaEntity
+import io.silv.manga.local.entity.relations.MangaWithChapters
 import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.models.manga.Manga
+import io.silv.manga.network.mangadex.requests.MangaByIdRequest
 import io.silv.manga.sync.Synchronizer
 import io.silv.manga.sync.syncWithSyncer
 import kotlinx.coroutines.CoroutineScope
@@ -49,7 +51,7 @@ internal class SavedMangaRepositoryImpl(
                 } else {
                     // Check if any images are downloaded or the progress state needs to be tracked
                     if (
-                        chapters.all { it.chapterImages.isNullOrEmpty() } &&
+                        chapters.all { it.chapterImages.isEmpty() } &&
                         manga.progressState == ProgressState.NotStarted
                     ) {
                         // delete if above is true
@@ -73,6 +75,10 @@ internal class SavedMangaRepositoryImpl(
         }
     }
 
+    override fun getSavedMangaWithChapters(): Flow<List<MangaWithChapters>> {
+        return savedMangaDao.getAllMangaWithChaptersAsFlow()
+    }
+
     override fun getSavedMangas(): Flow<List<SavedMangaEntity>> {
         return savedMangaDao.getAllAsFlow()
     }
@@ -87,7 +93,10 @@ internal class SavedMangaRepositoryImpl(
             getCurrent = { savedMangaDao.getAll() },
             getNetwork = {
                 savedMangaDao.getAll().map {
-                    mangaDexApi.getMangaById(it.id)
+                    mangaDexApi.getMangaById(
+                        it.id,
+                        MangaByIdRequest(includes = listOf("cover_art"))
+                    )
                         .getOrThrow()
                         .data
                 }

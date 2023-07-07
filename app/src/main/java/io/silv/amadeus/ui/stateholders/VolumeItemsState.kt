@@ -36,12 +36,16 @@ class VolumeItemsState(
         sortBy: SortBy
     ) = when(sortBy){
         SortBy.Asc -> this.groupBy {
-            it.volume?.toDoubleOrNull()?: 0
-        }.values.toList().also { println("volumes $it") }
+            it.volume?.toDoubleOrNull()?: 0.0
+        }
+            .values
+            .toList()
 
         SortBy.Dsc -> this.groupBy {
-            it.volume?.toDoubleOrNull()?: 0
-        }.values.reversed().also { println("volumes $it") }
+            it.volume?.toDoubleOrNull()?: 0.0
+        }
+            .values
+            .reversed()
     }
 
     val items: VolumeItems = when(groupBy) {

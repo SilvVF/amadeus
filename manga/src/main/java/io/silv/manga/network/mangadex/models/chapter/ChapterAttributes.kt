@@ -12,7 +12,7 @@ data class ChapterAttributes(
      * Count of readable images for this chapter
      */
     val pages: Int,
-    val translatedLanguage: String,
+    val translatedLanguage: String? = null,
     val uploader: String? = null,
     val externalUrl: String? = null,
     val version: Int,

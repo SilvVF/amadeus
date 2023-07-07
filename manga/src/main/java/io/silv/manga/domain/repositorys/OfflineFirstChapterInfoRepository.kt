@@ -20,6 +20,7 @@ import io.silv.core.Mapper
 import io.silv.manga.sync.Synchronizer
 import io.silv.manga.sync.syncWithSyncer
 import io.silv.manga.local.entity.syncerForEntity
+import io.silv.manga.network.mangadex.requests.MangaFeedRequest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -61,7 +62,13 @@ internal class OfflineFirstChapterInfoRepository(
 
     private fun updateChapterList(mangaId: String) = scope.launch {
         loading.emit(true)
-        suspend fun getMangaFeed() = mangaDexApi.getMangaFeed(mangaId).mapSuccess {
+        suspend fun getMangaFeed() = mangaDexApi.getMangaFeed(
+            mangaId,
+            MangaFeedRequest(
+                translatedLanguage = listOf("en"),
+                includeEmptyPages = 0
+            )
+        ).mapSuccess {
             data.map { chapter ->
                 mapper.map(chapter to null)
             }
@@ -123,7 +130,12 @@ internal class OfflineFirstChapterInfoRepository(
             getNetwork = {
                savedChapters.groupBy { it.mangaId }
                      .flatMap { (mangaId, _) ->
-                         mangaDexApi.getMangaFeed(mangaId)
+                         mangaDexApi.getMangaFeed(
+                             mangaId,
+                             MangaFeedRequest(
+                                 translatedLanguage = listOf("en"),
+                             )
+                         )
                              .getOrThrow()
                              .data
                      }
@@ -136,7 +148,6 @@ internal class OfflineFirstChapterInfoRepository(
                         mangaDexApi.getCoverArtList(
                             CoverArtRequest(
                                 manga = listOf(mangaId),
-                                limit = 100,
                             )
                         ).suspendOnSuccess {
                             updateMangaCoverArt(

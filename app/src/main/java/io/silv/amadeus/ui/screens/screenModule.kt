@@ -2,6 +2,7 @@ package io.silv.amadeus.ui.screens
 
 import io.silv.amadeus.ui.screens.home.HomeSM
 import io.silv.amadeus.ui.screens.manga_view.MangaViewSM
+import io.silv.amadeus.ui.screens.saved.SavedMangaSM
 import io.silv.manga.domain.models.DomainManga
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.withOptions
@@ -18,10 +19,7 @@ val screenModule = module {
         )
     }
 
-    factory {
-        HomeSM(
-            get(),
-            get(),
-        )
-    }
+    factoryOf(::HomeSM)
+
+    factoryOf(::SavedMangaSM)
 }

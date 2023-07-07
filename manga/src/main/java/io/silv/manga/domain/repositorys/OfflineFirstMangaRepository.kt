@@ -46,28 +46,30 @@ internal class OfflineFirstMangaRepository(
     ): Flow<List<MangaResource>> = mangaResourceDao.getMangaResources()
 
     override suspend fun loadNextPage(): Boolean = withContext(scope.coroutineContext) {
-        val result = syncer.sync(
-            current = mangaResourceDao.getAll(),
-            networkResponse = mangaDexApi.getMangaList(
-                MangaRequest(
-                    offset = currentOffset,
-                    limit = MANGA_PAGE_LIMIT,
-                    includes = listOf("cover_art")
+        runCatching {
+            val result = syncer.sync(
+                current = mangaResourceDao.getAll(),
+                networkResponse = mangaDexApi.getMangaList(
+                    MangaRequest(
+                        offset = currentOffset,
+                        limit = MANGA_PAGE_LIMIT,
+                        includes = listOf("cover_art")
+                    )
                 )
+                    .getOrThrow()
+                    .data,
             )
-                .getOrThrow()
-                .data,
-        )
 
-        // Initial sync delete previous paging data
-        if (currentOffset == 0 && result.unhandled.size > 200) {
-            for(unhandled in result.unhandled.subList(100, 200)) {
-                mangaResourceDao.delete(unhandled)
+            // Initial sync delete previous paging data
+            if (currentOffset == 0 && result.unhandled.size > 200) {
+                for(unhandled in result.unhandled.subList(100, 200)) {
+                    mangaResourceDao.delete(unhandled)
+                }
             }
+            // Increase offset after successful sync
+            currentOffset += MANGA_PAGE_LIMIT
         }
-        // Increase offset after successful sync
-        currentOffset += MANGA_PAGE_LIMIT
-        true
+            .isSuccess
     }
 
     private class MangaToMangaResourceMapper: Mapper<Pair<Manga, MangaResource?>, MangaResource> {

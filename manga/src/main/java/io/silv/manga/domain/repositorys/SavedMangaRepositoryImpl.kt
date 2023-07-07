@@ -10,6 +10,7 @@ import io.silv.manga.domain.descriptionEnglish
 import io.silv.manga.domain.titleEnglish
 import io.silv.manga.local.dao.MangaResourceDao
 import io.silv.manga.local.dao.SavedMangaDao
+import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.ProgressState
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.local.entity.relations.MangaWithChapters
@@ -20,7 +21,9 @@ import io.silv.manga.network.mangadex.requests.MangaByIdRequest
 import io.silv.manga.sync.Synchronizer
 import io.silv.manga.sync.syncWithSyncer
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 internal class SavedMangaRepositoryImpl(
@@ -28,6 +31,7 @@ internal class SavedMangaRepositoryImpl(
     private val mangaDao: MangaResourceDao,
     private val mangaDexApi: MangaDexApi,
     private val dispatchers: AmadeusDispatchers,
+    private val chapterInfoRepository: ChapterInfoRepository,
 ): SavedMangaRepository {
 
     private val TAG = "SavedMangaRepositoryImpl"
@@ -70,6 +74,12 @@ internal class SavedMangaRepositoryImpl(
                         bookmarked = true
                     )
                 )
+                // Load chapters info that will also attach volume images
+                // tries to preload the data and will fail if their is no interet
+                // this will be fetched later in any screen that needs it or during sync
+                launch {
+                    chapterInfoRepository.getChapters(id).first()
+                }
                 log("Inserted Saved manga using resource $id and set bookmarked true")
             }
         }
@@ -93,6 +103,7 @@ internal class SavedMangaRepositoryImpl(
             getCurrent = { savedMangaDao.getAll() },
             getNetwork = {
                 savedMangaDao.getAll().map {
+                    delay(500)
                     mangaDexApi.getMangaById(
                         it.id,
                         MangaByIdRequest(includes = listOf("cover_art"))

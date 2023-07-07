@@ -23,6 +23,7 @@ import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.requests.MangaFeedRequest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onEach
@@ -117,34 +118,36 @@ internal class OfflineFirstChapterInfoRepository(
     override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
         val savedManga = savedMangaDao.getAll()
         val savedChapters = chapterDao.getAll()
-
-        savedChapters.forEach { chapter ->
-            if (savedManga.none { it.id == chapter.id } && chapter.chapterImages.isEmpty()) {
-                chapterDao.deleteChapter(chapter)
-            }
+        // Delete any chapter that is not associated with a saved manga
+        // and that has no chapter images downloaded
+        val savedChaptersAfterDeletion = savedChapters.filter { chapter ->
+            savedManga.none { it.id == chapter.id } && chapter.chapterImages.isEmpty()
+                .also { unused ->
+                    if (unused) chapterDao.deleteChapter(chapter)
+                }
         }
 
         return synchronizer.syncWithSyncer(
             syncer = chapterSyncer,
-            getCurrent = { savedChapters },
+            getCurrent = { savedChaptersAfterDeletion },
             getNetwork = {
-               savedChapters.groupBy { it.mangaId }
-                     .flatMap { (mangaId, _) ->
-                         mangaDexApi.getMangaFeed(
-                             mangaId,
-                             MangaFeedRequest(
-                                 translatedLanguage = listOf("en"),
-                             )
-                         )
-                             .getOrThrow()
-                             .data
-                     }
+                // take all the saved mangas and fetch the updated chapter list
+               savedManga.flatMap {
+                   mangaDexApi.getMangaFeed(
+                       it.id,
+                       MangaFeedRequest(
+                           translatedLanguage = listOf("en"),
+                       )
+                   )
+                       .getOrThrow()
+                       .data
+               }
             },
             onComplete = { result ->
                 val allChanged = result.added + result.updated
                 allChanged
                     .groupBy { it.mangaId }
-                    .pForEachKey(scope) { (mangaId) ->
+                    .forEach { (mangaId) ->
                         mangaDexApi.getCoverArtList(
                             CoverArtRequest(
                                 manga = listOf(mangaId),

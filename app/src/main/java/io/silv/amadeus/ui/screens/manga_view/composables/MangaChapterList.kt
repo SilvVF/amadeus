@@ -49,6 +49,7 @@ fun ChapterList(
     sortBy: VolumeItemsState.SortBy,
     downloads: List<String>,
     sortByChange: () -> Unit,
+    readButtonClick: (DomainChapter) -> Unit,
     downloadChapterClicked: (DomainChapter) -> Unit,
     deleteChapterClicked: (DomainChapter) -> Unit
 ) {
@@ -107,7 +108,7 @@ fun ChapterList(
                            downloadChapterClicked(chapter)
                        },
                        readButtonClick = {
-
+                           readButtonClick(chapter)
                        },
                        deleteChapterClicked = {
                             deleteChapterClicked(chapter)

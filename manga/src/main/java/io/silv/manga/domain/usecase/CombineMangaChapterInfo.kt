@@ -23,8 +23,8 @@ class CombineMangaChapterInfo(
         ) { mangaResource, savedManga, chapterInfo ->
             println("CombinedMangaChapterInfoVolumeImagesRepositoryImpl new MANGA FULL")
             MangaFull(
-                domainManga = DomainManga(mangaResource, savedManga),
-                volumeImages = savedManga?.volumeToCoverArt ?: mangaResource.volumeToCoverArt,
+                domainManga = savedManga?.let { DomainManga(it) } ?: mangaResource?.let { DomainManga(it, savedManga) },
+                volumeImages = savedManga?.volumeToCoverArt ?: mangaResource?.volumeToCoverArt,
                 chapterInfo = chapterInfo.map {
                     DomainChapter(it)
                 }
@@ -33,7 +33,7 @@ class CombineMangaChapterInfo(
     }
 
     data class MangaFull(
-        val domainManga: DomainManga,
+        val domainManga: DomainManga?,
         val volumeImages: Map<String, String>?,
         val chapterInfo: List<DomainChapter>?
     )

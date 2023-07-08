@@ -21,6 +21,9 @@ internal interface ChapterDao: SyncableDao<ChapterEntity> {
     @Query("SELECT * FROM chapterentity WHERE id = :id")
     suspend fun getById(id: String): ChapterEntity?
 
+    @Query("SELECT * FROM chapterentity WHERE id = :id LIMIT 1")
+    fun getByIdAsFlow(id: String): Flow<ChapterEntity?>
+
     @Query("""
         SELECT * FROM chapterentity 
         WHERE manga_id = :mangaId

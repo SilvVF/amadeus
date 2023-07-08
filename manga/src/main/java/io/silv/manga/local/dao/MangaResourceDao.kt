@@ -25,7 +25,7 @@ internal interface MangaResourceDao: SyncableDao<MangaResource> {
     fun getMangaResources(): Flow<List<MangaResource>>
 
     @Query("SELECT * FROM mangaresource WHERE id = :mangaId")
-    fun getResourceAsFlowById(mangaId: String): Flow<MangaResource>
+    fun getResourceAsFlowById(mangaId: String): Flow<MangaResource?>
 
     @Query("SELECT * FROM mangaresource")
     suspend fun getAll(): List<MangaResource>

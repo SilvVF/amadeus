@@ -17,6 +17,7 @@ import io.silv.manga.network.mangadex.models.chapter.Chapter
 import io.silv.manga.network.mangadex.models.cover.Cover
 import io.silv.manga.network.mangadex.requests.CoverArtRequest
 import io.silv.core.Mapper
+import io.silv.manga.domain.ChapterToChapterEntityMapper
 import io.silv.manga.sync.Synchronizer
 import io.silv.manga.sync.syncWithSyncer
 import io.silv.manga.local.entity.syncerForEntity
@@ -30,7 +31,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 
-private typealias ChapterWithPrevEntity = Pair<Chapter, ChapterEntity?>
 
 internal class OfflineFirstChapterInfoRepository(
     private val chapterDao: ChapterDao,
@@ -43,7 +43,7 @@ internal class OfflineFirstChapterInfoRepository(
     private val scope = CoroutineScope(dispatchers.io) +
             CoroutineName("OfflineFirstChapterInfoRepository")
 
-    private val mapper = ChapterToChapterEntityMapper()
+    private val mapper = ChapterToChapterEntityMapper
 
     private val chapterSyncer = syncerForEntity<ChapterEntity, Chapter, String>(
         networkToKey = { chapter -> chapter.id },
@@ -193,25 +193,5 @@ internal class OfflineFirstChapterInfoRepository(
             )
         }
     }
-
-
-    private class ChapterToChapterEntityMapper: Mapper<ChapterWithPrevEntity, ChapterEntity> {
-        override fun map(from: ChapterWithPrevEntity): ChapterEntity {
-            val (chapter, prev) = from
-            return ChapterEntity(
-                id = chapter.id,
-                mangaId = chapter.relationships.find { it.type == "manga" }?.id
-                    ?: throw IllegalStateException("Chapter had no related manga id"),
-                progressState = prev?.progressState ?: ProgressState.NotStarted,
-                volume = chapter.attributes.volume,
-                title = chapter.attributes.title ?: "no title",
-                pages = chapter.attributes.pages,
-                chapterNumber = chapter.attributes.chapter?.toIntOrNull() ?: 0,
-                chapterImages = prev?.chapterImages ?: emptyList(),
-                createdAt = chapter.attributes.createdAt,
-                updatedAt = chapter.attributes.updatedAt,
-            )
-        }
-
-    }
 }
+

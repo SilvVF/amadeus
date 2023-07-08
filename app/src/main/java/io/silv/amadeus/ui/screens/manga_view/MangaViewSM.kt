@@ -1,9 +1,11 @@
 package io.silv.amadeus.ui.screens.manga_view
 
+import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.usecase.CombineMangaChapterInfo
 import io.silv.manga.local.workers.ChapterDeletionWorker
 import io.silv.manga.local.workers.ChapterDeletionWorkerTag
@@ -17,6 +19,7 @@ import kotlinx.coroutines.launch
 
 class MangaViewSM(
     combineMangaChapterInfo: CombineMangaChapterInfo,
+    private val savedMangaRepository: SavedMangaRepository,
     private val workManager: WorkManager,
     initialManga: DomainManga
 ): AmadeusScreenModel<MangaViewEvent>() {
@@ -24,14 +27,13 @@ class MangaViewSM(
     private val loading = combineMangaChapterInfo.loading
         .stateInUi(false)
 
-    private val downloadingIds = MutableStateFlow<List<String>>(emptyList())
 
     val downloadingOrDeleting = combine(
         workManager.getWorkInfosByTagFlow(ChapterDownloadWorkerTag)
             .map { it.anyRunning() },
         workManager.getWorkInfosByTagFlow(ChapterDeletionWorkerTag)
             .map { it.anyRunning() },
-        downloadingIds
+        ChapterDownloadWorker.downloadingIds
     ) { downloading, deleting, ids ->
         if (downloading || deleting) {
             ids
@@ -54,7 +56,7 @@ class MangaViewSM(
                         ChapterListState.Loading
                     else
                         ChapterListState.Failure("Failed To Load"),
-                manga = state.domainManga
+                manga = state.domainManga ?: initialManga
             )
         }
         .stateInUi(
@@ -65,8 +67,11 @@ class MangaViewSM(
             )
         )
 
+    fun bookmarkManga(id: String) = coroutineScope.launch {
+        savedMangaRepository.bookmarkManga(id)
+    }
+
     fun deleteChapterImages(chapterIds: List<String>) = coroutineScope.launch {
-        downloadingIds.emit(chapterIds)
         workManager.enqueue(
             ChapterDeletionWorker
                 .deletionWorkRequest(chapterIds)
@@ -74,8 +79,9 @@ class MangaViewSM(
     }
 
     fun downloadChapterImages(chapterIds: List<String>) = coroutineScope.launch {
-        downloadingIds.emit(chapterIds)
-        workManager.enqueue(
+        workManager.enqueueUniqueWork(
+            chapterIds.toString(),
+            ExistingWorkPolicy.KEEP,
             ChapterDownloadWorker.downloadWorkRequest(
                 chapterIds,
                 chapterInfoUiState.value.manga.id

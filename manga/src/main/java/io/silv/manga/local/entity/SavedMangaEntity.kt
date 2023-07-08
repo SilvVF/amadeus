@@ -13,6 +13,10 @@ data class SavedMangaEntity(
 
     val progressState: ProgressState = ProgressState.NotStarted,
 
+    val readChapters: List<Int>,
+
+    val chapterToLastReadPage: Map<Int, String>,
+
     val coverArt: String,
 
     val description: String,
@@ -49,6 +53,8 @@ data class SavedMangaEntity(
     constructor(mangaResource: MangaResource): this(
         id = mangaResource.id,
         progressState = ProgressState.NotStarted,
+        chapterToLastReadPage = emptyMap(),
+        readChapters = emptyList(),
         coverArt = mangaResource.coverArt,
         description = mangaResource.description,
         titleEnglish = mangaResource.titleEnglish,

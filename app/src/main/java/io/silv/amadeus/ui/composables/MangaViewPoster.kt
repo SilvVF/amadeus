@@ -18,7 +18,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BookOnline
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkAdd
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -170,7 +174,10 @@ fun MangaViewPoster(
                         onClick = onBookMarkClick
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Bookmark,
+                            imageVector =    if (manga.bookmarked)
+                                Icons.Filled.BookmarkRemove
+                            else
+                                Icons.Filled.BookmarkBorder,
                             contentDescription = null
                         )
                     }

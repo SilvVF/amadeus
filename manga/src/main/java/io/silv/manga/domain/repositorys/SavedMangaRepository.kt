@@ -14,6 +14,8 @@ interface SavedMangaRepository: Syncable {
 
     fun getSavedMangaWithChapters(): Flow<List<MangaWithChapters>>
 
+    fun getSavedMangaWithChapter(id: String): Flow<MangaWithChapters?>
+
     fun getSavedMangas(): Flow<List<SavedMangaEntity>>
 
     fun getSavedManga(id: String): Flow<SavedMangaEntity?>

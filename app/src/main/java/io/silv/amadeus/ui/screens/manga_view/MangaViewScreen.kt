@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
@@ -41,6 +42,7 @@ import io.silv.manga.domain.models.DomainChapter
 import io.silv.manga.domain.models.DomainManga
 import io.silv.amadeus.ui.composables.AnimatedShimmer
 import io.silv.amadeus.ui.composables.MangaViewPoster
+import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
 import io.silv.amadeus.ui.screens.manga_view.composables.ChapterList
 import io.silv.amadeus.ui.screens.manga_view.composables.VolumeList
 import io.silv.amadeus.ui.shared.CenterBox
@@ -65,6 +67,7 @@ class MangaViewScreen(
 
         val state by sm.chapterInfoUiState.collectAsStateWithLifecycle()
         val downloading by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
+        val navigator = LocalNavigator.current
 
         val snackbarHostState = remember { SnackbarHostState() }
 
@@ -83,8 +86,12 @@ class MangaViewScreen(
                        .fillMaxHeight(0.4f)
                        .fillMaxWidth(),
                    manga = state.manga,
-                   onReadNowClick = {},
-                   onBookMarkClick = {}
+                   onReadNowClick = {
+
+                   },
+                   onBookMarkClick = {
+                       sm.bookmarkManga(state.manga.id)
+                   }
                )
                MangaView(
                    state = state.chapterListState,
@@ -105,6 +112,11 @@ class MangaViewScreen(
                         sm.deleteChapterImages(
                             chapters.map { it.id }
                         )
+                   },
+                   readButtonClick = { mangaId, chapterId ->
+                       navigator?.push(
+                           MangaReaderScreen(mangaId, chapterId)
+                       )
                    }
                )
             }
@@ -119,6 +131,7 @@ fun MangaView(
     downloads: List<String>,
     retryLoadCoverArt: () -> Unit,
     retryLoadChapterList: () -> Unit,
+    readButtonClick: (String, String) -> Unit,
     downloadChapters: (List<DomainChapter>) -> Unit,
     deleteChapters: (List<DomainChapter>) -> Unit,
 ) {
@@ -166,6 +179,12 @@ fun MangaView(
                             deleteChapterClicked = {
                                 deleteChapters(
                                     listOf(it)
+                                )
+                            },
+                            readButtonClick = {
+                                readButtonClick(
+                                    it.mangaId,
+                                    it.id
                                 )
                             }
                         )

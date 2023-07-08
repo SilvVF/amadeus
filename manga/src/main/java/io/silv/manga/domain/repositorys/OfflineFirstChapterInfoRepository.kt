@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
+import kotlinx.datetime.Clock
 
 
 internal class OfflineFirstChapterInfoRepository(
@@ -67,7 +68,6 @@ internal class OfflineFirstChapterInfoRepository(
             mangaId,
             MangaFeedRequest(
                 translatedLanguage = listOf("en"),
-                includeEmptyPages = 0
             )
         ).mapSuccess {
             data.map { chapter ->
@@ -132,16 +132,24 @@ internal class OfflineFirstChapterInfoRepository(
             getCurrent = { savedChaptersAfterDeletion },
             getNetwork = {
                 // take all the saved mangas and fetch the updated chapter list
-               savedManga.flatMap {
-                   mangaDexApi.getMangaFeed(
-                       it.id,
-                       MangaFeedRequest(
-                           translatedLanguage = listOf("en"),
-                       )
-                   )
-                       .getOrThrow()
-                       .data
-               }
+                savedManga.mapNotNull {
+                    if (
+                        Clock.System.now().epochSeconds - it.savedLocalAtEpochSeconds
+                        > 60 * 60 * 12
+                    ) {
+                        mangaDexApi.getMangaFeed(
+                            it.id,
+                            MangaFeedRequest(
+                                translatedLanguage = listOf("en"),
+                            )
+                        )
+                            .getOrThrow()
+                            .data
+                    } else {
+                        null
+                    }
+                }
+                    .flatten()
             },
             onComplete = { result ->
                 val allChanged = result.added + result.updated

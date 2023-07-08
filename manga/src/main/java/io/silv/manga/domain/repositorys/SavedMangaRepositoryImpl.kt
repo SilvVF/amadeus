@@ -10,6 +10,7 @@ import io.silv.manga.domain.MangaEntityMapper
 import io.silv.manga.domain.alternateTitles
 import io.silv.manga.domain.coverArtUrl
 import io.silv.manga.domain.descriptionEnglish
+import io.silv.manga.domain.models.DomainManga
 import io.silv.manga.domain.titleEnglish
 import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.MangaResourceDao
@@ -31,9 +32,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
+import java.time.Duration
 
 internal class SavedMangaRepositoryImpl(
     private val savedMangaDao: SavedMangaDao,
@@ -75,18 +79,21 @@ internal class SavedMangaRepositoryImpl(
                         )
                     }
                 }
-            } ?: mangaDao.getMangaById(id)?.let { resource ->
-                log("No Saved found using resource $id")
-                val entity =  SavedMangaEntity(resource).copy(
-                    bookmarked = true
-                )
-                savedMangaDao.upsertManga(entity)
-                launch {
-                    updateVolumeCoverArtAndChapterInfo(id, entity)
-                }
-                log("Inserted Saved manga using resource $id and set bookmarked true")
-            }
+            } ?: saveManga(id)
     }
+
+    override suspend fun saveManga(id: String) {
+        mangaDao.getMangaById(id)?.let { resource ->
+            log("No Saved found using resource $id")
+            val entity =  SavedMangaEntity(resource).copy(
+                bookmarked = true
+            )
+            savedMangaDao.upsertManga(entity)
+            updateVolumeCoverArtAndChapterInfo(id, entity)
+            log("Inserted Saved manga using resource $id and set bookmarked true")
+        }
+    }
+
     // Load chapters info that will also attach volume images
     // tries to preload the data and will fail if there is no internet
     // this will be fetched later in any screen that needs it or during sync
@@ -124,23 +131,7 @@ internal class SavedMangaRepositoryImpl(
     }
 
     override fun getSavedMangaWithChapter(id: String): Flow<MangaWithChapters?> {
-        return savedMangaDao.getMangaWithChaptersAsFlow(id).onEach {
-            if (it == null) {
-                CoroutineScope(dispatchers.io).launch {
-                    mangaDao.getMangaById(id)?.let { resource ->
-                        log("No Saved found using resource $id")
-                        val entity =  SavedMangaEntity(resource).copy(
-                            bookmarked = true
-                        )
-                        savedMangaDao.upsertManga(entity)
-                        launch {
-                            updateVolumeCoverArtAndChapterInfo(id, entity)
-                        }
-                        log("Inserted Saved manga using resource $id and set bookmarked true")
-                    }
-                }
-            }
-        }
+        return savedMangaDao.getMangaWithChaptersAsFlow(id)
     }
 
     override fun getSavedMangas(): Flow<List<SavedMangaEntity>> {
@@ -156,14 +147,20 @@ internal class SavedMangaRepositoryImpl(
             syncer = syncer,
             getCurrent = { savedMangaDao.getAll() },
             getNetwork = {
-                savedMangaDao.getAll().map {
+                savedMangaDao.getAll().mapNotNull {
                     delay(1000)
-                    mangaDexApi.getMangaById(
-                        it.id,
-                        MangaByIdRequest(includes = listOf("cover_art"))
-                    )
-                        .getOrThrow()
-                        .data
+                    if (
+                        Clock.System.now().epochSeconds - it.savedLocalAtEpochSeconds > 60 * 60 * 12
+                    ) {
+                        mangaDexApi.getMangaById(
+                            it.id,
+                            MangaByIdRequest(includes = listOf("cover_art"))
+                        )
+                            .getOrThrow()
+                            .data
+                    } else {
+                        null
+                    }
                 }
             },
             onComplete = { result ->

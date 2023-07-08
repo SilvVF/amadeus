@@ -3,6 +3,7 @@ package io.silv.amadeus.ui.screens.manga_reader
 import android.widget.ImageView
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -29,11 +30,16 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.repositorys.ChapterInfoRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
+import io.silv.manga.local.entity.relations.MangaWithChapters
 import io.silv.manga.local.workers.ChapterDownloadWorker
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
@@ -48,41 +54,70 @@ class MangaReaderSM(
     private val workManager: WorkManager,
     private val savedMangaRepository: SavedMangaRepository,
     private val mangaId: String,
-    private val initialChapterId: String,
+    initialChapterId: String,
 ): AmadeusScreenModel<MangaReaderEvent>() {
 
     private val chapterId = MutableStateFlow(initialChapterId)
 
-    val mangaWithChapters = combine(
+    private var saveMangaJob: Job? = null
+
+    val mangaWithChapters = combineMangaWithChapter(
         chapterId,
-        savedMangaRepository.getSavedMangaWithChapter(mangaId)
-    ) { chapterId, mangaWithChapters ->
-        val chapterImages = mangaWithChapters?.chapters
-            ?.find { it.id == chapterId }
-            ?.chapterImages
-            ?.takeIf { it.isNotEmpty() }
-        if (chapterImages != null) {
-            MangaReaderState.Success(chapterImages)
-        } else {
+        savedMangaRepository.getSavedMangaWithChapter(mangaId),
+        mangaNotFound = {
+            if (saveMangaJob == null) {
+                saveMangaJob = CoroutineScope(Dispatchers.IO).launch {
+                    savedMangaRepository.saveManga(mangaId)
+                }
+            }
+        },
+        chapterNotFound = {},
+        notEnoughImages = {
             loadMangaImages()
-            MangaReaderState.Loading
         }
-    }
+    )
         .stateInUi(MangaReaderState.Loading)
 
     private fun loadMangaImages() = coroutineScope.launch {
-        withContext(Dispatchers.IO) {
-            workManager.enqueueUniqueWork(
-                chapterId.value,
-                ExistingWorkPolicy.KEEP,
-                ChapterDownloadWorker.downloadWorkRequest(
-                    listOf(chapterId.value),
-                    mangaId
-                )
+        workManager.enqueueUniqueWork(
+            chapterId.value,
+            ExistingWorkPolicy.KEEP,
+            ChapterDownloadWorker.downloadWorkRequest(
+                listOf(chapterId.value),
+                mangaId
             )
-        }
+        )
     }
 
+}
+
+private fun combineMangaWithChapter(
+    chapterId: Flow<String>,
+    manga: Flow<MangaWithChapters?>,
+    mangaNotFound: suspend () -> Unit,
+    chapterNotFound: suspend () -> Unit,
+    notEnoughImages: suspend (prev: Int) -> Unit
+) = combine(
+    chapterId,
+    manga
+) { cid, mangaWithChapters ->
+    if (mangaWithChapters == null) {
+       mangaNotFound()
+    }
+    val chapter = mangaWithChapters?.chapters?.find { it.id == cid }
+    if(chapter == null) {
+        chapterNotFound()
+    }
+    val images = chapter?.chapterImages
+    if (images != null) {
+        if (chapter.pages < images.size) {
+            notEnoughImages(images.size)
+        }
+        MangaReaderState.Success(images)
+    } else {
+        notEnoughImages(0)
+        MangaReaderState.Loading
+    }
 }
 
 sealed interface MangaReaderEvent
@@ -113,7 +148,7 @@ fun MangaReader(
 ) {
     when (state) {
         MangaReaderState.Loading -> {
-
+            AnimatedBoxShimmer(modifier = Modifier.padding(100.dp).fillMaxSize())
         }
         is MangaReaderState.Success -> {
             MangaImagePager(imageUris = state.pages)

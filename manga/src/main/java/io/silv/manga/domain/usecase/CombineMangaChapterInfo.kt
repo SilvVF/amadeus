@@ -23,7 +23,9 @@ class CombineMangaChapterInfo(
         ) { mangaResource, savedManga, chapterInfo ->
             println("CombinedMangaChapterInfoVolumeImagesRepositoryImpl new MANGA FULL")
             MangaFull(
-                domainManga = savedManga?.let { DomainManga(it) } ?: mangaResource?.let { DomainManga(it, savedManga) },
+                domainManga =
+                savedManga?.let { DomainManga(it) } ?:
+                mangaResource?.let { DomainManga(it, null) },
                 volumeImages = savedManga?.volumeToCoverArt ?: mangaResource?.volumeToCoverArt,
                 chapterInfo = chapterInfo.map {
                     DomainChapter(it)

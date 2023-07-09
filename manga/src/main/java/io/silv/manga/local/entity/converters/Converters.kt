@@ -12,7 +12,10 @@ class Converters {
 
     @TypeConverter
     fun strToStrList(string: String): List<String> {
-        return string.ifEmpty { return emptyList() }.split("<divider>")
+        return string
+            .ifEmpty { return emptyList() }
+            .split("<divider>")
+            .ifEmpty { return emptyList() }
     }
 
     @TypeConverter

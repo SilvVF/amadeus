@@ -1,6 +1,5 @@
-package io.silv.manga.di
+package io.silv.manga.local
 
-import io.silv.manga.local.AmadeusDatabase
 import org.koin.dsl.module
 
 val daosModule = module {

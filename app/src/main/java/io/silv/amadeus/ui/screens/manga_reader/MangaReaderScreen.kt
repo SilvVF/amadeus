@@ -1,29 +1,18 @@
 package io.silv.amadeus.ui.screens.manga_reader
 
-import android.widget.ImageView
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequest
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
 import cafe.adriel.voyager.core.screen.Screen
@@ -32,7 +21,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.domain.repositorys.ChapterInfoRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.local.entity.relations.MangaWithChapters
 import io.silv.manga.local.workers.ChapterDownloadWorker
@@ -42,13 +30,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.guava.asDeferred
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.core.parameter.parametersOf
-import java.util.UUID
 
 class MangaReaderSM(
     private val workManager: WorkManager,
@@ -108,7 +91,7 @@ private fun combineMangaWithChapter(
     if(chapter == null) {
         chapterNotFound()
     }
-    val images = chapter?.chapterImages
+    val images = chapter?.chapterImages?.takeIf { it.isNotEmpty() }
     if (images != null) {
         if (chapter.pages < images.size) {
             notEnoughImages(images.size)
@@ -128,8 +111,8 @@ sealed class MangaReaderState {
 }
 
 class MangaReaderScreen(
-    val mangaId: String,
-    val chapterId: String
+    private val mangaId: String,
+    private val chapterId: String
 ): Screen {
 
     @Composable

@@ -7,7 +7,6 @@ import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.network.mangadex.models.ContentRating
 import io.silv.manga.network.mangadex.models.Status
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.parcelize.Parcelize
 import java.io.Serializable
 
@@ -72,8 +71,4 @@ data class DomainManga(
         savedLocalAtEpochSeconds = mangaResource.savedLocalAtEpochSeconds,
         volumeToCoverArtUrl = savedManga?.volumeToCoverArt ?: emptyMap()
     )
-}
-
-fun MangaResource.mapToDomainManga(savedManga: SavedMangaEntity?): DomainManga {
-    return DomainManga(this, savedManga)
 }

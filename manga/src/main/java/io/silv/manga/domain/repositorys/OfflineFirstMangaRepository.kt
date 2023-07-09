@@ -2,18 +2,13 @@ package io.silv.manga.domain.repositorys
 
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
-import io.silv.manga.domain.alternateTitles
-import io.silv.manga.domain.coverArtUrl
-import io.silv.manga.domain.descriptionEnglish
-import io.silv.manga.domain.titleEnglish
+import io.silv.manga.domain.MangaToMangaResourceMapper
 import io.silv.manga.local.dao.MangaResourceDao
 import io.silv.manga.local.entity.MangaResource
+import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.models.manga.Manga
 import io.silv.manga.network.mangadex.requests.MangaRequest
-import io.silv.core.Mapper
-import io.silv.manga.domain.MangaToMangaResourceMapper
-import io.silv.manga.local.entity.syncerForEntity
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -42,9 +37,7 @@ internal class OfflineFirstMangaRepository(
         return mangaResourceDao.getResourceAsFlowById(id)
     }
 
-    override fun getMangaResources(
-        query: MangaQuery
-    ): Flow<List<MangaResource>> = mangaResourceDao.getMangaResources()
+    override fun getMangaResources(): Flow<List<MangaResource>> = mangaResourceDao.getMangaResources()
 
     override suspend fun loadNextPage(): Boolean = withContext(scope.coroutineContext) {
         runCatching {

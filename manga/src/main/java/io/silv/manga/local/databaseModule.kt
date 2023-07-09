@@ -1,7 +1,6 @@
-package io.silv.manga.di
+package io.silv.manga.local
 
 import androidx.room.Room
-import io.silv.manga.local.AmadeusDatabase
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 

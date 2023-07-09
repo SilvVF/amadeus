@@ -8,7 +8,7 @@ interface MangaRepository  {
 
     fun getMangaResource(id: String): Flow<MangaResource?>
 
-    fun getMangaResources(query: MangaQuery): Flow<List<MangaResource>>
+    fun getMangaResources(): Flow<List<MangaResource>>
 
     suspend fun loadNextPage(): Boolean
 }

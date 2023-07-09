@@ -12,7 +12,6 @@ import io.silv.manga.local.workers.ChapterDeletionWorkerTag
 import io.silv.manga.local.workers.ChapterDownloadWorker
 import io.silv.manga.local.workers.ChapterDownloadWorkerTag
 import io.silv.manga.sync.anyRunning
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -24,7 +23,7 @@ class MangaViewSM(
     initialManga: DomainManga
 ): AmadeusScreenModel<MangaViewEvent>() {
 
-    private val loading = combineMangaChapterInfo.loading
+    private val loading = combineMangaChapterInfo.loading(initialManga.id)
         .stateInUi(false)
 
 

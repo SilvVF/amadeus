@@ -1,10 +1,7 @@
-package io.silv.manga.di
+package io.silv.manga.local.workers
 
 import androidx.work.WorkManager
-import io.silv.manga.local.workers.ChapterDeletionWorker
-import io.silv.manga.local.workers.ChapterDownloadWorker
 import io.silv.manga.sync.SavedMangaSyncManager
-import io.silv.manga.local.workers.MangaSyncWorker
 import io.silv.manga.sync.SyncManager
 import io.silv.manga.sync.Synchronizer
 import org.koin.android.ext.koin.androidContext
@@ -14,11 +11,7 @@ import org.koin.core.module.dsl.named
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 
-val localModule = module {
-
-    includes(daosModule)
-
-
+val workerModule = module {
     single {
         SavedMangaSyncManager(androidContext())
     } withOptions {

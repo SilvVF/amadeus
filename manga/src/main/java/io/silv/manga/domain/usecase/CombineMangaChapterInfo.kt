@@ -7,13 +7,15 @@ import io.silv.manga.domain.repositorys.MangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 
 class CombineMangaChapterInfo(
     private val mangaRepository: MangaRepository,
     private val savedMangaRepository: SavedMangaRepository,
     private val chapterInfoRepository: ChapterInfoRepository
 ) {
-    val loading = chapterInfoRepository.loading
+    fun loading(id: String) = chapterInfoRepository.loadingIds
+        .map { ids -> ids.any { it == id } }
 
     operator fun invoke(id: String): Flow<MangaFull> {
         return combine(
@@ -23,9 +25,7 @@ class CombineMangaChapterInfo(
         ) { mangaResource, savedManga, chapterInfo ->
             println("CombinedMangaChapterInfoVolumeImagesRepositoryImpl new MANGA FULL")
             MangaFull(
-                domainManga =
-                savedManga?.let { DomainManga(it) } ?:
-                mangaResource?.let { DomainManga(it, null) },
+                domainManga = mangaResource?.let { DomainManga(it, savedManga) },
                 volumeImages = savedManga?.volumeToCoverArt ?: mangaResource?.volumeToCoverArt,
                 chapterInfo = chapterInfo.map {
                     DomainChapter(it)

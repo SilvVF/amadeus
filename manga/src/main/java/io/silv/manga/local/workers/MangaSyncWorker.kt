@@ -11,7 +11,6 @@ import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.core.pmap
 import io.silv.manga.domain.repositorys.ChapterInfoRepository
-import io.silv.manga.domain.repositorys.MangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.sync.Synchronizer
 import org.koin.core.component.KoinComponent
@@ -40,11 +39,7 @@ internal class MangaSyncWorker(
         return if (allSynced) {
             Result.success()
         } else {
-            if (runAttemptCount < 3) {
-                Result.retry()
-            } else {
-                Result.failure()
-            }
+            Result.failure()
         }
     }
 
@@ -60,8 +55,8 @@ internal class MangaSyncWorker(
             return OneTimeWorkRequestBuilder<MangaSyncWorker>()
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .setBackoffCriteria(
-                    BackoffPolicy.LINEAR,
-                    Duration.ofSeconds(5),
+                    BackoffPolicy.EXPONENTIAL,
+                    Duration.ofSeconds(15),
                 )
                 .setConstraints(SyncConstraints)
                 .build()

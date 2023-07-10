@@ -13,9 +13,9 @@ data class SavedMangaEntity(
 
     val progressState: ProgressState = ProgressState.NotStarted,
 
-    val readChapters: List<Int>,
+    val readChapters: List<String>,
 
-    val chapterToLastReadPage: Map<Int, String>,
+    val chapterToLastReadPage: Map<String, Int>,
 
     val coverArt: String,
 

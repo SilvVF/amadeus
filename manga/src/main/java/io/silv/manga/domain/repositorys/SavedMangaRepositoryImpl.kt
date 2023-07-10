@@ -98,6 +98,21 @@ internal class SavedMangaRepositoryImpl(
         return savedMangaDao.getMangaByIdAsFlow(id)
     }
 
+    override suspend fun updateLastReadPage(mangaId: String, chapterId: String, page: Int) {
+        withContext(dispatchers.io) {
+            savedMangaDao.getMangaById(mangaId)?.let { entity ->
+                savedMangaDao.updateSavedManga(
+                    entity.copy(
+                        chapterToLastReadPage = entity.chapterToLastReadPage.toMutableMap().apply {
+                            if ((this[chapterId] ?: 0) < page)
+                                this[chapterId] = page
+                        }
+                    )
+                )
+            }
+        }
+    }
+
     override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
         return synchronizer.syncWithSyncer(
             syncer = syncer,

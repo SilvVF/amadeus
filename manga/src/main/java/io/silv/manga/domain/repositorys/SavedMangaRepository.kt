@@ -22,4 +22,6 @@ interface SavedMangaRepository: Syncable {
     fun getSavedMangas(): Flow<List<SavedMangaEntity>>
 
     fun getSavedManga(id: String): Flow<SavedMangaEntity?>
+
+    suspend fun updateLastReadPage(mangaId: String, chapterId: String, page: Int)
 }

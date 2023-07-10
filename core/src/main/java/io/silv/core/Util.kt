@@ -108,3 +108,7 @@ fun <K, T> Map<K, List<T>>.pForEachKey(
         }
     }
 }
+
+fun lerp(start: Float, stop: Float, fraction: Float): Float {
+    return (start * (1f - fraction)) + (stop * fraction)
+}

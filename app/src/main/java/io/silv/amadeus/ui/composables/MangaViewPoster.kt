@@ -58,9 +58,10 @@ import io.silv.amadeus.ui.theme.LocalSpacing
 @Composable
 fun MangaViewPoster(
     modifier: Modifier,
+    includeTopButtons: Boolean = true,
     manga: DomainManga,
-    onReadNowClick: () -> Unit,
-    onBookMarkClick: () -> Unit
+    onReadNowClick: () -> Unit = {},
+    onBookMarkClick: () -> Unit = {}
 ) {
 
     val ctx = LocalContext.current
@@ -160,26 +161,28 @@ fun MangaViewPoster(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Button(
-                        onClick = onReadNowClick
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Visibility,
-                            contentDescription = null,
-                            Modifier.padding(end = space.small)
-                        )
-                        Text("Read Now")
-                    }
-                    IconButton(
-                        onClick = onBookMarkClick
-                    ) {
-                        Icon(
-                            imageVector =    if (manga.bookmarked)
-                                Icons.Filled.BookmarkRemove
-                            else
-                                Icons.Filled.BookmarkBorder,
-                            contentDescription = null
-                        )
+                    if (includeTopButtons) {
+                        Button(
+                            onClick = onReadNowClick
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Visibility,
+                                contentDescription = null,
+                                Modifier.padding(end = space.small)
+                            )
+                            Text("Read Now")
+                        }
+                        IconButton(
+                            onClick = onBookMarkClick
+                        ) {
+                            Icon(
+                                imageVector =    if (manga.bookmarked)
+                                    Icons.Filled.BookmarkRemove
+                                else
+                                    Icons.Filled.BookmarkBorder,
+                                contentDescription = null
+                            )
+                        }
                     }
                 }
                 LazyRow {

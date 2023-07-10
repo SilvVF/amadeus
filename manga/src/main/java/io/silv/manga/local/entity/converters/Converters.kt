@@ -31,6 +31,28 @@ class Converters {
     }
 
     @TypeConverter
+    fun fromStringIntMap(map: Map<String, Int>): String {
+        val sortedMap = TreeMap(map)
+        return sortedMap.keys.joinToString(separator = ",").plus("<divider>")
+            .plus(sortedMap.values.joinToString(separator = ","))
+    }
+
+    @TypeConverter
+    fun toStringIntMap(value: String): Map<String, Int> {
+        return value.ifEmpty { return emptyMap() }.split("<divider>").run {
+
+            val keys = getOrNull(0)?.split(",")
+            val values = getOrNull(1)?.split(",")?.map { it.toIntOrNull() ?: 0 }
+
+            val res = hashMapOf<String, Int>()
+            keys?.forEachIndexed { index, s ->
+                res[s] = values?.getOrNull(index) ?: 0
+            }
+            res
+        }
+    }
+
+    @TypeConverter
     fun fromIntMap(map: Map<Int, String>): String {
         val sortedMap = TreeMap(map)
         return sortedMap.keys.joinToString(separator = ",").plus("<divider>")

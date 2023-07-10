@@ -5,6 +5,7 @@ import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.ProgressState
 import kotlinx.parcelize.Parcelize
 import java.io.Serializable
+import java.util.UUID
 
 @Parcelize
 data class DomainChapter(
@@ -44,4 +45,27 @@ data class DomainChapter(
         updatedAt = entity.updatedAt,
         readableAt = ""
     )
+
+    companion object {
+        fun test(): DomainChapter {
+            return DomainChapter(
+                id = UUID.randomUUID().toString(),
+                downloaded = true,
+                progress = ProgressState.values().random(),
+                mangaId = UUID.randomUUID().toString(),
+                imageUris = emptyList(),
+                title = "test chapter",
+                volume = "1",
+                chapter = "1",
+                pages = 30,
+                translatedLanguage = "en",
+                uploader = "",
+                externalUrl = "",
+                version = 1,
+                createdAt = "1212",
+                updatedAt = "1121",
+                readableAt = "1212"
+            )
+        }
+    }
 }

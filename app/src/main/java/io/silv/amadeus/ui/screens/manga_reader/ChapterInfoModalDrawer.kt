@@ -23,11 +23,14 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.ReadMore
 import androidx.compose.material3.Button
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,18 +48,23 @@ import io.silv.manga.local.entity.ProgressState
 @Composable
 fun ChapterInfoModalDrawer(
     modifier: Modifier = Modifier,
+    drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
     manga: DomainManga,
     chapter: DomainChapter,
     chapters: List<DomainChapter>,
     onChapterClicked: (DomainChapter) -> Unit,
-    onGoToNextChapterClicked: () -> Unit,
-    onGoToPrevChapterClicked: () -> Unit,
+    onGoToNextChapterClicked: (DomainChapter) -> Unit,
+    onGoToPrevChapterClicked: (DomainChapter) -> Unit,
     content: @Composable () -> Unit
 ) {
     val space = LocalSpacing.current
 
     ModalNavigationDrawer(
+        drawerState = drawerState,
         drawerContent = {
+            if (drawerState.isClosed) {
+                return@ModalNavigationDrawer
+            }
             Column(
                 modifier
                     .clip(
@@ -83,8 +91,12 @@ fun ChapterInfoModalDrawer(
                     }
                     ChapterNavigationButtons(
                         Modifier.fillMaxWidth(0.8f),
-                        goNextClicked = onGoToNextChapterClicked,
-                        goPrevClick = onGoToPrevChapterClicked
+                        goNextClicked = {
+                           onGoToNextChapterClicked(chapter)
+                        },
+                        goPrevClick = {
+                            onGoToPrevChapterClicked(chapter)
+                        }
                     )
                 }
 

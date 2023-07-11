@@ -100,12 +100,32 @@ internal class SavedMangaRepositoryImpl(
 
     override suspend fun updateLastReadPage(mangaId: String, chapterId: String, page: Int) {
         withContext(dispatchers.io) {
+            val chapter = chapterDao.getById(chapterId) ?: return@withContext
+            chapterDao.updateChapter(
+                chapter.copy(
+                    progressState = when(page) {
+                        chapter.pages -> ProgressState.Finished
+                        in 1..chapter.pages -> {
+                            if (chapter.progressState != ProgressState.Finished)
+                                ProgressState.Reading
+                            else
+                                ProgressState.Finished
+                        }
+                        else -> ProgressState.NotStarted
+                    }
+                )
+            )
             savedMangaDao.getMangaById(mangaId)?.let { entity ->
                 savedMangaDao.updateSavedManga(
                     entity.copy(
                         chapterToLastReadPage = entity.chapterToLastReadPage.toMutableMap().apply {
                             if ((this[chapterId] ?: 0) < page)
                                 this[chapterId] = page
+                        },
+                        readChapters = if (page == chapter.pages) {
+                            entity.readChapters + chapterId
+                        } else {
+                            entity.readChapters
                         }
                     )
                 )

@@ -2,6 +2,7 @@ package io.silv.amadeus.ui.screens
 
 import io.ktor.http.parameters
 import io.silv.amadeus.ui.screens.home.HomeSM
+import io.silv.amadeus.ui.screens.library.LibrarySM
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderSM
 import io.silv.amadeus.ui.screens.manga_view.MangaViewSM
 import io.silv.amadeus.ui.screens.saved.SavedMangaSM
@@ -13,6 +14,8 @@ import org.koin.core.qualifier.qualifier
 import org.koin.dsl.module
 
 val screenModule = module {
+
+    factoryOf(::LibrarySM)
 
     factory {  (mangaId: String, chapterId: String) ->
         MangaReaderSM(

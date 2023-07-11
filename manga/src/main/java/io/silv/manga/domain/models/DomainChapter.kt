@@ -11,7 +11,7 @@ import java.util.UUID
 data class DomainChapter(
     val id: String,
     val downloaded: Boolean,
-    val progress: ProgressState = ProgressState.NotStarted,
+    val progress: ProgressState,
     val mangaId: String,
     val imageUris: List<String> = emptyList(),
     val title: String? = null,

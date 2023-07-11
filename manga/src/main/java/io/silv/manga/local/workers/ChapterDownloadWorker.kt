@@ -5,8 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
-import android.util.Log
-import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
@@ -18,23 +16,14 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.core.AmadeusDispatchers
-import io.silv.core.pForEach
-import io.silv.core.pmap
-import io.silv.ktor_response_mapper.getOrNull
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.ChapterToChapterEntityMapper
 import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.MangaResourceDao
 import io.silv.manga.local.dao.SavedMangaDao
-import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.network.mangadex.MangaDexApi
-import io.silv.manga.network.mangadex.models.common.Tag
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
@@ -47,7 +36,7 @@ const val ChapterDownloadWorkerTag = "ChapterDownloadWorker"
 
 
 
-class ChapterImageCache(
+class ImageDownloader(
     private val context: Context,
     private val dispatchers: AmadeusDispatchers
 ) {
@@ -62,12 +51,18 @@ class ChapterImageCache(
         val inputStream = image.openStream().buffered()
         val bitmap = BitmapFactory.decodeStream(inputStream)
 
-        val fileName = "$mangaId-$chapterId-$pageNumber.png"
+        val ext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) "webp" else "png"
+
+        val fileName = "$mangaId-$chapterId-$pageNumber.$ext"
 
         val file = File(context.filesDir, fileName)
 
         file.outputStream().buffered().use {
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, it)
+            } else {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+            }
         }
 
         file.toUri()
@@ -85,7 +80,7 @@ class ChapterDownloadWorker(
     private val savedMangaDao by inject<SavedMangaDao>()
     private val mangaDexApi by inject<MangaDexApi>()
 
-    private val downloader = ChapterImageCache(appContext, dispatchers)
+    private val downloader = ImageDownloader(appContext, dispatchers)
 
     override suspend fun doWork(): Result {
 

@@ -1,6 +1,7 @@
 package io.silv.amadeus.ui.screens.manga_reader
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -20,19 +22,17 @@ import coil.request.ImageRequest
 @Composable
 fun MangaImagePager(
     imageUris: List<String>,
-    state: PagerState
+    horizontalState: PagerState,
+    modifier: Modifier,
 ) {
     val ctx = LocalContext.current
-
     HorizontalPager(
-        contentPadding = PaddingValues(horizontal = 100.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.8f),
+        contentPadding = PaddingValues(horizontal = 0.dp),
         pageCount = imageUris.size,
+        modifier = modifier,
         pageSize = PageSize.Fill,
-        state = state
-    ){ page ->
+        state = horizontalState
+    ) { page ->
         AsyncImage(
             model = ImageRequest.Builder(ctx)
                 .data(imageUris[page])

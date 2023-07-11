@@ -15,6 +15,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MangaReaderSM(
@@ -45,12 +46,26 @@ class MangaReaderSM(
     )
         .stateInUi(MangaReaderState.Loading)
 
-    fun goToNextChapter() = coroutineScope.launch {
-
+    fun goToNextChapter(chapter: DomainChapter) = coroutineScope.launch {
+        chapterId.update { id ->
+            val chapterNumber = chapter.chapter?.toIntOrNull() ?: 0
+            (mangaWithChapters.value as? MangaReaderState.Success)?.let { state ->
+                state.chapters.find {
+                    it.chapter?.toIntOrNull() == chapterNumber + 1
+                }?.id ?: id
+            } ?: id
+        }
     }
 
-    fun goToPrevChapter() = coroutineScope.launch {
-
+    fun goToPrevChapter(chapter: DomainChapter) = coroutineScope.launch {
+        chapterId.update { id ->
+            val chapterNumber = chapter.chapter?.toIntOrNull() ?: 0
+            (mangaWithChapters.value as? MangaReaderState.Success)?.let { state ->
+                state.chapters.find {
+                    it.chapter?.toIntOrNull() == chapterNumber - 1
+                }?.id ?: id
+            } ?: id
+        }
     }
 
     fun goToChapter(id: String) = coroutineScope.launch {

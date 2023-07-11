@@ -41,7 +41,6 @@ class HomeScreen: Screen {
         val state by sm.mangaUiState.collectAsStateWithLifecycle()
         val isSyncing by sm.isSyncing.collectAsStateWithLifecycle()
 
-        val ctx = LocalContext.current
         val space = LocalSpacing.current
         val navigator = LocalNavigator.current
         val gridState = rememberLazyGridState()

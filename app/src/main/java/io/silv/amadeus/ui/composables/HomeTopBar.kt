@@ -4,6 +4,7 @@ package io.silv.amadeus.ui.composables
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,32 +23,22 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun HomeTopBar(
     modifier: Modifier = Modifier,
-    searchText: String,
-    onSearchTextChange: (query: String) -> Unit,
     searchButtonClick: () -> Unit = {}
 ) {
-    Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start,
         modifier = modifier
     ) {
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(0.8f),
-            value = searchText,
-            onValueChange = onSearchTextChange,
-            trailingIcon = {
-                IconButton(
-                    onClick = searchButtonClick,
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Search,
-                        contentDescription = Icons.Filled.Search.name
-                    )
-                }
-                           },
-            singleLine = true,
-            placeholder = { Text("Search Manga...") },
-            shape = RoundedCornerShape(12.dp)
+        Text(
+            modifier = Modifier.weight(1f),
+            text = "Home",
         )
+        IconButton(onClick = { searchButtonClick() }) {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = "search"
+            )
+        }
     }
 }

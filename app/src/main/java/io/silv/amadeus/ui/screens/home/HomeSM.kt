@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class HomeSM(
@@ -43,8 +44,8 @@ class HomeSM(
             searchMangaRepository.getMangaResources(
                 ResourceQuery(
                     title = txt,
-                    includedTags = emptyList(),
-                    excludedTags = emptyList()
+                    includedTags = null,
+                    excludedTags = null
                 )
             )
         }
@@ -83,8 +84,8 @@ class HomeSM(
         savedMangaRepository.bookmarkManga(mangaId)
     }
 
-    fun searchTextChanged(query: String) = coroutineScope.launch {
-        mutableSearchText.emit(query)
+    fun searchTextChanged(query: String)  {
+        mutableSearchText.update { query }
     }
 
     fun loadNextPopularPage() = coroutineScope.launch {

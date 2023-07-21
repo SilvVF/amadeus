@@ -94,7 +94,7 @@ fun List<QueryParam>.createQuery(base: String): String {
     val params = this
 
 
-    return StringBuilder().apply {
+    val urlString = StringBuilder().apply {
         append(
             base.removeSuffix("/")
         )
@@ -116,7 +116,29 @@ fun List<QueryParam>.createQuery(base: String): String {
             }
         }
     }
-        .toString().also {
-            Log.d("QUERY", it)
+        .toString()
+
+    // use %20 for whitespace in queries
+    var urlWithSpaces = ""
+    var i = 0
+    var lastWhiteSpace = false
+
+    while (i <= urlString.lastIndex) {
+        if (urlString[i] == ' ') {
+            lastWhiteSpace = true
+            i += 1
+            continue
+        } else {
+            if (lastWhiteSpace) {
+                lastWhiteSpace = false
+                urlWithSpaces += "%20"
+            }
         }
+        urlWithSpaces += urlString[i]
+        i += 1
+    }
+
+    return urlWithSpaces.also {
+        Log.d("QUERY", it)
+    }
 }

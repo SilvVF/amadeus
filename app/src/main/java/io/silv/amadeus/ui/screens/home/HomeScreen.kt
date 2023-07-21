@@ -1,5 +1,6 @@
 package io.silv.amadeus.ui.screens.home
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,17 +25,31 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,22 +62,27 @@ import io.silv.amadeus.ui.composables.HomeTopBar
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
+import io.silv.amadeus.ui.theme.LocalPaddingValues
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.DomainManga
 import kotlinx.coroutines.launch
 
 class HomeScreen: Screen {
 
+    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     override fun Content() {
         val sm = getScreenModel<HomeSM>()
 
         val recentMangaState by sm.recentMangaUiState.collectAsStateWithLifecycle()
         val popularMangaState by sm.popularMangaUiState.collectAsStateWithLifecycle()
+        val searchMangaState by sm.searchMangaUiState.collectAsStateWithLifecycle()
         val searchText by sm.searchText.collectAsStateWithLifecycle()
+        var searching by rememberSaveable { mutableStateOf(false) }
 
         val space = LocalSpacing.current
         val navigator = LocalNavigator.current
+        val bottomBarPadding by LocalPaddingValues.current
         val gridState = rememberLazyGridState()
         val popularMangaListState = rememberLazyListState()
         var bottomBarVisibility by LocalBottomBarVisibility.current
@@ -93,11 +113,88 @@ class HomeScreen: Screen {
                 .systemBarsPadding()
                 .navigationBarsPadding()
         ) {
+            if (searching) {
+                Column(Modifier.fillMaxSize()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start,
+                    ) {
+                        IconButton(onClick = { searching = false }) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowBack,
+                                contentDescription = null
+                            )
+                        }
+                        var focused by remember { mutableStateOf(false) }
+                        val bgc = MaterialTheme.colorScheme.onBackground
+                        BasicTextField(
+                            value = searchText,
+                            modifier = Modifier.onFocusChanged {
+                                focused = it.isFocused
+                            },
+                            singleLine = true,
+                            textStyle = TextStyle(
+                                color = bgc
+                            ),
+                            onValueChange = sm::searchTextChanged,
+                            decorationBox = { innerTextField ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Start,
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.9f)
+                                        .padding(space.small)
+                                        .drawBehind {
+                                            drawLine(
+                                                color = bgc,
+                                                start = Offset(0f, this.size.height),
+                                                end = Offset(this.size.width,  this.size.height),
+                                                strokeWidth = 2f
+                                            )
+                                        }
+                                ) {
+                                    if (searchText.isEmpty() && !focused) {
+                                        Text("Search for mangas...", color = bgc)
+                                    }
+                                    innerTextField()
+                                }
+                            }
+                        )
+                    }
+                    LazyVerticalGrid(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(bottomBarPadding),
+                        state = gridState,
+                        columns = GridCells.Fixed(2)
+                    ) {
+                        items(
+                            items = searchMangaState,
+                            key = {item: DomainManga -> item.id }
+                        ) { manga ->
+                            MangaListItem(
+                                manga = manga,
+                                modifier = Modifier
+                                    .padding(space.large)
+                                    .clickable {
+                                        navigator?.push(
+                                            MangaViewScreen(manga)
+                                        )
+                                    },
+                                onBookmarkClick = { sm.bookmarkManga(manga.id) }
+                            )
+                        }
+                    }
+                }
+                return
+            }
             HomeTopBar(
-                modifier = Modifier.fillMaxWidth(),
-                searchText = searchText,
-                onSearchTextChange = { query ->
-                    sm.searchTextChanged(query)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(space.large),
+                searchButtonClick = {
+                    searching = true
                 }
             )
             LazyVerticalGrid(
@@ -109,7 +206,11 @@ class HomeScreen: Screen {
             ) {
                 header {
                     Column {
-                        Text(text = "Trending", style = MaterialTheme.typography.headlineMedium)
+                        Text(
+                            text = "Trending",
+                            style = MaterialTheme.typography.headlineMedium,
+                            modifier = Modifier.padding(space.med)
+                        )
                         LazyRow(
                             state = popularMangaListState,
                         ) {
@@ -155,6 +256,13 @@ class HomeScreen: Screen {
                                 }
                             }
                         }}
+                }
+                header {
+                    Text(
+                        text = "Recently Updated",
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.padding(space.med)
+                    )
                 }
                 items(
                     items = recentMangaState,

@@ -54,7 +54,6 @@ internal class SearchMangaRepositoryImpl(
                         includedTags = query.includedTags,
                         excludedTags = query.excludedTags,
                         title = query.title,
-                        hasAvailableChapter = true,
                         availableTranslatedLanguage = listOf("en")
                     )
                 )

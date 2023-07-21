@@ -52,7 +52,6 @@ internal class RecentMangaRepositoryImpl(
                         limit = MANGA_PAGE_LIMIT,
                         includes = listOf("cover_art"),
                         status = listOf("ongoing"),
-                        hasAvailableChapter = true,
                         availableTranslatedLanguage = listOf("en")
                     )
                 )

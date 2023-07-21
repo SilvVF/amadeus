@@ -52,7 +52,6 @@ internal class PopularMangaRepositoryImpl(
                         limit = MANGA_PAGE_LIMIT,
                         includes = listOf("cover_art"),
                         order = mapOf("followedCount" to "dsc"),
-                        hasAvailableChapter = true,
                         availableTranslatedLanguage = listOf("en")
                     )
                 )

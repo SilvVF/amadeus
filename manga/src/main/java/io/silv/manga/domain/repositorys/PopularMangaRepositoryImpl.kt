@@ -22,7 +22,7 @@ internal class PopularMangaRepositoryImpl(
 ): PopularMangaRepository {
 
     private val mapper = MangaToPopularMangaResourceMapper
-    private val scope = CoroutineScope(dispatchers.io) + CoroutineName("RecentMangaRepositoryImpl")
+    private val scope = CoroutineScope(dispatchers.io) + CoroutineName("PopularMangaRepositoryImpl")
 
     private val MANGA_PAGE_LIMIT = 50
     private var currentOffset: Int = 0
@@ -51,7 +51,7 @@ internal class PopularMangaRepositoryImpl(
                         offset = currentOffset,
                         limit = MANGA_PAGE_LIMIT,
                         includes = listOf("cover_art"),
-                        order = mapOf("followedCount" to "dsc"),
+                        order = mapOf("followedCount" to "desc"),
                         availableTranslatedLanguage = listOf("en")
                     )
                 )

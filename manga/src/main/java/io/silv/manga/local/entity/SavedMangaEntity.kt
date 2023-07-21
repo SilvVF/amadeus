@@ -49,7 +49,6 @@ data class SavedMangaEntity(
 
     val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
 ): AmadeusEntity {
-
     constructor(mangaResource: MangaResource): this(
         id = mangaResource.id,
         progressState = ProgressState.NotStarted,

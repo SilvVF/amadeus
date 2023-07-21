@@ -2,9 +2,9 @@ package io.silv.manga.domain.repositorys
 
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
-import io.silv.manga.domain.MangaToMangaResourceMapper
-import io.silv.manga.local.dao.MangaResourceDao
-import io.silv.manga.local.entity.MangaResource
+import io.silv.manga.domain.MangaToRecentMangaResourceMapper
+import io.silv.manga.local.dao.RecentMangaResourceDao
+import io.silv.manga.local.entity.RecentMangaResource
 import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.models.manga.Manga
@@ -15,29 +15,32 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
 
-internal class OfflineFirstMangaRepository(
+internal class RecentMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,
-    private val mangaResourceDao: MangaResourceDao,
-    private val dispatchers: AmadeusDispatchers
-): MangaRepository {
+    private val mangaResourceDao: RecentMangaResourceDao,
+    dispatchers: AmadeusDispatchers
+): RecentMangaRepository {
 
-    private val mapper = MangaToMangaResourceMapper
-    private val scope = CoroutineScope(dispatchers.io) + CoroutineName("OfflineFirstMangaRepository")
+    private val mapper = MangaToRecentMangaResourceMapper
+    private val scope = CoroutineScope(dispatchers.io) + CoroutineName("RecentMangaRepositoryImpl")
 
     private val MANGA_PAGE_LIMIT = 50
     private var currentOffset: Int = 0
 
-    private val syncer = syncerForEntity<MangaResource, Manga, String>(
+
+    private val syncer = syncerForEntity<RecentMangaResource, Manga, String>(
         networkToKey = { n -> n.id },
         mapper = { manga, resource -> mapper.map(manga to resource) },
         upsert = { mangaResourceDao.upsertManga(it) }
     )
 
-    override fun getMangaResource(id: String): Flow<MangaResource?> {
+    override fun getMangaResource(id: String): Flow<RecentMangaResource?> {
         return mangaResourceDao.getResourceAsFlowById(id)
     }
 
-    override fun getMangaResources(): Flow<List<MangaResource>> = mangaResourceDao.getMangaResources()
+    override fun getMangaResources(): Flow<List<RecentMangaResource>> {
+        return mangaResourceDao.getMangaResources()
+    }
 
     override suspend fun loadNextPage(): Boolean = withContext(scope.coroutineContext) {
         runCatching {
@@ -47,11 +50,14 @@ internal class OfflineFirstMangaRepository(
                     MangaRequest(
                         offset = currentOffset,
                         limit = MANGA_PAGE_LIMIT,
-                        includes = listOf("cover_art")
+                        includes = listOf("cover_art"),
+                        status = listOf("ongoing"),
+                        hasAvailableChapter = true,
+                        availableTranslatedLanguage = listOf("en")
                     )
                 )
                     .getOrThrow()
-                    .data,
+                    .data
             )
 
             // Initial load delete previous resources

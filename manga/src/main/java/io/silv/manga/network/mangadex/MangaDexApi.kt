@@ -1,6 +1,7 @@
 package io.silv.manga.network.mangadex
 
 import ChapterListResponse
+import android.util.Log
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.ApiResponse
 import io.silv.ktor_response_mapper.client.KSandwichClient
@@ -34,7 +35,7 @@ class MangaDexApi(
     private suspend inline fun <reified T : Any> KSandwichClient.getWithCache(request: String): ApiResponse<T> {
         cache[request]?.let { success ->
             val response = success as? ApiResponse.Success<T>
-            response?.let { return it }
+            response?.let { return it.also { Log.d("MangaDexApi", "Value from cache") } }
         }
         return this.get<T>(request).also {
             it.suspendOnSuccess {

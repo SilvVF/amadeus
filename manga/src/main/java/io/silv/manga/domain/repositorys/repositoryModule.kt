@@ -10,10 +10,17 @@ val repositoryModule = module {
 
     includes(useCaseModule)
 
-    singleOf(::OfflineFirstMangaRepository) withOptions {
-        bind<MangaRepository>()
+    singleOf(::RecentMangaRepositoryImpl) withOptions {
+        bind<RecentMangaRepository>()
     }
 
+    singleOf(::PopularMangaRepositoryImpl) withOptions {
+        bind<PopularMangaRepository>()
+    }
+
+    singleOf(::SearchMangaRepositoryImpl) withOptions {
+        bind<SearchMangaRepository>()
+    }
 
     singleOf(::SavedMangaRepositoryImpl) withOptions {
         bind<SavedMangaRepository>()

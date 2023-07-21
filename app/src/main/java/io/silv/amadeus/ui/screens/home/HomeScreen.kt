@@ -1,7 +1,9 @@
 package io.silv.amadeus.ui.screens.home
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -17,8 +19,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
@@ -38,8 +40,9 @@ class HomeScreen: Screen {
     override fun Content() {
         val sm = getScreenModel<HomeSM>()
 
-        val state by sm.mangaUiState.collectAsStateWithLifecycle()
-        val isSyncing by sm.isSyncing.collectAsStateWithLifecycle()
+        val recentMangaState by sm.recentMangaUiState.collectAsStateWithLifecycle()
+        val popularMangaState by sm.popularMangaUiState.collectAsStateWithLifecycle()
+        val searchText by sm.searchText.collectAsStateWithLifecycle()
 
         val space = LocalSpacing.current
         val navigator = LocalNavigator.current
@@ -50,7 +53,7 @@ class HomeScreen: Screen {
             bottomBarVisibility = true
             snapshotFlow { gridState.canScrollForward }.collect {
                 if (!it) {
-                    sm.goToNextPage()
+                    sm.loadNextRecentPage()
                 }
             }
         }
@@ -60,7 +63,13 @@ class HomeScreen: Screen {
                 .systemBarsPadding()
                 .navigationBarsPadding()
         ) {
-            HomeTopBar(modifier = Modifier.fillMaxWidth())
+            HomeTopBar(
+                modifier = Modifier.fillMaxWidth(),
+                searchText = searchText,
+                onSearchTextChange = { query ->
+                    sm.searchTextChanged(query)
+                }
+            )
             LazyVerticalGrid(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -69,7 +78,7 @@ class HomeScreen: Screen {
                 columns = GridCells.Fixed(2)
             ) {
                 items(
-                    items = state,
+                    items = recentMangaState,
                     key = {item: DomainManga -> item.id }
                 ) { manga ->
                     MangaListItem(
@@ -84,8 +93,13 @@ class HomeScreen: Screen {
                         onBookmarkClick = { sm.bookmarkManga(manga.id) }
                     )
                 }
-                if (isSyncing) {
-                    items(6) {
+            }
+            if (sm.loadingRecentManga) {
+                Row(Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    repeat(2) {
                         AnimatedBoxShimmer(Modifier.size(220.dp))
                     }
                 }

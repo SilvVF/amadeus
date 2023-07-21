@@ -18,8 +18,8 @@ import androidx.work.WorkerParameters
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.ChapterToChapterEntityMapper
+import io.silv.manga.domain.usecase.GetMangaResourceById
 import io.silv.manga.local.dao.ChapterDao
-import io.silv.manga.local.dao.MangaResourceDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.network.mangadex.MangaDexApi
@@ -70,13 +70,13 @@ class ImageDownloader(
 }
 
 class ChapterDownloadWorker(
-    private val appContext: Context,
+    appContext: Context,
     workerParameters: WorkerParameters,
 ): CoroutineWorker(appContext, workerParameters), KoinComponent {
 
     private val dispatchers by inject<AmadeusDispatchers>()
     private val chapterDao by inject<ChapterDao>()
-    private val mangaResourceDao by inject<MangaResourceDao>()
+    private val getMangaResourceById by inject<GetMangaResourceById>()
     private val savedMangaDao by inject<SavedMangaDao>()
     private val mangaDexApi by inject<MangaDexApi>()
 
@@ -89,7 +89,10 @@ class ChapterDownloadWorker(
 
         // Create saved manga if it is being downloaded from a resource
         savedMangaDao.getMangaById(mangaId) ?: run {
-            val mangaResource = mangaResourceDao.getMangaById(mangaId) ?: return Result.failure()
+            val (mangaResource, daoId) = getMangaResourceById(mangaId)
+            if (mangaResource == null || daoId == -1) {
+                return Result.failure()
+            }
             SavedMangaEntity(mangaResource).also { savedMangaDao.upsertManga(it) }
         }
 

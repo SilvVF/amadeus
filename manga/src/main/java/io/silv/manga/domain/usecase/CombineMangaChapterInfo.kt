@@ -3,14 +3,19 @@ package io.silv.manga.domain.usecase
 import io.silv.manga.domain.models.DomainChapter
 import io.silv.manga.domain.models.DomainManga
 import io.silv.manga.domain.repositorys.ChapterInfoRepository
-import io.silv.manga.domain.repositorys.MangaRepository
+import io.silv.manga.domain.repositorys.PopularMangaRepository
+import io.silv.manga.domain.repositorys.RecentMangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
+import io.silv.manga.domain.repositorys.SearchMangaRepository
+import io.silv.manga.local.entity.MangaResource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 class CombineMangaChapterInfo(
-    private val mangaRepository: MangaRepository,
+    private val recentMangaRepository: RecentMangaRepository,
+    private val popularMangaRepository: PopularMangaRepository,
+    private val searchMangaRepository: SearchMangaRepository,
     private val savedMangaRepository: SavedMangaRepository,
     private val chapterInfoRepository: ChapterInfoRepository
 ) {
@@ -19,14 +24,17 @@ class CombineMangaChapterInfo(
 
     operator fun invoke(id: String): Flow<MangaFull> {
         return combine(
-            mangaRepository.getMangaResource(id),
+            popularMangaRepository.getMangaResource(id),
+            searchMangaRepository.getMangaResource(id),
+            recentMangaRepository.getMangaResource(id),
             savedMangaRepository.getSavedManga(id),
             chapterInfoRepository.getChapters(id)
-        ) { mangaResource, savedManga, chapterInfo ->
+        ) { popular, search, recent, savedManga, chapterInfo ->
             println("CombinedMangaChapterInfoVolumeImagesRepositoryImpl new MANGA FULL")
+            val resource: MangaResource? = popular ?: search ?: recent
             MangaFull(
-                domainManga = mangaResource?.let { DomainManga(it, savedManga) },
-                volumeImages = savedManga?.volumeToCoverArt ?: mangaResource?.volumeToCoverArt,
+                domainManga = resource?.let { DomainManga(it, savedManga) },
+                volumeImages = savedManga?.volumeToCoverArt ?: resource?.volumeToCoverArt,
                 chapterInfo = chapterInfo.map {
                     DomainChapter(it)
                 }

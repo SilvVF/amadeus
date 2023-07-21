@@ -25,7 +25,7 @@ data class MangaRequest(
     val contentRating: List<String>?  = null,
     val createdAtSince: String? = null,
     val updatedAtSince: String?  = null,
-    val order: Map<Order, OrderBy>? = null,
+    val order: Map<String, String>? = null,
     val includes: List<String>? = null,
     val hasAvailableChapter: Boolean? = null,
     val group: String? = null

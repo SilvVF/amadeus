@@ -1,15 +1,15 @@
 package io.silv.manga.domain.repositorys
 
 import io.silv.core.AmadeusDispatchers
+import io.silv.manga.domain.usecase.GetMangaResourceById
 import io.silv.manga.domain.usecase.UpdateChapterWithArt
-import io.silv.manga.local.dao.ChapterDao
-import io.silv.manga.local.dao.MangaResourceDao
-import io.silv.manga.local.dao.SavedMangaDao
-import io.silv.manga.local.entity.ChapterEntity
-import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.domain.usecase.UpdateInfo
 import io.silv.manga.domain.usecase.UpdateResourceChapterWithArt
 import io.silv.manga.domain.usecase.UpdateResourceInfo
+import io.silv.manga.local.dao.ChapterDao
+import io.silv.manga.local.dao.SavedMangaDao
+import io.silv.manga.local.entity.ChapterEntity
+import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.sync.Synchronizer
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -25,7 +25,7 @@ internal class OfflineFirstChapterInfoRepository(
     private val chapterDao: ChapterDao,
     private val mangaDexApi: MangaDexApi,
     private val savedMangaDao: SavedMangaDao,
-    private val mangaResourceDao: MangaResourceDao,
+    private val getMangaResourceById: GetMangaResourceById,
     private val updateChapter: UpdateChapterWithArt,
     private val updateResourceChapter: UpdateResourceChapterWithArt,
     dispatchers: AmadeusDispatchers,
@@ -48,7 +48,7 @@ internal class OfflineFirstChapterInfoRepository(
         loadingIds.update { it + mangaId }
 
         val savedManga = savedMangaDao.getMangaById(mangaId)
-        val mangaResource = mangaResourceDao.getMangaById(mangaId)
+        val (mangaResource, daoId) = getMangaResourceById(mangaId)
 
         if (savedManga != null) {
             updateChapter(
@@ -63,11 +63,11 @@ internal class OfflineFirstChapterInfoRepository(
         } else if (mangaResource != null) {
             updateResourceChapter(
                 UpdateResourceInfo(
-                    mangaId,
-                    chapterDao,
-                    mangaResourceDao,
-                    mangaDexApi,
-                    mangaResource
+                    id = mangaId,
+                    chapterDao = chapterDao,
+                    mangaDexApi = mangaDexApi,
+                    daoId = daoId,
+                    mangaResource = mangaResource
                 )
             )
         }

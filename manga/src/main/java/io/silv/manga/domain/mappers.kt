@@ -2,6 +2,7 @@ package io.silv.manga.domain
 
 import io.silv.core.Mapper
 import io.silv.manga.local.entity.ChapterEntity
+import io.silv.manga.local.entity.FilteredMangaResource
 import io.silv.manga.local.entity.PopularMangaResource
 import io.silv.manga.local.entity.ProgressState
 import io.silv.manga.local.entity.RecentMangaResource
@@ -10,6 +11,7 @@ import io.silv.manga.local.entity.SearchMangaResource
 import io.silv.manga.local.entity.SeasonalMangaResource
 import io.silv.manga.network.mangadex.models.chapter.Chapter
 import io.silv.manga.network.mangadex.models.manga.Manga
+import kotlinx.datetime.Clock
 
 typealias ChapterWithPrevEntity = Pair<Chapter, ChapterEntity?>
 
@@ -53,6 +55,7 @@ object MangaToSeasonalMangaResourceMapper: Mapper<Pair<Manga, SeasonalMangaResou
                 version = attributes.version,
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
+                tagToId = tagToId
             )
         }
     }
@@ -79,6 +82,7 @@ object MangaToPopularMangaResourceMapper: Mapper<Pair<Manga, PopularMangaResourc
                 version = attributes.version,
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
+                tagToId = tagToId
             )
         }
     }
@@ -106,6 +110,35 @@ object MangaToSearchMangaResourceMapper: Mapper<Pair<Manga, SearchMangaResource?
                 version = attributes.version,
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
+                tagToId = tagToId
+            )
+        }
+    }
+}
+
+object MangaToFilteredMangaResourceMapper: Mapper<Pair<Manga, FilteredMangaResource?>, FilteredMangaResource> {
+
+    override fun map(from: Pair<Manga, FilteredMangaResource?>): FilteredMangaResource {
+        val (manga, saved) = from
+        return with(manga) {
+            FilteredMangaResource(
+                id = id,
+                description = manga.descriptionEnglish,
+                coverArt = coverArtUrl(manga),
+                titleEnglish = manga.titleEnglish,
+                alternateTitles = manga.alternateTitles,
+                originalLanguage = attributes.originalLanguage,
+                availableTranslatedLanguages = attributes.availableTranslatedLanguages
+                    .filterNotNull(),
+                status = attributes.status,
+                contentRating = attributes.contentRating,
+                lastVolume = attributes.lastVolume,
+                lastChapter = attributes.lastChapter,
+                version = attributes.version,
+                createdAt = attributes.createdAt,
+                updatedAt = attributes.updatedAt,
+                tagToId = tagToId,
+                savedLocalAtEpochSeconds = saved?.savedLocalAtEpochSeconds ?: Clock.System.now().epochSeconds
             )
         }
     }
@@ -133,6 +166,7 @@ object MangaToRecentMangaResourceMapper: Mapper<Pair<Manga, RecentMangaResource?
                 version = attributes.version,
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
+                tagToId = tagToId
             )
         }
     }
@@ -164,6 +198,7 @@ object MangaEntityMapper: Mapper<Pair<Manga, SavedMangaEntity?>, SavedMangaEntit
             volumeToCoverArt = saved?.volumeToCoverArt ?: emptyMap(),
             createdAt = network.attributes.createdAt,
             updatedAt = network.attributes.updatedAt,
+            tagToId = network.tagToId
         )
     }
 }

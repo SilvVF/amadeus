@@ -15,12 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BookOnline
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material.icons.filled.Visibility
@@ -28,7 +23,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,14 +40,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
-import io.silv.manga.domain.models.DomainManga
+import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.manga.domain.models.DomainManga
 
 @Composable
 fun MangaViewPoster(
@@ -66,6 +62,7 @@ fun MangaViewPoster(
 
     val ctx = LocalContext.current
     val space = LocalSpacing.current
+    val navigator = LocalNavigator.current
 
     var isTransformed by rememberSaveable { mutableStateOf(false) }
 
@@ -185,26 +182,16 @@ fun MangaViewPoster(
                         }
                     }
                 }
-                LazyRow {
-                    items(manga.availableTranslatedLanguages) {
-                        SuggestionChip(
-                            onClick = {},
-                            label = { Text(it) },
-                            Modifier.padding(end = space.small),
+                TranslatedLanguageTags(tags = manga.availableTranslatedLanguages)
+                MangaGenreTags(
+                    tags = manga.tagToId.keys.toList(),
+                    onTagClick = { name ->
+                    manga.tagToId[name]?.let {
+                        navigator?.push(
+                            MangaFilterScreen(name, it)
                         )
                     }
-                }
-                LazyRow {
-                    items(
-                        emptyList<String>()// TODO()
-                    ) {
-                        SuggestionChip(
-                            onClick = {},
-                            label = { Text(it) },
-                            Modifier.padding(end = space.small),
-                        )
-                    }
-                }
+                })
                 LazyColumn {
                     item {
                         Text(

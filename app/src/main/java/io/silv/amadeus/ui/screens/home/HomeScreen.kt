@@ -72,6 +72,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -83,8 +84,10 @@ import coil.request.ImageRequest
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.ConfirmCloseAppPopup
 import io.silv.amadeus.ui.composables.HomeTopBar
+import io.silv.amadeus.ui.composables.MangaGenreTags
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.composables.TranslatedLanguageTags
+import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.noRippleClickable
@@ -93,6 +96,7 @@ import io.silv.amadeus.ui.theme.LocalPaddingValues
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.DomainManga
 import kotlinx.coroutines.launch
+
 
 class HomeScreen: Screen {
 
@@ -183,7 +187,14 @@ class HomeScreen: Screen {
                 columns = GridCells.Fixed(2)
             ) {
                 header {
-                   SeasonalMangaPager(seasonalManga = seasonalMangaState) {
+                   SeasonalMangaPager(
+                       seasonalManga = seasonalMangaState,
+                       onMangaClick = {
+                           navigator?.push(
+                               MangaViewScreen(it)
+                           )
+                       }
+                   ) {
                        sm.bookmarkManga(it.id)
                    }
                 }
@@ -221,6 +232,13 @@ class HomeScreen: Screen {
                                     MangaViewScreen(manga)
                                 )
                             },
+                        onTagClick = { name ->
+                            manga.tagToId[name]?.let {
+                                navigator?.push(
+                                    MangaFilterScreen(name, it)
+                                )
+                            }
+                        },
                         onBookmarkClick = { sm.bookmarkManga(manga.id) }
                     )
                 }
@@ -245,10 +263,12 @@ class HomeScreen: Screen {
 @Composable
 fun SeasonalMangaPager(
     seasonalManga: List<DomainManga>,
+    onMangaClick: (manga: DomainManga) -> Unit,
     onBookmarkClick: (manga: DomainManga) -> Unit
 ) {
     val space = LocalSpacing.current
     val context = LocalContext.current
+    val navigator = LocalNavigator.current
     val pagerState = rememberPagerState()
     val scope = rememberCoroutineScope()
 
@@ -272,7 +292,10 @@ fun SeasonalMangaPager(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(0.9f)
-                    .clip(RoundedCornerShape(12.dp)),
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable {
+                        onMangaClick(manga)
+                    },
                 url = manga.coverArt
             ) {
 
@@ -309,12 +332,25 @@ fun SeasonalMangaPager(
                             Column {
                                 Text(
                                     text = manga.titleEnglish,
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    maxLines = 2
+                                    style = MaterialTheme.typography.titleMedium,
+                                    maxLines = 2,
+                                    fontSize = 20.sp,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 TranslatedLanguageTags(
                                     tags = manga.availableTranslatedLanguages,
                                     modifier = Modifier.fillMaxWidth()
+                                )
+                                MangaGenreTags(
+                                    tags = manga.tagToId.keys.toList(),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onTagClick = { name ->
+                                        manga.tagToId[name]?.let {
+                                            navigator?.push(
+                                                MangaFilterScreen(name, it)
+                                            )
+                                        }
+                                    }
                                 )
                                 Row(
                                     Modifier.weight(1f),
@@ -454,6 +490,7 @@ fun TrendingMangaList(
     onBookmarkClick: (manga: DomainManga) -> Unit
 ) {
     val space = LocalSpacing.current
+    val navigator = LocalNavigator.current
     Column {
         Text(
             text = "Trending",
@@ -484,10 +521,17 @@ fun TrendingMangaList(
                         modifier = Modifier
                             .padding(space.large)
                             .width(240.dp)
-                            .height(290.dp)
+                            .height(330.dp)
                             .clickable {
                                 onMangaClick(manga)
                             },
+                        onTagClick = { name ->
+                            manga.tagToId[name]?.let {
+                                navigator?.push(
+                                    MangaFilterScreen(name, it)
+                                )
+                            }
+                        },
                         onBookmarkClick = { onBookmarkClick(manga) }
                     )
                 }
@@ -515,6 +559,7 @@ fun SearchItemsList(
     onBookmarkClick: (manga: DomainManga) -> Unit
 ) {
     val space = LocalSpacing.current
+    val navigator = LocalNavigator.current
     LazyVerticalGrid(
         modifier = modifier,
         state = state,
@@ -533,8 +578,15 @@ fun SearchItemsList(
                     },
                     onBookmarkClick = {
                         onBookmarkClick(manga)
+                    },
+                onTagClick = { name ->
+                    manga.tagToId[name]?.let {
+                        navigator?.push(
+                            MangaFilterScreen(name, it)
+                        )
                     }
-                )
+                }
+            )
         }
     }
 }

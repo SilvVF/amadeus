@@ -8,7 +8,9 @@ val useCaseModule = module {
         UpdateResourceChapterWithArt.defaultImpl(
             popularMangaResourceDao = get(),
             recentMangaResourceDao = get(),
-            searchMangaResourceDao = get()
+            searchMangaResourceDao = get(),
+            filteredMangaResourceDao = get(),
+            seasonalMangaResourceDao = get()
         )
     }
 
@@ -20,6 +22,7 @@ val useCaseModule = module {
 
     factory {
         GetMangaResourceById.defaultImpl(
+            get(),
             get(),
             get(),
             get(),

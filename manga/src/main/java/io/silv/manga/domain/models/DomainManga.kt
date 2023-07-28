@@ -22,6 +22,7 @@ data class DomainManga(
     val originalLanguage: String,
     val availableTranslatedLanguages: List<String>,
     val status: Status,
+    val tagToId: Map<String, String>,
     val contentRating: ContentRating,
     val lastVolume: String? = null,
     val lastChapter: String? = null,
@@ -33,7 +34,7 @@ data class DomainManga(
     val readChapters: List<String>,
     val chapterToLastReadPage: Map<String, Int>,
 
-): Parcelable, Serializable {
+    ): Parcelable, Serializable {
     constructor(savedManga: SavedMangaEntity) : this(
         id = savedManga.id,
         bookmarked = savedManga.bookmarked,
@@ -45,6 +46,7 @@ data class DomainManga(
         originalLanguage = savedManga.originalLanguage,
         availableTranslatedLanguages = savedManga.availableTranslatedLanguages,
         status = savedManga.status,
+        tagToId = savedManga.tagToId,
         contentRating = savedManga.contentRating,
         lastVolume = savedManga.lastVolume,
         lastChapter = savedManga.lastChapter,
@@ -67,6 +69,7 @@ data class DomainManga(
         originalLanguage = mangaResource.originalLanguage,
         availableTranslatedLanguages = mangaResource.availableTranslatedLanguages,
         status = mangaResource.status,
+        tagToId = mangaResource.tagToId,
         contentRating = mangaResource.contentRating,
         lastVolume = mangaResource.lastVolume,
         lastChapter = mangaResource.lastChapter,

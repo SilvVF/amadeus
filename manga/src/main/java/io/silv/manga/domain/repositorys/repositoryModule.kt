@@ -33,4 +33,8 @@ val repositoryModule = module {
     singleOf(::SeasonalMangaRepositoryImpl) withOptions {
         bind<SeasonalMangaRepository>()
     }
+
+    singleOf(::FilteredMangaRepositoryImpl) withOptions {
+        bind<FilteredMangaRepository>()
+    }
 }

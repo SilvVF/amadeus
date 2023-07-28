@@ -7,7 +7,7 @@ import io.silv.manga.network.mangadex.models.Status
 import kotlinx.datetime.Clock
 
 @Entity
-data class PopularMangaResource(
+data class FilteredMangaResource(
 
     @PrimaryKey override val id: String,
 

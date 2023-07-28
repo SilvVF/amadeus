@@ -25,6 +25,15 @@ val Manga.titleEnglish: String
     get() = attributes.title.getOrElse("en") {
         attributes.altTitles.firstNotNullOfOrNull { it["ja-ro"] } ?: "No english title"
     }
+
+val Manga.tagToId: Map<String, String>
+    get() = attributes.tags
+        .filter { it.type == "tag" }
+        .mapNotNull {
+            (it.attributes.name["en"] ?: it.attributes.name["ja-ro"] ?: return@mapNotNull null) to it.id
+        }
+        .toMap()
+
 val Manga.descriptionEnglish: String
     get() = attributes.description.getOrDefault("en", "No english description")
 

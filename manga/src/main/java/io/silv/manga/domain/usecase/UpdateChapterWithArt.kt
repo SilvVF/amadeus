@@ -4,15 +4,19 @@ import io.silv.ktor_response_mapper.getOrNull
 import io.silv.manga.domain.ChapterToChapterEntityMapper
 import io.silv.manga.domain.coverArtUrl
 import io.silv.manga.local.dao.ChapterDao
+import io.silv.manga.local.dao.FilteredMangaResourceDao
 import io.silv.manga.local.dao.PopularMangaResourceDao
 import io.silv.manga.local.dao.RecentMangaResourceDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.dao.SearchMangaResourceDao
+import io.silv.manga.local.dao.SeasonalMangaResourceDao
+import io.silv.manga.local.entity.FilteredMangaResource
 import io.silv.manga.local.entity.MangaResource
 import io.silv.manga.local.entity.PopularMangaResource
 import io.silv.manga.local.entity.RecentMangaResource
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.local.entity.SearchMangaResource
+import io.silv.manga.local.entity.SeasonalMangaResource
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.requests.CoverArtRequest
 import io.silv.manga.network.mangadex.requests.MangaFeedRequest
@@ -40,7 +44,9 @@ internal fun interface UpdateResourceChapterWithArt: suspend  (UpdateResourceInf
         fun defaultImpl(
             popularMangaResourceDao: PopularMangaResourceDao,
             recentMangaResourceDao: RecentMangaResourceDao,
-            searchMangaResourceDao: SearchMangaResourceDao
+            searchMangaResourceDao: SearchMangaResourceDao,
+            filteredMangaResourceDao: FilteredMangaResourceDao,
+            seasonalMangaResourceDao: SeasonalMangaResourceDao
         ) = UpdateResourceChapterWithArt { info ->
             updateVolumeCoverArtAndChapterInfoForResource(
                 id = info.id,
@@ -65,6 +71,20 @@ internal fun interface UpdateResourceChapterWithArt: suspend  (UpdateResourceInf
                         SearchMangaResourceDao.id -> {
                             searchMangaResourceDao.update(
                                 (info.mangaResource as SearchMangaResource).copy(
+                                    volumeToCoverArt = volumeToCoverArt
+                                )
+                            )
+                        }
+                        FilteredMangaResourceDao.id -> {
+                            filteredMangaResourceDao.update(
+                                (info.mangaResource as FilteredMangaResource).copy(
+                                    volumeToCoverArt = volumeToCoverArt
+                                )
+                            )
+                        }
+                        SeasonalMangaResourceDao.id -> {
+                            seasonalMangaResourceDao.update(
+                                (info.mangaResource as SeasonalMangaResource).copy(
                                     volumeToCoverArt = volumeToCoverArt
                                 )
                             )

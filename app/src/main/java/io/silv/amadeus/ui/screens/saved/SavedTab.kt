@@ -49,6 +49,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.screens.home.vertical
+import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.shadow
@@ -85,6 +86,8 @@ object SavedTab: Tab {
 }
 
 class SavedScreen: Screen {
+
+    //TODO(add ui to show saved with pages read)
 
     @Composable
     override fun Content() {
@@ -145,7 +148,7 @@ fun Saved(
                 Column {
                     Text("Bookmarked", style = MaterialTheme.typography.headlineMedium)
                     LazyRow {
-                        itemsIndexed(bookmarked) { i, (manga, chapterInfo) ->
+                        itemsIndexed(bookmarked) { i, (manga, _) ->
                             Row(
                                 verticalAlignment = Alignment.Bottom,
                             ) {
@@ -172,6 +175,13 @@ fun Saved(
                                                 MangaViewScreen(manga)
                                             )
                                         },
+                                    onTagClick = {name ->
+                                        manga.tagToId[name]?.let {
+                                            navigator?.push(
+                                                MangaFilterScreen(name, it)
+                                            )
+                                        }
+                                    },
                                     onBookmarkClick = { bookmarkManga(manga.id) }
                                 )
                             }

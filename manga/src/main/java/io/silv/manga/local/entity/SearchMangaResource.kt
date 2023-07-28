@@ -25,6 +25,8 @@ data class SearchMangaResource(
 
     override val status: Status,
 
+    override val tagToId: Map<String, String>,
+
     override val contentRating: ContentRating,
 
     override val lastVolume: String? = null,
@@ -39,7 +41,8 @@ data class SearchMangaResource(
 
     override val volumeToCoverArt: Map<String, String> = emptyMap(),
 
-    override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
+    override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds,
+
 ): MangaResource, AmadeusEntity {
 
     constructor(savedMangaEntity: SavedMangaEntity): this(
@@ -51,6 +54,7 @@ data class SearchMangaResource(
         originalLanguage = savedMangaEntity.originalLanguage,
         availableTranslatedLanguages = savedMangaEntity.availableTranslatedLanguages,
         status = savedMangaEntity.status,
+        tagToId = savedMangaEntity.tagToId,
         contentRating = savedMangaEntity.contentRating,
         lastVolume = savedMangaEntity.lastVolume,
         lastChapter = savedMangaEntity.lastChapter,

@@ -25,6 +25,8 @@ data class SeasonalMangaResource(
 
     override val status: Status,
 
+    override val tagToId: Map<String, String>,
+
     override val contentRating: ContentRating,
 
     override val lastVolume: String? = null,
@@ -51,6 +53,7 @@ data class SeasonalMangaResource(
         originalLanguage = savedMangaEntity.originalLanguage,
         availableTranslatedLanguages = savedMangaEntity.availableTranslatedLanguages,
         status = savedMangaEntity.status,
+        tagToId = savedMangaEntity.tagToId,
         contentRating = savedMangaEntity.contentRating,
         lastVolume = savedMangaEntity.lastVolume,
         lastChapter = savedMangaEntity.lastChapter,

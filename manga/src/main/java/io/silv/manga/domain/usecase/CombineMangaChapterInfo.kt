@@ -4,6 +4,7 @@ import io.silv.core.combine
 import io.silv.manga.domain.models.DomainChapter
 import io.silv.manga.domain.models.DomainManga
 import io.silv.manga.domain.repositorys.ChapterInfoRepository
+import io.silv.manga.domain.repositorys.FilteredMangaRepository
 import io.silv.manga.domain.repositorys.PopularMangaRepository
 import io.silv.manga.domain.repositorys.RecentMangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
@@ -18,8 +19,9 @@ class CombineMangaChapterInfo(
     private val recentMangaRepository: RecentMangaRepository,
     private val seasonalMangaRepository: SeasonalMangaRepository,
     private val searchMangaRepository: SearchMangaRepository,
+    private val filteredMangaRepository: FilteredMangaRepository,
     private val savedMangaRepository: SavedMangaRepository,
-    private val chapterInfoRepository: ChapterInfoRepository
+    private val chapterInfoRepository: ChapterInfoRepository,
 ) {
     fun loading(id: String) = chapterInfoRepository.loadingIds
         .map { ids -> ids.any { it == id } }
@@ -30,10 +32,11 @@ class CombineMangaChapterInfo(
             recentMangaRepository.getMangaResource(id),
             seasonalMangaRepository.getMangaResource(id),
             searchMangaRepository.getMangaResource(id),
+            filteredMangaRepository.getMangaResource(id),
             savedMangaRepository.getSavedManga(id),
             chapterInfoRepository.getChapters(id)
-        ) { popular, recent, seasonal, search, saved, chapterInfo ->
-            val resource: MangaResource? = popular ?: recent ?: seasonal ?: search
+        ) { popular, recent, seasonal, search, filtered, saved, chapterInfo ->
+            val resource: MangaResource? = popular ?: recent ?: seasonal ?: search ?: filtered
             MangaFull(
                 domainManga = resource?.let { DomainManga(it, saved) },
                 volumeImages = saved?.volumeToCoverArt ?: resource?.volumeToCoverArt,

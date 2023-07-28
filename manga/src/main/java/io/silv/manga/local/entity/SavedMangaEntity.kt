@@ -31,6 +31,8 @@ data class SavedMangaEntity(
 
     val status: Status,
 
+    val tagToId: Map<String, String>,
+
     val contentRating: ContentRating,
 
     val lastVolume: String? = null,
@@ -61,6 +63,7 @@ data class SavedMangaEntity(
         originalLanguage = mangaResource.originalLanguage,
         availableTranslatedLanguages = mangaResource.availableTranslatedLanguages,
         status = mangaResource.status,
+        tagToId = mangaResource.tagToId,
         contentRating = mangaResource.contentRating,
         lastVolume = mangaResource.lastVolume,
         lastChapter = mangaResource.lastChapter,

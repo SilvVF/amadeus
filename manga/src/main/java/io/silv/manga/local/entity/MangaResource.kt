@@ -11,6 +11,7 @@ interface MangaResource {
     val alternateTitles: Map<String, String>
     val originalLanguage: String
     val availableTranslatedLanguages: List<String>
+    val tagToId: Map<String, String>
     val status: Status
     val contentRating: ContentRating
     val lastVolume: String?

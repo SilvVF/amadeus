@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -35,6 +36,7 @@ import io.silv.manga.domain.models.DomainManga
 fun MangaListItem(
     modifier: Modifier = Modifier,
     manga: DomainManga,
+    onTagClick: (tag: String) -> Unit,
     onBookmarkClick: () -> Unit
 ) {
 
@@ -72,11 +74,40 @@ fun MangaListItem(
             bookmarked = manga.bookmarked,
             modifier = Modifier.fillMaxWidth()
         )
+        MangaGenreTags(
+            tags = manga.tagToId.keys.toList(),
+            modifier = Modifier.fillMaxWidth(),
+            onTagClick = {name ->
+                onTagClick(name)
+            }
+        )
         Spacer(modifier = Modifier.height(space.small))
         Text(
             text = manga.titleEnglish,
             style = MaterialTheme.typography.titleMedium
         )
+    }
+}
+
+@Composable
+fun MangaGenreTags(
+    modifier: Modifier = Modifier,
+    tags: List<String>,
+    onTagClick: (tag: String) -> Unit = {}
+) {
+    val space = LocalSpacing.current
+
+    LazyRow(modifier) {
+        items(
+            items = tags,
+            key = { item -> item }
+        ) {language ->
+            SuggestionChip(
+                onClick = { onTagClick(language) },
+                label = { Text(language) },
+                modifier = Modifier.padding(horizontal = space.small)
+            )
+        }
     }
 }
 
@@ -96,7 +127,7 @@ fun TranslatedLanguageTags(
             SuggestionChip(
                 onClick = { onLanguageClick(language) },
                 label = { Text(language) },
-                modifier = Modifier.padding(space.small)
+                modifier = Modifier.padding(horizontal = space.small)
             )
         }
     }
@@ -112,7 +143,7 @@ fun TranslatedLanguageTagsWithBookmark(
 ) {
     val space = LocalSpacing.current
 
-    LazyRow(modifier) {
+    LazyRow(modifier, verticalAlignment = Alignment.CenterVertically) {
         item {
             IconButton(onClick = onBookmarkClick) {
                 if (bookmarked) Icon(

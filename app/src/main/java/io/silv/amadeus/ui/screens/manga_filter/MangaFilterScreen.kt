@@ -38,7 +38,7 @@ class MangaFilterScreen(
     @Composable
     override fun Content() {
 
-        val sm = getScreenModel<MangaFilterSM> { parametersOf(tag, tagId) }
+        val sm = getScreenModel<MangaFilterSM> { parametersOf(tagId) }
         val navigator = LocalNavigator.current
         val searchItemsState by sm.filteredUiState.collectAsStateWithLifecycle()
         val lazyGridState = rememberLazyGridState()

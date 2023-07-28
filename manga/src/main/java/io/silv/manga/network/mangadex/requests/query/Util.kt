@@ -45,7 +45,7 @@ private fun StringBuilder.appendList(name: String, value: String) {
     list.forEachIndexed { i, it ->
         append(name)
         append("[]=")
-        append(it)
+        append(it.trimStart())
         if (i != list.lastIndex)
             append('&')
     }

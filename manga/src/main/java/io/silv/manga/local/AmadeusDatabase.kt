@@ -8,11 +8,13 @@ import io.silv.manga.local.dao.PopularMangaResourceDao
 import io.silv.manga.local.dao.RecentMangaResourceDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.dao.SearchMangaResourceDao
+import io.silv.manga.local.dao.SeasonalMangaResourceDao
 import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.PopularMangaResource
 import io.silv.manga.local.entity.RecentMangaResource
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.local.entity.SearchMangaResource
+import io.silv.manga.local.entity.SeasonalMangaResource
 import io.silv.manga.local.entity.converters.Converters
 
 @Database(
@@ -21,7 +23,8 @@ import io.silv.manga.local.entity.converters.Converters
         SavedMangaEntity::class,
         RecentMangaResource::class,
         PopularMangaResource::class,
-        SearchMangaResource::class
+        SearchMangaResource::class,
+        SeasonalMangaResource::class
     ],
     version = 1,
 )
@@ -37,4 +40,6 @@ internal abstract class AmadeusDatabase: RoomDatabase() {
     abstract fun popularMangaResourceDao(): PopularMangaResourceDao
 
     abstract fun searchMangaResourceDao(): SearchMangaResourceDao
+
+    abstract fun seasonalMangaResourceDao(): SeasonalMangaResourceDao
 }

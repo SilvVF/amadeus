@@ -11,6 +11,8 @@ import io.silv.manga.network.mangadex.models.chapter.Chapter
 import io.silv.manga.network.mangadex.models.chapter.ChapterImageResponse
 import io.silv.manga.network.mangadex.models.cover.Cover
 import io.silv.manga.network.mangadex.models.cover.CoverArtListResponse
+import io.silv.manga.network.mangadex.models.list.ListByIdResponse
+import io.silv.manga.network.mangadex.models.list.UserIdListResponse
 import io.silv.manga.network.mangadex.models.manga.MangaAggregateResponse
 import io.silv.manga.network.mangadex.models.manga.MangaByIdResponse
 import io.silv.manga.network.mangadex.models.manga.MangaListResponse
@@ -42,6 +44,18 @@ class MangaDexApi(
                 cache[request] = this
             }
         }
+    }
+
+    suspend fun getListById(
+        id: String
+    ) = withContext(dispatchers.io) {
+        client.get<ListByIdResponse>("$mangaDexUrl/list/$id".also { println(it) })
+    }
+
+    suspend fun getUserLists(
+        id: String
+    ) = withContext(dispatchers.io) {
+        client.get<UserIdListResponse>("$mangaDexUrl/user/$id/list".also { println(it) })
     }
 
     suspend fun getCoverArtList(

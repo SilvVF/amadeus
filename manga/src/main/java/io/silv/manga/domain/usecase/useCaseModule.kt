@@ -22,6 +22,7 @@ val useCaseModule = module {
         GetMangaResourceById.defaultImpl(
             get(),
             get(),
+            get(),
             get()
         )
     }

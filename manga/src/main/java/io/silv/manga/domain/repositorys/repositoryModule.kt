@@ -29,4 +29,8 @@ val repositoryModule = module {
     singleOf(::OfflineFirstChapterInfoRepository) withOptions {
         bind<ChapterInfoRepository>()
     }
+
+    singleOf(::SeasonalMangaRepositoryImpl) withOptions {
+        bind<SeasonalMangaRepository>()
+    }
 }

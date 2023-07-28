@@ -9,6 +9,8 @@ import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.models.manga.Manga
 import io.silv.manga.network.mangadex.requests.MangaRequest
+import io.silv.manga.network.mangadex.requests.Order
+import io.silv.manga.network.mangadex.requests.OrderBy
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -51,8 +53,8 @@ internal class RecentMangaRepositoryImpl(
                         offset = currentOffset,
                         limit = MANGA_PAGE_LIMIT,
                         includes = listOf("cover_art"),
-                        status = listOf("ongoing"),
-                        availableTranslatedLanguage = listOf("en")
+                        availableTranslatedLanguage = listOf("en"),
+                        order = mapOf("createdAt" to "desc")
                     )
                 )
                     .getOrThrow()

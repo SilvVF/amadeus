@@ -8,6 +8,9 @@ interface SearchMangaRepository  {
     fun getMangaResource(id: String): Flow<SearchMangaResource?>
 
     fun getMangaResources(query: ResourceQuery): Flow<List<SearchMangaResource>>
+
+    val id: Int
+        get() = 3
 }
 
 data class ResourceQuery(

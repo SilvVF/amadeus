@@ -11,6 +11,7 @@ import io.silv.manga.domain.repositorys.RecentMangaRepository
 import io.silv.manga.domain.repositorys.ResourceQuery
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaRepository
+import io.silv.manga.domain.repositorys.SeasonalMangaRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,7 @@ class HomeSM(
     private val searchMangaRepository: SearchMangaRepository,
     private val recentMangaRepository: RecentMangaRepository,
     private val popularMangaRepository: PopularMangaRepository,
+    private val seasonalMangaRepository: SeasonalMangaRepository,
     private val savedMangaRepository: SavedMangaRepository,
 ): AmadeusScreenModel<HomeEvent>() {
 
@@ -36,6 +38,12 @@ class HomeSM(
 
     var loadingRecentManga by mutableStateOf(false)
         private set
+
+    init {
+        coroutineScope.launch {
+            seasonalMangaRepository.refreshList()
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     val mangaSearchFlow = searchText
@@ -72,6 +80,16 @@ class HomeSM(
 
     val recentMangaUiState = combine(
         recentMangaRepository.getMangaResources(),
+        savedMangaRepository.getSavedMangas()
+    ) { resources, saved ->
+        resources.map {
+            DomainManga(it, saved.find { manga -> manga.id == it.id })
+        }
+    }
+        .stateInUi(emptyList())
+
+    val seasonalMangaUiState = combine(
+        seasonalMangaRepository.getMangaResources(),
         savedMangaRepository.getSavedMangas()
     ) { resources, saved ->
         resources.map {

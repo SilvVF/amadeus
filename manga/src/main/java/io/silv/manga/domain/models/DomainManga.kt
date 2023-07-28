@@ -29,7 +29,10 @@ data class DomainManga(
     val createdAt: String,
     val updatedAt: String,
     val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds,
-    val volumeToCoverArtUrl: Map<String, String>
+    val volumeToCoverArtUrl: Map<String, String>,
+    val readChapters: List<String>,
+    val chapterToLastReadPage: Map<String, Int>,
+
 ): Parcelable, Serializable {
     constructor(savedManga: SavedMangaEntity) : this(
         id = savedManga.id,
@@ -49,7 +52,9 @@ data class DomainManga(
         createdAt = savedManga.createdAt,
         updatedAt = savedManga.updatedAt,
         savedLocalAtEpochSeconds = savedManga.savedLocalAtEpochSeconds,
-        volumeToCoverArtUrl = savedManga.volumeToCoverArt
+        volumeToCoverArtUrl = savedManga.volumeToCoverArt,
+        readChapters = savedManga.readChapters,
+        chapterToLastReadPage = savedManga.chapterToLastReadPage
     )
     constructor(mangaResource: MangaResource, savedManga: SavedMangaEntity?) : this(
         id = mangaResource.id,
@@ -69,6 +74,8 @@ data class DomainManga(
         createdAt = mangaResource.createdAt,
         updatedAt = mangaResource.updatedAt,
         savedLocalAtEpochSeconds = mangaResource.savedLocalAtEpochSeconds,
-        volumeToCoverArtUrl = savedManga?.volumeToCoverArt ?: emptyMap()
+        volumeToCoverArtUrl = savedManga?.volumeToCoverArt ?: emptyMap(),
+        readChapters = savedManga?.readChapters ?: emptyList(),
+        chapterToLastReadPage = savedManga?.chapterToLastReadPage ?: emptyMap()
     )
 }

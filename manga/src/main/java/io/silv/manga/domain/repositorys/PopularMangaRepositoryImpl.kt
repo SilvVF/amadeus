@@ -14,6 +14,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
+import java.time.Duration
+import kotlin.time.toKotlinDuration
 
 internal class PopularMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,
@@ -50,9 +53,19 @@ internal class PopularMangaRepositoryImpl(
                     MangaRequest(
                         offset = currentOffset,
                         limit = MANGA_PAGE_LIMIT,
-                        includes = listOf("cover_art"),
+                        includes = listOf("cover_art", "author", "artist"),
                         order = mapOf("followedCount" to "desc"),
-                        availableTranslatedLanguage = listOf("en")
+                        availableTranslatedLanguage = listOf("en"),
+                        hasAvailableChapters = true,
+                        createdAtSince = Clock.System.now()
+                            .minus(
+                                Duration.ofDays(30).toKotlinDuration()
+                            )
+                            .toString()
+                            .replace(":", "%3A")
+                            .takeWhile {
+                                it != '.'
+                            }
                     )
                 )
                     .getOrThrow()

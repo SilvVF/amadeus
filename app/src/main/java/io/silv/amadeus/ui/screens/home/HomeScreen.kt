@@ -20,11 +20,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
 import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -43,15 +45,15 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
@@ -76,6 +78,7 @@ class HomeScreen: Screen {
 
         val recentMangaState by sm.recentMangaUiState.collectAsStateWithLifecycle()
         val popularMangaState by sm.popularMangaUiState.collectAsStateWithLifecycle()
+        val seasonalMangaState by sm.seasonalMangaUiState.collectAsStateWithLifecycle()
         val searchMangaState by sm.searchMangaUiState.collectAsStateWithLifecycle()
         val searchText by sm.searchText.collectAsStateWithLifecycle()
         var searching by rememberSaveable { mutableStateOf(false) }
@@ -97,8 +100,8 @@ class HomeScreen: Screen {
                 }
             }
             launch {
-                snapshotFlow { popularMangaListState.firstVisibleItemIndex }.collect { i ->
-                    if (i + 2 >= popularMangaListState.layoutInfo.totalItemsCount * 0.9 && !sm.loadingPopularManga) {
+                snapshotFlow { popularMangaListState.canScrollForward }.collect {
+                    if (!it) {
                         sm.loadNextPopularPage()
                     }
                 }
@@ -114,79 +117,30 @@ class HomeScreen: Screen {
                 .navigationBarsPadding()
         ) {
             if (searching) {
-                Column(Modifier.fillMaxSize()) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start,
-                    ) {
-                        IconButton(onClick = { searching = false }) {
-                            Icon(
-                                imageVector = Icons.Filled.ArrowBack,
-                                contentDescription = null
-                            )
-                        }
-                        var focused by remember { mutableStateOf(false) }
-                        val bgc = MaterialTheme.colorScheme.onBackground
-                        BasicTextField(
-                            value = searchText,
-                            modifier = Modifier.onFocusChanged {
-                                focused = it.isFocused
-                            },
-                            singleLine = true,
-                            textStyle = TextStyle(
-                                color = bgc
-                            ),
-                            onValueChange = sm::searchTextChanged,
-                            decorationBox = { innerTextField ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Start,
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.9f)
-                                        .padding(space.small)
-                                        .drawBehind {
-                                            drawLine(
-                                                color = bgc,
-                                                start = Offset(0f, this.size.height),
-                                                end = Offset(this.size.width,  this.size.height),
-                                                strokeWidth = 2f
-                                            )
-                                        }
-                                ) {
-                                    if (searchText.isEmpty() && !focused) {
-                                        Text("Search for mangas...", color = bgc)
-                                    }
-                                    innerTextField()
-                                }
-                            }
+                SearchMangaTopBar(
+                    searchText = searchText,
+                    onSearchTextValueChange = {
+                        sm.searchTextChanged(it)
+                    },
+                    onBackArrowClicked = {
+                        searching = false
+                    }
+                )
+                SearchItemsList(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(bottomBarPadding),
+                    items = searchMangaState,
+                    onMangaClick = {
+                        navigator?.push(
+                            MangaViewScreen(it)
                         )
+                    },
+                    onBookmarkClick = {
+                        sm.bookmarkManga(it.id)
                     }
-                    LazyVerticalGrid(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(bottomBarPadding),
-                        state = gridState,
-                        columns = GridCells.Fixed(2)
-                    ) {
-                        items(
-                            items = searchMangaState,
-                            key = {item: DomainManga -> item.id }
-                        ) { manga ->
-                            MangaListItem(
-                                manga = manga,
-                                modifier = Modifier
-                                    .padding(space.large)
-                                    .clickable {
-                                        navigator?.push(
-                                            MangaViewScreen(manga)
-                                        )
-                                    },
-                                onBookmarkClick = { sm.bookmarkManga(manga.id) }
-                            )
-                        }
-                    }
-                }
+                )
                 return
             }
             HomeTopBar(
@@ -204,6 +158,22 @@ class HomeScreen: Screen {
                 state = gridState,
                 columns = GridCells.Fixed(2)
             ) {
+                header {
+                    Column {
+                        Text(
+                            text = "Seasonal",
+                            style = MaterialTheme.typography.headlineMedium,
+                            modifier = Modifier.padding(space.med)
+                        )
+                        HorizontalPager(
+                            pageCount = seasonalMangaState.size,
+                            modifier = Modifier.height(320.dp).fillMaxWidth()
+                        ) {
+                            val manga = seasonalMangaState[it]
+
+                        }
+                    }
+                }
                 header {
                     Column {
                         Text(
@@ -255,7 +225,8 @@ class HomeScreen: Screen {
                                     )
                                 }
                             }
-                        }}
+                        }
+                    }
                 }
                 header {
                     Text(
@@ -280,14 +251,16 @@ class HomeScreen: Screen {
                         onBookmarkClick = { sm.bookmarkManga(manga.id) }
                     )
                 }
-            }
-            if (sm.loadingRecentManga) {
-                Row(Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    repeat(2) {
-                        AnimatedBoxShimmer(Modifier.size(220.dp))
+                if (sm.loadingRecentManga) {
+                    header {
+                        Row(Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            repeat(2) {
+                                AnimatedBoxShimmer(Modifier.size(220.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -295,10 +268,102 @@ class HomeScreen: Screen {
     }
 }
 
+@Composable
+fun SearchItemsList(
+    modifier: Modifier = Modifier,
+    items: List<DomainManga>,
+    state: LazyGridState = rememberLazyGridState(),
+    onMangaClick: (manga: DomainManga) -> Unit,
+    onBookmarkClick: (manga: DomainManga) -> Unit
+) {
+    val space = LocalSpacing.current
+    LazyVerticalGrid(
+        modifier = modifier,
+        state = state,
+        columns = GridCells.Fixed(2)
+    ) {
+        items(
+            items = items,
+            key = { item: DomainManga -> item.id }
+        ) { manga ->
+            MangaListItem(
+                manga = manga,
+                modifier = Modifier
+                    .padding(space.large)
+                    .clickable {
+                        onMangaClick(manga)
+                    },
+                    onBookmarkClick = {
+                        onBookmarkClick(manga)
+                    }
+                )
+        }
+    }
+}
+
+@Composable
+fun SearchMangaTopBar(
+    searchText: String,
+    onSearchTextValueChange: (String) -> Unit,
+    onBackArrowClicked: () -> Unit,
+) {
+    val space = LocalSpacing.current
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start,
+    ) {
+        IconButton(onClick = onBackArrowClicked) {
+            Icon(
+                imageVector = Icons.Filled.ArrowBack,
+                contentDescription = null
+            )
+        }
+        var focused by remember { mutableStateOf(false) }
+        val bgc = MaterialTheme.colorScheme.onBackground
+        BasicTextField(
+            value = searchText,
+            modifier = Modifier.onFocusChanged {
+                focused = it.isFocused
+            },
+            singleLine = true,
+            textStyle = TextStyle(
+                color = bgc,
+                fontSize = 24.sp
+            ),
+            cursorBrush = SolidColor(bgc),
+            onValueChange = onSearchTextValueChange,
+            decorationBox = { innerTextField ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .height(60.dp)
+                        .padding(space.small)
+                        .drawBehind {
+                            drawLine(
+                                color = bgc,
+                                start = Offset(0f, this.size.height),
+                                end = Offset(this.size.width, this.size.height),
+                                strokeWidth = 2f
+                            )
+                        }
+                ) {
+                    if (searchText.isEmpty() && !focused) {
+                        Text("Search for mangas...", color = bgc, fontSize = 18.sp)
+                    }
+                    innerTextField()
+                }
+            }
+        )
+    }
+}
+
 fun LazyGridScope.header(
     content: @Composable LazyGridItemScope.() -> Unit
 ) {
-    item(span = { GridItemSpan(this.maxLineSpan) }, content = content)
+    item(
+        span = { GridItemSpan(this.maxLineSpan) }, content = content)
 }
 
 fun Modifier.vertical() =

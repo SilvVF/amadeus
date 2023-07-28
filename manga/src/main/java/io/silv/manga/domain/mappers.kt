@@ -7,6 +7,7 @@ import io.silv.manga.local.entity.ProgressState
 import io.silv.manga.local.entity.RecentMangaResource
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.local.entity.SearchMangaResource
+import io.silv.manga.local.entity.SeasonalMangaResource
 import io.silv.manga.network.mangadex.models.chapter.Chapter
 import io.silv.manga.network.mangadex.models.manga.Manga
 
@@ -28,6 +29,32 @@ object ChapterToChapterEntityMapper: Mapper<ChapterWithPrevEntity, ChapterEntity
             createdAt = chapter.attributes.createdAt,
             updatedAt = chapter.attributes.updatedAt,
         )
+    }
+}
+
+object MangaToSeasonalMangaResourceMapper: Mapper<Pair<Manga, SeasonalMangaResource?>, SeasonalMangaResource> {
+
+    override fun map(from: Pair<Manga, SeasonalMangaResource?>): SeasonalMangaResource {
+        val (manga, _) = from
+        return with(manga) {
+            SeasonalMangaResource(
+                id = id,
+                description = manga.descriptionEnglish,
+                coverArt = coverArtUrl(manga),
+                titleEnglish = manga.titleEnglish,
+                alternateTitles = manga.alternateTitles,
+                originalLanguage = attributes.originalLanguage,
+                availableTranslatedLanguages = attributes.availableTranslatedLanguages
+                    .filterNotNull(),
+                status = attributes.status,
+                contentRating = attributes.contentRating,
+                lastVolume = attributes.lastVolume,
+                lastChapter = attributes.lastChapter,
+                version = attributes.version,
+                createdAt = attributes.createdAt,
+                updatedAt = attributes.updatedAt,
+            )
+        }
     }
 }
 

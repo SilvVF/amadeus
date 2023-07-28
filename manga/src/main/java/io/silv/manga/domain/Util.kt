@@ -22,8 +22,9 @@ fun coverArtUrl(
 }
 
 val Manga.titleEnglish: String
-    get() = attributes.title.getOrDefault("en", "No english title")
-
+    get() = attributes.title.getOrElse("en") {
+        attributes.altTitles.firstNotNullOfOrNull { it["ja-ro"] } ?: "No english title"
+    }
 val Manga.descriptionEnglish: String
     get() = attributes.description.getOrDefault("en", "No english description")
 

@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
@@ -46,6 +47,7 @@ internal class SeasonalMangaRepositoryImpl(
     }
 
     private val mutableLoading = MutableStateFlow(false)
+
     override val loading: Flow<Boolean> = mutableLoading.asStateFlow()
 
     private fun seasonFromMonth(month: Int): String = when(month) {
@@ -53,6 +55,12 @@ internal class SeasonalMangaRepositoryImpl(
         in listOf(3, 4, 5) -> "winter"
         in listOf(6, 7 ,8) -> "spring"
         else -> "summer"
+    }
+
+    init {
+        scope.launch {
+            refreshList()
+        }
     }
 
     override suspend fun refreshList() {
@@ -83,11 +91,9 @@ internal class SeasonalMangaRepositoryImpl(
 
                     println("Seasonal $seasonalListInfo")
 
-                    val seasonalList = mangaDexApi.getListById(seasonalListInfo.id).getOrThrow()
-
+                    val seasonalList = mangaDexApi.getListById(seasonalListInfo.id)
+                        .getOrThrow()
                     println("Seasonal $seasonalList")
-
-
                     mangaDexApi.getMangaList(
                         MangaRequest(
                             limit = 100,
@@ -100,14 +106,18 @@ internal class SeasonalMangaRepositoryImpl(
                         )
                     )
                         .getOrThrow()
-                        .data.also {
-                            println("Seasonal $it")
-                        }
+                        .data
+                        .takeIf { it.isNotEmpty() }
+                        .also { println("Seasonal ${ it?.map { it.id }}") }
+                        ?: error("Seasonal empty list")
                 }
             )
             for(unhandled in result.unhandled) {
                 mangaResourceDao.delete(unhandled)
             }
+            println("Seasonal unhandled ${result.unhandled.map { it.id }}")
+            println("Seasonal updated ${result.updated.map { it.id }}")
+            println("Seasonal added ${result.added.map { it.id }}")
         }
             .onFailure {
                 it.printStackTrace()

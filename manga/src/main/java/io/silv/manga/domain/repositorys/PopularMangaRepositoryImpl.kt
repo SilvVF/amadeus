@@ -53,7 +53,7 @@ internal class PopularMangaRepositoryImpl(
                     MangaRequest(
                         offset = currentOffset,
                         limit = MANGA_PAGE_LIMIT,
-                        includes = listOf("cover_art", "author", "artist"),
+                        includes = listOf("cover_art"),
                         order = mapOf("followedCount" to "desc"),
                         availableTranslatedLanguage = listOf("en"),
                         hasAvailableChapters = true,

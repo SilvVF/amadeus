@@ -30,7 +30,7 @@ internal class Syncer<Local : AmadeusEntity, Network, Key>(
 
         val added = mutableListOf<Local>()
         val updated = mutableListOf<Local>()
-        val unhandled = current.toMutableList()
+        var unhandled = current
 
         for (networkValue in networkResponse) {
 
@@ -39,7 +39,7 @@ internal class Syncer<Local : AmadeusEntity, Network, Key>(
             if (savedEntity != null) {
                 val entity = networkToLocal(networkValue, savedEntity)
                 upsert(entity)
-                unhandled.remove(entity)
+                unhandled = unhandled.filter { it.id != entity.id }
                 updated.add(entity)
             } else {
                 val entity = networkToLocal(networkValue, null)

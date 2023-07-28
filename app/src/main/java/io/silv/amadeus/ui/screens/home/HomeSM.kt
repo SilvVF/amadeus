@@ -33,17 +33,13 @@ class HomeSM(
     private val mutableSearchText = MutableStateFlow("")
     val searchText = mutableSearchText.asStateFlow()
 
+    val seasonalMangaLoading = seasonalMangaRepository.loading.stateInUi(false)
+
     var loadingPopularManga by mutableStateOf(false)
         private set
 
     var loadingRecentManga by mutableStateOf(false)
         private set
-
-    init {
-        coroutineScope.launch {
-            seasonalMangaRepository.refreshList()
-        }
-    }
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     val mangaSearchFlow = searchText

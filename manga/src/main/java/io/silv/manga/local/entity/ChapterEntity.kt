@@ -30,4 +30,4 @@ data class ChapterEntity(
     val updatedAt: String,
 
     val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
-): AmadeusEntity
+): AmadeusEntity<Any?>

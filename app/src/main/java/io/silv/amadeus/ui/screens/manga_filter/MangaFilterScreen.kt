@@ -2,6 +2,8 @@ package io.silv.amadeus.ui.screens.manga_filter
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -9,21 +11,32 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.amadeus.ui.composables.MangaListItem
+import io.silv.amadeus.ui.screens.home.MangaPager
+import io.silv.amadeus.ui.screens.home.header
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.repositorys.FilteredMangaRepository
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 
@@ -35,18 +48,22 @@ class MangaFilterScreen(
     override val key: ScreenKey
         get() = super.key + tag + tagId
 
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
     @Composable
     override fun Content() {
 
         val sm = getScreenModel<MangaFilterSM> { parametersOf(tagId) }
         val navigator = LocalNavigator.current
-        val searchItemsState by sm.filteredUiState.collectAsStateWithLifecycle()
+        val space = LocalSpacing.current
+        val timePeriod by sm.timePeriod.collectAsStateWithLifecycle()
+        val yearlyItemsState by sm.yearlyFilteredUiState.collectAsStateWithLifecycle()
+        val timePeriodItemsState by sm.timePeriodFilteredUiState.collectAsStateWithLifecycle()
         val lazyGridState = rememberLazyGridState()
 
         LaunchedEffect(Unit) {
             launch {
-                snapshotFlow { lazyGridState.canScrollForward }.collect {
-                    if (!it) {
+                snapshotFlow { lazyGridState.firstVisibleItemIndex }.collect { idx ->
+                    if (idx >= timePeriodItemsState.lastIndex - 5)  {
                         sm.loadNextPage()
                     }
                 }
@@ -58,15 +75,71 @@ class MangaFilterScreen(
                 .fillMaxSize()
                 .systemBarsPadding()
         ) {
-            Text(text = "showing manga with tag $tag")
-            val space = LocalSpacing.current
+            IconButton(
+                onClick = { navigator?.pop() },
+                modifier = Modifier.padding(space.small)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = null
+                )
+            }
             LazyVerticalGrid(
                 modifier = Modifier.weight(1f),
                 state = lazyGridState,
                 columns = GridCells.Fixed(2)
             ) {
+                header {
+                    Column {
+                        Text(
+                            "$tag trending this year",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
+                            modifier = Modifier.padding(space.large)
+                        )
+                        MangaPager(
+                            mangaList = yearlyItemsState,
+                            onMangaClick = {
+                                navigator?.push(
+                                    MangaViewScreen(it)
+                                )
+                            },
+                            onBookmarkClick = {
+                                sm.bookmarkManga(it.id)
+                            },
+                            onTagClick = { name, tag ->
+                                if (tag != tagId)
+                                    navigator?.replace(MangaFilterScreen(name, tag))
+                            }
+                        )
+                        Text(
+                            text = "Popularity",
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.padding(space.med)
+                        )
+                        FlowRow {
+                            listOf(
+                                "all time" to FilteredMangaRepository.TimePeriod.AllTime,
+                                "last 6 months" to FilteredMangaRepository.TimePeriod.SixMonths,
+                                "last 3 months" to FilteredMangaRepository.TimePeriod.ThreeMonths,
+                                "last month" to FilteredMangaRepository.TimePeriod.LastMonth,
+                                "last week" to FilteredMangaRepository.TimePeriod.OneWeek
+                            ).forEach { (text, time) ->
+                                FilterChip(
+                                    selected = time == timePeriod,
+                                    onClick = { sm.changeTimePeriod(time) },
+                                    label = {
+                                        Text(text = text)
+                                    },
+                                    modifier = Modifier.padding(space.small)
+                                )
+                            }
+                        }
+                    }
+                }
                 items(
-                    items = searchItemsState,
+                    items = timePeriodItemsState,
                     key = { item: DomainManga -> item.id }
                 ) { manga ->
                     MangaListItem(

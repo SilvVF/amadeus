@@ -2,6 +2,9 @@ package io.silv.manga.domain
 
 import io.silv.manga.network.mangadex.models.LocalizedString
 import io.silv.manga.network.mangadex.models.manga.Manga
+import kotlinx.datetime.Clock
+import java.time.Duration
+import kotlin.time.toKotlinDuration
 
 
 fun coverArtUrl(
@@ -48,4 +51,28 @@ val Manga.alternateTitles: Map<String, String>
             }
         }
     }
+
+fun timeStringMinus(duration: kotlin.time.Duration): String {
+    return Clock.System.now()
+        .minus(
+            duration
+        )
+        .toString()
+        .replace(":", "%3A")
+        .takeWhile {
+            it != '.'
+        }
+}
+
+fun timeStringMinus(duration: Duration): String {
+    return Clock.System.now()
+        .minus(
+            duration.toKotlinDuration()
+        )
+        .toString()
+        .replace(":", "%3A")
+        .takeWhile {
+            it != '.'
+        }
+}
 

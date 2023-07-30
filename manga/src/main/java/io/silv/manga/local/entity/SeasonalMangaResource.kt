@@ -1,5 +1,6 @@
 package io.silv.manga.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import io.silv.manga.network.mangadex.models.ContentRating
@@ -41,26 +42,7 @@ data class SeasonalMangaResource(
 
     override val volumeToCoverArt: Map<String, String> = emptyMap(),
 
-    override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
-): MangaResource, AmadeusEntity {
+    override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds,
 
-    constructor(savedMangaEntity: SavedMangaEntity): this(
-        id = savedMangaEntity.id,
-        coverArt = savedMangaEntity.coverArt,
-        description = savedMangaEntity.description,
-        titleEnglish = savedMangaEntity.titleEnglish,
-        alternateTitles = savedMangaEntity.alternateTitles,
-        originalLanguage = savedMangaEntity.originalLanguage,
-        availableTranslatedLanguages = savedMangaEntity.availableTranslatedLanguages,
-        status = savedMangaEntity.status,
-        tagToId = savedMangaEntity.tagToId,
-        contentRating = savedMangaEntity.contentRating,
-        lastVolume = savedMangaEntity.lastVolume,
-        lastChapter = savedMangaEntity.lastChapter,
-        version = savedMangaEntity.version,
-        createdAt = savedMangaEntity.createdAt,
-        updatedAt = savedMangaEntity.updatedAt,
-        volumeToCoverArt = savedMangaEntity.volumeToCoverArt,
-        savedLocalAtEpochSeconds = savedMangaEntity.savedLocalAtEpochSeconds
-    )
-}
+    @ColumnInfo("season_id")val seasonId: String
+): MangaResource, AmadeusEntity<Any?>

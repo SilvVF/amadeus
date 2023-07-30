@@ -1,65 +1,42 @@
 package io.silv.amadeus.ui.screens.home
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.DomainTag
 import io.silv.manga.domain.repositorys.PopularMangaRepository
 import io.silv.manga.domain.repositorys.RecentMangaRepository
-import io.silv.manga.domain.repositorys.ResourceQuery
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaRepository
 import io.silv.manga.domain.repositorys.SeasonalMangaRepository
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import io.silv.manga.domain.repositorys.TagRepository
+import io.silv.manga.domain.repositorys.toBool
+import io.silv.manga.local.entity.Season
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.flatMapMerge
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class HomeSM(
-    private val searchMangaRepository: SearchMangaRepository,
     private val recentMangaRepository: RecentMangaRepository,
     private val popularMangaRepository: PopularMangaRepository,
-    private val seasonalMangaRepository: SeasonalMangaRepository,
+    seasonalMangaRepository: SeasonalMangaRepository,
     private val savedMangaRepository: SavedMangaRepository,
+    searchMangaRepository: SearchMangaRepository,
+    private val tagRepository: TagRepository
 ): AmadeusScreenModel<HomeEvent>() {
 
-    private val mutableSearchText = MutableStateFlow("")
-    val searchText = mutableSearchText.asStateFlow()
+    val loadingPopularManga = popularMangaRepository.loadState
+        .map(::toBool)
+        .stateInUi(false)
 
-    val seasonalMangaLoading = seasonalMangaRepository.loading.stateInUi(false)
+    val loadingRecentManga = recentMangaRepository.loadState
+        .map(::toBool)
+        .stateInUi(false)
 
-    var loadingPopularManga by mutableStateOf(false)
-        private set
 
-    var loadingRecentManga by mutableStateOf(false)
-        private set
-
-    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-    val mangaSearchFlow = searchText
-        .debounce(3000)
-        .flatMapMerge { txt ->
-            searchMangaRepository.getMangaResources(
-                ResourceQuery(
-                    title = txt,
-                    includedTags = null,
-                    excludedTags = null
-                )
-            )
-        }
-
-    val searchMangaUiState = combine(
-        mangaSearchFlow,
-        savedMangaRepository.getSavedMangas()
-    ) { resources, saved ->
-        resources.map {
-            DomainManga(it, saved.find { manga -> manga.id == it.id })
+    val tagsUiState = tagRepository.allTags().map {
+        it.map { tag ->
+            DomainTag(tag)
         }
     }
         .stateInUi(emptyList())
@@ -85,33 +62,50 @@ class HomeSM(
         .stateInUi(emptyList())
 
     val seasonalMangaUiState = combine(
-        seasonalMangaRepository.getMangaResources(),
+        seasonalMangaRepository.getSeasonalLists(),
         savedMangaRepository.getSavedMangas()
-    ) { resources, saved ->
-        resources.map {
-            DomainManga(it, saved.find { manga -> manga.id == it.id })
+    ) { seasonWithManga, saved ->
+        val yearLists = seasonWithManga.map {
+            SeasonalList(
+                id = it.list.id,
+                year = it.list.year,
+                season = it.list.season,
+                mangas = it.manga.map { m -> DomainManga(m, saved.find { s -> s.id == m.id }) }
+            )
         }
+            .sortedBy { it.year * 10000 + it.season.ordinal }
+            .takeIf { it.size >= 4 }
+            ?.takeLast(4)
+            ?: return@combine   SeasonalMangaUiState(
+                emptyList()
+            )
+        SeasonalMangaUiState(
+            seasonalLists = yearLists
+        )
     }
-        .stateInUi(emptyList())
+        .stateInUi(SeasonalMangaUiState(emptyList()))
 
     fun bookmarkManga(mangaId: String) = coroutineScope.launch {
         savedMangaRepository.bookmarkManga(mangaId)
     }
 
-    fun searchTextChanged(query: String)  {
-        mutableSearchText.update { query }
-    }
-
     fun loadNextPopularPage() = coroutineScope.launch {
-        loadingPopularManga = true
         popularMangaRepository.loadNextPage()
-        loadingPopularManga = false
     }
 
     fun loadNextRecentPage() = coroutineScope.launch {
-        loadingRecentManga = true
         recentMangaRepository.loadNextPage()
-        loadingRecentManga = false
     }
 }
 
+
+data class SeasonalMangaUiState(
+    val seasonalLists: List<SeasonalList> = emptyList()
+)
+
+data class SeasonalList(
+    val id: String,
+    val year: Int,
+    val season: Season,
+    val mangas: List<DomainManga>
+)

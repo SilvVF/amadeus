@@ -6,9 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -87,7 +89,6 @@ object SavedTab: Tab {
 
 class SavedScreen: Screen {
 
-    //TODO(add ui to show saved with pages read)
 
     @Composable
     override fun Content() {
@@ -102,7 +103,7 @@ class SavedScreen: Screen {
             saved = saved,
             continueReading = continueReading,
             bookmarkManga = {
-
+                sm.bookmarkManga(it)
             }
         )
     }
@@ -220,6 +221,7 @@ private fun ReadingListItem(
                     offsetY = space.xs,
                     offsetX = space.xs
                 )
+                .size(140.dp)
                 .padding(space.xs)
         ) {
             AsyncImage(
@@ -238,15 +240,17 @@ private fun ReadingListItem(
             text = manga.titleEnglish,
             style = MaterialTheme.typography.titleMedium
         )
-        Divider()
-        Row {
-            val furthestChapter = remember {
-                manga.readChapters.maxBy {id ->
-                    chapters.find { it.id == id }?.chapter?.toIntOrNull() ?: -1
+        Column {
+            val furthestChapter = remember(manga) {
+                chapters.find {
+                    it.id == manga.readChapters.maxByOrNull { id ->
+                        chapters.find {  c -> c.id == id }?.chapter?.toIntOrNull() ?: 0
+                    }
                 }
             }
-            Text("Chapter $furthestChapter / ${manga.lastChapter ?: chapters.size}")
-            Divider()
+            Text("Chapter ${furthestChapter?.chapter ?: 0} / ${manga.lastChapter ?: chapters.size}")
+            Divider(modifier.fillMaxWidth(), thickness = 1.dp, MaterialTheme.colorScheme.primary)
+            Text("Chapter  ${furthestChapter?.chapter ?: 0} page : ${manga.chapterToLastReadPage[furthestChapter?.id]  ?: 0}")
         }
     }
 }

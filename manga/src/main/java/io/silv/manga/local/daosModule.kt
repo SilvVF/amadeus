@@ -33,4 +33,16 @@ val daosModule = module {
     single {
         get<AmadeusDatabase>().filteredMangaResourceDao()
     }
+
+    single {
+        get<AmadeusDatabase>().filteredMangaYearlyResourceDao()
+    }
+
+    single {
+        get<AmadeusDatabase>().getSeasonalListDao()
+    }
+
+    single {
+        get<AmadeusDatabase>().getTagDao()
+    }
 }

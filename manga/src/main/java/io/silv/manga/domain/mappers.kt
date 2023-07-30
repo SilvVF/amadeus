@@ -3,6 +3,7 @@ package io.silv.manga.domain
 import io.silv.core.Mapper
 import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.FilteredMangaResource
+import io.silv.manga.local.entity.FilteredMangaYearlyResource
 import io.silv.manga.local.entity.PopularMangaResource
 import io.silv.manga.local.entity.ProgressState
 import io.silv.manga.local.entity.RecentMangaResource
@@ -37,7 +38,7 @@ object ChapterToChapterEntityMapper: Mapper<ChapterWithPrevEntity, ChapterEntity
 object MangaToSeasonalMangaResourceMapper: Mapper<Pair<Manga, SeasonalMangaResource?>, SeasonalMangaResource> {
 
     override fun map(from: Pair<Manga, SeasonalMangaResource?>): SeasonalMangaResource {
-        val (manga, _) = from
+        val (manga, saved) = from
         return with(manga) {
             SeasonalMangaResource(
                 id = id,
@@ -55,7 +56,8 @@ object MangaToSeasonalMangaResourceMapper: Mapper<Pair<Manga, SeasonalMangaResou
                 version = attributes.version,
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
-                tagToId = tagToId
+                tagToId = tagToId,
+                seasonId = ""
             )
         }
     }
@@ -116,6 +118,36 @@ object MangaToSearchMangaResourceMapper: Mapper<Pair<Manga, SearchMangaResource?
     }
 }
 
+
+object MangaToFilteredYearlyMangaResourceMapper: Mapper<Pair<Manga, FilteredMangaYearlyResource?>, FilteredMangaYearlyResource> {
+
+    override fun map(from: Pair<Manga, FilteredMangaYearlyResource?>): FilteredMangaYearlyResource {
+        val (manga, saved) = from
+        return with(manga) {
+            FilteredMangaYearlyResource(
+                id = id,
+                description = manga.descriptionEnglish,
+                coverArt = coverArtUrl(manga),
+                titleEnglish = manga.titleEnglish,
+                alternateTitles = manga.alternateTitles,
+                originalLanguage = attributes.originalLanguage,
+                availableTranslatedLanguages = attributes.availableTranslatedLanguages.filterNotNull(),
+                status = attributes.status,
+                contentRating = attributes.contentRating,
+                lastVolume = attributes.lastVolume,
+                lastChapter = attributes.lastChapter,
+                version = attributes.version,
+                createdAt = attributes.createdAt,
+                updatedAt = attributes.updatedAt,
+                tagToId = tagToId,
+                savedLocalAtEpochSeconds = saved?.savedLocalAtEpochSeconds ?: Clock.System.now().epochSeconds,
+                topTags = saved?.topTags ?: emptyList(),
+                topTagPlacement = saved?.topTagPlacement ?: emptyMap()
+            )
+        }
+    }
+}
+
 object MangaToFilteredMangaResourceMapper: Mapper<Pair<Manga, FilteredMangaResource?>, FilteredMangaResource> {
 
     override fun map(from: Pair<Manga, FilteredMangaResource?>): FilteredMangaResource {
@@ -138,7 +170,7 @@ object MangaToFilteredMangaResourceMapper: Mapper<Pair<Manga, FilteredMangaResou
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
                 tagToId = tagToId,
-                savedLocalAtEpochSeconds = saved?.savedLocalAtEpochSeconds ?: Clock.System.now().epochSeconds
+                savedLocalAtEpochSeconds = saved?.savedLocalAtEpochSeconds ?: Clock.System.now().epochSeconds,
             )
         }
     }

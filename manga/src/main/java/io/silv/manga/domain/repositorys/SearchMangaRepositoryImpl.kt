@@ -1,5 +1,6 @@
 package io.silv.manga.domain.repositorys
 
+import android.util.Log
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.MangaToSearchMangaResourceMapper
@@ -12,6 +13,7 @@ import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
@@ -19,13 +21,13 @@ import kotlinx.coroutines.withContext
 internal class SearchMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,
     private val mangaResourceDao: SearchMangaResourceDao,
-    dispatchers: AmadeusDispatchers
-): SearchMangaRepository {
+    dispatchers: AmadeusDispatchers,
+): SearchMangaRepository, PaginatedResourceRepo<SearchMangaResource>() {
 
+    private val scope: CoroutineScope = CoroutineScope(dispatchers.io) + CoroutineName("SearchMangaRepositoryImpl")
     private val mapper = MangaToSearchMangaResourceMapper
-    private val scope = CoroutineScope(dispatchers.io) + CoroutineName("SearchMangaRepositoryImpl")
 
-    private val MANGA_PAGE_LIMIT = 50
+    private var currentQuery: ResourceQuery? = null
 
     private val syncer = syncerForEntity<SearchMangaResource, Manga, String>(
         networkToKey = { n -> n.id },
@@ -38,33 +40,51 @@ internal class SearchMangaRepositoryImpl(
     }
 
     override fun getMangaResources(query: ResourceQuery): Flow<List<SearchMangaResource>> {
-        scope.launch { loadData(query) }
+        return mangaResourceDao.getMangaResources().onStart {
+            resetPagination()
+            currentQuery = query
+            scope.launch {
+                loadNextPage()
+            }
+        }
+    }
+
+    override fun getMangaResources(): Flow<List<SearchMangaResource>> {
         return mangaResourceDao.getMangaResources()
     }
 
-    private suspend fun loadData(query: ResourceQuery): Boolean = withContext(scope.coroutineContext) {
-        runCatching {
+    override suspend fun loadNextPage() = withContext(scope.coroutineContext) {
+        Log.d("Search", "load next page")
+        loadPage(currentQuery) { offset, query ->
+            Log.d("Search", "loadPage")
             val result = syncer.sync(
                 current = mangaResourceDao.getAll(),
                 networkResponse = mangaDexApi.getMangaList(
                     MangaRequest(
-                        offset = 0,
+                        offset = offset,
                         limit = MANGA_PAGE_LIMIT,
                         includes = listOf("cover_art"),
-                        includedTags = query.includedTags,
-                        excludedTags = query.excludedTags,
-                        title = query.title,
+                        includedTags = query?.includedTags,
+                        excludedTags = query?.excludedTags,
+                        title = query?.title,
+                        includedTagsMode = query?.includedTagsMode,
+                        excludedTagsMode = query?.excludedTagsMode,
+                        status = query?.publicationStatus?.map { it.name },
                         availableTranslatedLanguage = listOf("en")
                     )
                 )
                     .getOrThrow()
+                    .also {
+                        updateLastPage(it.total)
+                        Log.d("Search", "last page ${it.total}")
+                    }
                     .data
             )
-
-            for(unhandled in result.unhandled) {
-                mangaResourceDao.delete(unhandled)
+            if (offset == 0) {
+                for(unhandled in result.unhandled) {
+                    mangaResourceDao.delete(unhandled)
+                }
             }
         }
-            .isSuccess
     }
 }

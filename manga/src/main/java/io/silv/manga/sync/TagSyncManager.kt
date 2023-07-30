@@ -12,24 +12,21 @@ import kotlinx.coroutines.flow.map
 /**
  * [SyncManager] backed by [WorkInfo] from [WorkManager]
  */
-internal class SavedMangaSyncManager (
+internal class TagSyncManager(
     private val context: Context,
 ) : SyncManager {
 
     override val isSyncing: Flow<Boolean> =
-        WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(MangaSyncWorkName)
+        WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(TagSyncWorkName)
             .map(List<WorkInfo>::anyRunning)
             .conflate()
 
     override fun requestSync() {
         val workManager = WorkManager.getInstance(context)
         workManager.enqueueUniqueWork(
-            MangaSyncWorkName,
+            TagSyncWorkName,
             ExistingWorkPolicy.KEEP,
             MangaSyncWorker.syncWorkRequest(),
         )
     }
 }
-
-
-

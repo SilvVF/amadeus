@@ -30,13 +30,14 @@ class CombineMangaChapterInfo(
         return combine(
             popularMangaRepository.getMangaResource(id),
             recentMangaRepository.getMangaResource(id),
-            seasonalMangaRepository.getMangaResource(id),
+            seasonalMangaRepository.getSeasonalManga(id),
             searchMangaRepository.getMangaResource(id),
             filteredMangaRepository.getMangaResource(id),
+            filteredMangaRepository.getYearlyMangaResource(id),
             savedMangaRepository.getSavedManga(id),
-            chapterInfoRepository.getChapters(id)
-        ) { popular, recent, seasonal, search, filtered, saved, chapterInfo ->
-            val resource: MangaResource? = popular ?: recent ?: seasonal ?: search ?: filtered
+            chapterInfoRepository.getChapters(id),
+        ) { popular, recent, seasonal, search, filtered, yearly, saved, chapterInfo ->
+            val resource: MangaResource? = popular ?: recent ?: seasonal ?: search ?: filtered ?: yearly
             MangaFull(
                 domainManga = resource?.let { DomainManga(it, saved) },
                 volumeImages = saved?.volumeToCoverArt ?: resource?.volumeToCoverArt,

@@ -44,7 +44,9 @@ internal class SavedMangaRepositoryImpl(
     )
 
     override suspend fun bookmarkManga(id: String): Unit = withContext(dispatchers.io) {
+            log("bookmarking $id")
             savedMangaDao.getMangaWithChapters(id)?.let { (manga, chapters) ->
+                log("saved found $id")
                 if (!manga.bookmarked) {
                     savedMangaDao.updateSavedManga(
                         manga.copy(bookmarked = true)

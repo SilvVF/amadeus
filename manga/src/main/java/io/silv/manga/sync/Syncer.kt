@@ -12,7 +12,7 @@ import io.silv.manga.local.entity.AmadeusEntity
  *  that contains all the inserts, updates, and unhandled being the entities not found in the network response
  *  but contained in the local db. Added and updated assume that [upsert] updated the db.
  */
-internal class Syncer<Local : AmadeusEntity, Network, Key>(
+internal class Syncer<Local : AmadeusEntity<Any?>, Network, Key>(
     private val networkToLocal: suspend (Network, Local?) -> Local,
     private val getIdFromNetwork: suspend (Network) -> Key,
     private val upsert: suspend (Local) -> Unit,

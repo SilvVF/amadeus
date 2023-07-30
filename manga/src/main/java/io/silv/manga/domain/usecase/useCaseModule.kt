@@ -10,7 +10,8 @@ val useCaseModule = module {
             recentMangaResourceDao = get(),
             searchMangaResourceDao = get(),
             filteredMangaResourceDao = get(),
-            seasonalMangaResourceDao = get()
+            seasonalMangaResourceDao = get(),
+            filteredMangaYearlyResourceDao = get()
         )
     }
 
@@ -22,6 +23,7 @@ val useCaseModule = module {
 
     factory {
         GetMangaResourceById.defaultImpl(
+            get(),
             get(),
             get(),
             get(),

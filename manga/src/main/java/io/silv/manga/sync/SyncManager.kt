@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 // This name should not be changed otherwise the app may have concurrent sync requests running
 const val MangaSyncWorkName = "MangaSyncWorkName"
+const val TagSyncWorkName = "TagSyncWorkName"
 
 interface SyncManager {
     val isSyncing: Flow<Boolean>

@@ -23,7 +23,7 @@ data class MangaRequest(
     val publicationDemographic: List<String>? = null,
     val ids: List<String>?  = null,
     val contentRating: List<String>?  = null,
-    val createdAtSince: String? = null,
+    var createdAtSince: String? = null,
     val updatedAtSince: String?  = null,
     val order: Map<String, String>? = null,
     val includes: List<String>? = null,

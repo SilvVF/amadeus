@@ -41,26 +41,49 @@ data class FilteredMangaResource(
 
     override val volumeToCoverArt: Map<String, String> = emptyMap(),
 
-    override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
-): MangaResource, AmadeusEntity {
+    override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds,
+): MangaResource, AmadeusEntity<Any?>
 
-    constructor(savedMangaEntity: SavedMangaEntity): this(
-        id = savedMangaEntity.id,
-        coverArt = savedMangaEntity.coverArt,
-        description = savedMangaEntity.description,
-        titleEnglish = savedMangaEntity.titleEnglish,
-        alternateTitles = savedMangaEntity.alternateTitles,
-        originalLanguage = savedMangaEntity.originalLanguage,
-        availableTranslatedLanguages = savedMangaEntity.availableTranslatedLanguages,
-        status = savedMangaEntity.status,
-        tagToId = savedMangaEntity.tagToId,
-        contentRating = savedMangaEntity.contentRating,
-        lastVolume = savedMangaEntity.lastVolume,
-        lastChapter = savedMangaEntity.lastChapter,
-        version = savedMangaEntity.version,
-        createdAt = savedMangaEntity.createdAt,
-        updatedAt = savedMangaEntity.updatedAt,
-        volumeToCoverArt = savedMangaEntity.volumeToCoverArt,
-        savedLocalAtEpochSeconds = savedMangaEntity.savedLocalAtEpochSeconds
-    )
-}
+
+@Entity
+data class FilteredMangaYearlyResource(
+
+    val topTags: List<String>,
+
+    val topTagPlacement: Map<String, Int>,
+
+    @PrimaryKey override val id: String,
+
+    override val coverArt: String,
+
+    override val description: String,
+
+    override val titleEnglish: String,
+
+    override val alternateTitles: Map<String, String>,
+
+    override val originalLanguage: String,
+
+    override val availableTranslatedLanguages: List<String>,
+
+    override val status: Status,
+
+    override val tagToId: Map<String, String>,
+
+    override val contentRating: ContentRating,
+
+    override val lastVolume: String? = null,
+
+    override val lastChapter: String? = null,
+
+    override val version: Int,
+
+    override val createdAt: String,
+
+    override val updatedAt: String,
+
+    override val volumeToCoverArt: Map<String, String> = emptyMap(),
+
+    override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds,
+
+): MangaResource, AmadeusEntity<Any?>

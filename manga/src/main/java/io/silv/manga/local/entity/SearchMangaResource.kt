@@ -43,7 +43,7 @@ data class SearchMangaResource(
 
     override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds,
 
-): MangaResource, AmadeusEntity {
+): MangaResource, AmadeusEntity<Any?> {
 
     constructor(savedMangaEntity: SavedMangaEntity): this(
         id = savedMangaEntity.id,

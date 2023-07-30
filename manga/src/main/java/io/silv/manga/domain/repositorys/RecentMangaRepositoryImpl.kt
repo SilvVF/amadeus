@@ -9,8 +9,6 @@ import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.models.manga.Manga
 import io.silv.manga.network.mangadex.requests.MangaRequest
-import io.silv.manga.network.mangadex.requests.Order
-import io.silv.manga.network.mangadex.requests.OrderBy
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -20,15 +18,12 @@ import kotlinx.coroutines.withContext
 internal class RecentMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,
     private val mangaResourceDao: RecentMangaResourceDao,
-    dispatchers: AmadeusDispatchers
-): RecentMangaRepository {
+    dispatchers: AmadeusDispatchers,
+): RecentMangaRepository, PaginatedResourceRepo<RecentMangaResource>() {
+
+    private val scope: CoroutineScope = CoroutineScope(dispatchers.io) + CoroutineName("RecentMangaRepositoryImpl")
 
     private val mapper = MangaToRecentMangaResourceMapper
-    private val scope = CoroutineScope(dispatchers.io) + CoroutineName("RecentMangaRepositoryImpl")
-
-    private val MANGA_PAGE_LIMIT = 50
-    private var currentOffset: Int = 0
-
 
     private val syncer = syncerForEntity<RecentMangaResource, Manga, String>(
         networkToKey = { n -> n.id },
@@ -44,13 +39,13 @@ internal class RecentMangaRepositoryImpl(
         return mangaResourceDao.getMangaResources()
     }
 
-    override suspend fun loadNextPage(): Boolean = withContext(scope.coroutineContext) {
-        runCatching {
+    override suspend fun loadNextPage() = withContext(scope.coroutineContext) {
+        loadPage { offset ->
             val result = syncer.sync(
                 current = mangaResourceDao.getAll(),
                 networkResponse = mangaDexApi.getMangaList(
                     MangaRequest(
-                        offset = currentOffset,
+                        offset = offset,
                         limit = MANGA_PAGE_LIMIT,
                         includes = listOf("cover_art"),
                         availableTranslatedLanguage = listOf("en"),
@@ -58,19 +53,16 @@ internal class RecentMangaRepositoryImpl(
                     )
                 )
                     .getOrThrow()
+                    .also {
+                        updateLastPage(it.total)
+                    }
                     .data
             )
-
-            // Initial load delete previous resources
-            // if at this point network response was successful
-            if (currentOffset == 0) {
-                for(unhandled in result.unhandled) {
+            if (offset == 0) {
+                for (unhandled in result.unhandled) {
                     mangaResourceDao.delete(unhandled)
                 }
             }
-            // Increase offset after successful sync
-            currentOffset += MANGA_PAGE_LIMIT
         }
-            .isSuccess
     }
 }

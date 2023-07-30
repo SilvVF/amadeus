@@ -1,9 +1,11 @@
 package io.silv.manga.local.workers
 
 import androidx.work.WorkManager
+import io.silv.manga.sync.MangaSyncWorkName
 import io.silv.manga.sync.SavedMangaSyncManager
 import io.silv.manga.sync.SyncManager
-import io.silv.manga.sync.Synchronizer
+import io.silv.manga.sync.TagSyncManager
+import io.silv.manga.sync.TagSyncWorkName
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.module.dsl.bind
@@ -16,11 +18,22 @@ val workerModule = module {
         SavedMangaSyncManager(androidContext())
     } withOptions {
         bind<SyncManager>()
-        named("Manga")
+        named(MangaSyncWorkName)
+    }
+
+    single {
+        TagSyncManager(androidContext())
+    } withOptions {
+        bind<SyncManager>()
+        named(TagSyncWorkName)
     }
 
     single {
         WorkManager.getInstance(androidContext())
+    }
+
+    single {
+        TagSyncWorker(androidContext(), get())
     }
 
     worker {
@@ -33,8 +46,6 @@ val workerModule = module {
 
     worker {
         MangaSyncWorker(androidContext(), get())
-    } withOptions {
-        bind<Synchronizer>()
     }
 
     worker {

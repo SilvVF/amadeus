@@ -42,7 +42,7 @@ data class PopularMangaResource(
     override val volumeToCoverArt: Map<String, String> = emptyMap(),
 
     override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
-): MangaResource, AmadeusEntity {
+): MangaResource, AmadeusEntity<Any?> {
 
     constructor(savedMangaEntity: SavedMangaEntity): this(
         id = savedMangaEntity.id,

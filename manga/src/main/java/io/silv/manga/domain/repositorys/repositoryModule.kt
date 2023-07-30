@@ -37,4 +37,8 @@ val repositoryModule = module {
     singleOf(::FilteredMangaRepositoryImpl) withOptions {
         bind<FilteredMangaRepository>()
     }
+
+    singleOf(::TagRepositoryImpl) withOptions {
+        bind<TagRepository>()
+    }
 }

@@ -1,4 +1,4 @@
-package io.silv.manga.domain.repositorys
+package io.silv.manga.domain.repositorys.tags
 
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.local.dao.TagDao
@@ -7,6 +7,7 @@ import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.sync.Synchronizer
 import io.silv.manga.sync.syncVersions
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Clock
 
 internal class TagRepositoryImpl(
     private val  tagDao: TagDao,
@@ -49,9 +50,10 @@ internal class TagRepositoryImpl(
                     TagEntity(
                         id = network.id,
                         group = network.attributes.group,
-                        version =  network.attributes.version,
-                        name = network.attributes.name["en"] ?: network.attributes.name.values.first(),
-                        lastUpdatedEpochSeconds = kotlinx.datetime.Clock.System.now().epochSeconds
+                        version = network.attributes.version,
+                        name = network.attributes.name["en"]
+                            ?: network.attributes.name.values.first(),
+                        lastUpdatedEpochSeconds = Clock.System.now().epochSeconds
                     )
                 )
             }

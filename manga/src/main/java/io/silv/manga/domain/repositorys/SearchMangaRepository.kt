@@ -1,29 +1,22 @@
 package io.silv.manga.domain.repositorys
 
+import io.silv.manga.domain.repositorys.base.PaginatedResourceRepository
 import io.silv.manga.local.entity.SearchMangaResource
 import io.silv.manga.network.mangadex.models.ContentRating
 import io.silv.manga.network.mangadex.models.Status
 import io.silv.manga.network.mangadex.requests.MangaRequest
-import kotlinx.coroutines.flow.Flow
 
-interface SearchMangaRepository: MangaResourceRepository<SearchMangaResource>  {
+interface SearchMangaRepository:
+    PaginatedResourceRepository<SearchMangaResource, SearchMangaResourceQuery>
 
-    override fun getMangaResource(id: String): Flow<SearchMangaResource?>
-
-    fun getMangaResources(query: ResourceQuery): Flow<List<SearchMangaResource>>
-
-    val id: Int
-        get() = 3
-}
-
-data class ResourceQuery(
+data class SearchMangaResourceQuery(
     val title: String? = null,
     val includedTags: List<String>? = null,
     val excludedTags: List<String>? = null,
-    val includedTagsMode: MangaRequest.TagsMode,
-    val excludedTagsMode: MangaRequest.TagsMode,
-    val contentRating: ContentRating?,
-    val publicationStatus: List<Status>?
+    val includedTagsMode: MangaRequest.TagsMode? = null,
+    val excludedTagsMode: MangaRequest.TagsMode? = null,
+    val contentRating: ContentRating? = null,
+    val publicationStatus: List<Status>? = null
 )
 
 

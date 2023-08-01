@@ -49,7 +49,7 @@ internal fun interface UpdateResourceChapterWithArt: suspend  (UpdateResourceInf
             searchMangaResourceDao: SearchMangaResourceDao,
             filteredMangaResourceDao: FilteredMangaResourceDao,
             seasonalMangaResourceDao: SeasonalMangaResourceDao,
-            filteredMangaYearlyResourceDao: FilteredMangaYearlyResourceDao
+            filteredMangaYearlyResourceDao: FilteredMangaYearlyResourceDao,
         ) = UpdateResourceChapterWithArt { info ->
             updateVolumeCoverArtAndChapterInfoForResource(
                 id = info.id,
@@ -129,8 +129,9 @@ private suspend fun getMangaFeedAndUpdateChapter(
     mangaDexApi.getMangaFeed(
         id,
         MangaFeedRequest(
+            limit = null,
+            offset = 0,
             translatedLanguage = listOf("en"),
-            includeEmptyPages = 0,
         )
     )
         .getOrNull()
@@ -156,7 +157,7 @@ private suspend fun updateVolumeCoverArtAndChapterInfoForResource(
 ) {
     runCatching {
         getMangaFeedAndUpdateChapter(mangaDexApi, id, chapterDao)
-        mangaDexApi.getCoverArtList(CoverArtRequest(manga = listOf(id)))
+        mangaDexApi.getCoverArtList(CoverArtRequest(manga = listOf(id), limit = 100, offset = 0))
             .getOrNull()?.let { r ->
                 update(
                      buildMap {
@@ -184,7 +185,7 @@ private suspend fun updateVolumeCoverArtAndChapterInfo(
 ) {
     runCatching {
         getMangaFeedAndUpdateChapter(mangaDexApi, id, chapterDao)
-        mangaDexApi.getCoverArtList(CoverArtRequest(manga = listOf(id)))
+        mangaDexApi.getCoverArtList(CoverArtRequest(manga = listOf(id),limit = 100, offset = 0))
             .getOrNull()?.let { r ->
                 savedMangaDao.updateSavedManga(
                     entity.copy(

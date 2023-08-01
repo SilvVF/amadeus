@@ -9,8 +9,8 @@ import io.silv.manga.domain.repositorys.RecentMangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaRepository
 import io.silv.manga.domain.repositorys.SeasonalMangaRepository
-import io.silv.manga.domain.repositorys.TagRepository
-import io.silv.manga.domain.repositorys.toBool
+import io.silv.manga.domain.repositorys.tags.TagRepository
+import io.silv.manga.domain.repositorys.base.toBool
 import io.silv.manga.local.entity.Season
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -42,7 +42,7 @@ class HomeSM(
         .stateInUi(emptyList())
 
     val popularMangaUiState = combine(
-        popularMangaRepository.getMangaResources(),
+        popularMangaRepository.getAllMangaResources(),
         savedMangaRepository.getSavedMangas()
     ) { resources, saved ->
         resources.map {
@@ -52,7 +52,7 @@ class HomeSM(
         .stateInUi(emptyList())
 
     val recentMangaUiState = combine(
-        recentMangaRepository.getMangaResources(),
+        recentMangaRepository.getAllMangaResources(),
         savedMangaRepository.getSavedMangas()
     ) { resources, saved ->
         resources.map {

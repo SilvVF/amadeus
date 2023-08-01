@@ -1,10 +1,11 @@
 package io.silv.amadeus.ui.screens.manga_filter
 
-import android.util.Log
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.DomainManga
 import io.silv.manga.domain.repositorys.FilteredMangaRepository
+import io.silv.manga.domain.repositorys.FilteredResourceQuery
+import io.silv.manga.domain.repositorys.FilteredYearlyMangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,12 +16,13 @@ import kotlinx.coroutines.launch
 
 class MangaFilterSM(
     private val filteredMangaRepository: FilteredMangaRepository,
+    private val filteredYearlyMangaRepository: FilteredYearlyMangaRepository,
     private val savedMangaRepository: SavedMangaRepository,
     tagId: String
 ): AmadeusScreenModel<MangaFilterEvent>() {
 
     val yearlyFilteredUiState = combine(
-        filteredMangaRepository.getYearlyTopResources(tagId),
+        filteredYearlyMangaRepository.getYearlyTopResources(tagId),
         savedMangaRepository.getSavedMangas()
     ) { resources, saved ->
         resources.map { r ->
@@ -35,8 +37,7 @@ class MangaFilterSM(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val timePeriodFilteredResources = mutableTimePeriod.flatMapMerge {
-        Log.d("FILTER", it.toString() + tagId)
-        filteredMangaRepository.getMangaResources(tagId, it)
+        filteredMangaRepository.getMangaResources(FilteredResourceQuery(tagId, it))
     }
 
     val timePeriodFilteredUiState = combine(

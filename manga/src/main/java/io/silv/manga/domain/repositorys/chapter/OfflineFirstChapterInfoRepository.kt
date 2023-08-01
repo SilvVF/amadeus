@@ -1,7 +1,8 @@
-package io.silv.manga.domain.repositorys
+package io.silv.manga.domain.repositorys.chapter
 
 import io.silv.core.AmadeusDispatchers
-import io.silv.manga.domain.usecase.GetMangaResourceById
+import io.silv.core.pForEach
+import io.silv.manga.domain.usecase.GetMangaResourcesById
 import io.silv.manga.domain.usecase.UpdateChapterWithArt
 import io.silv.manga.domain.usecase.UpdateInfo
 import io.silv.manga.domain.usecase.UpdateResourceChapterWithArt
@@ -25,7 +26,7 @@ internal class OfflineFirstChapterInfoRepository(
     private val chapterDao: ChapterDao,
     private val mangaDexApi: MangaDexApi,
     private val savedMangaDao: SavedMangaDao,
-    private val getMangaResourceById: GetMangaResourceById,
+    private val getMangaResourcesById: GetMangaResourcesById,
     private val updateChapter: UpdateChapterWithArt,
     private val updateResourceChapter: UpdateResourceChapterWithArt,
     dispatchers: AmadeusDispatchers,
@@ -48,7 +49,7 @@ internal class OfflineFirstChapterInfoRepository(
         loadingIds.update { it + mangaId }
 
         val savedManga = savedMangaDao.getMangaById(mangaId)
-        val (mangaResource, daoId) = getMangaResourceById(mangaId)
+        val resourceToIdList = getMangaResourcesById(mangaId)
 
         if (savedManga != null) {
             updateChapter(
@@ -60,16 +61,18 @@ internal class OfflineFirstChapterInfoRepository(
                     savedManga
                 )
             )
-        } else if (mangaResource != null) {
-            updateResourceChapter(
-                UpdateResourceInfo(
-                    id = mangaId,
-                    chapterDao = chapterDao,
-                    mangaDexApi = mangaDexApi,
-                    daoId = daoId,
-                    mangaResource = mangaResource
+        } else if (resourceToIdList.isNotEmpty()) {
+            resourceToIdList.pForEach { (resource, daoId) ->
+                updateResourceChapter(
+                    UpdateResourceInfo(
+                        id = mangaId,
+                        chapterDao = chapterDao,
+                        mangaDexApi = mangaDexApi,
+                        daoId = daoId,
+                        mangaResource = resource
+                    )
                 )
-            )
+            }
         }
     }
         .invokeOnCompletion {

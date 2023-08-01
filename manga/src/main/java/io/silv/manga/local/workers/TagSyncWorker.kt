@@ -9,7 +9,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
-import io.silv.manga.domain.repositorys.TagRepository
+import io.silv.manga.domain.repositorys.tags.TagRepository
 import io.silv.manga.sync.Synchronizer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject

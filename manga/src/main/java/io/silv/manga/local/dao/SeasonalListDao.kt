@@ -24,4 +24,8 @@ interface SeasonalListDao {
     @Transaction
     @Query("SELECT * FROM SeasonalListEntity")
     fun getSeasonListWithManga(): Flow<List<SeasonListWithManga>>
+
+    companion object {
+        const val id: Int = 9
+    }
 }

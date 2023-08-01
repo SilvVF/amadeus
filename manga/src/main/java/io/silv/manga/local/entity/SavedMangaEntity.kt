@@ -17,40 +17,40 @@ data class SavedMangaEntity(
 
     val chapterToLastReadPage: Map<String, Int>,
 
-    val coverArt: String,
+    override val coverArt: String,
 
-    val description: String,
+    override val description: String,
 
-    val titleEnglish: String,
+    override val titleEnglish: String,
 
-    val alternateTitles: Map<String, String>,
+    override val alternateTitles: Map<String, String>,
 
-    val originalLanguage: String,
+    override val originalLanguage: String,
 
-    val availableTranslatedLanguages: List<String>,
+    override val availableTranslatedLanguages: List<String>,
 
-    val status: Status,
+    override val status: Status,
 
-    val tagToId: Map<String, String>,
+    override val tagToId: Map<String, String>,
 
-    val contentRating: ContentRating,
+    override val contentRating: ContentRating,
 
-    val lastVolume: String? = null,
+    override val lastVolume: String? = null,
 
-    val lastChapter: String? = null,
+    override val lastChapter: String? = null,
 
-    val version: Int,
+    override val version: Int,
 
     val bookmarked: Boolean,
 
-    val createdAt: String,
+    override val createdAt: String,
 
-    val updatedAt: String,
+    override val updatedAt: String,
 
-    val volumeToCoverArt: Map<String, String>,
+    override val volumeToCoverArt: Map<String, String>,
 
-    val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
-): AmadeusEntity<Any?> {
+    override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
+): AmadeusEntity<Any?>, MangaResource {
     constructor(mangaResource: MangaResource): this(
         id = mangaResource.id,
         progressState = ProgressState.NotStarted,
@@ -73,4 +73,33 @@ data class SavedMangaEntity(
         updatedAt = mangaResource.updatedAt,
         volumeToCoverArt = emptyMap(),
     )
+
+    constructor(
+        mangaResources: List<MangaResource>,
+        recent: MangaResource = mangaResources.maxBy { it.savedLocalAtEpochSeconds }
+    ): this(
+            id = recent.id,
+            progressState = ProgressState.NotStarted,
+            chapterToLastReadPage = emptyMap(),
+            readChapters = emptyList(),
+            coverArt = recent.coverArt,
+            description = recent.description,
+            titleEnglish = recent.titleEnglish,
+            alternateTitles = recent.alternateTitles,
+            originalLanguage = recent.originalLanguage,
+            availableTranslatedLanguages = recent.availableTranslatedLanguages,
+            status = recent.status,
+            tagToId = recent.tagToId,
+            contentRating = recent.contentRating,
+            lastVolume = recent.lastVolume,
+            lastChapter = recent.lastChapter,
+            version = recent.version,
+            bookmarked = false,
+            createdAt = recent.createdAt,
+            updatedAt = recent.updatedAt,
+            volumeToCoverArt = mangaResources
+                .filter { it.volumeToCoverArt.isNotEmpty() }
+                .maxBy { it.savedLocalAtEpochSeconds }
+                .volumeToCoverArt,
+        )
 }

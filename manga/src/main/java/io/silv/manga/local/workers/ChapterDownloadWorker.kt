@@ -18,7 +18,7 @@ import androidx.work.WorkerParameters
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.ChapterToChapterEntityMapper
-import io.silv.manga.domain.usecase.GetMangaResourceById
+import io.silv.manga.domain.usecase.GetMangaResourcesById
 import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.SavedMangaEntity
@@ -76,7 +76,7 @@ class ChapterDownloadWorker(
 
     private val dispatchers by inject<AmadeusDispatchers>()
     private val chapterDao by inject<ChapterDao>()
-    private val getMangaResourceById by inject<GetMangaResourceById>()
+    private val getMangaResourcesById by inject<GetMangaResourcesById>()
     private val savedMangaDao by inject<SavedMangaDao>()
     private val mangaDexApi by inject<MangaDexApi>()
 
@@ -89,11 +89,13 @@ class ChapterDownloadWorker(
 
         // Create saved manga if it is being downloaded from a resource
         savedMangaDao.getMangaById(mangaId) ?: run {
-            val (mangaResource, daoId) = getMangaResourceById(mangaId)
-            if (mangaResource == null || daoId == -1) {
+            val resources = getMangaResourcesById(mangaId)
+            if (resources.isNotEmpty()) {
                 return Result.failure()
             }
-            SavedMangaEntity(mangaResource).also { savedMangaDao.upsertManga(it) }
+            SavedMangaEntity(
+                mangaResource = resources.maxBy { it.first.savedLocalAtEpochSeconds }.first
+            ).also { savedMangaDao.upsertManga(it) }
         }
 
         chaptersToGet.forEach {

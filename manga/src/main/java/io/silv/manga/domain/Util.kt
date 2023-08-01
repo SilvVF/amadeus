@@ -1,5 +1,7 @@
 package io.silv.manga.domain
 
+import io.silv.manga.domain.repositorys.FilteredMangaRepository
+import io.silv.manga.domain.repositorys.base.ProtectedResources
 import io.silv.manga.network.mangadex.models.LocalizedString
 import io.silv.manga.network.mangadex.models.manga.Manga
 import kotlinx.datetime.Clock
@@ -7,11 +9,26 @@ import java.time.Duration
 import kotlin.time.toKotlinDuration
 
 
+internal fun checkProtected(id: String) = ProtectedResources.ids.contains(id)
+
 fun coverArtUrl(
     fileName: String?,
     mangaId: String,
 ) =  "https://uploads.mangadex.org/covers/${mangaId}/$fileName"
 
+fun FilteredMangaRepository.TimePeriod.timeString(): String? {
+    return timeStringMinus(
+        Duration.ofDays(
+            when (this) {
+                FilteredMangaRepository.TimePeriod.SixMonths -> 6 * 30
+                FilteredMangaRepository.TimePeriod.ThreeMonths ->  3 * 30
+                FilteredMangaRepository.TimePeriod.LastMonth -> 30
+                FilteredMangaRepository.TimePeriod.OneWeek -> 7
+                else -> return null
+            }
+        )
+    )
+}
 
 fun coverArtUrl(
     manga: Manga,

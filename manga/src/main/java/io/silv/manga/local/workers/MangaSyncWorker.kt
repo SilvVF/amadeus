@@ -10,7 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.core.pmap
-import io.silv.manga.domain.repositorys.ChapterInfoRepository
+import io.silv.manga.domain.repositorys.chapter.ChapterInfoRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.sync.Synchronizer
 import org.koin.core.component.KoinComponent

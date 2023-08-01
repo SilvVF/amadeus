@@ -1,4 +1,4 @@
-package io.silv.manga.domain.repositorys
+package io.silv.manga.domain.repositorys.base
 
 sealed interface LoadState {
     object Refreshing: LoadState

@@ -35,6 +35,7 @@ val screenModule = module {
         MangaFilterSM(
             get(),
             get(),
+            get(),
             tagId
         )
     }

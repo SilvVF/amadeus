@@ -4,7 +4,7 @@ import android.util.Log
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.MangaEntityMapper
-import io.silv.manga.domain.usecase.GetMangaResourceById
+import io.silv.manga.domain.usecase.GetMangaResourcesById
 import io.silv.manga.domain.usecase.UpdateChapterWithArt
 import io.silv.manga.domain.usecase.UpdateInfo
 import io.silv.manga.local.dao.ChapterDao
@@ -25,7 +25,7 @@ import kotlinx.datetime.Clock
 
 internal class SavedMangaRepositoryImpl(
     private val savedMangaDao: SavedMangaDao,
-    private val getMangaResourceById: GetMangaResourceById,
+    private val getMangaResourceById: GetMangaResourcesById,
     private val mangaDexApi: MangaDexApi,
     private val dispatchers: AmadeusDispatchers,
     private val chapterDao: ChapterDao,
@@ -70,9 +70,9 @@ internal class SavedMangaRepositoryImpl(
     }
 
     override suspend fun saveManga(id: String) {
-        getMangaResourceById(id).first?.let { resource ->
+        getMangaResourceById(id).maxBy { it.first.savedLocalAtEpochSeconds }.let { resource ->
             log("No Saved found using resource $id")
-            val entity =  SavedMangaEntity(resource).copy(bookmarked = true)
+            val entity =  SavedMangaEntity(resource.first).copy(bookmarked = true)
             savedMangaDao.upsertManga(entity)
             updateChapter(
                 UpdateInfo(id, chapterDao, savedMangaDao, mangaDexApi, entity)

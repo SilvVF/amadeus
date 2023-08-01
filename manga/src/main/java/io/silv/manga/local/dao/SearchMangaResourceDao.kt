@@ -41,6 +41,6 @@ internal interface SearchMangaResourceDao {
     suspend fun delete(mangaResource: SearchMangaResource)
 
     companion object {
-        const val id = 2
+        const val id: Int = 8
     }
 }

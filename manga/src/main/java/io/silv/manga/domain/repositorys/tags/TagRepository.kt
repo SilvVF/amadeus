@@ -1,4 +1,4 @@
-package io.silv.manga.domain.repositorys
+package io.silv.manga.domain.repositorys.tags
 
 import io.silv.manga.local.entity.TagEntity
 import io.silv.manga.sync.Syncable

@@ -11,7 +11,7 @@ import io.silv.manga.network.mangadex.requests.query.QueryParams
  * @param includeExternalUrl Available values : 0, 1
  */
 data class MangaFeedRequest(
-    val limit: Int = 100,
+    val limit: Int? = 100,
     val offset: Int = 0,
     val translatedLanguage: List<String>? = null,
     val originalLanguage: List<String>? = null,

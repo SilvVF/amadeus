@@ -4,20 +4,21 @@ import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.DomainManga
 import io.silv.manga.domain.models.DomainTag
-import io.silv.manga.domain.repositorys.LoadState
-import io.silv.manga.domain.repositorys.ResourceQuery
+import io.silv.manga.domain.repositorys.base.LoadState
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaRepository
-import io.silv.manga.domain.repositorys.TagRepository
+import io.silv.manga.domain.repositorys.SearchMangaResourceQuery
+import io.silv.manga.domain.repositorys.tags.TagRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapMerge
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -47,21 +48,27 @@ class SearchSM(
     val mangaSearchFlow = combine(
         mutableIncludedIds,
         mutableExcludedIds,
-        searchText.debounce(3000),
+        searchText,
     ) { included, excluded, text  ->
-        if (text.isEmpty() && included.isEmpty() && excluded.isEmpty()) {
-            return@combine null
-        }
-        ResourceQuery(
-            title = text,
+        SearchMangaResourceQuery(
+            title = text.ifEmpty { null },
             includedTags = included.ifEmpty { null },
             excludedTags = excluded.ifEmpty { null }
         )
     }
+        .debounce(3000)
         .flatMapMerge {
-            it?.let { query ->
-                searchMangaRepository.getMangaResources(query)
-            } ?: flowOf(null)
+            searchMangaRepository.getMangaResources(it)
+        }
+        .onStart {
+            // emits initial search results prefetched for no query
+            // this will avoid the initial result being debounced by 3 seconds
+            emit(
+                searchMangaRepository
+                    .getMangaResources(
+                        SearchMangaResourceQuery()
+                    ).first()
+            )
         }
 
     val searchMangaUiState = combine(
@@ -69,9 +76,6 @@ class SearchSM(
         loadState,
         savedMangaRepository.getSavedMangas(),
     ) { resources, load, saved ->
-        if (resources == null) {
-            return@combine SearchMangaUiState.WaitingForQuery
-        }
         val combinedManga = resources.map {
             DomainManga(it, saved.find { s -> s.id ==  it.id})
         }

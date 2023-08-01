@@ -4,6 +4,8 @@ import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
 val useCaseModule = module {
+
+
     factory {
         UpdateResourceChapterWithArt.defaultImpl(
             popularMangaResourceDao = get(),
@@ -21,15 +23,6 @@ val useCaseModule = module {
 
     factoryOf(::CombineMangaChapterInfo)
 
-    factory {
-        GetMangaResourceById.defaultImpl(
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get()
-        )
-    }
+    factoryOf(::GetMangaResourcesById)
 }
 

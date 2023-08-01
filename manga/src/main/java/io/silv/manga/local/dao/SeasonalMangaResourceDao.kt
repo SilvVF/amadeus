@@ -6,7 +6,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import io.silv.manga.local.entity.PopularMangaResource
 import io.silv.manga.local.entity.SeasonalMangaResource
 import kotlinx.coroutines.flow.Flow
 
@@ -41,6 +40,6 @@ internal interface SeasonalMangaResourceDao {
     suspend fun delete(mangaResource: SeasonalMangaResource)
 
     companion object {
-        const val id = 5
+        const val id: Int = 10
     }
 }

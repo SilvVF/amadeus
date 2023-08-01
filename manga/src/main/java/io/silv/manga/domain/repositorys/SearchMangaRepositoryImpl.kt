@@ -4,6 +4,8 @@ import android.util.Log
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.MangaToSearchMangaResourceMapper
+import io.silv.manga.domain.checkProtected
+import io.silv.manga.domain.repositorys.base.BasePaginatedRepository
 import io.silv.manga.local.dao.SearchMangaResourceDao
 import io.silv.manga.local.entity.SearchMangaResource
 import io.silv.manga.local.entity.syncerForEntity
@@ -16,18 +18,20 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.withContext
 
 internal class SearchMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,
     private val mangaResourceDao: SearchMangaResourceDao,
     dispatchers: AmadeusDispatchers,
-): SearchMangaRepository, PaginatedResourceRepo<SearchMangaResource>() {
+): SearchMangaRepository, BasePaginatedRepository<SearchMangaResource, SearchMangaResourceQuery>(
+    initialQuery = SearchMangaResourceQuery(),
+    MANGA_PAGE_LIMIT = 50
+) {
 
-    private val scope: CoroutineScope = CoroutineScope(dispatchers.io) + CoroutineName("SearchMangaRepositoryImpl")
+    override val scope: CoroutineScope =
+        CoroutineScope(dispatchers.io) + CoroutineName("SearchMangaRepositoryImpl")
+
     private val mapper = MangaToSearchMangaResourceMapper
-
-    private var currentQuery: ResourceQuery? = null
 
     private val syncer = syncerForEntity<SearchMangaResource, Manga, String>(
         networkToKey = { n -> n.id },
@@ -35,28 +39,37 @@ internal class SearchMangaRepositoryImpl(
         upsert = { mangaResourceDao.upsertManga(it) }
     )
 
+    init {
+        scope.launch {
+            refresh()
+        }
+    }
+
+    override suspend fun refresh() {
+        resetPagination(SearchMangaResourceQuery())
+        loadNextPage()
+    }
+
     override fun getMangaResource(id: String): Flow<SearchMangaResource?> {
         return mangaResourceDao.getResourceAsFlowById(id)
     }
 
-    override fun getMangaResources(query: ResourceQuery): Flow<List<SearchMangaResource>> {
+    override fun getMangaResources(resourceQuery: SearchMangaResourceQuery): Flow<List<SearchMangaResource>>  {
         return mangaResourceDao.getMangaResources().onStart {
-            resetPagination()
-            currentQuery = query
-            scope.launch {
+            if (resourceQuery != currentQuery) {
+                resetPagination(resourceQuery)
+                emit(emptyList())
                 loadNextPage()
             }
         }
     }
 
-    override fun getMangaResources(): Flow<List<SearchMangaResource>> {
+    override fun getAllMangaResources(): Flow<List<SearchMangaResource>> {
         return mangaResourceDao.getMangaResources()
     }
 
-    override suspend fun loadNextPage() = withContext(scope.coroutineContext) {
-        Log.d("Search", "load next page")
-        loadPage(currentQuery) { offset, query ->
-            Log.d("Search", "loadPage")
+
+    override suspend fun loadNextPage() = loadPage { offset, query ->
             val result = syncer.sync(
                 current = mangaResourceDao.getAll(),
                 networkResponse = mangaDexApi.getMangaList(
@@ -64,12 +77,12 @@ internal class SearchMangaRepositoryImpl(
                         offset = offset,
                         limit = MANGA_PAGE_LIMIT,
                         includes = listOf("cover_art"),
-                        includedTags = query?.includedTags,
-                        excludedTags = query?.excludedTags,
-                        title = query?.title,
-                        includedTagsMode = query?.includedTagsMode,
-                        excludedTagsMode = query?.excludedTagsMode,
-                        status = query?.publicationStatus?.map { it.name },
+                        includedTags = query.includedTags,
+                        excludedTags = query.excludedTags,
+                        title = query.title,
+                        includedTagsMode = query.includedTagsMode,
+                        excludedTagsMode = query.excludedTagsMode,
+                        status = query.publicationStatus?.map { it.name },
                         availableTranslatedLanguage = listOf("en")
                     )
                 )
@@ -82,9 +95,10 @@ internal class SearchMangaRepositoryImpl(
             )
             if (offset == 0) {
                 for(unhandled in result.unhandled) {
-                    mangaResourceDao.delete(unhandled)
+                    if (!checkProtected(unhandled.id)) {
+                        mangaResourceDao.delete(unhandled)
+                    }
                 }
             }
-        }
     }
 }

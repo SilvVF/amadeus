@@ -64,4 +64,8 @@ internal interface SavedMangaDao: SyncableDao<SavedMangaEntity> {
 
     @Delete
     suspend fun delete(mangaEntity: SavedMangaEntity)
+
+    companion object {
+        const val id: Int = 7
+    }
 }

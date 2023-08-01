@@ -3,12 +3,11 @@ package io.silv.manga.domain.repositorys
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.MangaToFilteredMangaResourceMapper
-import io.silv.manga.domain.MangaToFilteredYearlyMangaResourceMapper
-import io.silv.manga.domain.timeStringMinus
+import io.silv.manga.domain.checkProtected
+import io.silv.manga.domain.repositorys.base.BasePaginatedRepository
+import io.silv.manga.domain.timeString
 import io.silv.manga.local.dao.FilteredMangaResourceDao
-import io.silv.manga.local.dao.FilteredMangaYearlyResourceDao
 import io.silv.manga.local.entity.FilteredMangaResource
-import io.silv.manga.local.entity.FilteredMangaYearlyResource
 import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.models.manga.Manga
@@ -16,38 +15,25 @@ import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
-import java.time.Duration
+
+data class FilteredResourceQuery(
+    val tagId: String,
+    val timePeriod: FilteredMangaRepository.TimePeriod = FilteredMangaRepository.TimePeriod.AllTime
+)
 
 internal class FilteredMangaRepositoryImpl(
     private val resourceDao: FilteredMangaResourceDao,
-    private val yearlyResourceDao: FilteredMangaYearlyResourceDao,
     private val mangaDexApi: MangaDexApi,
     dispatchers: AmadeusDispatchers,
-): FilteredMangaRepository, PaginatedResourceRepo<FilteredMangaResource>() {
+): FilteredMangaRepository, BasePaginatedRepository<FilteredMangaResource, FilteredResourceQuery?>(
+    initialQuery = null
+) {
 
-    private val scope: CoroutineScope = CoroutineScope(dispatchers.io) + CoroutineName("FilteredMangaRepositoryImpl")
-
-    private fun syncerForYearly(tag: String) = syncerForEntity<FilteredMangaYearlyResource, Pair<Manga, Int>, String>(
-        networkToKey = { (manga, _) -> manga.id },
-        mapper = { (manga, placement), saved ->
-            val r = MangaToFilteredYearlyMangaResourceMapper.map(manga to saved)
-            r.copy(
-                topTagPlacement = r.topTagPlacement.toMutableMap().apply {
-                    put(tag, placement)
-                },
-                topTags = (r.topTags + tag).toSet().toList()
-            )
-        },
-        upsert = {
-            yearlyResourceDao.upsertManga(it)
-        }
-    )
+    override val scope: CoroutineScope =
+         CoroutineScope(dispatchers.io) + CoroutineName("FilteredMangaRepositoryImpl")
 
     private val syncer = syncerForEntity<FilteredMangaResource, Manga, String>(
         networkToKey = { it.id },
@@ -65,129 +51,56 @@ internal class FilteredMangaRepositoryImpl(
         return resourceDao.getResourceAsFlowById(id)
     }
 
-    override fun getMangaResources(): Flow<List<FilteredMangaResource>> {
+    override fun getAllMangaResources(): Flow<List<FilteredMangaResource>> {
         return resourceDao.getMangaResources()
     }
 
-    override fun getYearlyMangaResource(id: String): Flow<FilteredMangaYearlyResource?> {
-        return yearlyResourceDao.getResourceAsFlowById(id)
+    override suspend fun refresh() {
+        resetPagination(currentQuery)
+        loadNextPage()
     }
 
-
-    override fun getYearlyTopResources(tag: String): Flow<List<FilteredMangaYearlyResource>> {
-        return yearlyResourceDao.getMangaResources()
-            .map { it.filter { m ->  m.topTags.contains(tag) }.sortedBy { it.topTagPlacement[tag] } }
-            .onStart {
-               scope.launch{
-                   loadYearlyTopManga(tag)
-               }
-            }
-    }
-
-
-    private var currTagId = ""
-    private var currTimePeriod = FilteredMangaRepository.TimePeriod.AllTime
-
-    override fun getMangaResources(
-        tagId: String,
-        timePeriod: FilteredMangaRepository.TimePeriod
-    ): Flow<List<FilteredMangaResource>> {
+    override fun getMangaResources(resourceQuery: FilteredResourceQuery?): Flow<List<FilteredMangaResource>> {
         return resourceDao.getMangaResources()
-            .map { it.filter { it.tagToId.containsValue(tagId) } }
             .onStart {
-                resetPagination()
-                currTagId = tagId
-                currTimePeriod = timePeriod
-                scope.launch {
-                    load(tagId, timePeriod)
+                if (resourceQuery != currentQuery) {
+                    emit(emptyList())
+                    resetPagination(resourceQuery)
+                    scope.launch { loadNextPage() }
                 }
             }
     }
 
-
-    override suspend fun loadNextPage() = withContext(scope.coroutineContext) {
-        if (currTagId.isNotEmpty()) {
-            load(currTagId, currTimePeriod)
-        }
+    override suspend fun loadNextPage() = loadPage { offset, query ->
+          query?.let {
+              val result = syncer.sync(
+                  current = resourceDao.getAll(),
+                  networkResponse = mangaDexApi.getMangaList(
+                      MangaRequest(
+                          offset = offset,
+                          limit = MANGA_PAGE_LIMIT,
+                          includes = listOf("cover_art"),
+                          availableTranslatedLanguage = listOf("en"),
+                          hasAvailableChapters = true,
+                          order = mapOf("followedCount" to "desc"),
+                          includedTags = listOf(query.tagId),
+                          includedTagsMode = MangaRequest.TagsMode.AND,
+                          createdAtSince = query.timePeriod.timeString()
+                      )
+                  )
+                      .getOrThrow()
+                      .also {
+                          updateLastPage(it.total)
+                      }
+                      .data
+              )
+              if (offset == 0) {
+                  for (unhandled in result.unhandled) {
+                      if (!checkProtected(unhandled.id)) {
+                          resourceDao.delete(unhandled)
+                      }
+                  }
+              }
+          }
     }
-
-    private suspend fun load(
-        tag: String,
-        timePeriod: FilteredMangaRepository.TimePeriod
-    ) {
-        loadPage(tag to timePeriod) { offset, (tag, timePeriod) ->
-           val result = syncer.sync(
-                current = resourceDao.getAll(),
-                networkResponse = mangaDexApi.getMangaList(
-                    MangaRequest(
-                        offset = offset,
-                        limit = MANGA_PAGE_LIMIT,
-                        includes = listOf("cover_art"),
-                        availableTranslatedLanguage = listOf("en"),
-                        hasAvailableChapters = true,
-                        order = mapOf("followedCount" to "desc"),
-                        includedTags = listOf(tag),
-                        includedTagsMode = MangaRequest.TagsMode.AND,
-                        createdAtSince = timePeriod.timeString()
-                    )
-                )
-                    .getOrThrow()
-                    .also {
-                        updateLastPage(it.total)
-                    }
-                    .data
-            )
-            if (offset == 0) {
-                for (unhandled in result.unhandled) {
-                    resourceDao.delete(unhandled)
-                }
-            }
-        }
-    }
-
-   private suspend fun loadYearlyTopManga(tagId: String) {
-       val lastUpdated = yearlyResourceDao.getAll()
-           .filter { it.topTags.contains(tagId) }
-           .takeIf { it.isNotEmpty() }
-           ?.minBy { it.savedLocalAtEpochSeconds }?.savedLocalAtEpochSeconds ?: 0L
-       if (Clock.System.now().epochSeconds - lastUpdated < 60 * 60 * 24 * 30) {
-            return
-       }
-       runCatching {
-           val result = syncerForYearly(tagId).sync(
-               current = yearlyResourceDao.getAll(),
-               networkResponse = mangaDexApi.getMangaList(
-                   MangaRequest(
-                       offset = 0,
-                       limit = 20,
-                       includes = listOf("cover_art"),
-                       availableTranslatedLanguage = listOf("en"),
-                       hasAvailableChapters = true,
-                       order = mapOf("followedCount" to "desc"),
-                       includedTags = listOf(tagId),
-                       includedTagsMode = MangaRequest.TagsMode.AND,
-                       createdAtSince = timeStringMinus(Duration.ofDays(365))
-                   )
-               )
-                   .getOrThrow()
-                   .data.mapIndexed { i, manga->
-                       manga to i + 1
-                   }
-           )
-           for(unhandled in result.unhandled) {
-               if (unhandled.topTags.contains(tagId)) {
-                   if (unhandled.topTags.size <= 1) {
-                       yearlyResourceDao.delete(unhandled)
-                   } else {
-                       yearlyResourceDao.update(
-                           unhandled.copy(
-                               topTags = unhandled.topTags.filter { it != tagId }
-                           )
-                       )
-                   }
-               }
-           }
-       }
-           .isSuccess
-   }
 }

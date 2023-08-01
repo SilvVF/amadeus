@@ -5,6 +5,7 @@ import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.repositorys.base.ProtectedResources
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.usecase.CombineMangaChapterInfo
 import io.silv.manga.local.workers.ChapterDeletionWorker
@@ -20,8 +21,12 @@ class MangaViewSM(
     combineMangaChapterInfo: CombineMangaChapterInfo,
     private val savedMangaRepository: SavedMangaRepository,
     private val workManager: WorkManager,
-    initialManga: DomainManga
+    private val initialManga: DomainManga
 ): AmadeusScreenModel<MangaViewEvent>() {
+
+    init {
+        ProtectedResources.ids.add(initialManga.id)
+    }
 
     private val loading = combineMangaChapterInfo.loading(initialManga.id)
         .stateInUi(false)
@@ -86,6 +91,11 @@ class MangaViewSM(
                 chapterInfoUiState.value.manga.id
             )
         )
+    }
+
+    override fun onDispose() {
+        super.onDispose()
+        ProtectedResources.ids.remove(initialManga.id)
     }
 }
 

@@ -81,4 +81,34 @@ data class DomainManga(
         readChapters = savedManga?.readChapters ?: emptyList(),
         chapterToLastReadPage = savedManga?.chapterToLastReadPage ?: emptyMap()
     )
+    constructor(
+        mangaResources: List<MangaResource>,
+        savedManga: SavedMangaEntity?,
+        newest: MangaResource = mangaResources.maxBy { it.savedLocalAtEpochSeconds }
+    ) : this(
+        id = newest.id,
+        bookmarked = savedManga?.bookmarked ?: false,
+        description = newest.description,
+        progressState = savedManga?.progressState ?: ProgressState.NotStarted,
+        coverArt = newest.coverArt,
+        titleEnglish = newest.titleEnglish,
+        alternateTitles = newest.alternateTitles,
+        originalLanguage = newest.originalLanguage,
+        availableTranslatedLanguages = newest.availableTranslatedLanguages,
+        status = newest.status,
+        tagToId = newest.tagToId,
+        contentRating = newest.contentRating,
+        lastVolume = newest.lastVolume,
+        lastChapter = newest.lastChapter,
+        version = newest.version,
+        createdAt = newest.createdAt,
+        updatedAt = newest.updatedAt,
+        savedLocalAtEpochSeconds = newest.savedLocalAtEpochSeconds,
+        volumeToCoverArtUrl = buildMap {
+            savedManga?.volumeToCoverArt?.let { putAll(it) }
+            mangaResources.map { it.volumeToCoverArt }.forEach { putAll(it) }
+        },
+        readChapters = savedManga?.readChapters ?: emptyList(),
+        chapterToLastReadPage = savedManga?.chapterToLastReadPage ?: emptyMap()
+    )
 }

@@ -5,7 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -25,11 +28,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.screens.home.MangaPager
 import io.silv.amadeus.ui.screens.home.header
@@ -63,7 +68,7 @@ class MangaFilterScreen(
         LaunchedEffect(Unit) {
             launch {
                 snapshotFlow { lazyGridState.firstVisibleItemIndex }.collect { idx ->
-                    if (idx >= timePeriodItemsState.lastIndex - 5)  {
+                    if (idx >= timePeriodItemsState.resources.lastIndex - 5)  {
                         sm.loadNextPage()
                     }
                 }
@@ -98,21 +103,28 @@ class MangaFilterScreen(
                             ),
                             modifier = Modifier.padding(space.large)
                         )
-                        MangaPager(
-                            mangaList = yearlyItemsState,
-                            onMangaClick = {
-                                navigator?.push(
-                                    MangaViewScreen(it)
-                                )
-                            },
-                            onBookmarkClick = {
-                                sm.bookmarkManga(it.id)
-                            },
-                            onTagClick = { name, tag ->
-                                if (tag != tagId)
-                                    navigator?.replace(MangaFilterScreen(name, tag))
-                            }
-                        )
+                        when (yearlyItemsState) {
+                            YearlyFilteredUiState.Loading -> AnimatedBoxShimmer(
+                                Modifier
+                                    .height(240.dp)
+                                    .fillMaxWidth()
+                            )
+                            is YearlyFilteredUiState.Success -> MangaPager(
+                                mangaList = yearlyItemsState.resources,
+                                onMangaClick = {
+                                    navigator?.push(
+                                        MangaViewScreen(it)
+                                    )
+                                },
+                                onBookmarkClick = {
+                                    sm.bookmarkManga(it.id)
+                                },
+                                onTagClick = { name, tag ->
+                                    if (tag != tagId)
+                                        navigator?.replace(MangaFilterScreen(name, tag))
+                                }
+                            )
+                        }
                         Text(
                             text = "Popularity",
                             style = MaterialTheme.typography.labelLarge,
@@ -138,32 +150,37 @@ class MangaFilterScreen(
                         }
                     }
                 }
-                items(
-                    items = timePeriodItemsState,
-                    key = { item: DomainManga -> item.id }
-                ) { manga ->
-                    MangaListItem(
-                        manga = manga,
-                        modifier = Modifier
-                            .padding(space.large)
-                            .clickable {
-                                navigator?.push(
-                                    MangaViewScreen(manga)
-                                )
-                            },
-                        onTagClick = { name ->
-                            manga.tagToId[name]?.let {
-                                if (name != tag && it != tagId) {
-                                    navigator?.replace(
-                                        MangaFilterScreen(name, it)
+                when(timePeriodItemsState) {
+                    TimeFilteredUiState.Loading -> items(4) {
+                        AnimatedBoxShimmer(Modifier.size(300.dp))
+                    }
+                    is TimeFilteredUiState.Success -> items(
+                        items = timePeriodItemsState.resources,
+                        key = { item: DomainManga -> item.id }
+                    ) { manga ->
+                        MangaListItem(
+                            manga = manga,
+                            modifier = Modifier
+                                .padding(space.large)
+                                .clickable {
+                                    navigator?.push(
+                                        MangaViewScreen(manga)
                                     )
+                                },
+                            onTagClick = { name ->
+                                manga.tagToId[name]?.let {
+                                    if (name != tag && it != tagId) {
+                                        navigator?.replace(
+                                            MangaFilterScreen(name, it)
+                                        )
+                                    }
                                 }
+                            },
+                            onBookmarkClick = {
+                                sm.bookmarkManga(manga.id)
                             }
-                        },
-                        onBookmarkClick = {
-                            sm.bookmarkManga(manga.id)
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }

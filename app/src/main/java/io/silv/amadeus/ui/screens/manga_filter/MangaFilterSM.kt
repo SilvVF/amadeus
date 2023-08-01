@@ -7,6 +7,7 @@ import io.silv.manga.domain.repositorys.FilteredMangaRepository
 import io.silv.manga.domain.repositorys.FilteredResourceQuery
 import io.silv.manga.domain.repositorys.FilteredYearlyMangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
+import io.silv.manga.domain.repositorys.base.LoadState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,20 +17,31 @@ import kotlinx.coroutines.launch
 
 class MangaFilterSM(
     private val filteredMangaRepository: FilteredMangaRepository,
-    private val filteredYearlyMangaRepository: FilteredYearlyMangaRepository,
+    filteredYearlyMangaRepository: FilteredYearlyMangaRepository,
     private val savedMangaRepository: SavedMangaRepository,
     tagId: String
 ): AmadeusScreenModel<MangaFilterEvent>() {
 
+    private val yearlyLoadState = filteredYearlyMangaRepository.loadState.stateInUi(LoadState.None)
+    private val timeLoadState = filteredMangaRepository.loadState.stateInUi(LoadState.None)
+
     val yearlyFilteredUiState = combine(
+        yearlyLoadState,
         filteredYearlyMangaRepository.getYearlyTopResources(tagId),
         savedMangaRepository.getSavedMangas()
-    ) { resources, saved ->
-        resources.map { r ->
-            DomainManga(r, saved.find { it.id == r.id })
+    ) { loadState, resources, saved ->
+        when (loadState) {
+            LoadState.Refreshing, LoadState.Loading -> YearlyFilteredUiState.Loading
+            else -> {
+                YearlyFilteredUiState.Success(
+                    resources.map { r ->
+                        DomainManga(r, saved.find { it.id == r.id })
+                    }
+                )
+            }
         }
     }
-        .stateInUi(emptyList())
+        .stateInUi(YearlyFilteredUiState.Loading)
 
 
     private val mutableTimePeriod = MutableStateFlow(FilteredMangaRepository.TimePeriod.AllTime)
@@ -41,14 +53,22 @@ class MangaFilterSM(
     }
 
     val timePeriodFilteredUiState = combine(
+        timeLoadState,
         timePeriodFilteredResources,
         savedMangaRepository.getSavedMangas()
-    ) { resources, saved ->
-        resources.map { r ->
-            DomainManga(r, saved.find { it.id == r.id })
+    ) { loadState, resources, saved ->
+        when (loadState) {
+            LoadState.Refreshing -> TimeFilteredUiState.Loading
+            else -> {
+                TimeFilteredUiState.Success(
+                    resources.map { r ->
+                        DomainManga(r, saved.find { it.id == r.id })
+                    }
+                )
+            }
         }
     }
-        .stateInUi(emptyList())
+        .stateInUi(TimeFilteredUiState.Loading)
 
 
     fun loadNextPage() = coroutineScope.launch {
@@ -63,5 +83,15 @@ class MangaFilterSM(
         println("bookmark clicked $id")
         savedMangaRepository.bookmarkManga(id)
     }
+}
+
+sealed class YearlyFilteredUiState(open val resources: List<DomainManga>) {
+    object Loading: YearlyFilteredUiState(emptyList())
+    data class Success(override val resources: List<DomainManga>): YearlyFilteredUiState(resources)
+}
+
+sealed class TimeFilteredUiState(open val resources: List<DomainManga>) {
+    object Loading: TimeFilteredUiState(emptyList())
+    data class Success(override val resources: List<DomainManga>): TimeFilteredUiState(resources)
 }
 

@@ -3,6 +3,7 @@ package io.silv.manga.domain.repositorys
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.MangaToFilteredYearlyMangaResourceMapper
+import io.silv.manga.domain.checkProtected
 import io.silv.manga.domain.repositorys.base.LoadState
 import io.silv.manga.domain.timeStringMinus
 import io.silv.manga.local.dao.FilteredMangaYearlyResourceDao
@@ -31,7 +32,7 @@ internal class FilteredYearlyMangaRepositoryImpl(
     private val scope: CoroutineScope =
         CoroutineScope(dispatchers.io) + CoroutineName("FilteredYearlyMangaRepositoryImpl")
 
-    override val loadState = MutableStateFlow(LoadState.None)
+    override val loadState = MutableStateFlow<LoadState>(LoadState.None)
 
     private fun syncerForYearly(tag: String) = syncerForEntity<FilteredMangaYearlyResource, Pair<Manga, Int>, String>(
         networkToKey = { (manga, _) -> manga.id },
@@ -67,6 +68,7 @@ internal class FilteredYearlyMangaRepositoryImpl(
         if (Clock.System.now().epochSeconds - lastUpdated < 60 * 60 * 24 * 30) {
             return
         }
+        loadState.emit(LoadState.Loading)
         runCatching {
             val result = syncerForYearly(tagId).sync(
                 current = yearlyResourceDao.getAll(),
@@ -90,7 +92,7 @@ internal class FilteredYearlyMangaRepositoryImpl(
             )
             for(unhandled in result.unhandled) {
                 if (unhandled.topTags.contains(tagId)) {
-                    if (unhandled.topTags.size <= 1) {
+                    if (unhandled.topTags.size <= 1 && !checkProtected(unhandled.id)) {
                         yearlyResourceDao.delete(unhandled)
                     } else {
                         yearlyResourceDao.update(
@@ -103,6 +105,7 @@ internal class FilteredYearlyMangaRepositoryImpl(
             }
         }
             .isSuccess
+            .also { loadState.emit(LoadState.None) }
     }
 
     override fun getMangaResource(id: String): Flow<FilteredMangaYearlyResource?> {

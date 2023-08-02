@@ -105,11 +105,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItem
+import io.silv.amadeus.ui.screens.home.HomeTab
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
@@ -157,6 +159,7 @@ class SearchScreen: Screen {
 
         val lazyGridState = rememberLazyGridState()
         val keyboardController = LocalSoftwareKeyboardController.current
+        val tabNavigator = LocalTabNavigator.current
         val navigator = LocalNavigator.current
         val topLevelPadding by LocalPaddingValues.current
         var bottomBarVisible by LocalBottomBarVisibility.current
@@ -241,7 +244,7 @@ class SearchScreen: Screen {
                                     sm.searchTextChanged(it)
                                 },
                                 onBackArrowClicked = {
-                                    navigator?.pop()
+                                    tabNavigator.current = HomeTab
                                 },
                                 includedTags = tagsUiState,
                                 excludedTags = tagsUiState,
@@ -1211,7 +1214,7 @@ fun SearchItemsList(
 }
 
 @Composable
-private fun SearchItems(
+fun SearchItems(
     modifier: Modifier,
     searchMangaUiState: SearchMangaUiState,
     gridState: LazyGridState,

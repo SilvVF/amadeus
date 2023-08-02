@@ -46,7 +46,7 @@ object LibraryTab: Tab {
 
             return remember {
                 TabOptions(
-                    index = 2u,
+                    index = 3u,
                     title = title,
                     icon = icon
                 )

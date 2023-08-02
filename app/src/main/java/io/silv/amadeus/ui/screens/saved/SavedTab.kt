@@ -69,7 +69,7 @@ object SavedTab: Tab {
             val icon = rememberVectorPainter(Icons.Filled.Bookmark)
             return remember {
                 TabOptions(
-                    index = 1u,
+                    index = 2u,
                     title = title,
                     icon = icon
                 )

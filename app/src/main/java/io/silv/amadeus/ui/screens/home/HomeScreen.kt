@@ -84,7 +84,6 @@ import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.composables.TranslatedLanguageTags
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
-import io.silv.amadeus.ui.screens.search.SearchScreen
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
@@ -106,6 +105,8 @@ class HomeScreen: Screen {
         val seasonalMangaState by sm.seasonalMangaUiState.collectAsStateWithLifecycle()
         val loadingPopular by sm.loadingPopularManga.collectAsStateWithLifecycle()
         val loadingRecent by sm.loadingRecentManga.collectAsStateWithLifecycle()
+        val searchMangaState by sm.searchMangaUiState.collectAsStateWithLifecycle()
+        val searchQuery by sm.searchQuery.collectAsStateWithLifecycle()
         val tagsState by sm.tagsUiState.collectAsStateWithLifecycle()
 
         val space = LocalSpacing.current
@@ -135,20 +136,20 @@ class HomeScreen: Screen {
         ConfirmCloseAppPopup()
 
         Column(
-            Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
-                .navigationBarsPadding()
+            Modifier.fillMaxSize()
         ) {
             HomeTopBar(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(space.large),
-                searchButtonClick = {
+                onBookmarkClick = {
+                    sm.bookmarkManga(it.id)
+                },
+                onMangaClick = {
                     navigator?.push(
-                        SearchScreen()
+                        MangaViewScreen(it)
                     )
-                }
+                },
+                onSearchQueryChange = sm::updateSearchQuery,
+                searchItems = searchMangaState,
+                searchQuery = searchQuery
             )
 
             var selectedIndex by rememberSaveable {
@@ -158,6 +159,8 @@ class HomeScreen: Screen {
             LazyVerticalGrid(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .systemBarsPadding()
+                    .navigationBarsPadding()
                     .weight(1f),
                 state = recentListState,
                 columns = GridCells.Fixed(2)

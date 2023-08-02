@@ -6,17 +6,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +28,7 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.amadeus.ui.screens.home.HomeTab
 import io.silv.amadeus.ui.screens.library.LibraryTab
 import io.silv.amadeus.ui.screens.saved.SavedTab
+import io.silv.amadeus.ui.screens.search.SearchTab
 import io.silv.amadeus.ui.theme.AmadeusTheme
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalPaddingValues
@@ -56,6 +54,7 @@ class MainActivity : ComponentActivity() {
                                 if (visible) {
                                     NavigationBar {
                                         TabNavigationItem(HomeTab)
+                                        TabNavigationItem(SearchTab)
                                         TabNavigationItem(SavedTab)
                                         TabNavigationItem(LibraryTab)
                                     }

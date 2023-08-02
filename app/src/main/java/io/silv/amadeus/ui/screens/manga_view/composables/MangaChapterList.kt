@@ -36,17 +36,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import io.silv.manga.domain.models.DomainChapter
-import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.stateholders.VolumeItemsState
+import io.silv.amadeus.ui.stateholders.SortedChapters
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.manga.domain.models.DomainChapter
 
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChapterList(
-    volumeItems: VolumeItemsState.VolumeItems,
-    sortBy: VolumeItemsState.SortBy,
+    chapters: List<DomainChapter>,
+    sortBy: SortedChapters.SortBy,
     downloads: List<String>,
     sortByChange: () -> Unit,
     readButtonClick: (DomainChapter) -> Unit,
@@ -54,71 +53,57 @@ fun ChapterList(
     deleteChapterClicked: (DomainChapter) -> Unit
 ) {
     val space = LocalSpacing.current
-    when (volumeItems) {
-        is VolumeItemsState.Chapters -> {
-            if (volumeItems.items.isEmpty()) {
-                return CenterBox(modifier = Modifier.fillMaxSize()) {
-                    Text(text = "No Chapters to display")
-                }
-            }
-            LazyColumn(Modifier.fillMaxSize()) {
-                stickyHeader {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.background),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            "Language: ${volumeItems.items.firstOrNull()?.translatedLanguage}",
-                            style = MaterialTheme.typography.labelLarge
+    LazyColumn(Modifier.fillMaxSize()) {
+        stickyHeader {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Language: ${chapters.firstOrNull()?.translatedLanguage}",
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "sorting by: ${
+                        when (sortBy) {
+                            SortedChapters.SortBy.Asc -> "Ascending"
+                            SortedChapters.SortBy.Dsc -> "Descending"
+                        }}",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    IconButton(onClick = sortByChange) {
+                        Icon(
+                            imageVector = if (sortBy == SortedChapters.SortBy.Dsc)
+                                Icons.Filled.KeyboardArrowDown
+                            else
+                                Icons.Filled.KeyboardArrowUp,
+                            contentDescription = null
                         )
-                        Row( verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "sorting by: ${
-                                when (sortBy) {
-                                    VolumeItemsState.SortBy.Asc -> "Ascending"
-                                    VolumeItemsState.SortBy.Dsc -> "Descending"
-                                }}",
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                            IconButton(onClick = sortByChange) {
-                                Icon(
-                                    imageVector = if (sortBy == VolumeItemsState.SortBy.Dsc)
-                                        Icons.Filled.KeyboardArrowDown
-                                    else
-                                        Icons.Filled.KeyboardArrowUp,
-                                    contentDescription = null
-                                )
-                            }
-                        }
                     }
-                }
-                items(
-                    volumeItems.items,
-                    key = { item -> item.id }
-                ) { chapter ->
-                   ChapterListItem(
-                       chapter,
-                       Modifier
-                           .fillMaxWidth()
-                           .padding(vertical = space.med),
-                       downloading =  chapter.id in downloads,
-                       downloadChapterClicked = {
-                           downloadChapterClicked(chapter)
-                       },
-                       readButtonClick = {
-                           readButtonClick(chapter)
-                       },
-                       deleteChapterClicked = {
-                            deleteChapterClicked(chapter)
-                       }
-                   )
-                   Divider()
                 }
             }
         }
-        else -> Unit
+        items(
+            chapters,
+            key = { item -> item.id }
+        ){ chapter ->
+            ChapterListItem(
+                chapter,
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = space.med),
+                downloading =  chapter.id in downloads,
+                downloadChapterClicked = {
+                    downloadChapterClicked(chapter)
+                },
+                readButtonClick = { readButtonClick(chapter) },
+                deleteChapterClicked = { deleteChapterClicked(chapter) }
+            )
+            Divider()
+        }
     }
 }
 

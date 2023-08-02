@@ -1,5 +1,7 @@
 package io.silv.amadeus.ui.screens.manga_view
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.foundation.background
@@ -38,8 +40,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
-import io.silv.manga.domain.models.DomainChapter
-import io.silv.manga.domain.models.DomainManga
 import io.silv.amadeus.ui.composables.AnimatedShimmer
 import io.silv.amadeus.ui.composables.MangaViewPoster
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
@@ -47,10 +47,11 @@ import io.silv.amadeus.ui.screens.manga_view.composables.ChapterList
 import io.silv.amadeus.ui.screens.manga_view.composables.VolumeList
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.noRippleClickable
-import io.silv.amadeus.ui.stateholders.VolumeItemsState
-import io.silv.amadeus.ui.stateholders.rememberVolumeItemsState
+import io.silv.amadeus.ui.stateholders.rememberSortedChapters
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.manga.domain.models.DomainChapter
+import io.silv.manga.domain.models.DomainManga
 import org.koin.core.parameter.parametersOf
 
 
@@ -124,6 +125,7 @@ class MangaViewScreen(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun MangaView(
     state: ChapterListState,
@@ -156,42 +158,54 @@ fun MangaView(
         }
         is ChapterListState.Success -> {
 
-            val volumeItemsState = rememberVolumeItemsState(chapters = state.chapters)
+            val sortedChapters = rememberSortedChapters(chapters = state.chapters)
+            var showChapters by rememberSaveable {
+                mutableStateOf(true)
+            }
 
             Column(Modifier.fillMaxSize()) {
-                MangaViewFilterRow(volumeItemsState,
-                    Modifier
+                MangaViewFilterRow(
+                    modifier = Modifier
                         .padding(vertical = space.med)
                         .fillMaxWidth()
-                        .height(40.dp))
-                when (volumeItemsState.items) {
-                    is VolumeItemsState.Chapters -> {
-                        ChapterList(
-                            volumeItemsState.items,
-                            volumeItemsState.sortBy,
-                            downloads,
-                            sortByChange = { volumeItemsState.sortByOpposite() },
-                            downloadChapterClicked = {
-                                downloadChapters(
-                                    listOf(it)
-                                )
-                            },
-                            deleteChapterClicked = {
-                                deleteChapters(
-                                    listOf(it)
-                                )
-                            },
-                            readButtonClick = {
-                                readButtonClick(
-                                    it.mangaId,
-                                    it.id
-                                )
-                            }
-                        )
+                        .height(40.dp),
+                    selectedTab = showChapters,
+                    onTabSelected = {
+                        showChapters = !showChapters
                     }
-                    is VolumeItemsState.Volumes -> {
-                        VolumeList(volumeItemsState.items, coverArtState) {
-                            retryLoadCoverArt()
+                )
+                AnimatedContent(targetState = showChapters, label = "ikdjf") {
+                    when (it) {
+                        true -> {
+                            ChapterList(
+                                sortedChapters.sortedChapters,
+                                sortedChapters.sortBy,
+                                downloads,
+                                sortByChange = { sortedChapters.sortByOpposite() },
+                                downloadChapterClicked = {
+                                    downloadChapters(
+                                        listOf(it)
+                                    )
+                                },
+                                deleteChapterClicked = {
+                                    deleteChapters(listOf(it))
+                                },
+                                readButtonClick = {
+                                    readButtonClick(
+                                        it.mangaId,
+                                        it.id
+                                    )
+                                }
+                            )
+                        }
+                        false -> {
+                            VolumeList(
+                                volumeItems = sortedChapters.sortedVolumes,
+                                coverArtState = coverArtState,
+                                onSortByChange = { sortedChapters.sortByOpposite() },
+                                onRetryLoadCoverArt =  retryLoadCoverArt,
+                                sortBy = sortedChapters.sortBy
+                            )
                         }
                     }
                 }
@@ -202,11 +216,10 @@ fun MangaView(
 
 @Composable
 private fun MangaViewFilterRow(
-    volumeItemsState: VolumeItemsState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    selectedTab: Boolean,
+    onTabSelected: () -> Unit
 ) {
-    var showSortByMenu by rememberSaveable { mutableStateOf(false) }
-
     val movementSpec = SpringSpec<IntOffset>(
         dampingRatio = Spring.DampingRatioMediumBouncy,
         stiffness = 200f
@@ -232,10 +245,10 @@ private fun MangaViewFilterRow(
     Column(modifier) {
         Orbital(
             Modifier
-                .noRippleClickable { volumeItemsState.groupByOpposite() }
+                .noRippleClickable { onTabSelected() }
                 .fillMaxWidth()
         ) {
-            if (volumeItemsState.groupBy == VolumeItemsState.GroupBy.Chapter) {
+            if (selectedTab) {
                 Box(Modifier
                     .fillMaxSize(),
                     contentAlignment = Alignment.CenterStart

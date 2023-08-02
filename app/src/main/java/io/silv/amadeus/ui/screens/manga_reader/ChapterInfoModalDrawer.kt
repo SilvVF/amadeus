@@ -1,6 +1,5 @@
 package io.silv.amadeus.ui.screens.manga_reader
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,8 +37,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.silv.amadeus.ui.composables.MangaViewPoster
-import io.silv.amadeus.ui.stateholders.VolumeItemsState
-import io.silv.amadeus.ui.stateholders.rememberVolumeItemsState
+import io.silv.amadeus.ui.stateholders.SortedChapters
+import io.silv.amadeus.ui.stateholders.rememberSortedChapters
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.DomainChapter
 import io.silv.manga.domain.models.DomainManga
@@ -100,12 +99,12 @@ fun ChapterInfoModalDrawer(
                     )
                 }
 
-                val volumeItemsState = rememberVolumeItemsState(chapters = chapters)
+                val sortedChapters = rememberSortedChapters(chapters = chapters)
 
-                SortByHeader(volumeItemsState = volumeItemsState)
+                SortByHeader(sortedChapters = sortedChapters)
                 ChapterList(
                     modifier = Modifier.weight(1f),
-                    volumeItemsState = volumeItemsState,
+                    sortedChapters = sortedChapters,
                     onChapterClicked = {
                         onChapterClicked(it)
                     }
@@ -117,7 +116,7 @@ fun ChapterInfoModalDrawer(
 }
 
 @Composable
-fun SortByHeader(volumeItemsState: VolumeItemsState) {
+fun SortByHeader(sortedChapters: SortedChapters) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -127,18 +126,18 @@ fun SortByHeader(volumeItemsState: VolumeItemsState) {
     ) {
         Row( verticalAlignment = Alignment.CenterVertically) {
             Text(text = "sorting by: ${
-                when (volumeItemsState.sortBy) {
-                    VolumeItemsState.SortBy.Asc -> "Ascending"
-                    VolumeItemsState.SortBy.Dsc -> "Descending"
+                when (sortedChapters.sortBy) {
+                    SortedChapters.SortBy.Asc -> "Ascending"
+                    SortedChapters.SortBy.Dsc -> "Descending"
                 }}",
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.labelLarge
             )
             IconButton(onClick = {
-                volumeItemsState.sortByOpposite()
+                sortedChapters.sortByOpposite()
             }) {
                 Icon(
-                    imageVector = if (volumeItemsState.sortBy == VolumeItemsState.SortBy.Dsc)
+                    imageVector = if (sortedChapters.sortBy == SortedChapters.SortBy.Dsc)
                         Icons.Filled.KeyboardArrowDown
                     else
                         Icons.Filled.KeyboardArrowUp,
@@ -153,25 +152,20 @@ fun SortByHeader(volumeItemsState: VolumeItemsState) {
 @Composable
 fun ChapterList(
     modifier: Modifier,
-    volumeItemsState: VolumeItemsState,
+    sortedChapters: SortedChapters,
     onChapterClicked: (DomainChapter) -> Unit
 ) {
     val space = LocalSpacing.current
-    when(volumeItemsState.items) {
-        is VolumeItemsState.Chapters -> {
-            LazyColumn(modifier) {
-                items(volumeItemsState.items.items) {
-                    ChapterListItem(
-                        chapter = it,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onChapterClicked(it) }
-                            .padding(end = space.med)
-                    )
-                }
-            }
+    LazyColumn(modifier) {
+        items(sortedChapters.sortedChapters) {
+            ChapterListItem(
+                chapter = it,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onChapterClicked(it) }
+                    .padding(end = space.med)
+            )
         }
-        is VolumeItemsState.Volumes ->  Unit
     }
 }
 

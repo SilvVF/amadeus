@@ -12,11 +12,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -84,6 +82,7 @@ import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.composables.TranslatedLanguageTags
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
+import io.silv.amadeus.ui.screens.search.SearchMangaUiState
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
@@ -114,12 +113,22 @@ class HomeScreen: Screen {
         val bottomBarPadding by LocalPaddingValues.current
         val recentListState = rememberLazyGridState()
         val popularMangaListState = rememberLazyListState()
+        val searchListState = rememberLazyGridState()
         var bottomBarVisibility by LocalBottomBarVisibility.current
 
         LaunchedEffect(popularMangaListState) {
             snapshotFlow { popularMangaListState.firstVisibleItemIndex }.collect { idx ->
                 if (idx >= popularMangaState.size - 5) {
                     sm.loadNextPopularPage()
+                }
+            }
+        }
+
+        LaunchedEffect(searchListState) {
+            snapshotFlow { searchListState.firstVisibleItemIndex }.collect {idx ->
+                val listSize = ((searchMangaState as? SearchMangaUiState.Success)?.results?.size ?: 0)
+                if (idx >= listSize - 5) {
+                    sm.loadNextSearchPage()
                 }
             }
         }
@@ -149,7 +158,8 @@ class HomeScreen: Screen {
                 },
                 onSearchQueryChange = sm::updateSearchQuery,
                 searchItems = searchMangaState,
-                searchQuery = searchQuery
+                searchQuery = searchQuery,
+                searchGridState = searchListState
             )
 
             var selectedIndex by rememberSaveable {
@@ -159,8 +169,6 @@ class HomeScreen: Screen {
             LazyVerticalGrid(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .systemBarsPadding()
-                    .navigationBarsPadding()
                     .weight(1f),
                 state = recentListState,
                 columns = GridCells.Fixed(2)

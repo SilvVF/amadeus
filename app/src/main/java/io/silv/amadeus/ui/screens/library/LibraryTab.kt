@@ -32,7 +32,7 @@ import io.silv.amadeus.ui.screens.manga_reader.ChapterList
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.noRippleClickable
-import io.silv.amadeus.ui.stateholders.rememberVolumeItemsState
+import io.silv.amadeus.ui.stateholders.rememberSortedChapters
 
 object LibraryTab: Tab {
 
@@ -83,7 +83,7 @@ class LibraryScreen: Screen {
                 }
 
                 val ctx = LocalContext.current
-                val volumeItemsState = rememberVolumeItemsState(chapters = chapters)
+                val sortedChapters = rememberSortedChapters(chapters = chapters)
                 CenterBox(
                     Modifier.noRippleClickable { expanded = !expanded }
                 ) {
@@ -92,7 +92,7 @@ class LibraryScreen: Screen {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(300.dp),
-                            volumeItemsState = volumeItemsState,
+                            sortedChapters = sortedChapters,
                             onChapterClicked = {
                                 navigator?.push(
                                     MangaReaderScreen(

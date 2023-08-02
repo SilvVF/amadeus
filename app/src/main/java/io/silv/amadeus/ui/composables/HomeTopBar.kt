@@ -2,6 +2,8 @@
 
 package io.silv.amadeus.ui.composables
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -9,10 +11,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -22,7 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,17 +36,21 @@ import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.DomainManga
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun HomeTopBar(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     searchItems: SearchMangaUiState,
+    searchGridState: LazyGridState,
     onBookmarkClick: (manga: DomainManga) -> Unit,
     onMangaClick: (manga: DomainManga) -> Unit
 ) {
-    var searchBarActive by remember {
+    var searchBarActive by rememberSaveable {
         mutableStateOf(false)
+    }
+    var showSearchBar by rememberSaveable {
+        mutableStateOf(true)
     }
     val space = LocalSpacing.current
     Row(
@@ -58,59 +66,80 @@ fun HomeTopBar(
         if(!searchBarActive) {
             Text(
                 text = "Home",
-                modifier = Modifier.padding(space.large)
+                modifier = Modifier.padding(horizontal = space.large)
             )
         }
-        SearchBar(
-            query = searchQuery,
-            onQueryChange = onSearchQueryChange,
-            onSearch = {},
-            modifier = Modifier.weight(1f),
-            active = searchBarActive,
-            onActiveChange = {
-               searchBarActive = it
-            },
-            placeholder = {
-                Text("Quick Search")
-            },
-            leadingIcon = {
-                if (!searchBarActive) {
-                    Icon(
-                        imageVector = Icons.Filled.Search,
-                        contentDescription = null
-                    )
-                } else {
-                    IconButton(onClick = {
-                        searchBarActive = false
-                        onSearchQueryChange("")
-                    }) {
+        AnimatedContent(targetState = showSearchBar, label = "search") {
+            when (it) {
+                false ->   Row {
+                    IconButton(onClick = { showSearchBar = true }) {
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack,
+                            imageVector = Icons.Filled.KeyboardArrowLeft,
                             contentDescription = null
                         )
                     }
                 }
-            },
-            trailingIcon = {
-                IconButton(onClick = { onSearchQueryChange("") }) {
-                    Icon(
-                        imageVector = Icons.Filled.Clear,
-                        contentDescription = null
-                    )
+                true -> SearchBar(
+                    query = searchQuery,
+                    onQueryChange = onSearchQueryChange,
+                    onSearch = {},
+                    modifier = Modifier.weight(1f),
+                    active = searchBarActive,
+                    onActiveChange = {
+                        searchBarActive = it
+                    },
+                    placeholder = {
+                        Text("Quick Search")
+                    },
+                    leadingIcon = {
+                        if (!searchBarActive) {
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = null
+                            )
+                        } else {
+                            IconButton(onClick = {
+                                searchBarActive = false
+                                onSearchQueryChange("")
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowBack,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                    },
+                    trailingIcon = {
+                        if (!searchBarActive) {
+                            IconButton(onClick = { showSearchBar = false }) {
+                                Icon(
+                                    imageVector = Icons.Filled.KeyboardArrowRight,
+                                    contentDescription = null
+                                )
+                            }
+                        } else {
+                            IconButton(onClick = { onSearchQueryChange("") }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Clear,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .systemBarsPadding()) {
+                        SearchItems(
+                            gridState = searchGridState,
+                            modifier = Modifier.fillMaxSize(),
+                            searchMangaUiState = searchItems,
+                            onMangaClick = onMangaClick,
+                            onBookmarkClick = onBookmarkClick,
+                        )
+                    }
                 }
-            }
-        ) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .systemBarsPadding()) {
-                SearchItems(
-                    gridState = rememberLazyGridState(),
-                    modifier = Modifier.fillMaxSize(),
-                    searchMangaUiState = searchItems,
-                    onMangaClick = onMangaClick,
-                    onBookmarkClick = onBookmarkClick,
-                )
             }
         }
     }

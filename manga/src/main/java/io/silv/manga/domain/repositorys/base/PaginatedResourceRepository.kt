@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.Flow
 interface PaginatedResourceRepository<ResourceType: MangaResource, ResourceQuery>:
     MangaResourceRepository<ResourceType> {
 
+    fun latestQuery(): ResourceQuery
+
     fun getMangaResources(resourceQuery: ResourceQuery): Flow<List<ResourceType>>
 
     suspend fun loadNextPage()

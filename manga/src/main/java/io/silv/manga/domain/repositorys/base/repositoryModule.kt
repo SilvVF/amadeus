@@ -16,6 +16,10 @@ import io.silv.manga.domain.repositorys.SeasonalMangaRepository
 import io.silv.manga.domain.repositorys.SeasonalMangaRepositoryImpl
 import io.silv.manga.domain.repositorys.chapter.ChapterInfoRepository
 import io.silv.manga.domain.repositorys.chapter.OfflineFirstChapterInfoRepository
+import io.silv.manga.domain.repositorys.people.ArtistListRepository
+import io.silv.manga.domain.repositorys.people.ArtistListRepositoryImpl
+import io.silv.manga.domain.repositorys.people.AuthorListRepository
+import io.silv.manga.domain.repositorys.people.AuthorListRepositoryImpl
 import io.silv.manga.domain.repositorys.tags.TagRepository
 import io.silv.manga.domain.repositorys.tags.TagRepositoryImpl
 import io.silv.manga.domain.usecase.useCaseModule
@@ -63,5 +67,13 @@ val repositoryModule = module {
 
     singleOf(::TagRepositoryImpl) withOptions {
         bind<TagRepository>()
+    }
+
+    singleOf(::AuthorListRepositoryImpl) withOptions {
+        bind<AuthorListRepository>()
+    }
+
+    singleOf(::ArtistListRepositoryImpl) withOptions {
+        bind<ArtistListRepository>()
     }
 }

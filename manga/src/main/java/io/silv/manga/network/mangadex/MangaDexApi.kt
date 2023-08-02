@@ -7,6 +7,7 @@ import io.silv.ktor_response_mapper.ApiResponse
 import io.silv.ktor_response_mapper.client.KSandwichClient
 import io.silv.ktor_response_mapper.client.get
 import io.silv.ktor_response_mapper.suspendOnSuccess
+import io.silv.manga.network.mangadex.models.author.AuthorListResponse
 import io.silv.manga.network.mangadex.models.chapter.Chapter
 import io.silv.manga.network.mangadex.models.chapter.ChapterImageResponse
 import io.silv.manga.network.mangadex.models.cover.Cover
@@ -17,6 +18,7 @@ import io.silv.manga.network.mangadex.models.manga.MangaAggregateResponse
 import io.silv.manga.network.mangadex.models.manga.MangaByIdResponse
 import io.silv.manga.network.mangadex.models.manga.MangaListResponse
 import io.silv.manga.network.mangadex.models.tags.TagResponse
+import io.silv.manga.network.mangadex.requests.AuthorListRequest
 import io.silv.manga.network.mangadex.requests.CoverArtRequest
 import io.silv.manga.network.mangadex.requests.MangaAggregateRequest
 import io.silv.manga.network.mangadex.requests.MangaByIdRequest
@@ -33,16 +35,25 @@ class MangaDexApi(
 ) {
     private val mangaDexUrl = "https://api.mangadex.org"
 
-    private val cache = ConcurrentHashMap<String, ApiResponse.Success<*>>()
+    private val cache = ConcurrentHashMap<String, Pair<ApiResponse.Success<*>, Long>>()
+    private var insertNumber: Long = 0
 
     private suspend inline fun <reified T : Any> KSandwichClient.getWithCache(request: String): ApiResponse<T> {
-        cache[request]?.let { success ->
+        cache[request]?.let {(success, _) ->
             val response = success as? ApiResponse.Success<T>
             response?.let { return it.also { Log.d("MangaDexApi", "Value from cache") } }
         }
         return this.get<T>(request).also {
             it.suspendOnSuccess {
-                cache[request] = this
+                cache[request] = this to insertNumber++
+                if (cache.size >= 40) {
+                    cache.entries
+                        .sortedBy { it.value.second }
+                        .take(20)
+                        .forEach { (k, _) ->
+                            cache.remove(k)
+                        }
+                }
             }
         }
     }
@@ -57,6 +68,15 @@ class MangaDexApi(
         id: String
     ) = withContext(dispatchers.io) {
         client.getWithCache<UserIdListResponse>("$mangaDexUrl/user/$id/list".also { println(it) })
+    }
+
+    suspend fun getAuthorList(
+        authorListRequest: AuthorListRequest
+    ) = withContext(dispatchers.io) {
+        val request = authorListRequest
+            .createQueryParams()
+            .createQuery("$mangaDexUrl/author")
+        client.getWithCache<AuthorListResponse>(request)
     }
 
     suspend fun getCoverArtList(

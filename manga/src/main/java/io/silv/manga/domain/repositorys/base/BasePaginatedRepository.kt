@@ -14,6 +14,8 @@ abstract class BasePaginatedRepository<ResourceType: MangaResource, ResourceQuer
 
     abstract val scope: CoroutineScope
 
+    override fun latestQuery(): ResourceQuery = currentQuery
+
     override val loadState = MutableStateFlow<LoadState>(LoadState.None)
 
     protected var currentQuery: ResourceQuery = initialQuery

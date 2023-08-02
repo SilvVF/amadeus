@@ -11,6 +11,7 @@ data class MangaRequest(
     val title: String?  = null,
     val authorOrArtist: String? = null,
     val authors: List<String>? = null,
+    val artists: List<String>? = null,
     val year: Int? = null,
     val includedTags: List<String>? = null,
     val includedTagsMode: TagsMode? = null,

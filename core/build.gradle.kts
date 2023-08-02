@@ -17,5 +17,4 @@ dependencies {
     implementation(kotlin("reflect"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.7.2")
     implementation(project(":ktor-response-mapper"))
-    implementation("com.github.skydoves:whatif:1.1.2")
 }

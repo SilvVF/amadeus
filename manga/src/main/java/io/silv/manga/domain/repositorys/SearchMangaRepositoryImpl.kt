@@ -83,10 +83,12 @@ internal class SearchMangaRepositoryImpl(
                         includedTagsMode = query.includedTagsMode,
                         excludedTagsMode = query.excludedTagsMode,
                         status = query.publicationStatus?.map { it.name },
-                        availableTranslatedLanguage = listOf("en"),
+                        availableTranslatedLanguage = query.translatedLanguages,
                         contentRating = query.contentRating?.map { it.name },
                         authors = query.authorIds,
                         artists = query.artistIds,
+                        originalLanguage = query.originalLanguages,
+                        publicationDemographic = query.demographics?.map { it.name }
                     )
                 )
                     .getOrThrow()

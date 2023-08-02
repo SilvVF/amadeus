@@ -3,6 +3,7 @@ package io.silv.manga.domain.repositorys
 import io.silv.manga.domain.repositorys.base.PaginatedResourceRepository
 import io.silv.manga.local.entity.SearchMangaResource
 import io.silv.manga.network.mangadex.models.ContentRating
+import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status
 import io.silv.manga.network.mangadex.requests.MangaRequest
 
@@ -17,7 +18,10 @@ data class SearchMangaResourceQuery(
     val contentRating: List<ContentRating>? = null,
     val publicationStatus: List<Status>? = null,
     val authorIds: List<String>? = null,
-    val artistIds: List<String>? = null
+    val artistIds: List<String>? = null,
+    val originalLanguages: List<String>? = null,
+    val translatedLanguages: List<String>? = null,
+    val demographics: List<PublicationDemographic>? = null
 )
 
 

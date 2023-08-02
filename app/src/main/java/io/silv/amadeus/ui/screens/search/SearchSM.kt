@@ -4,6 +4,7 @@ package io.silv.amadeus.ui.screens.search
 
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
+import io.silv.amadeus.ui.shared.Language
 import io.silv.core.combineTuple
 import io.silv.manga.domain.models.DomainAuthor
 import io.silv.manga.domain.models.DomainManga
@@ -17,6 +18,7 @@ import io.silv.manga.domain.repositorys.people.AuthorListRepository
 import io.silv.manga.domain.repositorys.people.QueryResult
 import io.silv.manga.domain.repositorys.tags.TagRepository
 import io.silv.manga.network.mangadex.models.ContentRating
+import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status
 import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,10 +46,19 @@ class SearchSM(
 
     val status = Status.values().toList()
 
+    private val mutableSelectedDemographics = MutableStateFlow(emptyList<PublicationDemographic>())
+    val selectedDemographics = mutableSelectedDemographics.asStateFlow()
+
     private val mutableSelectedStatus = MutableStateFlow(emptyList<Status>())
     val selectedStatus = mutableSelectedStatus.asStateFlow()
 
     val contentRatings = ContentRating.values().toList()
+
+    private val mutableSelectedOrigLangs = MutableStateFlow(emptyList<Language>())
+    val selectedOrigLangs = mutableSelectedOrigLangs.asStateFlow()
+
+    private val mutableSelectedTransLangs = MutableStateFlow(emptyList<Language>())
+    val selectedTransLang = mutableSelectedTransLangs.asStateFlow()
 
     private val mutableSelectedContentRatings = MutableStateFlow(emptyList<ContentRating>())
     val selectedContentRatings = mutableSelectedContentRatings.asStateFlow()
@@ -124,8 +135,11 @@ class SearchSM(
         selectedArtists,
         mutableSelectedContentRatings,
         mutableSelectedStatus,
+        mutableSelectedOrigLangs,
+        mutableSelectedTransLangs,
+        mutableSelectedDemographics,
         startFlow,
-    ).map { (open, included, excluded, text, includedTagsMode, excludedTagsMode, authors, artists, rating, status, _)  ->
+    ).map { (open, included, excluded, text, includedTagsMode, excludedTagsMode, authors, artists, rating, status, originalLangs, transLangs, demographics,_)  ->
         Pair(
             SearchMangaResourceQuery(
                 title = text.ifEmpty { null },
@@ -136,7 +150,10 @@ class SearchSM(
                 authorIds = authors.map { it.id }.ifEmpty { null },
                 artistIds = artists.map { it.id }.ifEmpty { null },
                 contentRating = rating.ifEmpty { null },
-                publicationStatus = status.ifEmpty { null }
+                publicationStatus = status.ifEmpty { null },
+                originalLanguages = originalLangs.map { it.code }.ifEmpty { null },
+                translatedLanguages = transLangs.map { it.code }.ifEmpty { null },
+                demographics = demographics.ifEmpty { null  }
             ), open
         )
     }
@@ -188,6 +205,27 @@ class SearchSM(
 
     fun loadNextSearchPage() = coroutineScope.launch {
         searchMangaRepository.loadNextPage()
+    }
+
+    fun selectDemographic(demographic: PublicationDemographic) = coroutineScope.launch {
+        mutableSelectedDemographics.update {
+            if (it.contains(demographic)) { it.filter { v -> v != demographic } }
+            else it + demographic
+        }
+    }
+
+    fun selectTranslatedLanguage(language: Language) = coroutineScope.launch {
+        mutableSelectedTransLangs.update {
+            if (it.contains(language)) { it.filter { v -> v != language } }
+            else it + language
+        }
+    }
+
+    fun selectOriginalLanguage(language: Language) = coroutineScope.launch {
+        mutableSelectedOrigLangs.update {
+            if (it.contains(language)) { it.filter { v -> v != language } }
+            else it + language
+        }
     }
 
     fun isFiltering(bool: Boolean) {

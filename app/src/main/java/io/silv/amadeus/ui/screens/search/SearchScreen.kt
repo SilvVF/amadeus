@@ -6,6 +6,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,14 +17,18 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -40,12 +45,15 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -54,11 +62,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,11 +83,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -101,6 +113,7 @@ import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
+import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalPaddingValues
@@ -110,6 +123,7 @@ import io.silv.manga.domain.models.DomainManga
 import io.silv.manga.domain.models.DomainTag
 import io.silv.manga.domain.repositorys.people.QueryResult
 import io.silv.manga.network.mangadex.models.ContentRating
+import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status
 import io.silv.manga.network.mangadex.requests.MangaRequest
 
@@ -137,6 +151,9 @@ class SearchScreen: Screen {
         val selectedContentRatings by sm.selectedContentRatings.collectAsStateWithLifecycle()
         val selectedStatus by sm.selectedStatus.collectAsStateWithLifecycle()
         val filtering by sm.filtering.collectAsStateWithLifecycle()
+        val selectedOriginalLanguages by sm.selectedOrigLangs.collectAsStateWithLifecycle()
+        val selectedTranslatedLanguages by sm.selectedTransLang.collectAsStateWithLifecycle()
+        val selectedDemographics by sm.selectedDemographics.collectAsStateWithLifecycle()
 
         val lazyGridState = rememberLazyGridState()
         val keyboardController = LocalSoftwareKeyboardController.current
@@ -168,11 +185,14 @@ class SearchScreen: Screen {
             }
         }
 
-        Scaffold {
+        Scaffold(
+            contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.systemBars)
+        ) {
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(it)) {
+                    .padding(it)
+            ) {
                 AnimatedContent(
                     targetState = filtering,
                     label = "filter"
@@ -204,7 +224,13 @@ class SearchScreen: Screen {
                             selectedContentRatings = selectedContentRatings,
                             selectedStatus = selectedStatus,
                             statusList = sm.status,
-                            onStatusSelected = sm::statusSelected
+                            onStatusSelected = sm::statusSelected,
+                            selectedOriginalLanguages = selectedOriginalLanguages,
+                            onOriginalLanguageSelected = sm::selectOriginalLanguage,
+                            selectedTranslatedLanguages = selectedTranslatedLanguages,
+                            onTranslatedLanguageSelected = sm::selectTranslatedLanguage,
+                            selectedDemographics = selectedDemographics,
+                            onDemographicSelected = sm::selectDemographic
                         )
                         false -> Column(
                             Modifier.systemBarsPadding()
@@ -285,7 +311,13 @@ fun FilterScreen(
     includedIds: List<String>,
     excludedIds: List<String>,
     includedSelected: (String) -> Unit,
-    excludedSelected: (String) -> Unit
+    excludedSelected: (String) -> Unit,
+    selectedOriginalLanguages: List<Language>,
+    onOriginalLanguageSelected: (Language) -> Unit,
+    selectedTranslatedLanguages: List<Language>,
+    onTranslatedLanguageSelected: (Language) -> Unit,
+    selectedDemographics: List<PublicationDemographic>,
+    onDemographicSelected: (PublicationDemographic) -> Unit
 ) {
     val space = LocalSpacing.current
     val groupedTags = remember(tagsUiState) {
@@ -301,6 +333,7 @@ fun FilterScreen(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
+            .systemBarsPadding()
     ) {
         FilterTopBar {
             hide()
@@ -337,11 +370,14 @@ fun FilterScreen(
                             selectedAuthors = selectedArtists,
                         )
                     }
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(space.med))
                 }
             }
             item {
-                Column(Modifier.fillMaxWidth()) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = space.med)) {
                     Text("Content Rating")
                     FlowRow {
                         contentRatings.forEach { rating ->
@@ -359,7 +395,10 @@ fun FilterScreen(
                 }
             }
             item {
-                Column(Modifier.fillMaxWidth()) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = space.med)) {
                     Text("Publication Status")
                     FlowRow {
                         statusList.forEach { status ->
@@ -373,7 +412,53 @@ fun FilterScreen(
                             )
                         }
                     }
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(space.med))
+                }
+            }
+            item {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = space.med)) {
+                    val demographics = remember {
+                        PublicationDemographic.values().toList()
+                    }
+                    Text("Magazine Demographic")
+                    FlowRow {
+                        demographics.forEach { demographic ->
+                            FilterChip(
+                                selected = remember(demographic, selectedDemographics) {
+                                    selectedDemographics.contains(demographic)
+                                },
+                                onClick = { onDemographicSelected(demographic) },
+                                label = { Text(demographic.name) },
+                                modifier = Modifier.padding(horizontal = space.xs)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(space.med))
+                }
+            }
+            item {
+                Column(Modifier.padding(horizontal = space.med)) {
+                    LanguageSelection(
+                        label = {
+                            Text("Original Language")
+                        },
+                        placeholder = "All Languages",
+                        selected = selectedOriginalLanguages,
+                        onLanguageSelected = onOriginalLanguageSelected,
+                    )
+                    Spacer(Modifier.height(space.med))
+                    LanguageSelection(
+                        label = {
+                            Text("Translated Languages")
+                        },
+                        placeholder = "All Languages",
+                        selected = selectedTranslatedLanguages,
+                        onLanguageSelected = onTranslatedLanguageSelected,
+                    )
+                    Spacer(Modifier.height(space.med))
                 }
             }
             stickyHeader {
@@ -397,6 +482,100 @@ fun FilterScreen(
                     includedSelected = includedSelected,
                     excludedIds = excludedIds,
                     excludedSelected = excludedSelected
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LanguageSelection(
+    label: (@Composable () -> Unit)? = null,
+    placeholder: String,
+    selected: List<Language>,
+    onLanguageSelected: (Language) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
+    val maxHeight = remember(screenHeightDp) {
+        screenHeightDp / 3f
+    }
+    val space = LocalSpacing.current
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentSize(Alignment.BottomStart)
+    ) {
+        Column(horizontalAlignment = Alignment.Start) {
+            label?.invoke()
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Start) {
+                IconButton(onClick = { expanded = true }) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = null
+                    )
+                }
+                if (selected.isEmpty()) {
+                    Text(text = placeholder)
+                } else {
+                    when (selected.size) {
+                        in 1..2 -> {
+                            selected.forEach {
+                                FilterChip(
+                                    selected = true ,
+                                    onClick = { onLanguageSelected(it) },
+                                    label = { Text(it.string) },
+                                    modifier = Modifier.padding(horizontal = space.xs)
+                                )
+                            }
+                        }
+                        else -> {
+                            FilterChip(
+                                selected = true ,
+                                onClick = { onLanguageSelected(selected.first()) },
+                                label = { Text(selected.first().string) },
+                                modifier = Modifier.padding(horizontal = space.xs)
+                            )
+                            AssistChip(
+                                onClick = { expanded = !expanded },
+                                enabled = true,
+                                label = { Text("+${selected.size - 1} more") },
+                                modifier = Modifier.padding(horizontal = space.xs)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        DropdownMenu(
+            expanded = expanded,
+            modifier = Modifier.heightIn(0.dp, maxHeight),
+            onDismissRequest = { expanded = false },
+        ) {
+           Language.values().forEach { language ->
+                DropdownMenuItem(
+                    onClick = { onLanguageSelected(language) },
+                    text = { Text(language.string) },
+                    leadingIcon = {
+                        Image(
+                            painter = painterResource(id = language.resId),
+                            contentDescription = "flag",
+                            modifier = Modifier.size(50.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                    },
+                    trailingIcon = {
+                        Checkbox(
+                            checked = remember(language, selected) {
+                                derivedStateOf { language in selected }.value
+                            },
+                            onCheckedChange = {
+                                onLanguageSelected(language)
+                            }
+                        )
+                    }
                 )
             }
         }
@@ -916,8 +1095,6 @@ fun SearchMangaTopBar(
     onFilterIconClick: () -> Unit,
     onBackArrowClicked: () -> Unit,
 ) {
-    val space = LocalSpacing.current
-
     val selectedExcluded = remember(excludedTags, selectedExcludedIds) {
         excludedTags.filter { it.id in selectedExcludedIds }
     }

@@ -7,8 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -48,11 +48,13 @@ class MainActivity : ComponentActivity() {
                 ) {
                     TabNavigator(HomeTab) {
                         Scaffold(
-                            contentWindowInsets = WindowInsets(0,0,0,0),
                             bottomBar = {
                                 val visible by LocalBottomBarVisibility.current
                                 if (visible) {
-                                    NavigationBar {
+                                    NavigationBar(
+                                        Modifier
+                                            .fillMaxWidth()
+                                    ) {
                                         TabNavigationItem(HomeTab)
                                         TabNavigationItem(SearchTab)
                                         TabNavigationItem(SavedTab)
@@ -79,6 +81,7 @@ private fun RowScope.TabNavigationItem(tab: Tab) {
 
     NavigationBarItem(
         label = { Text(tab.options.title) },
+        alwaysShowLabel = false,
         selected = tabNavigator.current == tab,
         onClick = { tabNavigator.current = tab },
         icon = { Icon(

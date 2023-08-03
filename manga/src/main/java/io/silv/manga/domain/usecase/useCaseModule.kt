@@ -23,6 +23,8 @@ val useCaseModule = module {
 
     factoryOf(::CombineMangaChapterInfo)
 
+    factoryOf(::UpdateMangaResourceWithArt)
+
     factoryOf(::GetMangaResourcesById)
 }
 

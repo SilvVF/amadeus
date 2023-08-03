@@ -1,9 +1,9 @@
 package io.silv.manga.domain.usecase
 
+import android.util.Log
 import io.silv.core.combine
 import io.silv.manga.domain.models.DomainChapter
 import io.silv.manga.domain.models.DomainManga
-import io.silv.manga.domain.repositorys.chapter.ChapterInfoRepository
 import io.silv.manga.domain.repositorys.FilteredMangaRepository
 import io.silv.manga.domain.repositorys.FilteredYearlyMangaRepository
 import io.silv.manga.domain.repositorys.PopularMangaRepository
@@ -11,6 +11,8 @@ import io.silv.manga.domain.repositorys.RecentMangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaRepository
 import io.silv.manga.domain.repositorys.SeasonalMangaRepository
+import io.silv.manga.domain.repositorys.base.toBool
+import io.silv.manga.domain.repositorys.chapter.ChapterInfoRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -24,8 +26,7 @@ class CombineMangaChapterInfo(
     private val chapterInfoRepository: ChapterInfoRepository,
     private val filteredYearlyMangaRepository: FilteredYearlyMangaRepository,
 ) {
-    fun loading(id: String) = chapterInfoRepository.loadingIds
-        .map { ids -> ids.any { it == id } }
+    fun loading() = chapterInfoRepository.loadState.map(::toBool)
 
     operator fun invoke(id: String): Flow<MangaFull> {
         return combine(
@@ -47,7 +48,11 @@ class CombineMangaChapterInfo(
                     resources.map { it.volumeToCoverArt }.forEach { putAll(it) }
                 },
                 chapterInfo = chapterInfo.map {
-                    DomainChapter(it)
+                    DomainChapter(it).also {
+                        if (it.downloaded) {
+                            Log.d("CombineMangaChapterInfo", "${it.id} downloaded")
+                        }
+                    }
                 }
             )
         }

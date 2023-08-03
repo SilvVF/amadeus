@@ -128,9 +128,8 @@ fun HomeTopBar(
                     }
                 ) {
                     Box(
-                        Modifier
-                            .fillMaxSize()
-                            .systemBarsPadding()) {
+                        Modifier.fillMaxSize()
+                    ) {
                         SearchItems(
                             gridState = searchGridState,
                             modifier = Modifier.fillMaxSize(),

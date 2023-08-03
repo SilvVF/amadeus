@@ -1,15 +1,37 @@
 package io.silv.manga.domain
 
+import android.util.Log
 import io.silv.manga.domain.repositorys.FilteredMangaRepository
 import io.silv.manga.domain.repositorys.base.ProtectedResources
 import io.silv.manga.network.mangadex.models.LocalizedString
 import io.silv.manga.network.mangadex.models.manga.Manga
 import kotlinx.datetime.Clock
 import java.time.Duration
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.toKotlinDuration
 
 
+
 internal fun checkProtected(id: String) = ProtectedResources.ids.contains(id)
+
+/**
+ * Attempts [block], returning a successful [Result] if it succeeds, otherwise a [Result.Failure]
+ * taking care not to break structured concurrency
+ */
+suspend fun <T> suspendRunCatching(block: suspend () -> T): Result<T> = try {
+    Result.success(block())
+} catch (cancellationException: CancellationException) {
+    throw cancellationException
+} catch (exception: Exception) {
+    Log.i(
+        "suspendRunCatching",
+        "Failed to evaluate a suspendRunCatchingBlock. Returning failure Result",
+        exception,
+    )
+    Result.failure(exception)
+}
+
+
 
 fun coverArtUrl(
     fileName: String?,

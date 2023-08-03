@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import io.silv.manga.network.mangadex.models.ContentRating
+import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status
 import kotlinx.datetime.Clock
 
@@ -39,6 +40,8 @@ data class SeasonalMangaResource(
     override val createdAt: String,
 
     override val updatedAt: String,
+
+    override val publicationDemographic: PublicationDemographic?,
 
     override val volumeToCoverArt: Map<String, String> = emptyMap(),
 

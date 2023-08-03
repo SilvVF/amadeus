@@ -161,19 +161,21 @@ class SearchScreen: Screen {
         val keyboardController = LocalSoftwareKeyboardController.current
         val tabNavigator = LocalTabNavigator.current
         val navigator = LocalNavigator.current
+        var bottomBarVisibility by LocalBottomBarVisibility.current
         val topLevelPadding by LocalPaddingValues.current
-        var bottomBarVisible by LocalBottomBarVisibility.current
 
         LaunchedEffect(Unit) {
-            bottomBarVisible = false
             sm.isFiltering(false)
         }
 
         LaunchedEffect(Unit) {
             var shownOnce = false
             snapshotFlow { filtering }.collect {
+                bottomBarVisibility = !it
                 if (shownOnce && !it) { sm.startSearch() }
-                if (it) { shownOnce = true }
+                if (it) {
+                    shownOnce = true
+                }
                 keyboardController?.hide()
             }
         }
@@ -194,7 +196,6 @@ class SearchScreen: Screen {
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(it)
             ) {
                 AnimatedContent(
                     targetState = filtering,
@@ -262,6 +263,8 @@ class SearchScreen: Screen {
                             )
                             SearchItems(
                                 modifier = Modifier
+                                    .padding(topLevelPadding)
+                                    .padding(it)
                                     .fillMaxWidth()
                                     .weight(1f),
                                 searchMangaUiState = searchMangaUiState,

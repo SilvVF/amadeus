@@ -41,12 +41,12 @@ dependencies {
     api(project(":core"))
     api(project(":ktor-response-mapper"))
 
-    implementation("androidx.core:core-ktx:1.10.1")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.9.0")
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
 
     //ROOM
     ksp(libs.room.ksp)
@@ -74,31 +74,31 @@ dependencies {
     val work_version = "2.9.0-alpha01"
 
     // Kotlin + coroutines
-    implementation("androidx.work:work-runtime-ktx:$work_version")
+    implementation(libs.androidx.work.runtime.ktx)
 
     // optional - RxJava2 support
-    implementation("androidx.work:work-rxjava2:$work_version")
+    implementation(libs.androidx.work.rxjava2)
 
     // optional - GCMNetworkManager support
-    implementation("androidx.work:work-gcm:$work_version")
+    implementation(libs.androidx.work.gcm)
 
     // optional - Test helpers
-    androidTestImplementation("androidx.work:work-testing:$work_version")
-    implementation("androidx.work:work-runtime-ktx:2.8.1")
+    androidTestImplementation(libs.androidx.work.testing)
+    implementation(libs.androidx.work.runtime.ktx)
 
 
     // optional - Multiprocess support
-    implementation("androidx.work:work-multiprocess:$work_version")
+    implementation(libs.androidx.work.multiprocess)
 
-    implementation("androidx.paging:paging-runtime:$paging_version")
+    implementation(libs.androidx.paging.runtime)
     // alternatively - without Android dependencies for tests
-    testImplementation("androidx.paging:paging-common:$paging_version")
+    testImplementation(libs.androidx.paging.common)
 
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.2")
+    implementation(libs.kotlinx.coroutines.android)
     implementation(kotlin("reflect"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.7.2")
+    implementation(libs.kotlinx.coroutines.guava)
     implementation(project(":ktor-response-mapper"))
 }

@@ -3,6 +3,7 @@ package io.silv.manga.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import io.silv.manga.network.mangadex.models.ContentRating
+import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status
 import kotlinx.datetime.Clock
 
@@ -16,6 +17,8 @@ data class SavedMangaEntity(
     val readChapters: List<String>,
 
     val chapterToLastReadPage: Map<String, Int>,
+
+    val readingStatus: ReadingStatus,
 
     override val coverArt: String,
 
@@ -43,6 +46,8 @@ data class SavedMangaEntity(
 
     val bookmarked: Boolean,
 
+    override val publicationDemographic: PublicationDemographic?,
+
     override val createdAt: String,
 
     override val updatedAt: String,
@@ -56,6 +61,7 @@ data class SavedMangaEntity(
         progressState = ProgressState.NotStarted,
         chapterToLastReadPage = emptyMap(),
         readChapters = emptyList(),
+        readingStatus = ReadingStatus.None,
         coverArt = mangaResource.coverArt,
         description = mangaResource.description,
         titleEnglish = mangaResource.titleEnglish,
@@ -72,6 +78,7 @@ data class SavedMangaEntity(
         createdAt = mangaResource.createdAt,
         updatedAt = mangaResource.updatedAt,
         volumeToCoverArt = emptyMap(),
+        publicationDemographic = mangaResource.publicationDemographic
     )
 
     constructor(
@@ -81,6 +88,7 @@ data class SavedMangaEntity(
             id = recent.id,
             progressState = ProgressState.NotStarted,
             chapterToLastReadPage = emptyMap(),
+            readingStatus = ReadingStatus.None,
             readChapters = emptyList(),
             coverArt = recent.coverArt,
             description = recent.description,
@@ -97,6 +105,7 @@ data class SavedMangaEntity(
             bookmarked = false,
             createdAt = recent.createdAt,
             updatedAt = recent.updatedAt,
+            publicationDemographic = recent.publicationDemographic,
             volumeToCoverArt = mangaResources
                 .filter { it.volumeToCoverArt.isNotEmpty() }
                 .maxBy { it.savedLocalAtEpochSeconds }

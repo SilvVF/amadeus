@@ -1,7 +1,6 @@
 package io.silv.manga.local.workers
 
 import android.content.Context
-import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.work.BackoffPolicy
 import androidx.work.CoroutineWorker
@@ -44,7 +43,6 @@ class ChapterDeletionWorker(
                         val file = File(uri.toUri().path ?: error("No path for $uri"))
                         file.delete() to uri
                     }
-                        .also { println(it) }
                         .mapNotNull { if (it.first) null else it.second }
                     chapterDao.updateChapter(
                         chapter.copy(

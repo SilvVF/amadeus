@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.core.net.toUri
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
@@ -17,12 +18,14 @@ import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
+import io.silv.ktor_response_mapper.suspendOnFailure
 import io.silv.manga.domain.ChapterToChapterEntityMapper
 import io.silv.manga.domain.usecase.GetMangaResourcesById
 import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.network.mangadex.MangaDexApi
+import io.silv.manga.network.mangadex.requests.ChapterListRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
@@ -84,34 +87,53 @@ class ChapterDownloadWorker(
 
     override suspend fun doWork(): Result {
 
-        val mangaId = inputData.getString(MANGA_ID) ?: return Result.failure()
-        val chaptersToGet = inputData.getStringArray(CHAPTERS_KEY)?.toList() ?: return Result.failure()
+        val mangaId = inputData.getString(MANGA_ID).also { Log.d("ChapterDownloadWorker", "$it manga id") } ?: return Result.failure()
+        val chaptersToGet = inputData.getStringArray(CHAPTERS_KEY).also { Log.d("ChapterDownloadWorker", "$it chapter ids") } ?.toList()?: return Result.failure()
 
+        Log.d("ChapterDownloadWorker", "$mangaId manga id")
+        Log.d("ChapterDownloadWorker", "$chaptersToGet chapter ids")
+
+        downloadingIds.update {
+            it + chaptersToGet
+        }
         // Create saved manga if it is being downloaded from a resource
         savedMangaDao.getMangaById(mangaId) ?: run {
+            Log.d("ChapterDownloadWorker", "Saving manga")
             val resources = getMangaResourcesById(mangaId)
-            if (resources.isNotEmpty()) {
+            Log.d("ChapterDownloadWorker", "Saving manga found resources ${resources.map { it.first.id }}")
+            if (resources.isEmpty()) {
                 return Result.failure()
             }
             SavedMangaEntity(
                 mangaResource = resources.maxBy { it.first.savedLocalAtEpochSeconds }.first
-            ).also { savedMangaDao.upsertManga(it) }
+            ).also {
+                savedMangaDao.upsertManga(it)
+            }
         }
 
-        chaptersToGet.forEach {
-            chapterDao.getById(it) ?: run {
-                mangaDexApi.getMangaFeed(mangaId)
-                    .getOrThrow()
-                    .data.forEach {
+        val refetch = chaptersToGet.filter { cid ->
+            chapterDao.getById(cid) == null
+        }
+
+        if (refetch.isNotEmpty()) {
+            Log.d("ChapterDownloadWorker", "refetching $refetch")
+            mangaDexApi.getChapterData(
+                ChapterListRequest(
+                    ids = refetch
+                )
+            )
+                .suspendOnFailure {
+                    Log.d("ChapterDownloadWorker", "refetching failed $refetch")
+                }
+                .getOrThrow()
+                .also {
+                    Log.d("ChapterDownloadWorker", "refetching saving $refetch")
+                    it.data.forEach {
                         chapterDao.upsertChapter(
                             ChapterToChapterEntityMapper.map(it to null)
                         )
                     }
-            }
-        }
-
-        downloadingIds.update {
-            it + chaptersToGet
+                }
         }
 
         val result = runCatching {
@@ -132,19 +154,18 @@ class ChapterDownloadWorker(
                                                     .toString()
                                     )
                                 )
+                                Log.d("ChapterDownloadWorker", "Updating images $id")
                             }
                         }
                 }
-                downloadingIds.update { ids ->
-                    ids.filter { it != id }
-                }
+                downloadingIds.update { ids -> ids - id }
             }
         }
 
         return if (result.isSuccess)
-            Result.success()
+            Result.success().also {   Log.d("ChapterDownloadWorker", "Success") }
         else
-            Result.failure()
+            Result.failure().also {   Log.d("ChapterDownloadWorker", "Failure") }
     }
 
     companion object {

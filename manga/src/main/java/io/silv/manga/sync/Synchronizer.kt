@@ -1,10 +1,9 @@
 package io.silv.manga.sync
 
-import android.util.Log
+import io.silv.manga.domain.suspendRunCatching
 import io.silv.manga.local.entity.AmadeusEntity
 import kotlinx.datetime.Clock
 import java.time.Duration
-import kotlin.coroutines.cancellation.CancellationException
 
 interface Synchronizer {
 
@@ -13,24 +12,6 @@ interface Synchronizer {
      */
     suspend fun Syncable.sync() = this@sync.syncWith(this@Synchronizer)
 }
-
-/**
- * Attempts [block], returning a successful [Result] if it succeeds, otherwise a [Result.Failure]
- * taking care not to break structured concurrency
- */
-private suspend fun <T> suspendRunCatching(block: suspend () -> T): Result<T> = try {
-    Result.success(block())
-} catch (cancellationException: CancellationException) {
-    throw cancellationException
-} catch (exception: Exception) {
-    Log.i(
-        "suspendRunCatching",
-        "Failed to evaluate a suspendRunCatchingBlock. Returning failure Result",
-        exception,
-    )
-    Result.failure(exception)
-}
-
 
 internal suspend fun <Key, Local: AmadeusEntity<Key>, Network> Synchronizer.syncVersions(
     getLocalWithVersions: suspend () -> List<Pair<Int, Local>>,

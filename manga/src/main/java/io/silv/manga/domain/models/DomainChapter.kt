@@ -33,17 +33,17 @@ data class DomainChapter(
         progress = entity.progressState,
         mangaId = entity.mangaId,
         imageUris = entity.chapterImages,
-        title = entity.title,
+        title = entity.title.ifEmpty { null },
         volume = entity.volume,
         chapter = entity.chapterNumber.toString(),
         pages = entity.pages,
         translatedLanguage = "en",
-        uploader = "",
-        externalUrl = null,
-        version = 0,
+        uploader = entity.uploader ?: "",
+        externalUrl = entity.externalUrl,
+        version = entity.version,
         createdAt = entity.createdAt,
         updatedAt = entity.updatedAt,
-        readableAt = ""
+        readableAt = entity.readableAt
     )
 
     companion object {

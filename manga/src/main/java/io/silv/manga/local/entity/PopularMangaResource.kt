@@ -3,6 +3,7 @@ package io.silv.manga.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import io.silv.manga.network.mangadex.models.ContentRating
+import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status
 import kotlinx.datetime.Clock
 
@@ -39,6 +40,8 @@ data class PopularMangaResource(
 
     override val updatedAt: String,
 
+    override val publicationDemographic: PublicationDemographic?,
+
     override val volumeToCoverArt: Map<String, String> = emptyMap(),
 
     override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
@@ -60,6 +63,7 @@ data class PopularMangaResource(
         version = savedMangaEntity.version,
         createdAt = savedMangaEntity.createdAt,
         updatedAt = savedMangaEntity.updatedAt,
+        publicationDemographic = savedMangaEntity.publicationDemographic,
         volumeToCoverArt = savedMangaEntity.volumeToCoverArt,
         savedLocalAtEpochSeconds = savedMangaEntity.savedLocalAtEpochSeconds
     )

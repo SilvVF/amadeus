@@ -66,16 +66,27 @@ internal class SavedMangaRepositoryImpl(
                         )
                     }
                 }
-            } ?: saveManga(id)
+            }
+                ?: run {
+                    getMangaResourceById(id).maxBy { it.first.savedLocalAtEpochSeconds }.let { resource ->
+                        log("No Saved found using resource $id")
+                        val entity =  SavedMangaEntity(resource.first).copy(bookmarked = true)
+                        savedMangaDao.upsertManga(entity)
+                        updateChapter(
+                            UpdateInfo(id, chapterDao, savedMangaDao, mangaDexApi, entity, 1)
+                        )
+                        log("Inserted Saved manga using resource $id and set bookmarked true")
+                    }
+                }
     }
 
     override suspend fun saveManga(id: String) {
         getMangaResourceById(id).maxBy { it.first.savedLocalAtEpochSeconds }.let { resource ->
             log("No Saved found using resource $id")
-            val entity =  SavedMangaEntity(resource.first).copy(bookmarked = true)
+            val entity =  SavedMangaEntity(resource.first)
             savedMangaDao.upsertManga(entity)
             updateChapter(
-                UpdateInfo(id, chapterDao, savedMangaDao, mangaDexApi, entity)
+                UpdateInfo(id, chapterDao, savedMangaDao, mangaDexApi, entity, 1)
             )
             log("Inserted Saved manga using resource $id and set bookmarked true")
         }

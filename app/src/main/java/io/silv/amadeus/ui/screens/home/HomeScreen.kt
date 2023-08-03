@@ -145,7 +145,9 @@ class HomeScreen: Screen {
         ConfirmCloseAppPopup()
 
         Column(
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
+                .padding(bottomBarPadding)
         ) {
             HomeTopBar(
                 onBookmarkClick = {
@@ -459,7 +461,7 @@ fun MangaPager(
 }
 
 @Composable
-fun BlurImageBackground(modifier: Modifier, url: String, content: @Composable () -> Unit) {
+fun BlurImageBackground(modifier: Modifier, url: String, content: @Composable () -> Unit = {}) {
     val context = LocalContext.current
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val screenHeight = LocalConfiguration.current.screenHeightDp

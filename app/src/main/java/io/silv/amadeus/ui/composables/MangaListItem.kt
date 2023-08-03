@@ -18,6 +18,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.ui.shared.CenterBox
+import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.shadow
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.DomainManga
@@ -124,9 +129,25 @@ fun TranslatedLanguageTags(
             items = tags,
             key = { item -> item }
         ) {language ->
+
+            var showLang by remember {
+                mutableStateOf(false)
+            }
+
+            val text = remember(showLang) {
+                if (showLang) {
+                    Language.values().find { it.code == language }?.string ?: language
+                } else {
+                    language
+                }
+            }
+
             SuggestionChip(
-                onClick = { onLanguageClick(language) },
-                label = { Text(language) },
+                onClick = {
+                    showLang = !showLang
+                    onLanguageClick(language)
+                },
+                label = { Text(text) },
                 modifier = Modifier.padding(horizontal = space.small)
             )
         }

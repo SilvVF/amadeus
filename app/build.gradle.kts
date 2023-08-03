@@ -59,7 +59,7 @@ dependencies {
     implementation(project(":core"))
 
     implementation(libs.androidx.core.ktx)
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
+    implementation(libs.androidx.lifecycle.runtime.ktx)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
     testImplementation(libs.junit)
@@ -74,25 +74,25 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit)
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
-    implementation("androidx.activity:activity-compose:1.7.2")
-    implementation("com.github.skydoves:orbital:0.2.4")
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.orbital)
     implementation("androidx.compose.ui:ui-graphics")
     debugImplementation("androidx.compose.ui:ui-tooling")
-    implementation("androidx.compose.material:material-icons-extended:1.4.3")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.1")
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     val paging_version = "3.1.1"
 
-    implementation("androidx.paging:paging-runtime:$paging_version")
+    implementation(libs.androidx.paging.runtime)
 
     // alternatively - without Android dependencies for tests
-    testImplementation("androidx.paging:paging-common:$paging_version")
+    testImplementation(libs.androidx.paging.common)
     // optional - Jetpack Compose integration
-    implementation("androidx.paging:paging-compose:3.2.0-rc01")
+    implementation("androidx.paging:paging-compose:3.2.0")
 
     val navVersion = "2.6.0"
 
-    implementation("androidx.navigation:navigation-compose:$navVersion")
+    implementation(libs.androidx.navigation.compose)
 
 
     //ROOM
@@ -133,5 +133,5 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
     implementation(kotlin("reflect"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.7.2")
+    implementation(libs.kotlinx.coroutines.guava)
 }

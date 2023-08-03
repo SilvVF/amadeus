@@ -1,22 +1,38 @@
 package io.silv.amadeus.ui.screens.manga_view
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -29,28 +45,25 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
-import com.skydoves.orbital.Orbital
-import com.skydoves.orbital.animateMovement
-import com.skydoves.orbital.rememberContentWithOrbitalScope
-import io.silv.amadeus.ui.composables.AnimatedShimmer
-import io.silv.amadeus.ui.composables.MangaViewPoster
+import io.silv.amadeus.ui.composables.MainPoster
+import io.silv.amadeus.ui.composables.TranslatedLanguageTags
+import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
-import io.silv.amadeus.ui.screens.manga_view.composables.ChapterList
-import io.silv.amadeus.ui.screens.manga_view.composables.VolumeList
+import io.silv.amadeus.ui.screens.manga_view.composables.ChapterListHeader
+import io.silv.amadeus.ui.screens.manga_view.composables.ChapterVolumeNavBar
+import io.silv.amadeus.ui.screens.manga_view.composables.MangaInfo
+import io.silv.amadeus.ui.screens.manga_view.composables.chapterListItems
+import io.silv.amadeus.ui.screens.manga_view.composables.volumePosterItems
 import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.shared.noRippleClickable
-import io.silv.amadeus.ui.stateholders.rememberSortedChapters
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.DomainChapter
 import io.silv.manga.domain.models.DomainManga
 import org.koin.core.parameter.parametersOf
 
@@ -63,150 +76,87 @@ class MangaViewScreen(
     override fun Content() {
 
         val sm = getScreenModel<MangaViewSM> { parametersOf(manga) }
-
         var bottomBarVisible by LocalBottomBarVisibility.current
-
-        val state by sm.chapterInfoUiState.collectAsStateWithLifecycle()
+        val mangaViewState by sm.mangaViewStateUiState.collectAsStateWithLifecycle()
         val downloading by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
+        val space = LocalSpacing.current
         val navigator = LocalNavigator.current
+        val currentPage by sm.currentPage.collectAsStateWithLifecycle()
+        val sortedAscending by sm.sortedByAsc.collectAsStateWithLifecycle()
 
         val snackbarHostState = remember { SnackbarHostState() }
+
+        var chaptersShowing by rememberSaveable {
+            mutableStateOf(true)
+        }
 
         LaunchedEffect(Unit) { bottomBarVisible = false }
 
         Scaffold(
             snackbarHost = {
                 SnackbarHost(hostState = snackbarHostState)
-            }
+            },
+            contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.systemBars)
         ) { paddingValues ->
             Column(Modifier
-                .padding(paddingValues)
-            ) {
-               MangaViewPoster(
-                   Modifier
-                       .fillMaxHeight(0.4f)
-                       .fillMaxWidth(),
-                   manga = state.manga,
-                   onReadNowClick = {
-
-                   },
-                   onBookMarkClick = {
-                       sm.bookmarkManga(state.manga.id)
-                   }
-               )
-               MangaView(
-                   state = state.chapterListState,
-                   coverArtState = state.coverArtState,
-                   downloads = downloading,
-                   retryLoadCoverArt = {
-
-                   },
-                   retryLoadChapterList = {
-
-                   },
-                   downloadChapters = { chapters ->
-                        sm.downloadChapterImages(
-                            chapters.map { it.id }
+                    .padding(paddingValues)
+                ) {
+                LazyColumn(Modifier.fillMaxSize().navigationBarsPadding()) {
+                    item {
+                        MainPoster(
+                            manga = manga,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                   },
-                   deleteChapters = {chapters ->
-                        sm.deleteChapterImages(
-                            chapters.map { it.id }
-                        )
-                   },
-                   readButtonClick = { mangaId, chapterId ->
-                       navigator?.push(
-                           MangaReaderScreen(mangaId, chapterId)
-                       )
-                   }
-               )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalAnimationApi::class)
-@Composable
-fun MangaView(
-    state: ChapterListState,
-    coverArtState: CoverArtState,
-    downloads: List<String>,
-    retryLoadCoverArt: () -> Unit,
-    retryLoadChapterList: () -> Unit,
-    readButtonClick: (String, String) -> Unit,
-    downloadChapters: (List<DomainChapter>) -> Unit,
-    deleteChapters: (List<DomainChapter>) -> Unit,
-) {
-
-    val space = LocalSpacing.current
-
-    when(state) {
-        is ChapterListState.Failure -> {
-            CenterBox(Modifier.fillMaxSize()) {
-                Text(state.message)
-                Button(onClick = retryLoadChapterList) {
-                    Text(text = "Try again")
-                }
-            }
-        }
-        ChapterListState.Loading -> {
-            Column(Modifier.fillMaxSize()) {
-                repeat(5) {
-                    AnimatedShimmer()
-                }
-            }
-        }
-        is ChapterListState.Success -> {
-
-            val sortedChapters = rememberSortedChapters(chapters = state.chapters)
-            var showChapters by rememberSaveable {
-                mutableStateOf(true)
-            }
-
-            Column(Modifier.fillMaxSize()) {
-                MangaViewFilterRow(
-                    modifier = Modifier
-                        .padding(vertical = space.med)
-                        .fillMaxWidth()
-                        .height(40.dp),
-                    selectedTab = showChapters,
-                    onTabSelected = {
-                        showChapters = !showChapters
                     }
-                )
-                AnimatedContent(targetState = showChapters, label = "ikdjf") {
-                    when (it) {
-                        true -> {
-                            ChapterList(
-                                sortedChapters.sortedChapters,
-                                sortedChapters.sortBy,
-                                downloads,
-                                sortByChange = { sortedChapters.sortByOpposite() },
-                                downloadChapterClicked = {
-                                    downloadChapters(
-                                        listOf(it)
-                                    )
-                                },
-                                deleteChapterClicked = {
-                                    deleteChapters(listOf(it))
-                                },
-                                readButtonClick = {
-                                    readButtonClick(
-                                        it.mangaId,
-                                        it.id
-                                    )
+                    item {
+                        Column {
+                            MangaInfo(
+                                manga = manga,
+                                bookmarked = (mangaViewState.mangaState as? MangaState.Success)?.manga?.bookmarked ?: manga.bookmarked,
+                                onBookmarkClicked = sm::bookmarkManga,
+                                onTagSelected = {tag ->
+                                    manga.tagToId[tag]?.let {id ->
+                                        navigator?.push(
+                                            MangaFilterScreen(tag, id)
+                                        )
+                                    }
+                                }
+                            )
+                            ChapterVolumeNavBar(
+                                chaptersShowing = chaptersShowing,
+                                onChange = {
+                                    chaptersShowing = it
                                 }
                             )
                         }
-                        false -> {
-                            VolumeList(
-                                volumeItems = sortedChapters.sortedVolumes,
-                                coverArtState = coverArtState,
-                                onSortByChange = { sortedChapters.sortByOpposite() },
-                                onRetryLoadCoverArt =  retryLoadCoverArt,
-                                sortBy = sortedChapters.sortBy
+                    }
+                    if (chaptersShowing) {
+                        item {
+                            ChapterListHeader(
+                                onPageClick = sm::navigateToPage,
+                                page = currentPage + 1,
+                                lastPage = mangaViewState.chapterPageState.lastPage,
+                                sortedAscending = sortedAscending,
+                                onChangeDirection = sm::changeDirection
                             )
                         }
+                        chapterListItems(
+                            chapterPageState = mangaViewState.chapterPageState,
+                            downloadingIds = downloading,
+                            onDownloadClicked = {
+                                sm.downloadChapterImages(listOf(it))
+                            },
+                            onDeleteClicked = {
+                                sm.deleteChapterImages(listOf(it))
+                            },
+                            onReadClicked = {
+                                navigator?.push(
+                                    MangaReaderScreen(manga.id, it)
+                                )
+                            }
+                        )
+                    }else {
+                        volumePosterItems(mangaViewState.mangaState)
                     }
                 }
             }
@@ -214,76 +164,207 @@ fun MangaView(
     }
 }
 
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MangaViewFilterRow(
-    modifier: Modifier = Modifier,
-    selectedTab: Boolean,
-    onTabSelected: () -> Unit
+fun TagsAndLanguages(
+    manga: DomainManga,
+    navigate: (name: String) -> Unit,
 ) {
-    val movementSpec = SpringSpec<IntOffset>(
-        dampingRatio = Spring.DampingRatioMediumBouncy,
-        stiffness = 200f
-    )
-
-    val backgroundBox = rememberContentWithOrbitalScope {
-            Box(
-                Modifier
-                    .fillMaxWidth(0.5f)
-                    .animateMovement(
-                        this@rememberContentWithOrbitalScope,
-                        movementSpec
-                    )
-            ) {
-               Box(modifier = Modifier
-                   .fillMaxSize()
-                   .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
-               )
+    val space = LocalSpacing.current
+    val list = remember(manga) {
+        manga.tagToId.keys.toList()
+    }
+    var expanded by rememberSaveable {
+        mutableStateOf(list.size < 4)
+    }
+    Text("Tags", style = MaterialTheme.typography.labelSmall)
+    FlowRow {
+        if (!expanded) {
+            list.runCatching { take(3) }.getOrDefault(list).forEach {name ->
+                AssistChip(
+                    onClick = { navigate(name)},
+                    label = { Text(name) },
+                    modifier = Modifier.padding(horizontal = space.xs)
+                )
             }
+            if (list.size > 4) {
+                AssistChip(
+                    onClick = { expanded = true },
+                    label = { Text("+ ${list.size - 3} more") },
+                    modifier = Modifier.padding(horizontal = space.xs)
+                )
+            }
+        } else {
+            list.forEach { name ->
+                AssistChip(
+                    onClick = { navigate(name) },
+                    label = { Text(name) },
+                    modifier = Modifier.padding(horizontal = space.xs)
+                )
+            }
+            if (list.size > 4) {
+                IconButton(onClick = { expanded = false }) {
+                    Icon(imageVector = Icons.Filled.KeyboardArrowLeft, contentDescription = null)
+                }
+            }
+        }
+    }
+    Text("Translated Languages", style = MaterialTheme.typography.labelSmall)
+    TranslatedLanguageTags(tags = manga.availableTranslatedLanguages)
+}
 
+@Composable
+fun Pagination(
+    modifier: Modifier = Modifier,
+    page: Int,
+    lastPage: Int,
+    onPageClick: (page: Int) -> Unit,
+) {
+
+    val pagesTillEnd = remember(page, lastPage) { lastPage - page }
+
+    var enteringPageLeft by remember {
+        mutableStateOf(false)
+    }
+    var enteringPageRight by remember {
+        mutableStateOf(false)
     }
 
-    Column(modifier) {
-        Orbital(
-            Modifier
-                .noRippleClickable { onTabSelected() }
-                .fillMaxWidth()
-        ) {
-            if (selectedTab) {
-                Box(Modifier
-                    .fillMaxSize(),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    backgroundBox()
-                    FilterRowTextItems()
+    Row(modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        IconButton(onClick = { onPageClick(page - 1) }) {
+            Icon(
+                imageVector = Icons.Filled.ArrowBack,
+                contentDescription = null
+            )
+        }
+        PageItem(
+            modifier = Modifier.size(32.dp),
+            onClick = { onPageClick(1) },
+            page = 1,
+            selected = page == 1
+        )
+        if (page >= 4) {
+            Box {
+                IconButton(onClick = {
+                    enteringPageRight = false
+                    enteringPageLeft = true
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreHoriz,
+                        contentDescription = null
+                    )
                 }
-            } else {
-                Box(modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.CenterEnd
+                DropdownMenu(
+                    modifier = Modifier.heightIn(0.dp, 200.dp),
+                    expanded = enteringPageLeft,
+                    onDismissRequest = { enteringPageLeft = false }
                 ) {
-                    backgroundBox()
-                    FilterRowTextItems()
+                    for (i in 1..lastPage) {
+                        DropdownMenuItem(
+                            text = { Text(i.toString()) },
+                            onClick = {
+                                onPageClick(i)
+                                enteringPageLeft = false
+                            }
+                        )
+                    }
                 }
             }
+        }
+        for (i in (page - 2 until page).toList().filter { it > 1 }) {
+            PageItem(
+                modifier = Modifier.size(32.dp),
+                onClick = { onPageClick(i) },
+                page = i,
+                selected = page == i
+            )
+        }
+        if(page != 1 && page != lastPage) {
+            PageItem(
+                modifier = Modifier.size(32.dp),
+                onClick = {},
+                page = page,
+                selected = true
+            )
+        }
+        for (i in (page + 1..page + 2).toList().filter { it < lastPage }) {
+            PageItem(
+                modifier = Modifier.size(32.dp),
+                onClick = { onPageClick(i) },
+                page = i,
+                selected = page == i
+            )
+        }
+        if (pagesTillEnd >= 4) {
+            Box {
+                IconButton(onClick = {
+                    enteringPageLeft = false
+                    enteringPageRight = true
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreHoriz,
+                        contentDescription = null
+                    )
+                }
+                DropdownMenu(
+                    modifier = Modifier.heightIn(0.dp, 200.dp),
+                    expanded = enteringPageRight,
+                    onDismissRequest = { enteringPageRight = false }
+                ) {
+                    for (i in 1..lastPage) {
+                        DropdownMenuItem(
+                            text = { Text(i.toString()) },
+                            onClick = {
+                                onPageClick(i)
+                                enteringPageRight = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        if (lastPage != 1 && lastPage != 0) {
+            PageItem(
+                modifier = Modifier.size(32.dp),
+                onClick = { onPageClick(lastPage) },
+                page = lastPage,
+                selected = page == lastPage
+            )
+        }
+        IconButton(onClick = { onPageClick(page + 1)}) {
+            Icon(
+                imageVector = Icons.Filled.ArrowForward,
+                contentDescription = null
+            )
         }
     }
 }
 
 @Composable
-private fun FilterRowTextItems() {
-    Row(Modifier
-        .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+fun PageItem(
+    modifier: Modifier,
+    onClick: () -> Unit,
+    page: Int,
+    selected: Boolean
+) {
+    val background by animateColorAsState(
+        targetValue = if(selected)
+            MaterialTheme.colorScheme.primary
+        else
+            Color.Transparent,
+        label = "page item background"
+    )
+    CenterBox(
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(background)
+            .clickable { onClick() }
     ) {
-        listOf("Chapters", "Volumes").forEach {
-            Text(
-                text = it,
-                modifier = Modifier
-                    .weight(1f),
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
+        Text(text = "$page")
     }
 }
 

@@ -6,6 +6,7 @@ import io.silv.manga.local.entity.FilteredMangaResource
 import io.silv.manga.local.entity.FilteredMangaYearlyResource
 import io.silv.manga.local.entity.PopularMangaResource
 import io.silv.manga.local.entity.ProgressState
+import io.silv.manga.local.entity.ReadingStatus
 import io.silv.manga.local.entity.RecentMangaResource
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.local.entity.SearchMangaResource
@@ -25,12 +26,16 @@ object ChapterToChapterEntityMapper: Mapper<ChapterWithPrevEntity, ChapterEntity
                 ?: throw IllegalStateException("Chapter had no related manga id"),
             progressState = prev?.progressState ?: ProgressState.NotStarted,
             volume = chapter.attributes.volume,
-            title = chapter.attributes.title ?: "no title",
+            title = chapter.attributes.title ?: "",
             pages = chapter.attributes.pages,
-            chapterNumber = chapter.attributes.chapter?.toIntOrNull() ?: 0,
+            chapterNumber = chapter.attributes.chapter?.toDoubleOrNull() ?: 0.0,
             chapterImages = prev?.chapterImages ?: emptyList(),
             createdAt = chapter.attributes.createdAt,
             updatedAt = chapter.attributes.updatedAt,
+            readableAt = chapter.attributes.readableAt,
+            uploader = chapter.attributes.uploader,
+            externalUrl = chapter.attributes.externalUrl,
+            version = chapter.attributes.version,
         )
     }
 }
@@ -57,7 +62,8 @@ object MangaToSeasonalMangaResourceMapper: Mapper<Pair<Manga, SeasonalMangaResou
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
                 tagToId = tagToId,
-                seasonId = ""
+                seasonId = "",
+                publicationDemographic = manga.attributes.publicationDemographic
             )
         }
     }
@@ -84,7 +90,8 @@ object MangaToPopularMangaResourceMapper: Mapper<Pair<Manga, PopularMangaResourc
                 version = attributes.version,
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
-                tagToId = tagToId
+                tagToId = tagToId,
+                publicationDemographic = manga.attributes.publicationDemographic
             )
         }
     }
@@ -112,7 +119,8 @@ object MangaToSearchMangaResourceMapper: Mapper<Pair<Manga, SearchMangaResource?
                 version = attributes.version,
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
-                tagToId = tagToId
+                tagToId = tagToId,
+                publicationDemographic = manga.attributes.publicationDemographic
             )
         }
     }
@@ -142,7 +150,8 @@ object MangaToFilteredYearlyMangaResourceMapper: Mapper<Pair<Manga, FilteredMang
                 tagToId = tagToId,
                 savedLocalAtEpochSeconds = saved?.savedLocalAtEpochSeconds ?: Clock.System.now().epochSeconds,
                 topTags = saved?.topTags ?: emptyList(),
-                topTagPlacement = saved?.topTagPlacement ?: emptyMap()
+                topTagPlacement = saved?.topTagPlacement ?: emptyMap(),
+                publicationDemographic = manga.attributes.publicationDemographic
             )
         }
     }
@@ -170,6 +179,7 @@ object MangaToFilteredMangaResourceMapper: Mapper<Pair<Manga, FilteredMangaResou
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
                 tagToId = tagToId,
+                publicationDemographic = manga.attributes.publicationDemographic,
                 savedLocalAtEpochSeconds = saved?.savedLocalAtEpochSeconds ?: Clock.System.now().epochSeconds,
             )
         }
@@ -191,6 +201,7 @@ object MangaToRecentMangaResourceMapper: Mapper<Pair<Manga, RecentMangaResource?
                 originalLanguage = attributes.originalLanguage,
                 availableTranslatedLanguages = attributes.availableTranslatedLanguages
                     .filterNotNull(),
+                publicationDemographic = manga.attributes.publicationDemographic,
                 status = attributes.status,
                 contentRating = attributes.contentRating,
                 lastVolume = attributes.lastVolume,
@@ -198,7 +209,7 @@ object MangaToRecentMangaResourceMapper: Mapper<Pair<Manga, RecentMangaResource?
                 version = attributes.version,
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
-                tagToId = tagToId
+                tagToId = tagToId,
             )
         }
     }
@@ -230,7 +241,9 @@ object MangaEntityMapper: Mapper<Pair<Manga, SavedMangaEntity?>, SavedMangaEntit
             volumeToCoverArt = saved?.volumeToCoverArt ?: emptyMap(),
             createdAt = network.attributes.createdAt,
             updatedAt = network.attributes.updatedAt,
-            tagToId = network.tagToId
+            tagToId = network.tagToId,
+            publicationDemographic = network.attributes.publicationDemographic,
+            readingStatus = saved?.readingStatus ?: ReadingStatus.None
         )
     }
 }

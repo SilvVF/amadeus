@@ -3,8 +3,10 @@ package io.silv.manga.domain.models
 import android.os.Parcelable
 import io.silv.manga.local.entity.MangaResource
 import io.silv.manga.local.entity.ProgressState
+import io.silv.manga.local.entity.ReadingStatus
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.network.mangadex.models.ContentRating
+import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status
 import kotlinx.datetime.Clock
 import kotlinx.parcelize.Parcelize
@@ -16,12 +18,14 @@ data class DomainManga(
     val bookmarked: Boolean = false,
     val description: String,
     val progressState: ProgressState = ProgressState.NotStarted,
+    val readingStatus: ReadingStatus,
     val coverArt: String,
     val titleEnglish: String,
     val alternateTitles: Map<String, String>,
     val originalLanguage: String,
     val availableTranslatedLanguages: List<String>,
     val status: Status,
+    val publicationDemographic: PublicationDemographic?,
     val tagToId: Map<String, String>,
     val contentRating: ContentRating,
     val lastVolume: String? = null,
@@ -56,7 +60,9 @@ data class DomainManga(
         savedLocalAtEpochSeconds = savedManga.savedLocalAtEpochSeconds,
         volumeToCoverArtUrl = savedManga.volumeToCoverArt,
         readChapters = savedManga.readChapters,
-        chapterToLastReadPage = savedManga.chapterToLastReadPage
+        chapterToLastReadPage = savedManga.chapterToLastReadPage,
+        publicationDemographic = savedManga.publicationDemographic,
+        readingStatus = savedManga.readingStatus
     )
     constructor(mangaResource: MangaResource, savedManga: SavedMangaEntity?) : this(
         id = mangaResource.id,
@@ -79,7 +85,9 @@ data class DomainManga(
         savedLocalAtEpochSeconds = mangaResource.savedLocalAtEpochSeconds,
         volumeToCoverArtUrl = savedManga?.volumeToCoverArt ?: emptyMap(),
         readChapters = savedManga?.readChapters ?: emptyList(),
-        chapterToLastReadPage = savedManga?.chapterToLastReadPage ?: emptyMap()
+        chapterToLastReadPage = savedManga?.chapterToLastReadPage ?: emptyMap(),
+        publicationDemographic = mangaResource.publicationDemographic,
+        readingStatus = savedManga?.readingStatus ?: ReadingStatus.None
     )
     constructor(
         mangaResources: List<MangaResource>,
@@ -109,6 +117,8 @@ data class DomainManga(
             mangaResources.map { it.volumeToCoverArt }.forEach { putAll(it) }
         },
         readChapters = savedManga?.readChapters ?: emptyList(),
-        chapterToLastReadPage = savedManga?.chapterToLastReadPage ?: emptyMap()
+        chapterToLastReadPage = savedManga?.chapterToLastReadPage ?: emptyMap(),
+        publicationDemographic = newest.publicationDemographic,
+        readingStatus = savedManga?.readingStatus ?: ReadingStatus.None
     )
 }

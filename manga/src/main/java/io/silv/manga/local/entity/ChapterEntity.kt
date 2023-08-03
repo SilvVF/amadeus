@@ -21,13 +21,21 @@ data class ChapterEntity(
 
     val pages: Int,
 
-    val chapterNumber: Int = 0,
+    val chapterNumber: Double = 0.0,
 
     val chapterImages: List<String> = emptyList(),
 
     val createdAt: String,
 
     val updatedAt: String,
+
+    val readableAt: String,
+
+    val uploader: String?,
+
+    val externalUrl: String?,
+
+    val version: Int,
 
     val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
 ): AmadeusEntity<Any?>

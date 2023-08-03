@@ -3,6 +3,7 @@ package io.silv.manga.domain.usecase
 import io.silv.ktor_response_mapper.getOrNull
 import io.silv.manga.domain.ChapterToChapterEntityMapper
 import io.silv.manga.domain.coverArtUrl
+import io.silv.manga.domain.timeStringMinus
 import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.FilteredMangaResourceDao
 import io.silv.manga.local.dao.FilteredMangaYearlyResourceDao
@@ -22,13 +23,18 @@ import io.silv.manga.local.entity.SeasonalMangaResource
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.requests.CoverArtRequest
 import io.silv.manga.network.mangadex.requests.MangaFeedRequest
+import io.silv.manga.network.mangadex.requests.Order
+import io.silv.manga.network.mangadex.requests.OrderBy
+import java.time.Duration
 
 internal data class UpdateInfo(
     val id: String,
     val chapterDao: ChapterDao,
     val savedMangaDao: SavedMangaDao,
     val mangaDexApi: MangaDexApi,
-    val entity: SavedMangaEntity
+    val entity: SavedMangaEntity,
+    val page: Int,
+    val fetchLatest: Boolean = false
 )
 
 internal data class UpdateResourceInfo(
@@ -36,7 +42,8 @@ internal data class UpdateResourceInfo(
     val chapterDao: ChapterDao,
     val mangaDexApi: MangaDexApi,
     val daoId: Int,
-    val mangaResource: MangaResource
+    val mangaResource: MangaResource,
+    val page: Int,
 )
 
 
@@ -55,6 +62,7 @@ internal fun interface UpdateResourceChapterWithArt: suspend  (UpdateResourceInf
                 id = info.id,
                 chapterDao = info.chapterDao,
                 mangaDexApi = info.mangaDexApi,
+                page = info.page,
                 update = { volumeToCoverArt ->
                     when(info.daoId) {
                         PopularMangaResourceDao.id -> {
@@ -115,7 +123,9 @@ internal fun interface UpdateChapterWithArt: suspend  (UpdateInfo) -> Unit {
                 chapterDao = info.chapterDao,
                 savedMangaDao = info.savedMangaDao,
                 mangaDexApi = info.mangaDexApi,
-                entity = info.entity
+                entity = info.entity,
+                page = info.page,
+                fetchLatest = info.fetchLatest
             )
         }
     }
@@ -125,14 +135,25 @@ private suspend fun getMangaFeedAndUpdateChapter(
     mangaDexApi: MangaDexApi,
     id: String,
     chapterDao: ChapterDao,
+    page: Int,
+    fetchLatest: Boolean
 ) {
     mangaDexApi.getMangaFeed(
         id,
-        MangaFeedRequest(
-            limit = null,
-            offset = 0,
-            translatedLanguage = listOf("en"),
-        )
+        if (fetchLatest) {
+            MangaFeedRequest(
+                limit = 100,
+                translatedLanguage = listOf("en"),
+                order = mapOf(Order.createdAt to OrderBy.desc),
+                createdAtSince = timeStringMinus(Duration.ofDays(30))
+            )
+        } else {
+            MangaFeedRequest(
+                limit = 100,
+                offset = page * 100,
+                translatedLanguage = listOf("en"),
+            )
+        }
     )
         .getOrNull()
         ?.let { chapterListResponse ->
@@ -154,9 +175,10 @@ private suspend fun updateVolumeCoverArtAndChapterInfoForResource(
     chapterDao: ChapterDao,
     update: suspend (Map<String, String>) -> Unit,
     mangaDexApi: MangaDexApi,
+    page: Int,
 ) {
     runCatching {
-        getMangaFeedAndUpdateChapter(mangaDexApi, id, chapterDao)
+        getMangaFeedAndUpdateChapter(mangaDexApi, id, chapterDao, page, false)
         mangaDexApi.getCoverArtList(CoverArtRequest(manga = listOf(id), limit = 100, offset = 0))
             .getOrNull()?.let { r ->
                 update(
@@ -181,10 +203,12 @@ private suspend fun updateVolumeCoverArtAndChapterInfo(
     chapterDao: ChapterDao,
     savedMangaDao: SavedMangaDao,
     mangaDexApi: MangaDexApi,
-    entity: SavedMangaEntity
+    entity: SavedMangaEntity,
+    page: Int,
+    fetchLatest: Boolean,
 ) {
     runCatching {
-        getMangaFeedAndUpdateChapter(mangaDexApi, id, chapterDao)
+        getMangaFeedAndUpdateChapter(mangaDexApi, id, chapterDao, page, fetchLatest)
         mangaDexApi.getCoverArtList(CoverArtRequest(manga = listOf(id),limit = 100, offset = 0))
             .getOrNull()?.let { r ->
                 savedMangaDao.updateSavedManga(

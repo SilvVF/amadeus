@@ -80,7 +80,6 @@ class MangaFilterSM(
     }
 
     fun bookmarkManga(id: String) = coroutineScope.launch {
-        println("bookmark clicked $id")
         savedMangaRepository.bookmarkManga(id)
     }
 }

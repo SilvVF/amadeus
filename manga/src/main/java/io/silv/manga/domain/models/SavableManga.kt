@@ -13,7 +13,7 @@ import kotlinx.parcelize.Parcelize
 import java.io.Serializable
 
 @Parcelize
-data class DomainManga(
+data class SavableManga(
     val id: String,
     val bookmarked: Boolean = false,
     val description: String,

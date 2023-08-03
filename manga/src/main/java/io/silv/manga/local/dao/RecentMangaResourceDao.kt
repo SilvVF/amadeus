@@ -14,30 +14,20 @@ internal interface RecentMangaResourceDao {
 
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertManga(mangaResource: RecentMangaResource)
+    suspend fun upsertRecentMangaResource(mangaResource: RecentMangaResource)
 
-
-    @Query("""
-          SELECT * FROM RecentMangaResource ORDER BY savedLocalAtEpochSeconds ASC
-    """)
-    fun getMangaResources(): Flow<List<RecentMangaResource>>
-
-    @Query("SELECT * FROM RecentMangaResource WHERE id = :mangaId")
-    fun getResourceAsFlowById(mangaId: String): Flow<RecentMangaResource?>
 
     @Query("SELECT * FROM RecentMangaResource")
-    suspend fun getAll(): List<RecentMangaResource>
+    fun getRecentMangaResources(): Flow<List<RecentMangaResource>>
+
+    @Query("SELECT * FROM RecentMangaResource WHERE id = :mangaId")
+    fun getRecentMangaResourceById(mangaId: String): Flow<RecentMangaResource?>
 
     @Update
-    suspend fun update(mangaResource: RecentMangaResource)
-
-
-    @Query("SELECT * FROM RecentMangaResource WHERE id = :id LIMIT 1")
-    suspend fun getMangaById(id: String):  RecentMangaResource?
-
+    suspend fun updateRecentMangaResource(mangaResource: RecentMangaResource)
 
     @Delete
-    suspend fun delete(mangaResource: RecentMangaResource)
+    suspend fun deleteRecentMangaResource(mangaResource: RecentMangaResource)
 
     companion object {
         const val id: Int = 6

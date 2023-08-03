@@ -3,7 +3,7 @@ package io.silv.amadeus.ui.screens.home
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.screens.search.SearchMangaUiState
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.models.DomainTag
 import io.silv.manga.domain.repositorys.PopularMangaRepository
 import io.silv.manga.domain.repositorys.RecentMangaRepository
@@ -59,7 +59,7 @@ class HomeSM(
     private val mangaSearchFlow = searchQuery
         .debounce { 1000L }
         .flatMapMerge { query ->
-            searchMangaRepository.getMangaResources(
+            searchMangaRepository.observeMangaResources(
                 SearchMangaResourceQuery(title = query)
             )
         }
@@ -67,7 +67,7 @@ class HomeSM(
             // emits initial search results prefetched for no query
             // this will avoid the initial result being debounced by 3 seconds
             emit(
-                searchMangaRepository.getMangaResources(searchMangaRepository.latestQuery())
+                searchMangaRepository.observeMangaResources(searchMangaRepository.latestQuery())
                     .first()
             )
         }
@@ -80,7 +80,7 @@ class HomeSM(
         savedMangaRepository.getSavedMangas(),
     ) { resources, load, saved ->
         val combinedManga = resources.map {
-            DomainManga(it, saved.find { s -> s.id ==  it.id})
+            SavableManga(it, saved.find { s -> s.id ==  it.id})
         }
         when (load) {
             LoadState.End -> {
@@ -102,21 +102,21 @@ class HomeSM(
         .stateInUi(SearchMangaUiState.WaitingForQuery)
 
     val popularMangaUiState = combine(
-        popularMangaRepository.getAllMangaResources(),
+        popularMangaRepository.observeAllMangaResources(),
         savedMangaRepository.getSavedMangas()
     ) { resources, saved ->
         resources.map {
-            DomainManga(it, saved.find { manga -> manga.id == it.id })
+            SavableManga(it, saved.find { manga -> manga.id == it.id })
         }
     }
         .stateInUi(emptyList())
 
     val recentMangaUiState = combine(
-        recentMangaRepository.getAllMangaResources(),
+        recentMangaRepository.observeAllMangaResources(),
         savedMangaRepository.getSavedMangas()
     ) { resources, saved ->
         resources.map {
-            DomainManga(it, saved.find { manga -> manga.id == it.id })
+            SavableManga(it, saved.find { manga -> manga.id == it.id })
         }
     }
         .stateInUi(emptyList())
@@ -130,7 +130,7 @@ class HomeSM(
                 id = it.list.id,
                 year = it.list.year,
                 season = it.list.season,
-                mangas = it.manga.map { m -> DomainManga(m, saved.find { s -> s.id == m.id }) }
+                mangas = it.manga.map { m -> SavableManga(m, saved.find { s -> s.id == m.id }) }
             )
         }
             .sortedBy { it.year * 10000 + it.season.ordinal }
@@ -175,5 +175,5 @@ data class SeasonalList(
     val id: String,
     val year: Int,
     val season: Season,
-    val mangas: List<DomainManga>
+    val mangas: List<SavableManga>
 )

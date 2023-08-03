@@ -7,7 +7,7 @@ import io.silv.amadeus.ui.screens.manga_reader.MangaReaderSM
 import io.silv.amadeus.ui.screens.manga_view.MangaViewSM
 import io.silv.amadeus.ui.screens.saved.SavedMangaSM
 import io.silv.amadeus.ui.screens.search.SearchSM
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableManga
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
@@ -24,7 +24,7 @@ val screenModule = module {
         )
     }
 
-    factory { (manga: DomainManga) ->
+    factory { (manga: SavableManga) ->
         MangaViewSM(
             get(), get(), get(), get(),
             manga

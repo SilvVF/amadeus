@@ -29,7 +29,7 @@ internal class UpdateMangaResourceWithArt(
         suspendRunCatching {
             when (id) {
                 PopularMangaResourceDao.id -> {
-                    popularMangaResourceDao.update(
+                    popularMangaResourceDao.updatePopularMangaResource(
                         (mangaResource as PopularMangaResource).copy(
                             volumeToCoverArt = mangaResource.volumeToCoverArt + volumeToCoverArt
                         )
@@ -37,7 +37,7 @@ internal class UpdateMangaResourceWithArt(
                 }
 
                 RecentMangaResourceDao.id -> {
-                    recentMangaResourceDao.update(
+                    recentMangaResourceDao.updateRecentMangaResource(
                         (mangaResource as RecentMangaResource).copy(
                             volumeToCoverArt = mangaResource.volumeToCoverArt + volumeToCoverArt
                         )
@@ -45,7 +45,7 @@ internal class UpdateMangaResourceWithArt(
                 }
 
                 SearchMangaResourceDao.id -> {
-                    searchMangaResourceDao.update(
+                    searchMangaResourceDao.updateSearchMangaResource(
                         (mangaResource as SearchMangaResource).copy(
                             volumeToCoverArt = mangaResource.volumeToCoverArt + volumeToCoverArt
                         )
@@ -53,7 +53,7 @@ internal class UpdateMangaResourceWithArt(
                 }
 
                 FilteredMangaResourceDao.id -> {
-                    filteredMangaResourceDao.update(
+                    filteredMangaResourceDao.updateFilteredMangaResource(
                         (mangaResource as FilteredMangaResource).copy(
                             volumeToCoverArt = mangaResource.volumeToCoverArt + volumeToCoverArt
                         )
@@ -61,7 +61,7 @@ internal class UpdateMangaResourceWithArt(
                 }
 
                 SeasonalMangaResourceDao.id -> {
-                    seasonalMangaResourceDao.update(
+                    seasonalMangaResourceDao.updateSeasonalMangaResource(
                         (mangaResource as SeasonalMangaResource).copy(
                             volumeToCoverArt = mangaResource.volumeToCoverArt + volumeToCoverArt
                         )
@@ -69,7 +69,7 @@ internal class UpdateMangaResourceWithArt(
                 }
 
                 FilteredMangaYearlyResourceDao.id -> {
-                    filteredMangaYearlyResourceDao.update(
+                    filteredMangaYearlyResourceDao.updateFilteredYearlyMangaResource(
                         (mangaResource as FilteredMangaYearlyResource).copy(
                             volumeToCoverArt = mangaResource.volumeToCoverArt + volumeToCoverArt
                         )

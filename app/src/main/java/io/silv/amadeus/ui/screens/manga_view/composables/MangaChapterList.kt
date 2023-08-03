@@ -38,19 +38,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.silv.amadeus.ui.stateholders.SortedChapters
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.DomainChapter
+import io.silv.manga.domain.models.SavableChapter
 
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChapterList(
-    chapters: List<DomainChapter>,
+    chapters: List<SavableChapter>,
     sortBy: SortedChapters.SortBy,
     downloads: List<String>,
     sortByChange: () -> Unit,
-    readButtonClick: (DomainChapter) -> Unit,
-    downloadChapterClicked: (DomainChapter) -> Unit,
-    deleteChapterClicked: (DomainChapter) -> Unit
+    readButtonClick: (SavableChapter) -> Unit,
+    downloadChapterClicked: (SavableChapter) -> Unit,
+    deleteChapterClicked: (SavableChapter) -> Unit
 ) {
     val space = LocalSpacing.current
     LazyColumn(Modifier.fillMaxSize()) {
@@ -109,7 +109,7 @@ fun ChapterList(
 
 @Composable
 private fun ChapterListItem(
-    chapter: DomainChapter,
+    chapter: SavableChapter,
     modifier: Modifier = Modifier,
     downloading: Boolean,
     readButtonClick: () -> Unit,

@@ -31,12 +31,12 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.network.mangadex.models.Status
 
 @Composable
 fun MainPoster(
-    manga: DomainManga,
+    manga: SavableManga,
     modifier: Modifier
 ) {
     val ctx = LocalContext.current
@@ -97,7 +97,7 @@ fun MainPoster(
 }
 
 @Composable
-fun MangaTitle(modifier: Modifier= Modifier, manga: DomainManga,) {
+fun MangaTitle(modifier: Modifier= Modifier, manga: SavableManga,) {
     Column(modifier) {
         Text(
             text = manga.titleEnglish,

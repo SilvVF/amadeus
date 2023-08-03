@@ -7,10 +7,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import io.silv.manga.domain.models.DomainChapter
+import io.silv.manga.domain.models.SavableChapter
 
 class SortedChapters(
-    private val chapters: List<DomainChapter>,
+    private val chapters: List<SavableChapter>,
     val sortBy: SortBy,
     private val onSortByChange: (SortBy) -> Unit,
 ) {
@@ -30,13 +30,13 @@ class SortedChapters(
         return@derivedStateOf if (sortBy == SortBy.Asc) {
             buildMap {
                 grouped.keys.sorted().forEach {
-                    put(it, (grouped[it]?.sortedBy { it.chapter?.toDoubleOrNull() ?: 0.0 } ?: emptyList<DomainChapter>()))
+                    put(it, (grouped[it]?.sortedBy { it.chapter?.toDoubleOrNull() ?: 0.0 } ?: emptyList<SavableChapter>()))
                 }
             }
         } else {
             buildMap {
                 grouped.keys.sortedDescending().forEach {
-                    put(it, (grouped[it]?.sortedByDescending { it.chapter?.toDoubleOrNull() ?: 0.0 } ?: emptyList<DomainChapter>()))
+                    put(it, (grouped[it]?.sortedByDescending { it.chapter?.toDoubleOrNull() ?: 0.0 } ?: emptyList<SavableChapter>()))
                 }
             }
         }
@@ -54,7 +54,7 @@ class SortedChapters(
 
 @Composable
 fun rememberSortedChapters(
-    chapters: List<DomainChapter>,
+    chapters: List<SavableChapter>,
 ): SortedChapters {
 
     var sortBy by rememberSaveable {

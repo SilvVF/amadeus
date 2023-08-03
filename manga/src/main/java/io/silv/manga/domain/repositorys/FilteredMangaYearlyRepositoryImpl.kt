@@ -16,6 +16,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
@@ -46,12 +47,12 @@ internal class FilteredYearlyMangaRepositoryImpl(
             )
         },
         upsert = {
-            yearlyResourceDao.upsertManga(it)
+            yearlyResourceDao.upsertFilteredYearlyMangaResource(it)
         }
     )
 
     override fun getYearlyTopResources(tag: String): Flow<List<FilteredMangaYearlyResource>> {
-        return yearlyResourceDao.getMangaResources()
+        return yearlyResourceDao.getFilteredMangaYearlyResources()
             .map { it.filter { m ->  m.topTags.contains(tag) }.sortedBy { it.topTagPlacement[tag] } }
             .onStart {
                 scope.launch {
@@ -61,7 +62,8 @@ internal class FilteredYearlyMangaRepositoryImpl(
     }
 
     private suspend fun loadYearlyTopManga(tagId: String) {
-        val lastUpdated = yearlyResourceDao.getAll()
+        val yearly = yearlyResourceDao.getFilteredMangaYearlyResources().first()
+        val lastUpdated = yearly
             .filter { it.topTags.contains(tagId) }
             .takeIf { it.isNotEmpty() }
             ?.minBy { it.savedLocalAtEpochSeconds }?.savedLocalAtEpochSeconds ?: 0L
@@ -71,7 +73,7 @@ internal class FilteredYearlyMangaRepositoryImpl(
         loadState.emit(LoadState.Loading)
         runCatching {
             val result = syncerForYearly(tagId).sync(
-                current = yearlyResourceDao.getAll(),
+                current = yearly,
                 networkResponse = mangaDexApi.getMangaList(
                     MangaRequest(
                         offset = 0,
@@ -93,9 +95,9 @@ internal class FilteredYearlyMangaRepositoryImpl(
             for(unhandled in result.unhandled) {
                 if (unhandled.topTags.contains(tagId)) {
                     if (unhandled.topTags.size <= 1 && !checkProtected(unhandled.id)) {
-                        yearlyResourceDao.delete(unhandled)
+                        yearlyResourceDao.deleteFilteredYearlyMangaResource(unhandled)
                     } else {
-                        yearlyResourceDao.update(
+                        yearlyResourceDao.updateFilteredYearlyMangaResource(
                             unhandled.copy(
                                 topTags = unhandled.topTags.filter { it != tagId }
                             )
@@ -108,12 +110,12 @@ internal class FilteredYearlyMangaRepositoryImpl(
             .also { loadState.emit(LoadState.None) }
     }
 
-    override fun getMangaResource(id: String): Flow<FilteredMangaYearlyResource?> {
-        return yearlyResourceDao.getResourceAsFlowById(id)
+    override fun observeMangaResourceById(id: String): Flow<FilteredMangaYearlyResource?> {
+        return yearlyResourceDao.getFilteredMangaYearlyResourceById(id)
     }
 
-    override fun getAllMangaResources(): Flow<List<FilteredMangaYearlyResource>> {
-        return yearlyResourceDao.getMangaResources()
+    override fun observeAllMangaResources(): Flow<List<FilteredMangaYearlyResource>> {
+        return yearlyResourceDao.getFilteredMangaYearlyResources()
     }
 
     override suspend fun refresh() = Unit

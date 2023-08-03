@@ -30,7 +30,7 @@ internal interface SearchMangaResourceDao {
     suspend fun getAll(): List<SearchMangaResource>
 
     @Update
-    suspend fun update(mangaResource: SearchMangaResource)
+    suspend fun updateSearchMangaResource(mangaResource: SearchMangaResource)
 
 
     @Query("SELECT * FROM SearchMangaResource WHERE id = :id LIMIT 1")

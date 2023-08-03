@@ -2,11 +2,9 @@
 
 package io.silv.manga.domain.repositorys
 
-import io.silv.manga.domain.models.DomainManga
 import io.silv.manga.local.entity.SavedMangaEntity
-import io.silv.manga.local.entity.relations.MangaWithChapters
+import io.silv.manga.local.entity.relations.SavedMangaWithChapters
 import io.silv.manga.sync.Syncable
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 
 interface SavedMangaRepository: Syncable {
@@ -15,9 +13,9 @@ interface SavedMangaRepository: Syncable {
 
     suspend fun saveManga(id: String)
 
-    fun getSavedMangaWithChapters(): Flow<List<MangaWithChapters>>
+    fun getSavedMangaWithChapters(): Flow<List<SavedMangaWithChapters>>
 
-    fun getSavedMangaWithChapter(id: String): Flow<MangaWithChapters?>
+    fun getSavedMangaWithChapter(id: String): Flow<SavedMangaWithChapters?>
 
     fun getSavedMangas(): Flow<List<SavedMangaEntity>>
 

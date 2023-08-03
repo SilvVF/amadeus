@@ -38,20 +38,20 @@ import androidx.compose.ui.unit.dp
 import io.silv.amadeus.ui.stateholders.SortedChapters
 import io.silv.amadeus.ui.stateholders.rememberSortedChapters
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.DomainChapter
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableChapter
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.local.entity.ProgressState
 
 @Composable
 fun ChapterInfoModalDrawer(
     modifier: Modifier = Modifier,
     drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
-    manga: DomainManga,
-    chapter: DomainChapter,
-    chapters: List<DomainChapter>,
-    onChapterClicked: (DomainChapter) -> Unit,
-    onGoToNextChapterClicked: (DomainChapter) -> Unit,
-    onGoToPrevChapterClicked: (DomainChapter) -> Unit,
+    manga: SavableManga,
+    chapter: SavableChapter,
+    chapters: List<SavableChapter>,
+    onChapterClicked: (SavableChapter) -> Unit,
+    onGoToNextChapterClicked: (SavableChapter) -> Unit,
+    onGoToPrevChapterClicked: (SavableChapter) -> Unit,
     content: @Composable () -> Unit
 ) {
     val space = LocalSpacing.current
@@ -143,7 +143,7 @@ fun SortByHeader(sortedChapters: SortedChapters) {
 fun ChapterList(
     modifier: Modifier,
     sortedChapters: SortedChapters,
-    onChapterClicked: (DomainChapter) -> Unit
+    onChapterClicked: (SavableChapter) -> Unit
 ) {
     val space = LocalSpacing.current
     LazyColumn(modifier) {
@@ -161,7 +161,7 @@ fun ChapterList(
 
 @Composable
 private fun ChapterListItem(
-    chapter: DomainChapter,
+    chapter: SavableChapter,
     modifier: Modifier
 ) {
     val space = LocalSpacing.current

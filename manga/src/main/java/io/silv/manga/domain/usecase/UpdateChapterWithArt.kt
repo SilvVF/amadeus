@@ -25,6 +25,7 @@ import io.silv.manga.network.mangadex.requests.CoverArtRequest
 import io.silv.manga.network.mangadex.requests.MangaFeedRequest
 import io.silv.manga.network.mangadex.requests.Order
 import io.silv.manga.network.mangadex.requests.OrderBy
+import kotlinx.coroutines.flow.first
 import java.time.Duration
 
 internal data class UpdateInfo(
@@ -66,42 +67,42 @@ internal fun interface UpdateResourceChapterWithArt: suspend  (UpdateResourceInf
                 update = { volumeToCoverArt ->
                     when(info.daoId) {
                         PopularMangaResourceDao.id -> {
-                            popularMangaResourceDao.update(
+                            popularMangaResourceDao.updatePopularMangaResource(
                                 (info.mangaResource as PopularMangaResource).copy(
                                     volumeToCoverArt = volumeToCoverArt
                                 )
                             )
                         }
                         RecentMangaResourceDao.id -> {
-                            recentMangaResourceDao.update(
+                            recentMangaResourceDao.updateRecentMangaResource(
                                 (info.mangaResource as RecentMangaResource).copy(
                                     volumeToCoverArt = volumeToCoverArt
                                 )
                             )
                         }
                         SearchMangaResourceDao.id -> {
-                            searchMangaResourceDao.update(
+                            searchMangaResourceDao.updateSearchMangaResource(
                                 (info.mangaResource as SearchMangaResource).copy(
                                     volumeToCoverArt = volumeToCoverArt
                                 )
                             )
                         }
                         FilteredMangaResourceDao.id -> {
-                            filteredMangaResourceDao.update(
+                            filteredMangaResourceDao.updateFilteredMangaResource(
                                 (info.mangaResource as FilteredMangaResource).copy(
                                     volumeToCoverArt = volumeToCoverArt
                                 )
                             )
                         }
                         SeasonalMangaResourceDao.id -> {
-                            seasonalMangaResourceDao.update(
+                            seasonalMangaResourceDao.updateSeasonalMangaResource(
                                 (info.mangaResource as SeasonalMangaResource).copy(
                                     volumeToCoverArt = volumeToCoverArt
                                 )
                             )
                         }
                         FilteredMangaYearlyResourceDao.id -> {
-                            filteredMangaYearlyResourceDao.update(
+                            filteredMangaYearlyResourceDao.updateFilteredYearlyMangaResource(
                                 (info.mangaResource as FilteredMangaYearlyResource).copy(
                                     volumeToCoverArt = volumeToCoverArt
                                 )
@@ -160,7 +161,7 @@ private suspend fun getMangaFeedAndUpdateChapter(
             chapterListResponse.data.forEach {
                 chapterDao.upsertChapter(
                     ChapterToChapterEntityMapper.map(
-                        it to chapterDao.getById(it.id)
+                        it to chapterDao.getChapterById(it.id).first()
                     )
                 )
             }

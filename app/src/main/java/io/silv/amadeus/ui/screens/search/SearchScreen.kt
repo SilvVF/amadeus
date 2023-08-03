@@ -121,7 +121,7 @@ import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalPaddingValues
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.DomainAuthor
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.models.DomainTag
 import io.silv.manga.domain.repositorys.people.QueryResult
 import io.silv.manga.network.mangadex.models.ContentRating
@@ -1177,10 +1177,10 @@ fun SearchMangaTopBar(
 @Composable
 fun SearchItemsList(
     modifier: Modifier = Modifier,
-    items: List<DomainManga>,
+    items: List<SavableManga>,
     state: LazyGridState = rememberLazyGridState(),
-    onMangaClick: (manga: DomainManga) -> Unit,
-    onBookmarkClick: (manga: DomainManga) -> Unit
+    onMangaClick: (manga: SavableManga) -> Unit,
+    onBookmarkClick: (manga: SavableManga) -> Unit
 ) {
     val space = LocalSpacing.current
     val navigator = LocalNavigator.current
@@ -1192,7 +1192,7 @@ fun SearchItemsList(
     ) {
         items(
             items = items,
-            key = { item: DomainManga -> item.id }
+            key = { item: SavableManga -> item.id }
         ) { manga ->
             MangaListItem(
                 manga = manga,
@@ -1221,8 +1221,8 @@ fun SearchItems(
     modifier: Modifier,
     searchMangaUiState: SearchMangaUiState,
     gridState: LazyGridState,
-    onMangaClick: (DomainManga) -> Unit,
-    onBookmarkClick: (DomainManga) -> Unit
+    onMangaClick: (SavableManga) -> Unit,
+    onBookmarkClick: (SavableManga) -> Unit
 ) {
     when(searchMangaUiState) {
         is SearchMangaUiState.Refreshing -> {

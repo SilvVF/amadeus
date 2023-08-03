@@ -10,7 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.core.pmap
-import io.silv.manga.domain.repositorys.chapter.ChapterInfoRepository
+import io.silv.manga.domain.repositorys.chapter.ChapterEntityRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.sync.Synchronizer
 import org.koin.core.component.KoinComponent
@@ -23,7 +23,7 @@ internal class MangaSyncWorker(
 ): CoroutineWorker(appContext, workerParams), Synchronizer, KoinComponent {
 
     private val savedMangaRepository by inject<SavedMangaRepository>()
-    private val chapterInfoRepository by inject<ChapterInfoRepository>()
+    private val chapterInfoRepository by inject<ChapterEntityRepository>()
 
     override suspend fun doWork(): Result {
 

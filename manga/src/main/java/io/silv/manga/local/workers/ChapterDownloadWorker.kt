@@ -27,6 +27,7 @@ import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.requests.ChapterListRequest
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
@@ -97,7 +98,7 @@ class ChapterDownloadWorker(
             it + chaptersToGet
         }
         // Create saved manga if it is being downloaded from a resource
-        savedMangaDao.getMangaById(mangaId) ?: run {
+        savedMangaDao.getSavedMangaById(mangaId) ?: run {
             Log.d("ChapterDownloadWorker", "Saving manga")
             val resources = getMangaResourcesById(mangaId)
             Log.d("ChapterDownloadWorker", "Saving manga found resources ${resources.map { it.first.id }}")
@@ -107,12 +108,12 @@ class ChapterDownloadWorker(
             SavedMangaEntity(
                 mangaResource = resources.maxBy { it.first.savedLocalAtEpochSeconds }.first
             ).also {
-                savedMangaDao.upsertManga(it)
+                savedMangaDao.upsertSavedManga(it)
             }
         }
 
         val refetch = chaptersToGet.filter { cid ->
-            chapterDao.getById(cid) == null
+            chapterDao.getChapterById(cid).first() == null
         }
 
         if (refetch.isNotEmpty()) {
@@ -145,7 +146,7 @@ class ChapterDownloadWorker(
                     // $.baseUrl / $QUALITY / $.chapter.hash / $.chapter.$QUALITY[*]
                     response.chapter.data.forEachIndexed { i, img ->
                         val url = "${response.baseUrl}/data/${response.chapter.hash}/$img"
-                        chapterDao.getById(id)
+                        chapterDao.getChapterById(id).first()
                             ?.let { e ->
                                 chapterDao.updateChapter(
                                     e.copy(

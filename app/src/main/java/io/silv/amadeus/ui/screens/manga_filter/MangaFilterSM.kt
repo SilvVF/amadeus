@@ -2,7 +2,7 @@ package io.silv.amadeus.ui.screens.manga_filter
 
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.FilteredMangaRepository
 import io.silv.manga.domain.repositorys.FilteredResourceQuery
 import io.silv.manga.domain.repositorys.FilteredYearlyMangaRepository
@@ -35,7 +35,7 @@ class MangaFilterSM(
             else -> {
                 YearlyFilteredUiState.Success(
                     resources.map { r ->
-                        DomainManga(r, saved.find { it.id == r.id })
+                        SavableManga(r, saved.find { it.id == r.id })
                     }
                 )
             }
@@ -49,7 +49,7 @@ class MangaFilterSM(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val timePeriodFilteredResources = mutableTimePeriod.flatMapMerge {
-        filteredMangaRepository.getMangaResources(FilteredResourceQuery(tagId, it))
+        filteredMangaRepository.observeMangaResources(FilteredResourceQuery(tagId, it))
     }
 
     val timePeriodFilteredUiState = combine(
@@ -62,7 +62,7 @@ class MangaFilterSM(
             else -> {
                 TimeFilteredUiState.Success(
                     resources.map { r ->
-                        DomainManga(r, saved.find { it.id == r.id })
+                        SavableManga(r, saved.find { it.id == r.id })
                     }
                 )
             }
@@ -84,13 +84,13 @@ class MangaFilterSM(
     }
 }
 
-sealed class YearlyFilteredUiState(open val resources: List<DomainManga>) {
+sealed class YearlyFilteredUiState(open val resources: List<SavableManga>) {
     object Loading: YearlyFilteredUiState(emptyList())
-    data class Success(override val resources: List<DomainManga>): YearlyFilteredUiState(resources)
+    data class Success(override val resources: List<SavableManga>): YearlyFilteredUiState(resources)
 }
 
-sealed class TimeFilteredUiState(open val resources: List<DomainManga>) {
+sealed class TimeFilteredUiState(open val resources: List<SavableManga>) {
     object Loading: TimeFilteredUiState(emptyList())
-    data class Success(override val resources: List<DomainManga>): TimeFilteredUiState(resources)
+    data class Success(override val resources: List<SavableManga>): TimeFilteredUiState(resources)
 }
 

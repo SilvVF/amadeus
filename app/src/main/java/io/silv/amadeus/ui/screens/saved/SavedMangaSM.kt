@@ -2,10 +2,10 @@ package io.silv.amadeus.ui.screens.saved
 
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.domain.models.DomainChapter
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableChapter
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.SavedMangaRepository
-import io.silv.manga.local.entity.relations.MangaWithChapters
+import io.silv.manga.local.entity.relations.SavedMangaWithChapters
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
@@ -14,9 +14,9 @@ class SavedMangaSM(
 ): AmadeusScreenModel<SavedMangaEvent>() {
 
     val savedMangas = savedMangaRepository.getSavedMangaWithChapters()
-        .map { value: List<MangaWithChapters> ->
+        .map { value: List<SavedMangaWithChapters> ->
             value.map { (manga, chapters) ->
-               DomainManga(manga) to chapters.map { DomainChapter(it) }
+               SavableManga(manga) to chapters.map { SavableChapter(it) }
             }
         }
         .stateInUi(emptyList())

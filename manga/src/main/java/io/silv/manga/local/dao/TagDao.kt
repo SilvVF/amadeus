@@ -15,17 +15,14 @@ internal interface TagDao {
     @Insert(
         onConflict = OnConflictStrategy.REPLACE
     )
-    suspend fun upsert(tag: TagEntity)
+    suspend fun upsertTag(tag: TagEntity)
 
     @Update
-    suspend fun update(tag: TagEntity)
+    suspend fun updateTag(tag: TagEntity)
 
     @Delete
-    suspend fun delete(tag: TagEntity)
+    suspend fun deleteTag(tag: TagEntity)
 
     @Query("SELECT * FROM tagentity")
-    fun getAllAsFlow(): Flow<List<TagEntity>>
-
-    @Query("SELECT * FROM tagentity")
-    suspend fun getAll(): List<TagEntity>
+    fun getAllTags(): Flow<List<TagEntity>>
 }

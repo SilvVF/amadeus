@@ -58,8 +58,8 @@ import io.silv.amadeus.ui.shared.shadow
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalPaddingValues
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.DomainChapter
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableChapter
+import io.silv.manga.domain.models.SavableManga
 
 object SavedTab: Tab {
     override val options: TabOptions
@@ -111,9 +111,9 @@ class SavedScreen: Screen {
 
 @Composable
 fun Saved(
-    bookmarked: List<Pair<DomainManga, List<DomainChapter>>>,
-    saved: List<Pair<DomainManga, List<DomainChapter>>>,
-    continueReading: List<Pair<DomainManga, List<DomainChapter>>>,
+    bookmarked: List<Pair<SavableManga, List<SavableChapter>>>,
+    saved: List<Pair<SavableManga, List<SavableChapter>>>,
+    continueReading: List<Pair<SavableManga, List<SavableChapter>>>,
     bookmarkManga: (id: String) -> Unit
 ) {
 
@@ -197,8 +197,8 @@ fun Saved(
 @Composable
 private fun ReadingListItem(
     modifier: Modifier = Modifier,
-    manga: DomainManga,
-    chapters: List<DomainChapter>
+    manga: SavableManga,
+    chapters: List<SavableChapter>
 ) {
 
     val space = LocalSpacing.current

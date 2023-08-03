@@ -14,30 +14,22 @@ internal interface SeasonalMangaResourceDao {
 
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertManga(mangaResource: SeasonalMangaResource)
+    suspend fun upsertSeasonalMangaResource(mangaResource: SeasonalMangaResource)
 
 
     @Query("""
-          SELECT * FROM SeasonalMangaResource ORDER BY savedLocalAtEpochSeconds ASC
+          SELECT * FROM SeasonalMangaResource
     """)
-    fun getMangaResources(): Flow<List<SeasonalMangaResource>>
+    fun getSeasonalMangaResources(): Flow<List<SeasonalMangaResource>>
 
     @Query("SELECT * FROM SeasonalMangaResource WHERE id = :mangaId")
-    fun getResourceAsFlowById(mangaId: String): Flow<SeasonalMangaResource?>
-
-    @Query("SELECT * FROM SeasonalMangaResource")
-    suspend fun getAll(): List<SeasonalMangaResource>
+    fun getSeasonalMangaResourceById(mangaId: String): Flow<SeasonalMangaResource?>
 
     @Update
-    suspend fun update(mangaResource: SeasonalMangaResource)
-
-
-    @Query("SELECT * FROM SeasonalMangaResource WHERE id = :id LIMIT 1")
-    suspend fun getMangaById(id: String):  SeasonalMangaResource?
-
+    suspend fun updateSeasonalMangaResource(mangaResource: SeasonalMangaResource)
 
     @Delete
-    suspend fun delete(mangaResource: SeasonalMangaResource)
+    suspend fun deleteSeasonalMangaResource(mangaResource: SeasonalMangaResource)
 
     companion object {
         const val id: Int = 10

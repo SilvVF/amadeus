@@ -5,7 +5,7 @@ import androidx.room.Relation
 import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.SavedMangaEntity
 
-data class MangaWithChapters(
+data class SavedMangaWithChapters(
 
     @Embedded val manga: SavedMangaEntity,
 

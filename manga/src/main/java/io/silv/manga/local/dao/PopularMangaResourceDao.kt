@@ -18,26 +18,20 @@ internal interface PopularMangaResourceDao {
 
 
     @Query("""
-          SELECT * FROM PopularMangaResource ORDER BY savedLocalAtEpochSeconds ASC
+          SELECT * FROM PopularMangaResource
     """)
-    fun getMangaResources(): Flow<List<PopularMangaResource>>
+    fun getPopularMangaResources(): Flow<List<PopularMangaResource>>
 
     @Query("SELECT * FROM PopularMangaResource WHERE id = :mangaId")
-    fun getResourceAsFlowById(mangaId: String): Flow<PopularMangaResource?>
-
-    @Query("SELECT * FROM PopularMangaResource")
-    suspend fun getAll(): List<PopularMangaResource>
+    fun getPopularMangaResourceById(mangaId: String): Flow<PopularMangaResource?>
 
     @Update
-    suspend fun update(mangaResource: PopularMangaResource)
+    suspend fun updatePopularMangaResource(mangaResource: PopularMangaResource)
 
-
-    @Query("SELECT * FROM PopularMangaResource WHERE id = :id LIMIT 1")
-    suspend fun getMangaById(id: String):  PopularMangaResource?
 
 
     @Delete
-    suspend fun delete(mangaResource: PopularMangaResource)
+    suspend fun deletePopularMangaResource(mangaResource: PopularMangaResource)
 
     companion object {
         const val id: Int = 5

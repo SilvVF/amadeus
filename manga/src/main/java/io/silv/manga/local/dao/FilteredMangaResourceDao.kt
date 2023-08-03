@@ -14,31 +14,22 @@ internal interface FilteredMangaResourceDao {
 
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertManga(mangaResource: FilteredMangaResource)
+    suspend fun upsertFilteredMangaResource(mangaResource: FilteredMangaResource)
 
 
-    @Query("""
-          SELECT * FROM FilteredMangaResource
-          ORDER BY savedLocalAtEpochSeconds ASC
-    """)
-    fun getMangaResources(): Flow<List<FilteredMangaResource>>
 
     @Query("SELECT * FROM FilteredMangaResource WHERE id = :mangaId")
-    fun getResourceAsFlowById(mangaId: String): Flow<FilteredMangaResource?>
+    fun getFilteredMangaResourcesById(mangaId: String): Flow<FilteredMangaResource?>
 
     @Query("SELECT * FROM FilteredMangaResource")
-    suspend fun getAll(): List<FilteredMangaResource>
+    fun getFilteredMangaResources(): Flow<List<FilteredMangaResource>>
 
     @Update
-    suspend fun update(mangaResource: FilteredMangaResource)
-
-
-    @Query("SELECT * FROM FilteredMangaResource WHERE id = :id LIMIT 1")
-    suspend fun getMangaById(id: String):  FilteredMangaResource?
+    suspend fun updateFilteredMangaResource(mangaResource: FilteredMangaResource)
 
 
     @Delete
-    suspend fun delete(mangaResource: FilteredMangaResource)
+    suspend fun deleteFilteredMangaResource(mangaResource: FilteredMangaResource)
 
     companion object {
         const val id: Int = 3

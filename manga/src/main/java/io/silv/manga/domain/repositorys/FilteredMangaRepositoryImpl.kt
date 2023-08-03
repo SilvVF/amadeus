@@ -15,6 +15,7 @@ import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
@@ -43,16 +44,16 @@ internal class FilteredMangaRepositoryImpl(
             )
         },
         upsert = {
-            resourceDao.upsertManga(it)
+            resourceDao.upsertFilteredMangaResource(it)
         }
     )
 
-    override fun getMangaResource(id: String): Flow<FilteredMangaResource?> {
-        return resourceDao.getResourceAsFlowById(id)
+    override fun observeMangaResourceById(id: String): Flow<FilteredMangaResource?> {
+        return resourceDao.getFilteredMangaResourcesById(id)
     }
 
-    override fun getAllMangaResources(): Flow<List<FilteredMangaResource>> {
-        return resourceDao.getMangaResources()
+    override fun observeAllMangaResources(): Flow<List<FilteredMangaResource>> {
+        return resourceDao.getFilteredMangaResources()
     }
 
     override suspend fun refresh() {
@@ -60,8 +61,8 @@ internal class FilteredMangaRepositoryImpl(
         loadNextPage()
     }
 
-    override fun getMangaResources(resourceQuery: FilteredResourceQuery?): Flow<List<FilteredMangaResource>> {
-        return resourceDao.getMangaResources()
+    override fun observeMangaResources(resourceQuery: FilteredResourceQuery?): Flow<List<FilteredMangaResource>> {
+        return resourceDao.getFilteredMangaResources()
             .onStart {
                 if (resourceQuery != currentQuery) {
                     emit(emptyList())
@@ -74,7 +75,7 @@ internal class FilteredMangaRepositoryImpl(
     override suspend fun loadNextPage() = loadPage { offset, query ->
           query?.let {
               val result = syncer.sync(
-                  current = resourceDao.getAll(),
+                  current = resourceDao.getFilteredMangaResources().first(),
                   networkResponse = mangaDexApi.getMangaList(
                       MangaRequest(
                           offset = offset,
@@ -97,7 +98,7 @@ internal class FilteredMangaRepositoryImpl(
               if (offset == 0) {
                   for (unhandled in result.unhandled) {
                       if (!checkProtected(unhandled.id)) {
-                          resourceDao.delete(unhandled)
+                          resourceDao.deleteFilteredMangaResource(unhandled)
                       }
                   }
               }

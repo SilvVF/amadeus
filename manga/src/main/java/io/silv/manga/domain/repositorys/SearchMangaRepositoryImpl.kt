@@ -50,11 +50,11 @@ internal class SearchMangaRepositoryImpl(
         loadNextPage()
     }
 
-    override fun getMangaResource(id: String): Flow<SearchMangaResource?> {
+    override fun observeMangaResourceById(id: String): Flow<SearchMangaResource?> {
         return mangaResourceDao.getResourceAsFlowById(id)
     }
 
-    override fun getMangaResources(resourceQuery: SearchMangaResourceQuery): Flow<List<SearchMangaResource>>  {
+    override fun observeMangaResources(resourceQuery: SearchMangaResourceQuery): Flow<List<SearchMangaResource>>  {
         return mangaResourceDao.getMangaResources().onStart {
             if (resourceQuery != currentQuery) {
                 resetPagination(resourceQuery)
@@ -64,7 +64,7 @@ internal class SearchMangaRepositoryImpl(
         }
     }
 
-    override fun getAllMangaResources(): Flow<List<SearchMangaResource>> {
+    override fun observeAllMangaResources(): Flow<List<SearchMangaResource>> {
         return mangaResourceDao.getMangaResources()
     }
 

@@ -15,6 +15,7 @@ import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.plus
 import java.time.Duration
 
@@ -29,8 +30,8 @@ internal class PopularMangaRepositoryImpl(
     override val scope: CoroutineScope =
         CoroutineScope(dispatchers.io) + CoroutineName("PopularMangaRepositoryImpl")
 
-    override fun getMangaResources(resourceQuery: Any?): Flow<List<PopularMangaResource>> {
-        return mangaResourceDao.getMangaResources()
+    override fun observeMangaResources(resourceQuery: Any?): Flow<List<PopularMangaResource>> {
+        return mangaResourceDao.getPopularMangaResources()
     }
 
     private val mapper = MangaToPopularMangaResourceMapper
@@ -41,12 +42,12 @@ internal class PopularMangaRepositoryImpl(
         upsert = { mangaResourceDao.upsertManga(it) }
     )
 
-    override fun getMangaResource(id: String): Flow<PopularMangaResource?> {
-        return mangaResourceDao.getResourceAsFlowById(id)
+    override fun observeMangaResourceById(id: String): Flow<PopularMangaResource?> {
+        return mangaResourceDao.getPopularMangaResourceById(id)
     }
 
-    override fun getAllMangaResources(): Flow<List<PopularMangaResource>> {
-        return mangaResourceDao.getMangaResources()
+    override fun observeAllMangaResources(): Flow<List<PopularMangaResource>> {
+        return mangaResourceDao.getPopularMangaResources()
     }
 
     override suspend fun refresh() {
@@ -56,7 +57,7 @@ internal class PopularMangaRepositoryImpl(
 
     override suspend fun loadNextPage() = loadPage { offset, _ ->
             val result = syncer.sync(
-                current = mangaResourceDao.getAll(),
+                current = mangaResourceDao.getPopularMangaResources().first(),
                 networkResponse = mangaDexApi.getMangaList(
                     MangaRequest(
                         offset = offset,
@@ -77,7 +78,7 @@ internal class PopularMangaRepositoryImpl(
             if (offset == 0) {
                 for(unhandled in result.unhandled) {
                     if (!checkProtected(unhandled.id)) {
-                        mangaResourceDao.delete(unhandled)
+                        mangaResourceDao.deletePopularMangaResource(unhandled)
                     }
                 }
             }

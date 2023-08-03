@@ -64,12 +64,12 @@ import io.silv.amadeus.ui.screens.manga_view.composables.volumePosterItems
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableManga
 import org.koin.core.parameter.parametersOf
 
 
 class MangaViewScreen(
-  private val manga: DomainManga
+  private val manga: SavableManga
 ): Screen {
 
     @Composable
@@ -135,7 +135,7 @@ class MangaViewScreen(
                             ChapterListHeader(
                                 onPageClick = sm::navigateToPage,
                                 page = currentPage + 1,
-                                lastPage = mangaViewState.chapterPageState.lastPage,
+                                lastPage = (mangaViewState.chapterPageState as? ChapterPageState.Success)?.lastPage ?: 0,
                                 sortedAscending = sortedAscending,
                                 onChangeDirection = sm::changeDirection
                             )
@@ -168,7 +168,7 @@ class MangaViewScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TagsAndLanguages(
-    manga: DomainManga,
+    manga: SavableManga,
     navigate: (name: String) -> Unit,
 ) {
     val space = LocalSpacing.current

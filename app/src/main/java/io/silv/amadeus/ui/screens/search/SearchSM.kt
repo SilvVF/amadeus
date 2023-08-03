@@ -7,7 +7,7 @@ import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.amadeus.ui.shared.Language
 import io.silv.core.combineTuple
 import io.silv.manga.domain.models.DomainAuthor
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.models.DomainTag
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaRepository
@@ -23,14 +23,13 @@ import io.silv.manga.network.mangadex.models.Status
 import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
@@ -101,14 +100,14 @@ class SearchSM(
         .stateInUi(emptyList())
 
     private var start: Boolean = false
-    private val startFlow = MutableSharedFlow<Boolean>()
+    private val startFlow = MutableStateFlow(false)
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     val authorListUiState = mutableAuthorQuery
         .debounce {
             if (it.isNotBlank()) 800L else 0L
         }
-        .flatMapMerge { query ->
+        .flatMapLatest { query ->
             authorListRepository.getAuthorList(query)
         }
         .stateInUi(QueryResult.Done(emptyList()))
@@ -118,7 +117,7 @@ class SearchSM(
         .debounce {
             if (it.isNotBlank()) 800L else 0L
         }
-        .flatMapMerge { query ->
+        .flatMapLatest { query ->
             artistListRepository.getArtistList(query)
         }
         .stateInUi(QueryResult.Done(emptyList()))
@@ -162,16 +161,16 @@ class SearchSM(
             if (start.also { start = false }) {
                 0L
             } else
-                3000L
+                2000L
         }
-        .flatMapMerge { (query, _) ->
-            searchMangaRepository.getMangaResources(query)
+        .flatMapLatest { (query, _) ->
+            searchMangaRepository.observeMangaResources(query)
         }
         .onStart {
             // emits initial search results prefetched for no query
             // this will avoid the initial result being debounced by 3 seconds
             emit(
-                searchMangaRepository.getMangaResources(searchMangaRepository.latestQuery())
+                searchMangaRepository.observeMangaResources(searchMangaRepository.latestQuery())
                     .first()
             )
         }
@@ -182,7 +181,7 @@ class SearchSM(
         savedMangaRepository.getSavedMangas(),
     ) { resources, load, saved ->
         val combinedManga = resources.map {
-            DomainManga(it, saved.find { s -> s.id ==  it.id})
+            SavableManga(it, saved.find { s -> s.id ==  it.id})
         }
         when (load) {
             LoadState.End -> {

@@ -8,7 +8,7 @@ import java.io.Serializable
 import java.util.UUID
 
 @Parcelize
-data class DomainChapter(
+data class SavableChapter(
     val id: String,
     val downloaded: Boolean,
     val progress: ProgressState,
@@ -47,8 +47,8 @@ data class DomainChapter(
     )
 
     companion object {
-        fun test(): DomainChapter {
-            return DomainChapter(
+        fun test(): SavableChapter {
+            return SavableChapter(
                 id = UUID.randomUUID().toString(),
                 downloaded = true,
                 progress = ProgressState.values().random(),

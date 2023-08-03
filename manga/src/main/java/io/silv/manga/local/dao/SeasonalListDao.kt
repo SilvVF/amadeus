@@ -13,17 +13,14 @@ import kotlinx.coroutines.flow.Flow
 interface SeasonalListDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertList(seasonalListEntity: SeasonalListEntity)
+    suspend fun upsertSeasonalList(seasonalListEntity: SeasonalListEntity)
 
     @Query("SELECT * FROM SeasonalListEntity")
-    fun getAllLists(): Flow<List<SeasonalListEntity>>
-
-    @Query("SELECT * FROM SeasonalListEntity")
-    suspend fun getAll(): List<SeasonalListEntity>
+    fun getSeasonalLists(): Flow<List<SeasonalListEntity>>
 
     @Transaction
     @Query("SELECT * FROM SeasonalListEntity")
-    fun getSeasonListWithManga(): Flow<List<SeasonListWithManga>>
+    fun getSeasonListsWithManga(): Flow<List<SeasonListWithManga>>
 
     companion object {
         const val id: Int = 9

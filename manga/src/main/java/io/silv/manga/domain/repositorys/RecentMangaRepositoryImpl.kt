@@ -14,6 +14,7 @@ import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 
@@ -27,8 +28,8 @@ internal class RecentMangaRepositoryImpl(
 
     override val scope: CoroutineScope = CoroutineScope(dispatchers.io) + CoroutineName("RecentMangaRepositoryImpl")
 
-    override fun getMangaResources(resourceQuery: Any?): Flow<List<RecentMangaResource>> {
-        return mangaResourceDao.getMangaResources()
+    override fun observeMangaResources(resourceQuery: Any?): Flow<List<RecentMangaResource>> {
+        return mangaResourceDao.getRecentMangaResources()
     }
 
     private val mapper = MangaToRecentMangaResourceMapper
@@ -36,7 +37,7 @@ internal class RecentMangaRepositoryImpl(
     private val syncer = syncerForEntity<RecentMangaResource, Manga, String>(
         networkToKey = { n -> n.id },
         mapper = { manga, resource -> mapper.map(manga to resource) },
-        upsert = { mangaResourceDao.upsertManga(it) }
+        upsert = { mangaResourceDao.upsertRecentMangaResource(it) }
     )
 
     init {
@@ -45,12 +46,12 @@ internal class RecentMangaRepositoryImpl(
         }
     }
 
-    override fun getMangaResource(id: String): Flow<RecentMangaResource?> {
-        return mangaResourceDao.getResourceAsFlowById(id)
+    override fun observeMangaResourceById(id: String): Flow<RecentMangaResource?> {
+        return mangaResourceDao.getRecentMangaResourceById(id)
     }
 
-    override fun getAllMangaResources(): Flow<List<RecentMangaResource>> {
-        return mangaResourceDao.getMangaResources()
+    override fun observeAllMangaResources(): Flow<List<RecentMangaResource>> {
+        return mangaResourceDao.getRecentMangaResources()
     }
 
     override suspend fun refresh() {
@@ -60,7 +61,7 @@ internal class RecentMangaRepositoryImpl(
 
     override suspend fun loadNextPage() = loadPage { offset, _ ->
             val result = syncer.sync(
-                current = mangaResourceDao.getAll(),
+                current = mangaResourceDao.getRecentMangaResources().first(),
                 networkResponse = mangaDexApi.getMangaList(
                     MangaRequest(
                         offset = offset,
@@ -79,7 +80,7 @@ internal class RecentMangaRepositoryImpl(
             if (offset == 0) {
                 for (unhandled in result.unhandled) {
                     if (!checkProtected(unhandled.id)) {
-                        mangaResourceDao.delete(unhandled)
+                        mangaResourceDao.deleteRecentMangaResource(unhandled)
                     }
                 }
             }

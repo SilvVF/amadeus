@@ -40,7 +40,7 @@ import io.silv.amadeus.ui.screens.home.MangaPager
 import io.silv.amadeus.ui.screens.home.header
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.FilteredMangaRepository
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
@@ -156,7 +156,7 @@ class MangaFilterScreen(
                     }
                     is TimeFilteredUiState.Success -> items(
                         items = timePeriodItemsState.resources,
-                        key = { item: DomainManga -> item.id }
+                        key = { item: SavableManga -> item.id }
                     ) { manga ->
                         MangaListItem(
                             manga = manga,

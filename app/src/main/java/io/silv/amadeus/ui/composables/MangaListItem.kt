@@ -35,12 +35,12 @@ import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.shadow
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableManga
 
 @Composable
 fun MangaListItem(
     modifier: Modifier = Modifier,
-    manga: DomainManga,
+    manga: SavableManga,
     onTagClick: (tag: String) -> Unit,
     onBookmarkClick: () -> Unit
 ) {

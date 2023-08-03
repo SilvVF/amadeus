@@ -61,8 +61,8 @@ import io.silv.amadeus.ui.screens.manga_view.TagsAndLanguages
 import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.DomainChapter
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableChapter
+import io.silv.manga.domain.models.SavableManga
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -100,7 +100,7 @@ fun ChapterVolumeNavBar(
 
 @Composable
 fun MangaInfo(
-    manga: DomainManga,
+    manga: SavableManga,
     bookmarked: Boolean,
     onBookmarkClicked: (String) -> Unit,
     onTagSelected: (tag: String) -> Unit
@@ -181,7 +181,7 @@ fun LazyListScope.chapterListItems(
                 items(
                     items = chapters,
                     key = { chapter -> chapter.id },
-                    contentType = { DomainChapter },
+                    contentType = { SavableChapter },
                 ) { chapter ->
                     val space = LocalSpacing.current
                     ChapterListItem(
@@ -232,7 +232,7 @@ private fun ChapterItemPlaceHolder() {
 
 @Composable
 private fun ChapterInfoHeader(
-    chapters: List<DomainChapter>,
+    chapters: List<SavableChapter>,
     volume: Int
 ) {
     Surface(
@@ -265,7 +265,7 @@ private fun ChapterInfoHeader(
 @Composable
 private fun ChapterListItem(
     modifier: Modifier = Modifier,
-    chapter: DomainChapter,
+    chapter: SavableChapter,
     downloading: Boolean,
     onDownloadClicked: () -> Unit,
     onDeleteClicked: () -> Unit,
@@ -415,7 +415,7 @@ private fun VolumePostersPlaceHolder() {
 
 @Composable
 private fun MangaActions(
-    manga: DomainManga,
+    manga: SavableManga,
     bookmarked: Boolean,
     onBookmarkClicked: (String) -> Unit
 ) {
@@ -454,7 +454,7 @@ private fun MangaActions(
 
 @Composable
 private fun MangaContentInfo(
-    manga: DomainManga,
+    manga: SavableManga,
     showMaxLines: Boolean,
     showMaxLinesChange: (Boolean) -> Unit,
     onTagSelected: (tag: String) -> Unit

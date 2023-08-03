@@ -33,7 +33,7 @@ import androidx.compose.ui.Modifier
 import io.silv.amadeus.ui.screens.search.SearchItems
 import io.silv.amadeus.ui.screens.search.SearchMangaUiState
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableManga
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
@@ -43,8 +43,8 @@ fun HomeTopBar(
     onSearchQueryChange: (String) -> Unit,
     searchItems: SearchMangaUiState,
     searchGridState: LazyGridState,
-    onBookmarkClick: (manga: DomainManga) -> Unit,
-    onMangaClick: (manga: DomainManga) -> Unit
+    onBookmarkClick: (manga: SavableManga) -> Unit,
+    onMangaClick: (manga: SavableManga) -> Unit
 ) {
     var searchBarActive by rememberSaveable {
         mutableStateOf(false)

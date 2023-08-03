@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
@@ -58,7 +59,7 @@ internal class SeasonalMangaRepositoryImpl(
     override suspend fun updateSeasonList(season: Season, year: Int): Unit = withContext(dispatchers.io) {
         loadState.emit(LoadState.Loading)
         runCatching {
-            if (seasonalListDao.getAll().any { it.year == year  && it.season == season}) {
+            if (seasonalListDao.getSeasonalLists().first().any { it.year == year  && it.season == season}) {
                 return@withContext
             }
             val mangaDexLists = mangaDexApi
@@ -89,7 +90,7 @@ internal class SeasonalMangaRepositoryImpl(
                     .getOrThrow()
                     .data
 
-                seasonalListDao.upsertList(
+                seasonalListDao.upsertSeasonalList(
                     SeasonalListEntity(
                         id = list.id,
                         year = y,
@@ -104,15 +105,15 @@ internal class SeasonalMangaRepositoryImpl(
                         )
                     },
                     upsert = {
-                        mangaResourceDao.upsertManga(it)
+                        mangaResourceDao.upsertSeasonalMangaResource(it)
                     }
                 ).sync(
-                    current = mangaResourceDao.getAll().filter { it.seasonId == list.id },
+                    current = mangaResourceDao.getSeasonalMangaResources().first().filter { it.seasonId == list.id },
                     networkResponse = response
                 )
                 for (unhandled in result.unhandled) {
                     if (!checkProtected(unhandled.id)) {
-                        mangaResourceDao.delete(unhandled)
+                        mangaResourceDao.deleteSeasonalMangaResource(unhandled)
                     }
                 }
             }
@@ -138,14 +139,14 @@ internal class SeasonalMangaRepositoryImpl(
     }
 
     override fun getSeasonalLists(): Flow<List<SeasonListWithManga>> {
-        return seasonalListDao.getSeasonListWithManga()
+        return seasonalListDao.getSeasonListsWithManga()
     }
 
-    override fun getMangaResource(id: String): Flow<SeasonalMangaResource?> {
-        return mangaResourceDao.getResourceAsFlowById(id)
+    override fun observeMangaResourceById(id: String): Flow<SeasonalMangaResource?> {
+        return mangaResourceDao.getSeasonalMangaResourceById(id)
     }
 
-    override fun getAllMangaResources(): Flow<List<SeasonalMangaResource>> {
-       return mangaResourceDao.getMangaResources()
+    override fun observeAllMangaResources(): Flow<List<SeasonalMangaResource>> {
+       return mangaResourceDao.getSeasonalMangaResources()
     }
 }

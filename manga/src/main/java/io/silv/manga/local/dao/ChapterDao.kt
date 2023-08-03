@@ -18,11 +18,8 @@ internal interface ChapterDao: SyncableDao<ChapterEntity> {
     )
     suspend fun upsertChapter(chapterEntity: ChapterEntity)
 
-    @Query("SELECT * FROM chapterentity WHERE id = :id")
-    suspend fun getById(id: String): ChapterEntity?
-
     @Query("SELECT * FROM chapterentity WHERE id = :id LIMIT 1")
-    fun getByIdAsFlow(id: String): Flow<ChapterEntity?>
+    fun getChapterById(id: String): Flow<ChapterEntity?>
 
     @Query("""
         SELECT * FROM chapterentity 
@@ -30,10 +27,8 @@ internal interface ChapterDao: SyncableDao<ChapterEntity> {
     """)
     fun getChaptersByMangaId(mangaId: String): Flow<List<ChapterEntity>>
 
-    @Query("""
-        SELECT * FROM chapterentity
-    """)
-    suspend fun getAll(): List<ChapterEntity>
+    @Query("SELECT * FROM chapterentity")
+    fun getChapterEntities(): Flow<List<ChapterEntity>>
 
     @Delete
     suspend fun deleteChapter(chapterEntity: ChapterEntity)

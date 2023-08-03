@@ -11,15 +11,16 @@ import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.ProgressState
 import io.silv.manga.local.entity.SavedMangaEntity
-import io.silv.manga.local.entity.relations.MangaWithChapters
+import io.silv.manga.local.entity.relations.SavedMangaWithChapters
 import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
+import io.silv.manga.network.mangadex.models.Status
 import io.silv.manga.network.mangadex.models.manga.Manga
-import io.silv.manga.network.mangadex.requests.MangaByIdRequest
+import io.silv.manga.network.mangadex.requests.MangaRequest
 import io.silv.manga.sync.Synchronizer
 import io.silv.manga.sync.syncWithSyncer
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 
@@ -40,12 +41,12 @@ internal class SavedMangaRepositoryImpl(
     private val syncer = syncerForEntity<SavedMangaEntity, Manga, String>(
         networkToKey = { manga -> manga.id },
         mapper = { network, saved -> mapper.map(network to saved) },
-        upsert = { savedMangaDao.upsertManga(it) }
+        upsert = { savedMangaDao.upsertSavedManga(it) }
     )
 
     override suspend fun bookmarkManga(id: String): Unit = withContext(dispatchers.io) {
             log("bookmarking $id")
-            savedMangaDao.getMangaWithChapters(id)?.let { (manga, chapters) ->
+            savedMangaDao.getSavedMangaWithChaptersById(id).first()?.let { (manga, chapters) ->
                 log("saved found $id")
                 if (!manga.bookmarked) {
                     savedMangaDao.updateSavedManga(
@@ -58,7 +59,7 @@ internal class SavedMangaRepositoryImpl(
                         manga.progressState == ProgressState.NotStarted
                     ) {
                         // delete if above is true
-                        savedMangaDao.delete(manga)
+                        savedMangaDao.deleteSavedManga(manga)
                     } else {
                         // need the saved manga to track progress and save the images
                         savedMangaDao.updateSavedManga(
@@ -71,7 +72,7 @@ internal class SavedMangaRepositoryImpl(
                     getMangaResourceById(id).maxBy { it.first.savedLocalAtEpochSeconds }.let { resource ->
                         log("No Saved found using resource $id")
                         val entity =  SavedMangaEntity(resource.first).copy(bookmarked = true)
-                        savedMangaDao.upsertManga(entity)
+                        savedMangaDao.upsertSavedManga(entity)
                         updateChapter(
                             UpdateInfo(id, chapterDao, savedMangaDao, mangaDexApi, entity, 1)
                         )
@@ -84,7 +85,7 @@ internal class SavedMangaRepositoryImpl(
         getMangaResourceById(id).maxBy { it.first.savedLocalAtEpochSeconds }.let { resource ->
             log("No Saved found using resource $id")
             val entity =  SavedMangaEntity(resource.first)
-            savedMangaDao.upsertManga(entity)
+            savedMangaDao.upsertSavedManga(entity)
             updateChapter(
                 UpdateInfo(id, chapterDao, savedMangaDao, mangaDexApi, entity, 1)
             )
@@ -93,25 +94,25 @@ internal class SavedMangaRepositoryImpl(
     }
 
 
-    override fun getSavedMangaWithChapters(): Flow<List<MangaWithChapters>> {
-        return savedMangaDao.getAllMangaWithChaptersAsFlow()
+    override fun getSavedMangaWithChapters(): Flow<List<SavedMangaWithChapters>> {
+        return savedMangaDao.getSavedMangaWithChapters()
     }
 
-    override fun getSavedMangaWithChapter(id: String): Flow<MangaWithChapters?> {
-        return savedMangaDao.getMangaWithChaptersAsFlow(id)
+    override fun getSavedMangaWithChapter(id: String): Flow<SavedMangaWithChapters?> {
+        return savedMangaDao.getSavedMangaWithChaptersById(id)
     }
 
     override fun getSavedMangas(): Flow<List<SavedMangaEntity>> {
-        return savedMangaDao.getAllAsFlow()
+        return savedMangaDao.getSavedManga()
     }
 
     override fun getSavedManga(id: String): Flow<SavedMangaEntity?> {
-        return savedMangaDao.getMangaByIdAsFlow(id)
+        return savedMangaDao.getSavedMangaById(id)
     }
 
     override suspend fun updateLastReadPage(mangaId: String, chapterId: String, page: Int) {
         withContext(dispatchers.io) {
-            val chapter = chapterDao.getById(chapterId) ?: return@withContext
+            val chapter = chapterDao.getChapterById(chapterId).first() ?: return@withContext
             chapterDao.updateChapter(
                 chapter.copy(
                     progressState = when(page) {
@@ -126,7 +127,7 @@ internal class SavedMangaRepositoryImpl(
                     }
                 )
             )
-            savedMangaDao.getMangaById(mangaId)?.let { entity ->
+            savedMangaDao.getSavedMangaById(mangaId).first()?.let { entity ->
                 savedMangaDao.updateSavedManga(
                     entity.copy(
                         chapterToLastReadPage = entity.chapterToLastReadPage.toMutableMap().apply {
@@ -145,24 +146,28 @@ internal class SavedMangaRepositoryImpl(
     }
 
     override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
+        val saved = savedMangaDao.getSavedManga().first()
         return synchronizer.syncWithSyncer(
             syncer = syncer,
-            getCurrent = { savedMangaDao.getAll() },
+            getCurrent = { saved },
             getNetwork = {
-                savedMangaDao.getAll().mapNotNull {
-                    delay(1000)
-                    if (
-                        Clock.System.now().epochSeconds - it.savedLocalAtEpochSeconds > 60 * 60 * 12
-                    ) {
-                        mangaDexApi.getMangaById(
-                            it.id,
-                            MangaByIdRequest(includes = listOf("cover_art"))
+                saved.mapNotNull { saved ->
+                    saved.takeIf {
+                        Clock.System.now().epochSeconds - saved.savedLocalAtEpochSeconds > 60 * 60 * 1
+                                && saved.status != Status.cancelled
+                                && saved.status != Status.completed
+                    }
+                }
+                    .chunked(100)
+                    .flatMap {
+                        mangaDexApi.getMangaList(
+                            MangaRequest(
+                                ids = it.map { saved -> saved.id },
+                                includes = listOf("cover_art")
+                            )
                         )
                             .getOrThrow()
                             .data
-                    } else {
-                        null
-                    }
                 }
             },
             onComplete = { result ->

@@ -8,7 +8,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import io.silv.manga.local.entity.SavedMangaEntity
-import io.silv.manga.local.entity.relations.MangaWithChapters
+import io.silv.manga.local.entity.relations.SavedMangaWithChapters
 import io.silv.manga.sync.SyncableDao
 import kotlinx.coroutines.flow.Flow
 
@@ -16,54 +16,30 @@ import kotlinx.coroutines.flow.Flow
 internal interface SavedMangaDao: SyncableDao<SavedMangaEntity> {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertManga(mangaEntity: SavedMangaEntity)
+    suspend fun upsertSavedManga(mangaEntity: SavedMangaEntity)
 
     @Update
     fun updateSavedManga(mangaEntity: SavedMangaEntity)
 
     @Query("SELECT * FROM savedmangaentity")
-    fun getAllAsFlow(): Flow<List<SavedMangaEntity>>
+    fun getSavedManga(): Flow<List<SavedMangaEntity>>
 
 
-    @Query("SELECT * FROM savedmangaentity")
-    fun getAll(): List<SavedMangaEntity>
+    @Query("SELECT * FROM savedmangaentity WHERE id = :id")
+    fun getSavedMangaById(id: String):  Flow<SavedMangaEntity?>
 
-    @Query("""
-       SELECT * FROM savedmangaentity
-       WHERE id = :id
-       LIMIT 1
-    """)
-    suspend fun getMangaById(id: String):  SavedMangaEntity?
-
-    @Query("""
-       SELECT * FROM savedmangaentity
-       WHERE id = :id
-       LIMIT 1
-    """)
-    fun getMangaByIdAsFlow(id: String):  Flow<SavedMangaEntity?>
 
     @Transaction
-    @Query("""
-      SELECT * FROM savedmangaentity
-      WHERE id = :id
-      LIMIT 1
-    """)
-    suspend fun getMangaWithChapters(id: String): MangaWithChapters?
-
-    @Transaction
-    @Query("""
-      SELECT * FROM savedmangaentity
-      WHERE id = :id
-      LIMIT 1
-    """)
-    fun getMangaWithChaptersAsFlow(id: String): Flow<MangaWithChapters?>
+    @Query("SELECT * FROM savedmangaentity WHERE id = :id")
+    fun getSavedMangaWithChaptersById(id: String): Flow<SavedMangaWithChapters?>
 
     @Transaction
     @Query("SELECT * FROM savedmangaentity")
-    fun getAllMangaWithChaptersAsFlow(): Flow<List<MangaWithChapters>>
+    fun getSavedMangaWithChapters(): Flow<List<SavedMangaWithChapters>>
+
 
     @Delete
-    suspend fun delete(mangaEntity: SavedMangaEntity)
+    suspend fun deleteSavedManga(mangaEntity: SavedMangaEntity)
 
     companion object {
         const val id: Int = 7

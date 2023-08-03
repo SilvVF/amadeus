@@ -1,18 +1,19 @@
 package io.silv.amadeus.ui.screens.manga_view
 
-import android.util.Log
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.ChapterToChapterEntityMapper
-import io.silv.manga.domain.models.DomainChapter
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableChapter
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.base.ProtectedResources
+import io.silv.manga.domain.repositorys.base.Resource
+import io.silv.manga.domain.repositorys.chapter.ChapterInfoResponse
 import io.silv.manga.domain.repositorys.chapter.ChapterListRepository
-import io.silv.manga.domain.repositorys.chapter.Resource
-import io.silv.manga.domain.usecase.CombineMangaChapterInfo
+import io.silv.manga.domain.usecase.GetCombinedSavableMangaWithChapters
+import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.workers.ChapterDeletionWorker
 import io.silv.manga.local.workers.ChapterDeletionWorkerTag
 import io.silv.manga.local.workers.ChapterDownloadWorker
@@ -29,17 +30,18 @@ import kotlinx.coroutines.launch
 
 class MangaViewSM(
     chapterInfoRepository: ChapterListRepository,
-    combineMangaChapterInfo: CombineMangaChapterInfo,
+    getCombinedSavableMangaWithChapters: GetCombinedSavableMangaWithChapters,
     private val savedMangaRepository: SavedMangaRepository,
     private val workManager: WorkManager,
-    private val initialManga: DomainManga
+    private val initialManga: SavableManga
 ): AmadeusScreenModel<MangaViewEvent>() {
 
     init {
         ProtectedResources.ids.add(initialManga.id)
+        coroutineScope.launch {
+            chapterInfoRepository.loadVolumeArt(initialManga.id)
+        }
     }
-
-    private val loading = false
 
     val downloadingOrDeleting = combine(
         workManager.getWorkInfosByTagFlow(ChapterDownloadWorkerTag)
@@ -64,57 +66,38 @@ class MangaViewSM(
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val chapterPageState = currentPage
+    private val observeChaptersForPage = currentPage
         .combine(
             mutableSortedByAsc
         ) { page, asc -> page to asc }
             .flatMapLatest { (page, asc) ->
-                chapterInfoRepository.getChapters(initialManga.id, page, asc)
+                chapterInfoRepository.observeChapters(initialManga.id, page, asc)
             }
 
 
     val mangaViewStateUiState = combine(
-        chapterPageState,
-        chapterInfoRepository.getSavedChapters(initialManga.id),
-        combineMangaChapterInfo(initialManga.id),
+        observeChaptersForPage,
+        getCombinedSavableMangaWithChapters(initialManga.id),
         chapterInfoRepository.loadingVolumeArtIds,
-    ) { chapterState, chapters, mangaFull, loadingIds ->
-        MangaViewState(
-            mangaState = mangaFull.domainManga?.let{ manga ->
-                MangaState.Success(
-                    loadingArt = manga.id in loadingIds,
-                    volumeToArt = mangaFull.volumeImages?.mapKeys { (k, _) -> k.toIntOrNull() ?: 0 } ?: emptyMap(),
-                    manga = manga
-                )
-            } ?: MangaState.Loading,
-            chapterPageState = when(chapterState) {
+    ) { chaptersList, combinedSavableMangaWithChapters, loadingVolumeArtIds ->
+        val (savableManga, chapterEntities) = combinedSavableMangaWithChapters
+        MangaViewUiState(
+            mangaState = MangaState.Success(
+                    loadingArt = savableManga.id in loadingVolumeArtIds,
+                    volumeToArt = savableManga.volumeToCoverArtUrl.mapKeys { (k, _) -> k.toIntOrNull() ?: 0 },
+                    manga = savableManga
+            ),
+            chapterPageState = when(chaptersList) {
                 is Resource.Failure, Resource.Loading -> ChapterPageState.Loading
                 is Resource.Success -> ChapterPageState.Success(
-                    lastPage = chapterState.result.lastPage,
-                    volumeToChapters = chapterState.result.chapters.groupBy { it.attributes.volume?.toIntOrNull() ?: 0 }
-                        .mapValues { (_, v) ->
-                            v.run {
-                                val sorted = this
-                                    .sortedBy { it.attributes.chapter?.toDoubleOrNull() ?: 0.0 }
-                                    .map {
-                                        DomainChapter(
-                                            ChapterToChapterEntityMapper.map(
-                                                it to chapters.find { s -> s.id == it.id }
-                                            )
-                                        ).also {
-                                            if (it.downloaded) {
-                                                Log.d("CombineMangaChapterInfo", "${it.id} downloaded")
-                                            }
-                                        }
-                                    }
-                                return@run if (!chapterState.result.sortedByAsc) { sorted.reversed() } else sorted
-                            }
-                        }
+                    lastPage = chaptersList.result.lastPage,
+                    volumeToChapters = chaptersList.result
+                        .toChapterPageState(chapterEntities)
                 )
             }
         )
     }
-        .stateInUi(MangaViewState())
+        .stateInUi(MangaViewUiState())
 
     fun bookmarkManga(id: String) = coroutineScope.launch {
         savedMangaRepository.bookmarkManga(id)
@@ -154,30 +137,44 @@ class MangaViewSM(
     }
 }
 
-data class MangaViewState(
+data class MangaViewUiState(
     val chapterPageState: ChapterPageState = ChapterPageState.Loading,
     val mangaState: MangaState = MangaState.Loading
 )
 
-sealed class MangaState {
-    object Loading: MangaState()
+sealed interface MangaState {
+    object Loading: MangaState
     data class Success(
         val loadingArt: Boolean,
         val volumeToArt: Map<Int, String>,
-        val manga: DomainManga,
-    ) : MangaState()
+        val manga: SavableManga,
+    ) : MangaState
 }
 
-sealed class ChapterPageState(
-    open val lastPage: Int = 0,
-    open val volumeToChapters: Map<Int, List<DomainChapter>> = emptyMap()
-) {
+fun ChapterInfoResponse.toChapterPageState(savedChapters: List<ChapterEntity>) =
+    this.chapters.groupBy { it.attributes.volume?.toIntOrNull() ?: 0 }
+        .mapValues { (_, v) ->
+            v.run {
+                val sorted = this
+                    .sortedBy { it.attributes.chapter?.toDoubleOrNull() ?: 0.0 }
+                    .map {
+                        SavableChapter(
+                            ChapterToChapterEntityMapper.map(
+                                it to savedChapters.find { s -> s.id == it.id }
+                            )
+                        )
+                    }
+                return@run if (!this@toChapterPageState.sortedByAsc) { sorted.reversed() } else sorted
+            }
+        }
 
-    object Loading: ChapterPageState()
+sealed interface ChapterPageState {
+
+    object Loading: ChapterPageState
 
     data class Success(
-        override val lastPage: Int = 0,
-        override val volumeToChapters: Map<Int, List<DomainChapter>> = emptyMap()
-    ): ChapterPageState(lastPage, volumeToChapters)
+         val lastPage: Int = 0,
+         val volumeToChapters: Map<Int, List<SavableChapter>> = emptyMap()
+    ): ChapterPageState
 }
 

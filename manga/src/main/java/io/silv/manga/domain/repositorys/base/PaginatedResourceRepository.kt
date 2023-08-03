@@ -8,7 +8,7 @@ interface PaginatedResourceRepository<ResourceType: MangaResource, ResourceQuery
 
     fun latestQuery(): ResourceQuery
 
-    fun getMangaResources(resourceQuery: ResourceQuery): Flow<List<ResourceType>>
+    fun observeMangaResources(resourceQuery: ResourceQuery): Flow<List<ResourceType>>
 
     suspend fun loadNextPage()
 }

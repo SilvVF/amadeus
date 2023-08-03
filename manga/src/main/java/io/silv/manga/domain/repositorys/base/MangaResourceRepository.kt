@@ -5,9 +5,9 @@ import kotlinx.coroutines.flow.Flow
 
 interface MangaResourceRepository<ResourceType: MangaResource> {
 
-    fun getMangaResource(id: String): Flow<ResourceType?>
+    fun observeMangaResourceById(id: String): Flow<ResourceType?>
 
-    fun getAllMangaResources(): Flow<List<ResourceType>>
+    fun observeAllMangaResources(): Flow<List<ResourceType>>
 
     suspend fun refresh()
 

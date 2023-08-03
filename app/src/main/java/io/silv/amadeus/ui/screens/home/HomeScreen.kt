@@ -88,7 +88,7 @@ import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalPaddingValues
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableManga
 import kotlinx.coroutines.launch
 
 
@@ -242,7 +242,7 @@ class HomeScreen: Screen {
                 }
                 items(
                     items = recentMangaState,
-                    key = {item: DomainManga -> item.id }
+                    key = {item: SavableManga -> item.id }
                 ) { manga ->
                     MangaListItem(
                         manga = manga,
@@ -283,9 +283,9 @@ class HomeScreen: Screen {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MangaPager(
-    mangaList: List<DomainManga>,
-    onMangaClick: (manga: DomainManga) -> Unit,
-    onBookmarkClick: (manga: DomainManga) -> Unit,
+    mangaList: List<SavableManga>,
+    onMangaClick: (manga: SavableManga) -> Unit,
+    onBookmarkClick: (manga: SavableManga) -> Unit,
     onTagClick: (name: String, id: String) -> Unit
 ) {
     val space = LocalSpacing.current
@@ -495,11 +495,11 @@ fun BlurImageBackground(modifier: Modifier, url: String, content: @Composable ()
 
 @Composable
 fun TrendingMangaList(
-    trendingManga: List<DomainManga>,
+    trendingManga: List<SavableManga>,
     loading: Boolean,
     state: LazyListState = rememberLazyListState(),
-    onMangaClick: (manga: DomainManga) -> Unit,
-    onBookmarkClick: (manga: DomainManga) -> Unit
+    onMangaClick: (manga: SavableManga) -> Unit,
+    onBookmarkClick: (manga: SavableManga) -> Unit
 ) {
     val space = LocalSpacing.current
     val navigator = LocalNavigator.current

@@ -4,10 +4,10 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.domain.models.DomainChapter
-import io.silv.manga.domain.models.DomainManga
+import io.silv.manga.domain.models.SavableChapter
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.SavedMangaRepository
-import io.silv.manga.local.entity.relations.MangaWithChapters
+import io.silv.manga.local.entity.relations.SavedMangaWithChapters
 import io.silv.manga.local.workers.ChapterDownloadWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +46,7 @@ class MangaReaderSM(
     )
         .stateInUi(MangaReaderState.Loading)
 
-    fun goToNextChapter(chapter: DomainChapter) = coroutineScope.launch {
+    fun goToNextChapter(chapter: SavableChapter) = coroutineScope.launch {
         chapterId.update { id ->
             val chapterNumber = chapter.chapter?.toIntOrNull() ?: 0
             (mangaWithChapters.value as? MangaReaderState.Success)?.let { state ->
@@ -57,7 +57,7 @@ class MangaReaderSM(
         }
     }
 
-    fun goToPrevChapter(chapter: DomainChapter) = coroutineScope.launch {
+    fun goToPrevChapter(chapter: SavableChapter) = coroutineScope.launch {
         chapterId.update { id ->
             val chapterNumber = chapter.chapter?.toIntOrNull() ?: 0
             (mangaWithChapters.value as? MangaReaderState.Success)?.let { state ->
@@ -91,7 +91,7 @@ class MangaReaderSM(
 
 private fun combineMangaWithChapter(
     chapterId: Flow<String>,
-    manga: Flow<MangaWithChapters?>,
+    manga: Flow<SavedMangaWithChapters?>,
     mangaNotFound: suspend () -> Unit,
     chapterNotFound: suspend () -> Unit,
     notEnoughImages: suspend (prev: Int) -> Unit
@@ -112,9 +112,9 @@ private fun combineMangaWithChapter(
             notEnoughImages(images.size)
         }
         MangaReaderState.Success(
-            DomainManga(mangaWithChapters.manga),
-            DomainChapter(chapter),
-            mangaWithChapters.chapters.map { DomainChapter(it) },
+            SavableManga(mangaWithChapters.manga),
+            SavableChapter(chapter),
+            mangaWithChapters.chapters.map { SavableChapter(it) },
             images
         )
     } else {
@@ -128,9 +128,9 @@ sealed interface MangaReaderEvent
 sealed class MangaReaderState {
     object Loading: MangaReaderState()
     data class Success(
-        val manga: DomainManga,
-        val chapter: DomainChapter,
-        val chapters: List<DomainChapter>,
+        val manga: SavableManga,
+        val chapter: SavableChapter,
+        val chapters: List<SavableChapter>,
         val pages: List<String> = emptyList()
     ): MangaReaderState()
 }

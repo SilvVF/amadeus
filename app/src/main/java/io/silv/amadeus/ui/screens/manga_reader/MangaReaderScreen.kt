@@ -50,7 +50,7 @@ import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalPaddingValues
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.core.lerp
-import io.silv.manga.domain.models.DomainChapter
+import io.silv.manga.domain.models.SavableChapter
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 import kotlin.math.absoluteValue
@@ -90,9 +90,9 @@ class MangaReaderScreen(
 fun MangaReader(
     state: MangaReaderState,
     currentPage: (Int) -> Unit,
-    goToNextChapter: (DomainChapter) -> Unit,
-    goToPrevChapter: (DomainChapter) -> Unit,
-    goToChapter: (DomainChapter) -> Unit
+    goToNextChapter: (SavableChapter) -> Unit,
+    goToPrevChapter: (SavableChapter) -> Unit,
+    goToChapter: (SavableChapter) -> Unit
 ) {
     when (state) {
         MangaReaderState.Loading -> {

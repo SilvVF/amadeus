@@ -374,7 +374,7 @@ fun LazyListScope.volumePosterItems(
     mangaState: MangaState
 ) {
     when (mangaState) {
-        MangaState.Loading -> item {
+        is MangaState.Loading -> item {
             VolumePostersPlaceHolder()
         }
         is MangaState.Success -> {

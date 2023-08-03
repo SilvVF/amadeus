@@ -7,8 +7,8 @@ import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.amadeus.ui.shared.Language
 import io.silv.core.combineTuple
 import io.silv.manga.domain.models.DomainAuthor
-import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.models.DomainTag
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaResourceQuery

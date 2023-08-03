@@ -6,7 +6,6 @@ import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.MangaEntityMapper
 import io.silv.manga.domain.usecase.GetMangaResourcesById
 import io.silv.manga.domain.usecase.UpdateChapterWithArt
-import io.silv.manga.domain.usecase.UpdateInfo
 import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.ProgressState
@@ -73,22 +72,16 @@ internal class SavedMangaRepositoryImpl(
                         log("No Saved found using resource $id")
                         val entity =  SavedMangaEntity(resource.first).copy(bookmarked = true)
                         savedMangaDao.upsertSavedManga(entity)
-                        updateChapter(
-                            UpdateInfo(id, chapterDao, savedMangaDao, mangaDexApi, entity, 1)
-                        )
                         log("Inserted Saved manga using resource $id and set bookmarked true")
                     }
                 }
     }
 
-    override suspend fun saveManga(id: String) {
+    override suspend fun saveManga(id: String): Unit = withContext(dispatchers.io) {
         getMangaResourceById(id).maxBy { it.first.savedLocalAtEpochSeconds }.let { resource ->
             log("No Saved found using resource $id")
             val entity =  SavedMangaEntity(resource.first)
             savedMangaDao.upsertSavedManga(entity)
-            updateChapter(
-                UpdateInfo(id, chapterDao, savedMangaDao, mangaDexApi, entity, 1)
-            )
             log("Inserted Saved manga using resource $id and set bookmarked true")
         }
     }
@@ -131,7 +124,7 @@ internal class SavedMangaRepositoryImpl(
                 savedMangaDao.updateSavedManga(
                     entity.copy(
                         chapterToLastReadPage = entity.chapterToLastReadPage.toMutableMap().apply {
-                            if ((this[chapterId] ?: 0) < page)
+                            if ((this[chapterId] ?: -1) < page)
                                 this[chapterId] = page
                         },
                         readChapters = if (page == chapter.pages) {

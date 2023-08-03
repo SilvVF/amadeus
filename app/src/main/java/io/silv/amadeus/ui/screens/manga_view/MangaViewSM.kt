@@ -88,7 +88,16 @@ class MangaViewSM(
                     manga = savableManga
             ),
             chapterPageState = when(chaptersList) {
-                is Resource.Failure, Resource.Loading -> ChapterPageState.Loading
+                is Resource.Failure -> {
+                    mutableEvents.send(
+                        MangaViewEvent
+                            .FailedToLoadChapterList(
+                                "Failed to load chapters list check internet connection"
+                            )
+                    )
+                    ChapterPageState.Loading
+                }
+                is Resource.Loading -> ChapterPageState.Loading
                 is Resource.Success -> ChapterPageState.Success(
                     lastPage = chaptersList.result.lastPage,
                     volumeToChapters = chaptersList.result
@@ -97,7 +106,7 @@ class MangaViewSM(
             }
         )
     }
-        .stateInUi(MangaViewUiState())
+        .stateInUi(MangaViewUiState(mangaState = MangaState.Loading(initialManga)))
 
     fun bookmarkManga(id: String) = coroutineScope.launch {
         savedMangaRepository.bookmarkManga(id)
@@ -139,16 +148,18 @@ class MangaViewSM(
 
 data class MangaViewUiState(
     val chapterPageState: ChapterPageState = ChapterPageState.Loading,
-    val mangaState: MangaState = MangaState.Loading
+    val mangaState: MangaState
 )
 
-sealed interface MangaState {
-    object Loading: MangaState
+sealed class MangaState(
+    open val manga: SavableManga
+) {
+    data class Loading(override val manga: SavableManga) : MangaState(manga)
     data class Success(
         val loadingArt: Boolean,
         val volumeToArt: Map<Int, String>,
-        val manga: SavableManga,
-    ) : MangaState
+        override val manga: SavableManga,
+    ) : MangaState(manga)
 }
 
 fun ChapterInfoResponse.toChapterPageState(savedChapters: List<ChapterEntity>) =
@@ -168,13 +179,20 @@ fun ChapterInfoResponse.toChapterPageState(savedChapters: List<ChapterEntity>) =
             }
         }
 
-sealed interface ChapterPageState {
+sealed interface MangaViewEvent {
+    data class FailedToLoadVolumeArt(val message: String): MangaViewEvent
+    data class FailedToLoadChapterList(val message: String): MangaViewEvent
+}
 
-    object Loading: ChapterPageState
+sealed class ChapterPageState(
+    open val lastPage: Int = 0,
+) {
+
+    object Loading: ChapterPageState()
 
     data class Success(
-         val lastPage: Int = 0,
+         override val lastPage: Int = 0,
          val volumeToChapters: Map<Int, List<SavableChapter>> = emptyMap()
-    ): ChapterPageState
+    ): ChapterPageState(lastPage)
 }
 

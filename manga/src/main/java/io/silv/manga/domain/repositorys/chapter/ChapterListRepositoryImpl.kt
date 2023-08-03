@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.plus
+import kotlinx.coroutines.withContext
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -48,54 +49,55 @@ internal class ChapterListRepositoryImpl(
 
     override val loadingVolumeArtIds = MutableStateFlow(emptyList<String>())
 
-    private suspend fun updateVolumeArt(mangaId: String) = suspendRunCatching {
+    private suspend fun updateVolumeArt(mangaId: String) = withContext(scope.coroutineContext) {
+        suspendRunCatching {
 
-        loadingVolumeArtIds.update { it + mangaId }
+            loadingVolumeArtIds.update { it + mangaId }
 
-        val savedManga = savedMangaDao.getSavedMangaById(mangaId).first()
-        val resourceToIdList = getMangaResourcesById(mangaId).also {
-            Log.d("ChapterInfoRepositoryImpl", it.size.toString() + "resources")
-        }
+            val savedManga = savedMangaDao.getSavedMangaById(mangaId).first()
+            val resourceToIdList = getMangaResourcesById(mangaId).also {
+                Log.d("ChapterInfoRepositoryImpl", it.size.toString() + "resources")
+            }
 
-        val list = mangaDexApi.getCoverArtList(
-            CoverArtRequest(
-                manga = listOf(mangaId),
-                limit = 100,
-                offset = 0
+            val list = mangaDexApi.getCoverArtList(
+                CoverArtRequest(
+                    manga = listOf(mangaId),
+                    limit = 100,
+                    offset = 0
+                )
             )
-        )
-            .getOrThrow()
+                .getOrThrow()
 
-        val volumeCoverArt = buildMap {
-            list.data.forEach { cover ->
-                put(
-                    cover.attributes.volume ?: "0",
-                    coverArtUrl(cover.attributes.fileName, mangaId)
+            val volumeCoverArt = buildMap {
+                list.data.forEach { cover ->
+                    put(
+                        cover.attributes.volume ?: "0",
+                        coverArtUrl(cover.attributes.fileName, mangaId)
+                    )
+                }
+            }
+
+            if (savedManga != null) {
+                savedMangaDao.updateSavedManga(
+                    savedManga.copy(
+                        volumeToCoverArt = savedManga.volumeToCoverArt + volumeCoverArt
+                    )
                 )
             }
+            resourceToIdList.forEach { (r, id) ->
+                Log.d("ChapterInfoRepositoryImpl", id.toString() + "trying to update")
+                updateMangaResourceWithArt(id, r, volumeCoverArt + r.volumeToCoverArt)
+            }
         }
-
-        if (savedManga != null) {
-            savedMangaDao.updateSavedManga(
-                savedManga.copy(
-                    volumeToCoverArt = savedManga.volumeToCoverArt + volumeCoverArt
-                )
-            )
-        }
-        resourceToIdList.forEach { (r, id) ->
-            Log.d("ChapterInfoRepositoryImpl", id.toString() + "trying to update")
-            updateMangaResourceWithArt(id, r, volumeCoverArt + r.volumeToCoverArt)
-        }
+            .onSuccess {
+                loadingVolumeArtIds.update { it - mangaId }
+            }
+            .onFailure {
+                Log.d("ChapterInfoRepositoryImpl", it.message ?: it.stackTraceToString())
+                it.printStackTrace()
+                loadingVolumeArtIds.update { it - mangaId }
+            }
     }
-        .onSuccess {
-            loadingVolumeArtIds.update { it - mangaId }
-        }
-        .onFailure {
-            Log.d("ChapterInfoRepositoryImpl", it.message ?: it.stackTraceToString() )
-            it.printStackTrace()
-            loadingVolumeArtIds.update { it - mangaId }
-        }
-
 
     override fun observeChapters(
         mangaId: String, page: Int, asc: Boolean

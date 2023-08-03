@@ -33,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -62,6 +63,7 @@ import io.silv.amadeus.ui.screens.manga_view.composables.MangaInfo
 import io.silv.amadeus.ui.screens.manga_view.composables.chapterListItems
 import io.silv.amadeus.ui.screens.manga_view.composables.volumePosterItems
 import io.silv.amadeus.ui.shared.CenterBox
+import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
@@ -82,8 +84,21 @@ class MangaViewScreen(
         val navigator = LocalNavigator.current
         val currentPage by sm.currentPage.collectAsStateWithLifecycle()
         val sortedAscending by sm.sortedByAsc.collectAsStateWithLifecycle()
-
         val snackbarHostState = remember { SnackbarHostState() }
+
+        sm.collectEvents { event ->
+            suspend fun showSnackBar(message: String) {
+                snackbarHostState.showSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                    duration = SnackbarDuration.Short
+                )
+            }
+            when (event) {
+                is MangaViewEvent.FailedToLoadChapterList -> showSnackBar(event.message)
+                is MangaViewEvent.FailedToLoadVolumeArt -> showSnackBar(event.message)
+            }
+        }
 
         var chaptersShowing by rememberSaveable {
             mutableStateOf(true)
@@ -98,7 +113,10 @@ class MangaViewScreen(
             Column(Modifier
                     .padding(paddingValues)
                 ) {
-                LazyColumn(Modifier.fillMaxSize().navigationBarsPadding()) {
+                LazyColumn(
+                    Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding()) {
                     item {
                         MainPoster(
                             manga = manga,
@@ -109,7 +127,7 @@ class MangaViewScreen(
                         Column {
                             MangaInfo(
                                 manga = manga,
-                                bookmarked = (mangaViewState.mangaState as? MangaState.Success)?.manga?.bookmarked ?: manga.bookmarked,
+                                bookmarked = mangaViewState.mangaState.manga.bookmarked,
                                 onBookmarkClicked = sm::bookmarkManga,
                                 onTagSelected = {tag ->
                                     manga.tagToId[tag]?.let {id ->
@@ -132,7 +150,7 @@ class MangaViewScreen(
                             ChapterListHeader(
                                 onPageClick = sm::navigateToPage,
                                 page = currentPage + 1,
-                                lastPage = (mangaViewState.chapterPageState as? ChapterPageState.Success)?.lastPage ?: 0,
+                                lastPage = mangaViewState.chapterPageState.lastPage,
                                 sortedAscending = sortedAscending,
                                 onChangeDirection = sm::changeDirection
                             )

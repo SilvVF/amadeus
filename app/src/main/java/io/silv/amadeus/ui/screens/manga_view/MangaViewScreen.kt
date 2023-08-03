@@ -79,7 +79,6 @@ class MangaViewScreen(
         var bottomBarVisible by LocalBottomBarVisibility.current
         val mangaViewState by sm.mangaViewStateUiState.collectAsStateWithLifecycle()
         val downloading by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
-        val space = LocalSpacing.current
         val navigator = LocalNavigator.current
         val currentPage by sm.currentPage.collectAsStateWithLifecycle()
         val sortedAscending by sm.sortedByAsc.collectAsStateWithLifecycle()
@@ -93,9 +92,7 @@ class MangaViewScreen(
         LaunchedEffect(Unit) { bottomBarVisible = false }
 
         Scaffold(
-            snackbarHost = {
-                SnackbarHost(hostState = snackbarHostState)
-            },
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
             contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.systemBars)
         ) { paddingValues ->
             Column(Modifier

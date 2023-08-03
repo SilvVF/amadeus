@@ -208,21 +208,21 @@ class SearchSM(
 
     fun selectDemographic(demographic: PublicationDemographic) = coroutineScope.launch {
         mutableSelectedDemographics.update {
-            if (it.contains(demographic)) { it.filter { v -> v != demographic } }
+            if (demographic in it) { it - demographic }
             else it + demographic
         }
     }
 
     fun selectTranslatedLanguage(language: Language) = coroutineScope.launch {
         mutableSelectedTransLangs.update {
-            if (it.contains(language)) { it.filter { v -> v != language } }
+            if (language in it) { it - language }
             else it + language
         }
     }
 
     fun selectOriginalLanguage(language: Language) = coroutineScope.launch {
         mutableSelectedOrigLangs.update {
-            if (it.contains(language)) { it.filter { v -> v != language } }
+            if (language in it) { it - language }
             else it + language
         }
     }
@@ -233,14 +233,14 @@ class SearchSM(
 
     fun statusSelected(status: Status) = coroutineScope.launch {
         mutableSelectedStatus.update {
-            if (it.contains(status)) { it.filter { v -> v != status } }
+            if (status in it) { it - status }
             else it + status
         }
     }
 
     fun contentRatingSelected(rating: ContentRating) = coroutineScope.launch {
         mutableSelectedContentRatings.update {
-            if (it.contains(rating)) { it.filter { v -> v != rating } }
+            if (rating in it) { it - rating }
             else it + rating
         }
     }
@@ -256,7 +256,7 @@ class SearchSM(
 
     fun authorSelected(author: DomainAuthor) = coroutineScope.launch {
         mutableSelectedAuthors.update {
-            if (it.contains(author)) it.filter { v -> v != author }
+            if (author in it) it - author
             else it + author
         }
     }
@@ -267,7 +267,7 @@ class SearchSM(
 
     fun artistSelected(artist: DomainAuthor) = coroutineScope.launch {
         mutableSelectedArtists.update {
-            if (it.contains(artist)) it.filter { v -> v != artist }
+            if (artist in it) it - artist
             else it + artist
         }
     }
@@ -290,13 +290,13 @@ class SearchSM(
 
     fun includeTagSelected(id: String) = coroutineScope.launch {
         mutableIncludedIds.update { ids ->
-            if (id in ids) { ids.filter { it != id    } }
+            if (id in ids) ids - id
             else { ids + id }
         }
     }
     fun excludeTagSelected(id: String) = coroutineScope.launch {
         mutableExcludedIds.update { ids ->
-            if (id in ids) { ids.filter { it != id } }
+            if (id in ids) ids - id
             else { ids + id}
         }
     }

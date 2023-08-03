@@ -12,7 +12,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
 class MangaFilterSM(
@@ -48,7 +48,7 @@ class MangaFilterSM(
     val timePeriod = mutableTimePeriod.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val timePeriodFilteredResources = mutableTimePeriod.flatMapMerge {
+    private val timePeriodFilteredResources = mutableTimePeriod.flatMapLatest {
         filteredMangaRepository.observeMangaResources(FilteredResourceQuery(tagId, it))
     }
 

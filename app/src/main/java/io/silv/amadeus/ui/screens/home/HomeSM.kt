@@ -3,8 +3,8 @@ package io.silv.amadeus.ui.screens.home
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.screens.search.SearchMangaUiState
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.models.DomainTag
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.PopularMangaRepository
 import io.silv.manga.domain.repositorys.RecentMangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
@@ -58,7 +58,7 @@ class HomeSM(
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private val mangaSearchFlow = searchQuery
         .debounce { 1000L }
-        .flatMapMerge { query ->
+        .flatMapLatest { query ->
             searchMangaRepository.observeMangaResources(
                 SearchMangaResourceQuery(title = query)
             )

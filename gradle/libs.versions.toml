@@ -4,6 +4,7 @@ androidxComposeBom = "2023.05.01"
 androidxCoreKtx = "1.10.1"
 androidxTestEspressoCore = "3.5.1"
 appcompat = "1.6.1"
+jsoup = "1.14.3"
 kotlinxCoroutinesAndroid = "1.7.2"
 kotlinxCoroutinesGuava = "1.7.2"
 lifecycleRuntimeCompose = "2.6.1"
@@ -57,6 +58,7 @@ androidx-work-rxjava2 = { module = "androidx.work:work-rxjava2", version.ref = "
 androidx-work-testing = { module = "androidx.work:work-testing", version.ref = "workTesting" }
 coil-svg={module="io.coil-kt:coil-svg", version.ref="coil"}
 
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "kotlinxCoroutinesGuava" }
 kotlinx-datetime={module="org.jetbrains.kotlinx:kotlinx-datetime", version.ref="kotlinxdatetime"}

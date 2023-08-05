@@ -15,6 +15,7 @@ import io.silv.manga.domain.repositorys.base.LoadState
 import io.silv.manga.domain.repositorys.base.toBool
 import io.silv.manga.domain.repositorys.tags.TagRepository
 import io.silv.manga.local.entity.Season
+import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +38,7 @@ class HomeSM(
     private val tagRepository: TagRepository
 ): AmadeusScreenModel<HomeEvent>() {
 
-    private val mutableSearchQuery = MutableStateFlow("")
+    private val mutableSearchQuery = MutableStateFlow(searchMangaRepository.latestQuery().title ?: "")
     val searchQuery = mutableSearchQuery.asStateFlow()
 
     val loadingPopularManga = popularMangaRepository.loadState
@@ -71,7 +72,11 @@ class HomeSM(
         .debounce { 1000L }
         .flatMapLatest { query ->
             searchMangaRepository.observeMangaResources(
-                SearchMangaResourceQuery(title = query)
+                SearchMangaResourceQuery(
+                    title = query,
+                    includedTagsMode = MangaRequest.TagsMode.AND,
+                    excludedTagsMode = MangaRequest.TagsMode.OR,
+                )
             )
         }
         .onStart {

@@ -77,7 +77,7 @@ class SearchSM(
     private val mutableFiltering = MutableStateFlow(false)
     val filtering = mutableFiltering.asStateFlow()
 
-    private val mutableSearchText = MutableStateFlow("")
+    private val mutableSearchText = MutableStateFlow(searchMangaRepository.latestQuery().title ?: "")
     val searchText = mutableSearchText.asStateFlow()
 
     private val mutableIncludedIds = MutableStateFlow(emptyList<String>())
@@ -128,8 +128,8 @@ class SearchSM(
         mutableIncludedIds,
         mutableExcludedIds,
         searchText,
-        mutableExcludedTagMode,
-        mutableIncludedTagMode,
+        includedTagsMode,
+        excludedTagsMode,
         selectedAuthors,
         selectedArtists,
         mutableSelectedContentRatings,

@@ -28,8 +28,11 @@ import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.requests.ChapterListRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
@@ -44,6 +47,29 @@ class ImageDownloader(
     private val context: Context,
     private val dispatchers: AmadeusDispatchers
 ) {
+    suspend fun writeFromMangaPlus(
+        mangaId: String,
+        chapterId: String,
+        pageNumber: Int,
+        url: String
+    ) = withContext(dispatchers.io) {
+        val image = URL(url)
+        val inputStream = image.openStream().buffered()
+        val bitmap = BitmapFactory.decodeStream(inputStream)
+
+        val ext = "jpg"
+
+        val fileName = "$mangaId-$chapterId-$pageNumber.$ext"
+
+        val file = File(context.filesDir, fileName)
+
+        file.outputStream().buffered().use {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
+        }
+
+        file.toUri()
+    }
+
     suspend fun write(
         mangaId: String,
         chapterId: String,
@@ -78,6 +104,7 @@ class ChapterDownloadWorker(
     workerParameters: WorkerParameters,
 ): CoroutineWorker(appContext, workerParameters), KoinComponent {
 
+    private val client = OkHttpClient()
     private val dispatchers by inject<AmadeusDispatchers>()
     private val chapterDao by inject<ChapterDao>()
     private val getMangaResourcesById by inject<GetMangaResourcesById>()
@@ -98,7 +125,7 @@ class ChapterDownloadWorker(
             it + chaptersToGet
         }
         // Create saved manga if it is being downloaded from a resource
-        savedMangaDao.getSavedMangaById(mangaId) ?: run {
+        savedMangaDao.getSavedMangaById(mangaId).first() ?: run {
             Log.d("ChapterDownloadWorker", "Saving manga")
             val resources = getMangaResourcesById(mangaId)
             Log.d("ChapterDownloadWorker", "Saving manga found resources ${resources.map { it.first.id }}")
@@ -138,28 +165,66 @@ class ChapterDownloadWorker(
         }
 
         val result = runCatching {
-            chaptersToGet.forEach { id ->
+            chaptersToGet.mapNotNull { chapterDao.getChapterById(it).firstOrNull() }.forEach { chapter ->
                 withContext(dispatchers.io) {
                     // Download request happens by chapter id which should only be available if
                     // the chapter info was already fetched or saved
-                    val response = mangaDexApi.getChapterImages(id).getOrThrow()
-                    // $.baseUrl / $QUALITY / $.chapter.hash / $.chapter.$QUALITY[*]
-                    response.chapter.data.forEachIndexed { i, img ->
-                        val url = "${response.baseUrl}/data/${response.chapter.hash}/$img"
-                        chapterDao.getChapterById(id).first()
-                            ?.let { e ->
-                                chapterDao.updateChapter(
-                                    e.copy(
-                                        chapterImages = e.chapterImages +
-                                                downloader.write(mangaId, id, i, url)
-                                                    .toString()
-                                    )
+                    if (chapter.externalUrl != null && "mangaplus.shueisha" in chapter.externalUrl) {
+                        val mangaPlusApiId = chapter.externalUrl.takeLastWhile { c -> c != '/' }
+                        Log.d("ChapterDownloadWorker", "Trying to load from mangaplus ${chapter.externalUrl.replace("\\", "")}")
+                        Log.d("ChapterDownloadWorker", "Trying to load from mangaplus api id $mangaPlusApiId")
+
+                        val request = Request.Builder()
+                            .url("https://jumpg-webapi.tokyo-cdn.com/api/manga_viewer?chapter_id=$mangaPlusApiId&split=yes&img_quality=high")
+                            .build()
+                        val response = client.newCall(request).execute()
+                        val stringBody = response.body?.string()
+                        Log.d("ChapterDownloadWorker", "$stringBody")
+                        val urlList = mutableListOf<String>()
+                        stringBody?.split("https://mangaplus.shueisha.co.jp/drm/title/")
+                            ?.forEach {
+                                if (it.contains("chapter_thumbnail")) {
+                                    return@forEach
+                                }
+                                val idx = it.indexOf("&duration=").takeIf { it != -1 } ?: return@forEach
+                                val duration = it.substring(idx + "&duration=".length, it.length)
+                                    .takeWhile { c -> c.isDigit() }
+                                urlList.add(
+                                    "https://mangaplus.shueisha.co.jp/drm/title/" + it.substring(0, idx) + "&duration=" + duration.runCatching { duration.take(5) }.getOrDefault(duration)
                                 )
-                                Log.d("ChapterDownloadWorker", "Updating images $id")
                             }
+                        Log.d("ChapterDownloadWorker", "$urlList")
+                        urlList.chunked(4).forEachIndexed { i, urls ->
+
+                            Log.d("ChapterDownloadWorker", "Updating images ${chapter.id}")
+                            val imageList = urls.mapIndexed { index, url ->
+                                downloader.write(mangaId, chapter.id, (i * 4) + index, url).toString()
+                            }
+                            chapterDao.updateChapter(
+                                chapterDao.getChapterById(chapter.id).first()?.let {
+                                    it.copy(
+                                        chapterImages = it.chapterImages + imageList,
+                                        pages = (i * 4) + imageList.size
+                                    )
+                                } ?: return@forEachIndexed
+                            )
                         }
+                    } else {
+                        val response = mangaDexApi.getChapterImages(chapter.id).getOrThrow()
+                        // $.baseUrl / $QUALITY / $.chapter.hash / $.chapter.$QUALITY[*]
+                        response.chapter.data.forEachIndexed { i, img ->
+                            val url = "${response.baseUrl}/data/${response.chapter.hash}/$img"
+                            chapterDao.getChapterById(chapter.id).first()?.let {
+                                it.copy(
+                                    chapterImages = it.chapterImages + downloader.write(mangaId, chapter.id, i, url).toString(),
+                                    pages = i + 1
+                                )
+                            } ?: return@forEachIndexed
+                            Log.d("ChapterDownloadWorker", "Updating images $id")
+                        }
+                    }
                 }
-                downloadingIds.update { ids -> ids - id }
+                downloadingIds.update { ids -> ids - chapter.id }
             }
         }
 
@@ -182,10 +247,10 @@ class ChapterDownloadWorker(
                 .build()
 
         fun downloadWorkRequest(chapterIds: List<String>, mangaId: String): OneTimeWorkRequest {
-            return OneTimeWorkRequestBuilder<ChapterDownloadWorker >()
+            return OneTimeWorkRequestBuilder<ChapterDownloadWorker>()
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .setBackoffCriteria(
-                    BackoffPolicy.LINEAR,
+                    BackoffPolicy.EXPONENTIAL,
                     Duration.ofSeconds(5),
                 )
                 .setInputData(

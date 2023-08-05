@@ -55,7 +55,7 @@ dependencies {
     implementation(libs.room.coroutines)
     testImplementation(libs.room.test)
 
-
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
     //KOIN
     implementation(libs.koin.android)
     implementation(libs.koin.core)
@@ -67,12 +67,6 @@ dependencies {
     implementation(libs.ktor.serialization.json)
     implementation(libs.ktor.logging)
     implementation(libs.ktor.contentnegotiation)
-
-
-    val paging_version = "3.1.1"
-
-    val work_version = "2.9.0-alpha01"
-
     // Kotlin + coroutines
     implementation(libs.androidx.work.runtime.ktx)
 
@@ -86,6 +80,7 @@ dependencies {
     androidTestImplementation(libs.androidx.work.testing)
     implementation(libs.androidx.work.runtime.ktx)
 
+    implementation(libs.jsoup)
 
     // optional - Multiprocess support
     implementation(libs.androidx.work.multiprocess)

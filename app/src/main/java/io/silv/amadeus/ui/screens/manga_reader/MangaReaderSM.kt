@@ -41,7 +41,7 @@ class MangaReaderSM(
         },
         chapterNotFound = {},
         notEnoughImages = {
-            loadMangaImages()
+            // loadMangaImages()
         }
     )
         .stateInUi(MangaReaderState.Loading)

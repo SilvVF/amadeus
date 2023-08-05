@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.TopStart
 import androidx.compose.ui.Modifier
@@ -31,6 +32,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.ui.shared.fillMaxAfterMesaure
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.core.filterUnique
 import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.network.mangadex.models.Status
 
@@ -93,7 +95,7 @@ fun MangaInfo(
                 .wrapContentHeight(),
             title = manga.titleEnglish,
             altTitle = manga.alternateTitles["ja-ro"]?.ifEmpty { null } ?: manga.titleEnglish,
-            authors = (manga.authors + manga.artists).joinToString()
+            authors = remember(manga) { (manga.authors + manga.artists).filterUnique { it }.joinToString() }
         )
         PublicationStatusIndicator(status = manga.status, year = manga.year)
     }
@@ -196,7 +198,7 @@ fun BackgroundImageDarkened(
         }
         Box(modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.85f))
+            .background(Color.Black.copy(alpha = 0.7f))
         )
     }
 }

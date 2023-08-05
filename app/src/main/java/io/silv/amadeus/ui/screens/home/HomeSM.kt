@@ -48,6 +48,17 @@ class HomeSM(
         .map(::toBool)
         .stateInUi(false)
 
+    val refreshingSeasonal = seasonalMangaRepository.loadState
+        .map {
+            when(it) {
+                LoadState.End -> false
+                LoadState.Loading -> false
+                LoadState.None -> false
+                LoadState.Refreshing -> true
+            }
+        }
+        .stateInUi(false)
+
 
     val tagsUiState = tagRepository.allTags().map {
         it.map { tag ->

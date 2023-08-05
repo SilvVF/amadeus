@@ -99,7 +99,7 @@ fun ChapterVolumeNavBar(
 }
 
 @Composable
-fun MangaInfo(
+fun MangaContent(
     manga: SavableManga,
     bookmarked: Boolean,
     onBookmarkClicked: (String) -> Unit,
@@ -115,7 +115,7 @@ fun MangaInfo(
             bookmarked = bookmarked,
             onBookmarkClicked = onBookmarkClicked
         )
-        MangaContentInfo(
+        MangaInfo(
             manga = manga,
             showMaxLines = showMaxLines,
             showMaxLinesChange = {
@@ -134,6 +134,7 @@ fun ChapterListHeader(
     sortedAscending: Boolean,
     onChangeDirection: () -> Unit
 ) {
+    val space = LocalSpacing.current
     Column {
         Pagination(
             modifier = Modifier
@@ -143,17 +144,20 @@ fun ChapterListHeader(
             lastPage = lastPage,
             onPageClick = onPageClick
         )
-        Button(
-            shape = RoundedCornerShape(12.dp),
-            onClick = onChangeDirection
-        ) {
-            Text(
-                if (sortedAscending) {
-                    "Ascending"
-                } else {
-                    "Descending"
-                }
-            )
+        Row {
+            Button(
+                shape = RoundedCornerShape(12.dp),
+                onClick = onChangeDirection,
+                modifier = Modifier.padding(horizontal = space.med)
+            ) {
+                Text(
+                    if (sortedAscending) {
+                        "Ascending"
+                    } else {
+                        "Descending"
+                    }
+                )
+            }
         }
     }
 }
@@ -163,7 +167,7 @@ fun ChapterListHeader(
 fun LazyListScope.chapterListItems(
     chapterPageState: ChapterPageState,
     downloadingIds: List<String>,
-    onDownloadClicked: (id: String) -> Unit,
+    onDownloadClicked: (ids: List<String>) -> Unit,
     onDeleteClicked: (id: String) -> Unit,
     onReadClicked: (id: String) -> Unit
 ) {
@@ -176,7 +180,13 @@ fun LazyListScope.chapterListItems(
         is ChapterPageState.Success -> {
             chapterPageState.volumeToChapters.forEach { (volume, chapters) ->
                 stickyHeader {
-                    ChapterInfoHeader(chapters = chapters, volume = volume)
+                    ChapterInfoHeader(
+                        chapters = chapters,
+                        volume = volume,
+                        onDownloadClicked = {
+                            onDownloadClicked(chapters.map { it.id })
+                        }
+                    )
                 }
                 items(
                     items = chapters,
@@ -194,7 +204,7 @@ fun LazyListScope.chapterListItems(
                         chapter = chapter,
                         downloading = chapter.id in downloadingIds,
                         onDownloadClicked = {
-                           onDownloadClicked(chapter.id)
+                           onDownloadClicked(listOf(chapter.id))
                         },
                         onDeleteClicked = {
                             onDeleteClicked(chapter.id)
@@ -233,7 +243,8 @@ private fun ChapterItemPlaceHolder() {
 @Composable
 private fun ChapterInfoHeader(
     chapters: List<SavableChapter>,
-    volume: Int
+    volume: Int,
+    onDownloadClicked: () -> Unit,
 ) {
     Surface(
         Modifier.fillMaxWidth(),
@@ -242,6 +253,7 @@ private fun ChapterInfoHeader(
         val space = LocalSpacing.current
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .systemBarsPadding()
                 .padding(horizontal = space.large)
@@ -256,7 +268,15 @@ private fun ChapterInfoHeader(
                     }.chapter
                 )
             }
-            Text("Volume ${if (volume <= 0) "no volume" else volume}")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Volume ${if (volume <= 0) "no volume" else volume}")
+                IconButton(onClick = onDownloadClicked) {
+                    Icon(
+                        imageVector = Icons.Filled.Download,
+                        contentDescription = null
+                    )
+                }
+            }
             Text("Ch. ${maxToMin.second} - ${maxToMin.first}")
         }
     }
@@ -453,7 +473,7 @@ private fun MangaActions(
 }
 
 @Composable
-private fun MangaContentInfo(
+private fun MangaInfo(
     manga: SavableManga,
     showMaxLines: Boolean,
     showMaxLinesChange: (Boolean) -> Unit,

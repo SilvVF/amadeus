@@ -8,7 +8,11 @@ import io.silv.manga.network.mangadex.models.Status
 import kotlinx.datetime.Clock
 
 @Entity
-data class PopularMangaResource(
+data class FilteredMangaYearlyResource(
+
+    val topTags: List<String>,
+
+    val topTagPlacement: Map<String, Int>,
 
     @PrimaryKey override val id: String,
 
@@ -38,9 +42,9 @@ data class PopularMangaResource(
 
     override val createdAt: String,
 
-    override val updatedAt: String,
-
     override val publicationDemographic: PublicationDemographic?,
+
+    override val updatedAt: String,
 
     override val volumeToCoverArt: Map<String, String> = emptyMap(),
 
@@ -48,5 +52,5 @@ data class PopularMangaResource(
     override val year: Int?,
     override val latestUploadedChapter: String?,
     override val authors: List<String>,
-    override val artists: List<String>
-): MangaResource, AmadeusEntity<Any?>
+    override val artists: List<String>,
+    ): MangaResource, AmadeusEntity<Any?>

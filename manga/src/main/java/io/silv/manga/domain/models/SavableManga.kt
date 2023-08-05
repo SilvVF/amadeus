@@ -37,8 +37,10 @@ data class SavableManga(
     val volumeToCoverArtUrl: Map<String, String>,
     val readChapters: List<String>,
     val chapterToLastReadPage: Map<String, Int>,
-
-    ): Parcelable, Serializable {
+    val authors: List<String>,
+    val artists: List<String>,
+    val year: Int?,
+): Parcelable, Serializable {
     constructor(savedManga: SavedMangaEntity) : this(
         id = savedManga.id,
         bookmarked = savedManga.bookmarked,
@@ -62,7 +64,10 @@ data class SavableManga(
         readChapters = savedManga.readChapters,
         chapterToLastReadPage = savedManga.chapterToLastReadPage,
         publicationDemographic = savedManga.publicationDemographic,
-        readingStatus = savedManga.readingStatus
+        readingStatus = savedManga.readingStatus,
+        year = savedManga.year,
+        artists = savedManga.artists,
+        authors = savedManga.authors
     )
     constructor(mangaResource: MangaResource, savedManga: SavedMangaEntity?) : this(
         id = mangaResource.id,
@@ -87,7 +92,10 @@ data class SavableManga(
         readChapters = savedManga?.readChapters ?: emptyList(),
         chapterToLastReadPage = savedManga?.chapterToLastReadPage ?: emptyMap(),
         publicationDemographic = mangaResource.publicationDemographic,
-        readingStatus = savedManga?.readingStatus ?: ReadingStatus.None
+        readingStatus = savedManga?.readingStatus ?: ReadingStatus.None,
+        year = mangaResource.year,
+        artists = mangaResource.artists,
+        authors = mangaResource.authors
     )
     constructor(
         mangaResources: List<MangaResource>,
@@ -119,6 +127,9 @@ data class SavableManga(
         readChapters = savedManga?.readChapters ?: emptyList(),
         chapterToLastReadPage = savedManga?.chapterToLastReadPage ?: emptyMap(),
         publicationDemographic = newest.publicationDemographic,
-        readingStatus = savedManga?.readingStatus ?: ReadingStatus.None
+        readingStatus = savedManga?.readingStatus ?: ReadingStatus.None,
+        year = newest.year,
+        authors = newest.authors,
+        artists = newest.artists
     )
 }

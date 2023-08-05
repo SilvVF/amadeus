@@ -78,7 +78,7 @@ internal class FilteredYearlyMangaRepositoryImpl(
                     MangaRequest(
                         offset = 0,
                         limit = 20,
-                        includes = listOf("cover_art"),
+                        includes = listOf("cover_art","author", "artist"),
                         availableTranslatedLanguage = listOf("en"),
                         hasAvailableChapters = true,
                         order = mapOf("followedCount" to "desc"),

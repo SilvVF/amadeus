@@ -54,7 +54,11 @@ data class SavedMangaEntity(
 
     override val volumeToCoverArt: Map<String, String>,
 
-    override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
+    override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds,
+    override val year: Int?,
+    override val latestUploadedChapter: String?,
+    override val authors: List<String>,
+    override val artists: List<String>
 ): AmadeusEntity<Any?>, MangaResource {
     constructor(mangaResource: MangaResource): this(
         id = mangaResource.id,
@@ -78,7 +82,11 @@ data class SavedMangaEntity(
         createdAt = mangaResource.createdAt,
         updatedAt = mangaResource.updatedAt,
         volumeToCoverArt = emptyMap(),
-        publicationDemographic = mangaResource.publicationDemographic
+        publicationDemographic = mangaResource.publicationDemographic,
+        year = mangaResource.year,
+        latestUploadedChapter = mangaResource.latestUploadedChapter,
+        authors = mangaResource.authors,
+        artists = mangaResource.artists
     )
 
     constructor(
@@ -110,5 +118,9 @@ data class SavedMangaEntity(
                 .filter { it.volumeToCoverArt.isNotEmpty() }
                 .maxBy { it.savedLocalAtEpochSeconds }
                 .volumeToCoverArt,
+            latestUploadedChapter = recent.latestUploadedChapter,
+            year = recent.year,
+            authors = recent.authors,
+            artists = recent.artists
         )
 }

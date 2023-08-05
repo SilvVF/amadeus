@@ -66,7 +66,7 @@ internal class RecentMangaRepositoryImpl(
                     MangaRequest(
                         offset = offset,
                         limit = MANGA_PAGE_LIMIT,
-                        includes = listOf("cover_art"),
+                        includes = listOf("cover_art","author", "artist"),
                         availableTranslatedLanguage = listOf("en"),
                         order = mapOf("createdAt" to "desc")
                     )

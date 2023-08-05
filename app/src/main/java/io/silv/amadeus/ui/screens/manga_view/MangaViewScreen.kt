@@ -59,7 +59,7 @@ import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
 import io.silv.amadeus.ui.screens.manga_view.composables.ChapterListHeader
 import io.silv.amadeus.ui.screens.manga_view.composables.ChapterVolumeNavBar
-import io.silv.amadeus.ui.screens.manga_view.composables.MangaInfo
+import io.silv.amadeus.ui.screens.manga_view.composables.MangaContent
 import io.silv.amadeus.ui.screens.manga_view.composables.chapterListItems
 import io.silv.amadeus.ui.screens.manga_view.composables.volumePosterItems
 import io.silv.amadeus.ui.shared.CenterBox
@@ -125,11 +125,11 @@ class MangaViewScreen(
                     }
                     item {
                         Column {
-                            MangaInfo(
+                            MangaContent(
                                 manga = manga,
                                 bookmarked = mangaViewState.mangaState.manga.bookmarked,
                                 onBookmarkClicked = sm::bookmarkManga,
-                                onTagSelected = {tag ->
+                                onTagSelected = { tag ->
                                     manga.tagToId[tag]?.let {id ->
                                         navigator?.push(
                                             MangaFilterScreen(tag, id)
@@ -159,7 +159,7 @@ class MangaViewScreen(
                             chapterPageState = mangaViewState.chapterPageState,
                             downloadingIds = downloading,
                             onDownloadClicked = {
-                                sm.downloadChapterImages(listOf(it))
+                                sm.downloadChapterImages(it)
                             },
                             onDeleteClicked = {
                                 sm.deleteChapterImages(listOf(it))
@@ -170,7 +170,7 @@ class MangaViewScreen(
                                 )
                             }
                         )
-                    }else {
+                    } else {
                         volumePosterItems(mangaViewState.mangaState)
                     }
                 }

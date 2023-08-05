@@ -1,6 +1,7 @@
 package io.silv.amadeus.ui.shared
 
 import android.graphics.BlurMaskFilter
+import androidx.annotation.FloatRange
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -19,8 +20,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 
 fun Modifier.shadow(
     color: Color = Color.Black,
@@ -52,6 +55,21 @@ fun Modifier.shadow(
         }
     }
 )
+
+fun Modifier.fillMaxAfterMesaure(context: BoxScope, @FloatRange(0.0, 1.0, true, true) size: Float) = with(context) {
+    this@fillMaxAfterMesaure
+        .matchParentSize()
+        .layout { measurable, constraints ->
+            // Measure the composable
+            val placeable = measurable.measure(constraints)
+
+            layout(placeable.width, placeable.height) {
+                placeable.place(0, -(constraints.maxHeight * (1f - size)).roundToInt())
+            }
+        }
+}
+
+
 
 object StringStateListSaver: Saver<SnapshotStateList<String>, String> {
     override fun restore(value: String): SnapshotStateList<String> {

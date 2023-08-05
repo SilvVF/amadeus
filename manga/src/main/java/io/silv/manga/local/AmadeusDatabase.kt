@@ -36,7 +36,7 @@ import io.silv.manga.local.entity.converters.Converters
         FilteredMangaResource::class,
         FilteredMangaYearlyResource::class,
         SeasonalListEntity::class,
-        TagEntity::class
+        TagEntity::class,
     ],
     version = 1,
 )

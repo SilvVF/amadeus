@@ -156,7 +156,7 @@ internal class SavedMangaRepositoryImpl(
                         mangaDexApi.getMangaList(
                             MangaRequest(
                                 ids = it.map { saved -> saved.id },
-                                includes = listOf("cover_art")
+                                includes = listOf("cover_art", "author", "artist")
                             )
                         )
                             .getOrThrow()

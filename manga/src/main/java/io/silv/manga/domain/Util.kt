@@ -58,7 +58,7 @@ fun coverArtUrl(
     val fileName = manga.relationships
         .find { it.type == "cover_art" }
         ?.attributes
-        ?.get("fileName")
+        ?.fileName
 
     return "https://uploads.mangadex.org/covers/${manga.id}/$fileName"
 }
@@ -78,6 +78,20 @@ val Manga.tagToId: Map<String, String>
 
 val Manga.descriptionEnglish: String
     get() = attributes.description.getOrDefault("en", "No english description")
+
+val Manga.artists: List<String>
+    get() = this.relationships.filter { it.type == "artist" }
+        .map {
+            it.attributes?.name ?: ""
+        }
+
+
+val Manga.authors: List<String>
+    get() = this.relationships.filter { it.type == "author" }
+        .map {
+            it.attributes?.name ?: ""
+        }
+
 
 val Manga.alternateTitles: Map<String, String>
     get() {

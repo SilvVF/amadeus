@@ -45,27 +45,8 @@ data class SearchMangaResource(
     override val volumeToCoverArt: Map<String, String> = emptyMap(),
 
     override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds,
-
-): MangaResource, AmadeusEntity<Any?> {
-
-    constructor(savedMangaEntity: SavedMangaEntity): this(
-        id = savedMangaEntity.id,
-        coverArt = savedMangaEntity.coverArt,
-        description = savedMangaEntity.description,
-        titleEnglish = savedMangaEntity.titleEnglish,
-        alternateTitles = savedMangaEntity.alternateTitles,
-        originalLanguage = savedMangaEntity.originalLanguage,
-        availableTranslatedLanguages = savedMangaEntity.availableTranslatedLanguages,
-        status = savedMangaEntity.status,
-        tagToId = savedMangaEntity.tagToId,
-        contentRating = savedMangaEntity.contentRating,
-        lastVolume = savedMangaEntity.lastVolume,
-        lastChapter = savedMangaEntity.lastChapter,
-        version = savedMangaEntity.version,
-        createdAt = savedMangaEntity.createdAt,
-        updatedAt = savedMangaEntity.updatedAt,
-        publicationDemographic = savedMangaEntity.publicationDemographic,
-        volumeToCoverArt = savedMangaEntity.volumeToCoverArt,
-        savedLocalAtEpochSeconds = savedMangaEntity.savedLocalAtEpochSeconds
-    )
-}
+    override val year: Int?,
+    override val latestUploadedChapter: String?,
+    override val authors: List<String>,
+    override val artists: List<String>
+): MangaResource, AmadeusEntity<Any?>

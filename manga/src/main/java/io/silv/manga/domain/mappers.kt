@@ -63,7 +63,11 @@ object MangaToSeasonalMangaResourceMapper: Mapper<Pair<Manga, SeasonalMangaResou
                 updatedAt = attributes.updatedAt,
                 tagToId = tagToId,
                 seasonId = "",
-                publicationDemographic = manga.attributes.publicationDemographic
+                publicationDemographic = manga.attributes.publicationDemographic,
+                latestUploadedChapter = attributes.latestUploadedChapter,
+                year = attributes.year,
+                authors = authors,
+                artists = artists
             )
         }
     }
@@ -91,7 +95,11 @@ object MangaToPopularMangaResourceMapper: Mapper<Pair<Manga, PopularMangaResourc
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
                 tagToId = tagToId,
-                publicationDemographic = manga.attributes.publicationDemographic
+                publicationDemographic = manga.attributes.publicationDemographic,
+                latestUploadedChapter = attributes.latestUploadedChapter,
+                year = attributes.year,
+                authors = authors,
+                artists = artists
             )
         }
     }
@@ -120,7 +128,11 @@ object MangaToSearchMangaResourceMapper: Mapper<Pair<Manga, SearchMangaResource?
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
                 tagToId = tagToId,
-                publicationDemographic = manga.attributes.publicationDemographic
+                publicationDemographic = manga.attributes.publicationDemographic,
+                latestUploadedChapter = attributes.latestUploadedChapter,
+                year = attributes.year,
+                authors = authors,
+                artists = artists
             )
         }
     }
@@ -151,7 +163,11 @@ object MangaToFilteredYearlyMangaResourceMapper: Mapper<Pair<Manga, FilteredMang
                 savedLocalAtEpochSeconds = saved?.savedLocalAtEpochSeconds ?: Clock.System.now().epochSeconds,
                 topTags = saved?.topTags ?: emptyList(),
                 topTagPlacement = saved?.topTagPlacement ?: emptyMap(),
-                publicationDemographic = manga.attributes.publicationDemographic
+                publicationDemographic = manga.attributes.publicationDemographic,
+                latestUploadedChapter = attributes.latestUploadedChapter,
+                year = attributes.year,
+                authors = authors,
+                artists = artists
             )
         }
     }
@@ -181,6 +197,10 @@ object MangaToFilteredMangaResourceMapper: Mapper<Pair<Manga, FilteredMangaResou
                 tagToId = tagToId,
                 publicationDemographic = manga.attributes.publicationDemographic,
                 savedLocalAtEpochSeconds = saved?.savedLocalAtEpochSeconds ?: Clock.System.now().epochSeconds,
+                latestUploadedChapter = attributes.latestUploadedChapter,
+                year = attributes.year,
+                authors = authors,
+                artists = artists
             )
         }
     }
@@ -210,6 +230,10 @@ object MangaToRecentMangaResourceMapper: Mapper<Pair<Manga, RecentMangaResource?
                 createdAt = attributes.createdAt,
                 updatedAt = attributes.updatedAt,
                 tagToId = tagToId,
+                authors = authors,
+                artists = artists,
+                year = attributes.year,
+                latestUploadedChapter = attributes.latestUploadedChapter
             )
         }
     }
@@ -243,7 +267,11 @@ object MangaEntityMapper: Mapper<Pair<Manga, SavedMangaEntity?>, SavedMangaEntit
             updatedAt = network.attributes.updatedAt,
             tagToId = network.tagToId,
             publicationDemographic = network.attributes.publicationDemographic,
-            readingStatus = saved?.readingStatus ?: ReadingStatus.None
+            readingStatus = saved?.readingStatus ?: ReadingStatus.None,
+            authors = network.authors,
+            artists = network.artists,
+            year = network.attributes.year,
+            latestUploadedChapter = network.attributes.latestUploadedChapter
         )
     }
 }

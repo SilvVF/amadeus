@@ -80,7 +80,7 @@ internal class FilteredMangaRepositoryImpl(
                       MangaRequest(
                           offset = offset,
                           limit = MANGA_PAGE_LIMIT,
-                          includes = listOf("cover_art"),
+                          includes = listOf("cover_art","author", "artist"),
                           availableTranslatedLanguage = listOf("en"),
                           hasAvailableChapters = true,
                           order = mapOf("followedCount" to "desc"),

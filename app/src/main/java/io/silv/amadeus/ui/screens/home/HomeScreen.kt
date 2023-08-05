@@ -104,6 +104,7 @@ class HomeScreen: Screen {
         val seasonalMangaState by sm.seasonalMangaUiState.collectAsStateWithLifecycle()
         val loadingPopular by sm.loadingPopularManga.collectAsStateWithLifecycle()
         val loadingRecent by sm.loadingRecentManga.collectAsStateWithLifecycle()
+        val refreshingSeasonal by sm.refreshingSeasonal.collectAsStateWithLifecycle()
         val searchMangaState by sm.searchMangaUiState.collectAsStateWithLifecycle()
         val searchQuery by sm.searchQuery.collectAsStateWithLifecycle()
         val tagsState by sm.tagsUiState.collectAsStateWithLifecycle()
@@ -182,40 +183,57 @@ class HomeScreen: Screen {
                             style = MaterialTheme.typography.labelSmall,
                             modifier = Modifier.padding(space.xs)
                         )
-                        Row {
-                           seasonalMangaState.seasonalLists.forEachIndexed { index, seasonalList ->
-                                FilterChip(
-                                    selected = index == selectedIndex,
-                                    onClick = { selectedIndex = index },
-                                    label = {
-                                        Text(
-                                            "${seasonalList.season.name}  ${seasonalList.year.toString().takeLast(2)}",
-                                            fontSize = 12.sp,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(space.xs)
-                                )
+                        if (refreshingSeasonal) {
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                repeat(4) {
+                                    AnimatedBoxShimmer(Modifier.weight(1f).height(40.dp))
+                                }
                             }
+                            AnimatedBoxShimmer(
+                                Modifier
+                                    .height(240.dp)
+                                    .fillMaxWidth()
+                            )
+                        } else {
+                            Row {
+                                seasonalMangaState.seasonalLists.forEachIndexed { index, seasonalList ->
+                                    FilterChip(
+                                        selected = index == selectedIndex,
+                                        onClick = { selectedIndex = index },
+                                        label = {
+                                            Text(
+                                                "${seasonalList.season.name}  ${seasonalList.year.toString().takeLast(2)}",
+                                                fontSize = 12.sp,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(space.xs)
+                                    )
+                                }
+                            }
+                            MangaPager(
+                                mangaList = seasonalMangaState.seasonalLists.getOrNull(selectedIndex)?.mangas ?: emptyList(),
+                                onTagClick = { name , id ->
+                                    navigator?.push(
+                                        MangaFilterScreen(name, id)
+                                    )
+                                },
+                                onMangaClick = {
+                                    navigator?.push(
+                                        MangaViewScreen(it)
+                                    )
+                                },
+                                onBookmarkClick = {
+                                    sm.bookmarkManga(it.id)
+                                }
+                            )
                         }
-                        MangaPager(
-                            mangaList = seasonalMangaState.seasonalLists.getOrNull(selectedIndex)?.mangas ?: emptyList(),
-                            onTagClick = { name , id ->
-                                navigator?.push(
-                                    MangaFilterScreen(name, id)
-                                )
-                            },
-                            onMangaClick = {
-                                navigator?.push(
-                                    MangaViewScreen(it)
-                                )
-                            },
-                            onBookmarkClick = {
-                                sm.bookmarkManga(it.id)
-                            }
-                        )
                     }
                 }
                 header {

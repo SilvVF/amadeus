@@ -47,5 +47,10 @@ data class SeasonalMangaResource(
 
     override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds,
 
-    @ColumnInfo("season_id")val seasonId: String
+    @ColumnInfo("season_id")val seasonId: String,
+
+    override val year: Int?,
+    override val latestUploadedChapter: String?,
+    override val authors: List<String>,
+    override val artists: List<String>
 ): MangaResource, AmadeusEntity<Any?>

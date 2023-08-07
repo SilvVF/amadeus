@@ -166,7 +166,7 @@ class HomeScreen: Screen {
             )
 
             var selectedIndex by rememberSaveable {
-                mutableStateOf(3)
+                mutableStateOf(0)
             }
 
             LazyVerticalGrid(
@@ -190,7 +190,10 @@ class HomeScreen: Screen {
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 repeat(4) {
-                                    AnimatedBoxShimmer(Modifier.weight(1f).height(40.dp))
+                                    AnimatedBoxShimmer(
+                                        Modifier
+                                            .weight(1f)
+                                            .height(40.dp))
                                 }
                             }
                             AnimatedBoxShimmer(
@@ -199,8 +202,11 @@ class HomeScreen: Screen {
                                     .fillMaxWidth()
                             )
                         } else {
-                            Row {
-                                seasonalMangaState.seasonalLists.forEachIndexed { index, seasonalList ->
+                            LazyRow {
+                                itemsIndexed(
+                                    seasonalMangaState.seasonalLists,
+                                    key = { _, list -> list.id }
+                                ) { index, seasonalList ->
                                     FilterChip(
                                         selected = index == selectedIndex,
                                         onClick = { selectedIndex = index },
@@ -231,7 +237,7 @@ class HomeScreen: Screen {
                                 },
                                 onBookmarkClick = {
                                     sm.bookmarkManga(it.id)
-                                }
+                                },
                             )
                         }
                     }
@@ -304,7 +310,7 @@ fun MangaPager(
     mangaList: List<SavableManga>,
     onMangaClick: (manga: SavableManga) -> Unit,
     onBookmarkClick: (manga: SavableManga) -> Unit,
-    onTagClick: (name: String, id: String) -> Unit
+    onTagClick: (name: String, id: String) -> Unit,
 ) {
     val space = LocalSpacing.current
     val context = LocalContext.current

@@ -23,7 +23,7 @@ internal interface SeasonalMangaResourceDao {
     fun getSeasonalMangaResources(): Flow<List<SeasonalMangaResource>>
 
     @Query("SELECT * FROM SeasonalMangaResource WHERE id = :mangaId")
-    fun getSeasonalMangaResourceById(mangaId: String): Flow<SeasonalMangaResource?>
+    fun observeSeasonalMangaResourceById(mangaId: String): Flow<SeasonalMangaResource?>
 
     @Update
     suspend fun updateSeasonalMangaResource(mangaResource: SeasonalMangaResource)

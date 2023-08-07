@@ -15,27 +15,17 @@ internal interface SearchMangaResourceDao {
 
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertManga(mangaResource: SearchMangaResource)
+    suspend fun upsertSearchMangaResource(mangaResource: SearchMangaResource)
 
-
-    @Query("""
-          SELECT * FROM SearchMangaResource ORDER BY savedLocalAtEpochSeconds ASC
-    """)
-    fun getMangaResources(): Flow<List<SearchMangaResource>>
-
-    @Query("SELECT * FROM SearchMangaResource WHERE id = :mangaId")
-    fun getResourceAsFlowById(mangaId: String): Flow<SearchMangaResource?>
 
     @Query("SELECT * FROM SearchMangaResource")
-    suspend fun getAll(): List<SearchMangaResource>
+    fun observeAllSearchMangaResources(): Flow<List<SearchMangaResource>>
+
+    @Query("SELECT * FROM SearchMangaResource WHERE id = :mangaId")
+    fun observeSearchMangaResourceById(mangaId: String): Flow<SearchMangaResource?>
 
     @Update
     suspend fun updateSearchMangaResource(mangaResource: SearchMangaResource)
-
-
-    @Query("SELECT * FROM SearchMangaResource WHERE id = :id LIMIT 1")
-    suspend fun getMangaById(id: String):  SearchMangaResource?
-
 
     @Delete
     suspend fun delete(mangaResource: SearchMangaResource)

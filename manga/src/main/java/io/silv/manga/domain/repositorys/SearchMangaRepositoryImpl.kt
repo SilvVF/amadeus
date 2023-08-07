@@ -15,6 +15,7 @@ import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
@@ -36,7 +37,7 @@ internal class SearchMangaRepositoryImpl(
     private val syncer = syncerForEntity<SearchMangaResource, Manga, String>(
         networkToKey = { n -> n.id },
         mapper = { manga, resource -> mapper.map(manga to resource) },
-        upsert = { mangaResourceDao.upsertManga(it) }
+        upsert = { mangaResourceDao.upsertSearchMangaResource(it) }
     )
 
     init {
@@ -51,11 +52,11 @@ internal class SearchMangaRepositoryImpl(
     }
 
     override fun observeMangaResourceById(id: String): Flow<SearchMangaResource?> {
-        return mangaResourceDao.getResourceAsFlowById(id)
+        return mangaResourceDao.observeSearchMangaResourceById(id)
     }
 
     override fun observeMangaResources(resourceQuery: SearchMangaResourceQuery): Flow<List<SearchMangaResource>>  {
-        return mangaResourceDao.getMangaResources().onStart {
+        return mangaResourceDao.observeAllSearchMangaResources().onStart {
             if (resourceQuery != currentQuery) {
                 resetPagination(resourceQuery)
                 emit(emptyList())
@@ -65,13 +66,13 @@ internal class SearchMangaRepositoryImpl(
     }
 
     override fun observeAllMangaResources(): Flow<List<SearchMangaResource>> {
-        return mangaResourceDao.getMangaResources()
+        return mangaResourceDao.observeAllSearchMangaResources()
     }
 
 
     override suspend fun loadNextPage() = loadPage { offset, query ->
             val result = syncer.sync(
-                current = mangaResourceDao.getAll(),
+                current = mangaResourceDao.observeAllSearchMangaResources().first(),
                 networkResponse = mangaDexApi.getMangaList(
                     MangaRequest(
                         offset = offset,

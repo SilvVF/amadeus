@@ -49,7 +49,7 @@ internal class FilteredMangaRepositoryImpl(
     )
 
     override fun observeMangaResourceById(id: String): Flow<FilteredMangaResource?> {
-        return resourceDao.getFilteredMangaResourcesById(id)
+        return resourceDao.observeFilteredMangaResourceById(id)
     }
 
     override fun observeAllMangaResources(): Flow<List<FilteredMangaResource>> {

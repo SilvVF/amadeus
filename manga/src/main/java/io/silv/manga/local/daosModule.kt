@@ -11,7 +11,7 @@ val daosModule = module {
     }
 
     single {
-        get<AmadeusDatabase>().mangaDao()
+        get<AmadeusDatabase>().savedMangaDao()
     }
 
     single {
@@ -39,10 +39,14 @@ val daosModule = module {
     }
 
     single {
-        get<AmadeusDatabase>().getSeasonalListDao()
+        get<AmadeusDatabase>().seasonalListDao()
     }
 
     single {
-        get<AmadeusDatabase>().getTagDao()
+        get<AmadeusDatabase>().tagDao()
+    }
+
+    single {
+        get<AmadeusDatabase>().quickSearchResourceDao()
     }
 }

@@ -111,7 +111,7 @@ internal class FilteredYearlyMangaRepositoryImpl(
     }
 
     override fun observeMangaResourceById(id: String): Flow<FilteredMangaYearlyResource?> {
-        return yearlyResourceDao.getFilteredMangaYearlyResourceById(id)
+        return yearlyResourceDao.observeFilteredYearlyMangaResourceById(id)
     }
 
     override fun observeAllMangaResources(): Flow<List<FilteredMangaYearlyResource>> {

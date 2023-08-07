@@ -122,7 +122,7 @@ class MangaFilterScreen(
                                 onTagClick = { name, tag ->
                                     if (tag != tagId)
                                         navigator?.replace(MangaFilterScreen(name, tag))
-                                }
+                                },
                             )
                         }
                         Text(

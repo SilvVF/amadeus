@@ -6,6 +6,8 @@ import io.silv.manga.domain.repositorys.FilteredYearlyMangaRepository
 import io.silv.manga.domain.repositorys.FilteredYearlyMangaRepositoryImpl
 import io.silv.manga.domain.repositorys.PopularMangaRepository
 import io.silv.manga.domain.repositorys.PopularMangaRepositoryImpl
+import io.silv.manga.domain.repositorys.QuickSearchMangaRepository
+import io.silv.manga.domain.repositorys.QuickSearchMangaRepositoryImpl
 import io.silv.manga.domain.repositorys.RecentMangaRepository
 import io.silv.manga.domain.repositorys.RecentMangaRepositoryImpl
 import io.silv.manga.domain.repositorys.SavedMangaRepository
@@ -14,8 +16,8 @@ import io.silv.manga.domain.repositorys.SearchMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaRepositoryImpl
 import io.silv.manga.domain.repositorys.SeasonalMangaRepository
 import io.silv.manga.domain.repositorys.SeasonalMangaRepositoryImpl
-import io.silv.manga.domain.repositorys.chapter.ChapterListRepository
 import io.silv.manga.domain.repositorys.chapter.ChapterEntityRepository
+import io.silv.manga.domain.repositorys.chapter.ChapterListRepository
 import io.silv.manga.domain.repositorys.chapter.ChapterListRepositoryImpl
 import io.silv.manga.domain.repositorys.chapter.OfflineFirstChapterInfoRepository
 import io.silv.manga.domain.repositorys.people.ArtistListRepository
@@ -81,5 +83,9 @@ val repositoryModule = module {
 
     singleOf(::ChapterListRepositoryImpl) withOptions {
         bind<ChapterListRepository>()
+    }
+
+    singleOf(::QuickSearchMangaRepositoryImpl) withOptions {
+        bind<QuickSearchMangaRepository>()
     }
 }

@@ -23,7 +23,7 @@ internal interface PopularMangaResourceDao {
     fun getPopularMangaResources(): Flow<List<PopularMangaResource>>
 
     @Query("SELECT * FROM PopularMangaResource WHERE id = :mangaId")
-    fun getPopularMangaResourceById(mangaId: String): Flow<PopularMangaResource?>
+    fun observePopularMangaResourceById(mangaId: String): Flow<PopularMangaResource?>
 
     @Update
     suspend fun updatePopularMangaResource(mangaResource: PopularMangaResource)

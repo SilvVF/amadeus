@@ -19,7 +19,7 @@ internal interface FilteredMangaResourceDao {
 
 
     @Query("SELECT * FROM FilteredMangaResource WHERE id = :mangaId")
-    fun getFilteredMangaResourcesById(mangaId: String): Flow<FilteredMangaResource?>
+    fun observeFilteredMangaResourceById(mangaId: String): Flow<FilteredMangaResource?>
 
     @Query("SELECT * FROM FilteredMangaResource")
     fun getFilteredMangaResources(): Flow<List<FilteredMangaResource>>

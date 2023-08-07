@@ -47,7 +47,7 @@ internal class RecentMangaRepositoryImpl(
     }
 
     override fun observeMangaResourceById(id: String): Flow<RecentMangaResource?> {
-        return mangaResourceDao.getRecentMangaResourceById(id)
+        return mangaResourceDao.observeRecentMangaResourceById(id)
     }
 
     override fun observeAllMangaResources(): Flow<List<RecentMangaResource>> {

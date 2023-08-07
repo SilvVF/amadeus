@@ -158,7 +158,7 @@ internal class SeasonalMangaRepositoryImpl(
     }
 
     override fun observeMangaResourceById(id: String): Flow<SeasonalMangaResource?> {
-        return mangaResourceDao.getSeasonalMangaResourceById(id)
+        return mangaResourceDao.observeSeasonalMangaResourceById(id)
     }
 
     override fun observeAllMangaResources(): Flow<List<SeasonalMangaResource>> {

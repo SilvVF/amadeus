@@ -6,16 +6,14 @@ import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.DomainTag
 import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.PopularMangaRepository
+import io.silv.manga.domain.repositorys.QuickSearchMangaRepository
 import io.silv.manga.domain.repositorys.RecentMangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
-import io.silv.manga.domain.repositorys.SearchMangaRepository
-import io.silv.manga.domain.repositorys.SearchMangaResourceQuery
 import io.silv.manga.domain.repositorys.SeasonalMangaRepository
 import io.silv.manga.domain.repositorys.base.LoadState
 import io.silv.manga.domain.repositorys.base.toBool
 import io.silv.manga.domain.repositorys.tags.TagRepository
 import io.silv.manga.local.entity.Season
-import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,11 +32,11 @@ class HomeSM(
     private val popularMangaRepository: PopularMangaRepository,
     seasonalMangaRepository: SeasonalMangaRepository,
     private val savedMangaRepository: SavedMangaRepository,
-    private val searchMangaRepository: SearchMangaRepository,
-    private val tagRepository: TagRepository
+    private val searchMangaRepository: QuickSearchMangaRepository,
+    tagRepository: TagRepository
 ): AmadeusScreenModel<HomeEvent>() {
 
-    private val mutableSearchQuery = MutableStateFlow(searchMangaRepository.latestQuery().title ?: "")
+    private val mutableSearchQuery = MutableStateFlow(searchMangaRepository.latestQuery())
     val searchQuery = mutableSearchQuery.asStateFlow()
 
     val loadingPopularManga = popularMangaRepository.loadState
@@ -71,17 +69,9 @@ class HomeSM(
     private val mangaSearchFlow = searchQuery
         .debounce { 1000L }
         .flatMapLatest { query ->
-            searchMangaRepository.observeMangaResources(
-                SearchMangaResourceQuery(
-                    title = query.ifEmpty { null },
-                    includedTagsMode = MangaRequest.TagsMode.AND,
-                    excludedTagsMode = MangaRequest.TagsMode.OR,
-                )
-            )
+            searchMangaRepository.observeMangaResources(query)
         }
         .onStart {
-            // emits initial search results prefetched for no query
-            // this will avoid the initial result being debounced by 3 seconds
             emit(
                 searchMangaRepository.observeMangaResources(searchMangaRepository.latestQuery())
                     .first()
@@ -149,10 +139,10 @@ class HomeSM(
                 mangas = it.manga.map { m -> SavableManga(m, saved.find { s -> s.id == m.id }) }
             )
         }
-            .sortedBy { it.year * 10000 + it.season.ordinal }
+            .sortedByDescending { it.year * 10000 + it.season.ordinal }
             .takeIf { it.size >= 4 }
-            ?.takeLast(4)
-            ?: return@combine   SeasonalMangaUiState(
+            ?.take(8)
+            ?: return@combine SeasonalMangaUiState(
                 emptyList()
             )
         SeasonalMangaUiState(

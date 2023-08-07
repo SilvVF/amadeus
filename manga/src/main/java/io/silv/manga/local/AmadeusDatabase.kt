@@ -7,6 +7,7 @@ import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.FilteredMangaResourceDao
 import io.silv.manga.local.dao.FilteredMangaYearlyResourceDao
 import io.silv.manga.local.dao.PopularMangaResourceDao
+import io.silv.manga.local.dao.QuickSearchMangaResourceDao
 import io.silv.manga.local.dao.RecentMangaResourceDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.dao.SearchMangaResourceDao
@@ -17,6 +18,7 @@ import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.FilteredMangaResource
 import io.silv.manga.local.entity.FilteredMangaYearlyResource
 import io.silv.manga.local.entity.PopularMangaResource
+import io.silv.manga.local.entity.QuickSearchMangaResource
 import io.silv.manga.local.entity.RecentMangaResource
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.local.entity.SearchMangaResource
@@ -37,6 +39,7 @@ import io.silv.manga.local.entity.converters.Converters
         FilteredMangaYearlyResource::class,
         SeasonalListEntity::class,
         TagEntity::class,
+        QuickSearchMangaResource::class
     ],
     version = 1,
 )
@@ -45,7 +48,7 @@ internal abstract class AmadeusDatabase: RoomDatabase() {
 
     abstract fun chapterDao(): ChapterDao
 
-    abstract fun mangaDao(): SavedMangaDao
+    abstract fun savedMangaDao(): SavedMangaDao
 
     abstract fun recentMangaResourceDao(): RecentMangaResourceDao
 
@@ -59,7 +62,9 @@ internal abstract class AmadeusDatabase: RoomDatabase() {
 
     abstract fun filteredMangaYearlyResourceDao(): FilteredMangaYearlyResourceDao
 
-    abstract fun getSeasonalListDao(): SeasonalListDao
+    abstract fun seasonalListDao(): SeasonalListDao
 
-    abstract fun getTagDao(): TagDao
+    abstract fun tagDao(): TagDao
+
+    abstract fun quickSearchResourceDao(): QuickSearchMangaResourceDao
 }

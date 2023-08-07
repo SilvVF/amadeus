@@ -21,7 +21,7 @@ internal interface FilteredMangaYearlyResourceDao {
     fun getFilteredMangaYearlyResources(): Flow<List<FilteredMangaYearlyResource>>
 
     @Query("SELECT * FROM FilteredMangaYearlyResource WHERE id = :mangaId")
-    fun getFilteredMangaYearlyResourceById(mangaId: String): Flow<FilteredMangaYearlyResource?>
+    fun observeFilteredYearlyMangaResourceById(mangaId: String): Flow<FilteredMangaYearlyResource?>
 
     @Update
     suspend fun updateFilteredYearlyMangaResource(mangaResource: FilteredMangaYearlyResource)

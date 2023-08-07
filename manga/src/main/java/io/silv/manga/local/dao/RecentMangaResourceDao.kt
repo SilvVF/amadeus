@@ -21,7 +21,7 @@ internal interface RecentMangaResourceDao {
     fun getRecentMangaResources(): Flow<List<RecentMangaResource>>
 
     @Query("SELECT * FROM RecentMangaResource WHERE id = :mangaId")
-    fun getRecentMangaResourceById(mangaId: String): Flow<RecentMangaResource?>
+    fun observeRecentMangaResourceById(mangaId: String): Flow<RecentMangaResource?>
 
     @Update
     suspend fun updateRecentMangaResource(mangaResource: RecentMangaResource)

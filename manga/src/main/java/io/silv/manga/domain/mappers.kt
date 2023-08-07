@@ -35,7 +35,12 @@ object ChapterToChapterEntityMapper: Mapper<ChapterWithPrevEntity, ChapterEntity
             readableAt = chapter.attributes.readableAt,
             uploader = chapter.attributes.uploader,
             externalUrl = chapter.attributes.externalUrl,
+            languageCode = chapter.attributes.translatedLanguage ?: "",
             version = chapter.attributes.version,
+            scanlationGroup = chapter.relationships.find { it.type == "scanlation_group" }?.attributes?.name,
+            scanlationGroupId = chapter.relationships.find { it.type == "scanlation_group" }?.id,
+            user = chapter.relationships.find { it.type == "user" }?.attributes?.username,
+            userId = chapter.relationships.find { it.type == "user" }?.id
         )
     }
 }

@@ -92,15 +92,14 @@ internal class ChapterListRepositoryImpl(
             .onSuccess {
                 loadingVolumeArtIds.update { it - mangaId }
             }
-            .onFailure {
-                Log.d("ChapterInfoRepositoryImpl", it.message ?: it.stackTraceToString())
-                it.printStackTrace()
+            .onFailure { e ->
+                Log.d("ChapterInfoRepositoryImpl", e.message ?: e.stackTraceToString())
                 loadingVolumeArtIds.update { it - mangaId }
             }
     }
 
     override fun observeChapters(
-        mangaId: String, page: Int, asc: Boolean
+        mangaId: String, page: Int, asc: Boolean, languages: List<String>
     ): Flow<Resource<ChapterInfoResponse>> = flow {
         emit(Resource.Loading)
         mangaDexApi.getMangaFeed(
@@ -108,7 +107,8 @@ internal class ChapterListRepositoryImpl(
             mangaFeedRequest = MangaFeedRequest(
                 limit = 96,
                 offset = page * 96,
-                translatedLanguage = listOf("en"),
+                includes = listOf("scanlation_group", "user"),
+                translatedLanguage = languages.ifEmpty { null },
                 order = if (asc) mapOf(Order.volume to  OrderBy.asc) else mapOf(Order.volume to  OrderBy.desc),
                 contentRating = listOf(ContentRating.safe, ContentRating.suggestive, ContentRating.pornographic, ContentRating.erotica)
             )

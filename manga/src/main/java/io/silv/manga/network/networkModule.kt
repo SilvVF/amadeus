@@ -1,5 +1,6 @@
 package io.silv.manga.network
 
+import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
@@ -21,7 +22,7 @@ val networkModule = module {
     }
 
     single {
-        KSandwichClient.createClient(CIO) {
+        HttpClient(CIO) {
             install(ContentNegotiation) {
                 json(
                     json = get<Json>(),
@@ -29,7 +30,10 @@ val networkModule = module {
                 )
             }
         }
+    }
 
+    single {
+        KSandwichClient.create(get<HttpClient>())
     }
 
     single {

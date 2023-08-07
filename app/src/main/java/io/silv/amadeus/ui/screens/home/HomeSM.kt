@@ -73,7 +73,7 @@ class HomeSM(
         .flatMapLatest { query ->
             searchMangaRepository.observeMangaResources(
                 SearchMangaResourceQuery(
-                    title = query,
+                    title = query.ifEmpty { null },
                     includedTagsMode = MangaRequest.TagsMode.AND,
                     excludedTagsMode = MangaRequest.TagsMode.OR,
                 )

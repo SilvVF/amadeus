@@ -28,6 +28,7 @@ data class Relationship(
     data class Attribute(
         val fileName: String? = null,
         val name	:	String?	 = null,
+        val username: String? = null,
         val imageUrl: String?  = null,
         val biography: Map<String?, String?>? = null,
         val twitter: String?	=	null,

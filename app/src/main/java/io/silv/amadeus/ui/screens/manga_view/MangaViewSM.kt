@@ -4,6 +4,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
+import io.silv.amadeus.ui.shared.Language
 import io.silv.manga.domain.ChapterToChapterEntityMapper
 import io.silv.manga.domain.models.SavableChapter
 import io.silv.manga.domain.models.SavableManga
@@ -64,15 +65,19 @@ class MangaViewSM(
     private val mutableSortedByAsc = MutableStateFlow(false)
     val sortedByAsc = mutableSortedByAsc.asStateFlow()
 
+    private val mutableLanguageList = MutableStateFlow(listOf("en"))
+    val languageList = mutableLanguageList.asStateFlow()
+
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val observeChaptersForPage = currentPage
-        .combine(
-            mutableSortedByAsc
-        ) { page, asc -> page to asc }
-            .flatMapLatest { (page, asc) ->
-                chapterInfoRepository.observeChapters(initialManga.id, page, asc)
-            }
+    private val observeChaptersForPage = combine(
+        mutableCurrentPage,
+        mutableSortedByAsc,
+        mutableLanguageList
+    ) { page, asc, langs -> Triple(page, asc, langs) }
+        .flatMapLatest { (page, asc, langs) ->
+            chapterInfoRepository.observeChapters(initialManga.id, page, asc, langs)
+        }
 
 
     val mangaViewStateUiState = combine(
@@ -118,8 +123,7 @@ class MangaViewSM(
 
     fun deleteChapterImages(chapterIds: List<String>) = coroutineScope.launch {
         workManager.enqueue(
-            ChapterDeletionWorker
-                .deletionWorkRequest(chapterIds)
+            ChapterDeletionWorker.deletionWorkRequest(chapterIds)
         )
     }
 
@@ -133,6 +137,14 @@ class MangaViewSM(
             )
         )
     }
+
+    fun languageChanged(language: Language)  {
+        mutableLanguageList.update {
+            if (language.code in it) it - language.code
+            else it + language.code
+        }
+    }
+
 
     fun navigateToPage(page: Int) {
         if (page > 0 && (page <= ((mangaViewStateUiState.value.chapterPageState as? ChapterPageState.Success)?.lastPage ?: Int.MAX_VALUE))) {

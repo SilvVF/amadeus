@@ -55,11 +55,16 @@ dependencies {
     implementation(libs.room.coroutines)
     testImplementation(libs.room.test)
 
-    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation(libs.okhttp)
     //KOIN
     implementation(libs.koin.android)
     implementation(libs.koin.core)
     implementation(libs.koin.workmanager)
+
+    implementation(libs.okhttp.dnsoverhttps)
+    implementation(libs.okio)
+    implementation(libs.jsoup)
+    implementation(libs.kotlinx.serialization.json.okio)
 
     //KTOR
     implementation(libs.ktor.core)
@@ -80,8 +85,6 @@ dependencies {
     androidTestImplementation(libs.androidx.work.testing)
     implementation(libs.androidx.work.runtime.ktx)
 
-    implementation(libs.jsoup)
-
     // optional - Multiprocess support
     implementation(libs.androidx.work.multiprocess)
 
@@ -95,5 +98,4 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(kotlin("reflect"))
     implementation(libs.kotlinx.coroutines.guava)
-    implementation(project(":ktor-response-mapper"))
 }

@@ -4,8 +4,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngineConfig
 import io.ktor.client.engine.HttpClientEngineFactory
-import io.silv.ktor_response_mapper.operators.SandwichOperator
 import io.silv.ktor_response_mapper.KSandwichInitializer
+import io.silv.ktor_response_mapper.operators.SandwichOperator
 
 
 interface KSandwichClient {
@@ -15,6 +15,14 @@ interface KSandwichClient {
     fun addGlobalOperator(operator: SandwichOperator)
 
     companion object {
+        fun create(
+            client: HttpClient
+        ): KSandwichClient {
+            return KSandwichClientImpl(
+                client = client
+            )
+        }
+
         fun <T : HttpClientEngineConfig> createClient(
             engineFactory: HttpClientEngineFactory<T>,
             block: HttpClientConfig<T>.() -> Unit = {}

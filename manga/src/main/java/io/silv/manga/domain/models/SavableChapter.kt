@@ -5,7 +5,6 @@ import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.ProgressState
 import kotlinx.parcelize.Parcelize
 import java.io.Serializable
-import java.util.UUID
 
 @Parcelize
 data class SavableChapter(
@@ -21,10 +20,13 @@ data class SavableChapter(
     val translatedLanguage: String,
     val uploader: String,
     val externalUrl: String? = null,
+    val scanlationGroupToId: Pair<String, String>? = null,
+    val userToId: Pair<String,String>? = null,
     val version: Int,
     val createdAt: String,
     val updatedAt: String,
     val readableAt: String,
+    val ableToDownload: Boolean,
 ): Parcelable, Serializable {
 
     constructor(entity: ChapterEntity): this(
@@ -37,35 +39,27 @@ data class SavableChapter(
         volume = entity.volume,
         chapter = entity.chapterNumber.toString(),
         pages = entity.pages,
-        translatedLanguage = "en",
+        translatedLanguage = entity.languageCode,
         uploader = entity.uploader ?: "",
         externalUrl = entity.externalUrl,
         version = entity.version,
         createdAt = entity.createdAt,
         updatedAt = entity.updatedAt,
-        readableAt = entity.readableAt
+        readableAt = entity.readableAt,
+        scanlationGroupToId = if (entity.scanlationGroup != null && entity.scanlationGroupId != null) {
+            entity.scanlationGroup to entity.scanlationGroupId
+        } else null,
+        userToId = if (entity.user != null && entity.userId != null) { entity.user to entity.userId } else null,
+        ableToDownload = entity.externalUrl == null || implementedImageSources.any { it in entity.externalUrl },
     )
 
     companion object {
-        fun test(): SavableChapter {
-            return SavableChapter(
-                id = UUID.randomUUID().toString(),
-                downloaded = true,
-                progress = ProgressState.values().random(),
-                mangaId = UUID.randomUUID().toString(),
-                imageUris = emptyList(),
-                title = "test chapter",
-                volume = "1",
-                chapter = "1",
-                pages = 30,
-                translatedLanguage = "en",
-                uploader = "",
-                externalUrl = "",
-                version = 1,
-                createdAt = "1212",
-                updatedAt = "1121",
-                readableAt = "1212"
-            )
-        }
+        val implementedImageSources = listOf(
+            "mangaplus.shueisha",
+            "azuki.co",
+            "mangahot.jp",
+            "bilibilicomics.com",
+            "comikey.com"
+        )
     }
 }

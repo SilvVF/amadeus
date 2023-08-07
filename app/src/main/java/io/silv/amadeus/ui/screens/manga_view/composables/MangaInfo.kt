@@ -20,12 +20,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.LibraryBooks
+import androidx.compose.material.icons.outlined.Web
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -58,6 +61,7 @@ import io.silv.amadeus.ui.screens.manga_view.ChapterPageState
 import io.silv.amadeus.ui.screens.manga_view.MangaState
 import io.silv.amadeus.ui.screens.manga_view.Pagination
 import io.silv.amadeus.ui.screens.manga_view.TagsAndLanguages
+import io.silv.amadeus.ui.screens.search.LanguageSelection
 import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
@@ -113,7 +117,7 @@ fun MangaContent(
         MangaActions(
             manga = manga,
             bookmarked = bookmarked,
-            onBookmarkClicked = onBookmarkClicked
+            onBookmarkClicked = onBookmarkClicked,
         )
         MangaInfo(
             manga = manga,
@@ -132,7 +136,9 @@ fun ChapterListHeader(
     page: Int,
     lastPage: Int,
     sortedAscending: Boolean,
-    onChangeDirection: () -> Unit
+    onChangeDirection: () -> Unit,
+    selectedLanguages: List<Language>,
+    onLanguageSelected: (Language) -> Unit
 ) {
     val space = LocalSpacing.current
     Column {
@@ -144,7 +150,22 @@ fun ChapterListHeader(
             lastPage = lastPage,
             onPageClick = onPageClick
         )
-        Row {
+        Row(Modifier
+            .fillMaxWidth()
+            .padding(horizontal = space.med),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            LanguageSelection(
+                label = {
+                    Text("Translated Language")
+                },
+                placeholder = "All Languages",
+                selected = selectedLanguages,
+                onLanguageSelected = {
+                    onLanguageSelected(it)
+                },
+            )
             Button(
                 shape = RoundedCornerShape(12.dp),
                 onClick = onChangeDirection,
@@ -169,6 +190,7 @@ fun LazyListScope.chapterListItems(
     downloadingIds: List<String>,
     onDownloadClicked: (ids: List<String>) -> Unit,
     onDeleteClicked: (id: String) -> Unit,
+    onOpenWebView: (url: String) -> Unit,
     onReadClicked: (id: String) -> Unit
 ) {
     when (chapterPageState) {
@@ -204,7 +226,12 @@ fun LazyListScope.chapterListItems(
                         chapter = chapter,
                         downloading = chapter.id in downloadingIds,
                         onDownloadClicked = {
-                           onDownloadClicked(listOf(chapter.id))
+                            onDownloadClicked(listOf(chapter.id))
+                        },
+                        onViewOnWebClicked = {
+                            if (chapter.externalUrl != null && chapter.externalUrl?.contains("mangaplus.shueisha") != true) {
+                                onOpenWebView(chapter.externalUrl?.replace("\\","") ?: "")
+                            }
                         },
                         onDeleteClicked = {
                             onDeleteClicked(chapter.id)
@@ -289,16 +316,17 @@ private fun ChapterListItem(
     downloading: Boolean,
     onDownloadClicked: () -> Unit,
     onDeleteClicked: () -> Unit,
-    onReadClicked: () -> Unit
+    onReadClicked: () -> Unit,
+    onViewOnWebClicked: () -> Unit,
 ) {
     val space = LocalSpacing.current
     Card(modifier) {
         Row(
             Modifier
                 .padding(space.med)
-                .fillMaxWidth()
-                .height(95.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Column {
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween) {
+            Column(Modifier.fillMaxWidth(0.5f)) {
                 Text(
                     text = "Chapter ${chapter.chapter ?: "extra"}",
                     style = MaterialTheme.typography.labelLarge.copy(
@@ -313,12 +341,21 @@ private fun ChapterListItem(
                     ),
                     modifier = Modifier.padding(vertical = space.xs)
                 )
-                Button(
-                    shape = RoundedCornerShape(12.dp),
-                    onClick = { onReadClicked() }
-                ) {
-                    Icon(imageVector = Icons.Outlined.Article, contentDescription = null)
-                    Text("Read")
+                Row {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Group,
+                                contentDescription = null,
+                                modifier = Modifier.padding(horizontal = space.xs)
+                            )
+                            Text(chapter.scanlationGroupToId?.first ?: "")
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(imageVector = Icons.Filled.Person, contentDescription = null)
+                            Text(chapter.userToId?.first ?: "")
+                        }
+                    }
                 }
             }
             Column(
@@ -328,22 +365,40 @@ private fun ChapterListItem(
                     .weight(1f)
                     .fillMaxHeight()
             ) {
-                if (downloading) {
-                    CircularProgressIndicator()
-                } else {
-                    if (chapter.downloaded) {
-                        IconButton(onClick = onDeleteClicked) {
-                            Icon(
-                                imageVector = Icons.Filled.Delete ,
-                                contentDescription = null
-                            )
-                        }
+                if (chapter.externalUrl != null && chapter.externalUrl?.contains("mangaplus.shueisha") != true) {
+                    Button(
+                        shape = RoundedCornerShape(12.dp),
+                        onClick = { onViewOnWebClicked() }
+                    ) {
+                        Icon(imageVector = Icons.Outlined.Web, contentDescription = null)
+                        Text("View on web")
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
+                    Button(
+                        shape = RoundedCornerShape(12.dp),
+                        onClick = { onReadClicked() }
+                    ) {
+                        Icon(imageVector = Icons.Outlined.Article, contentDescription = null)
+                        Text("Read")
+                    }
+                    if (downloading) {
+                        CircularProgressIndicator()
                     } else {
-                        IconButton(onClick = onDownloadClicked) {
-                            Icon(
-                                imageVector = Icons.Filled.Download ,
-                                contentDescription = null
-                            )
+                        if (chapter.downloaded) {
+                            IconButton(onClick = onDeleteClicked) {
+                                Icon(
+                                    imageVector = Icons.Filled.Delete,
+                                    contentDescription = null
+                                )
+                            }
+                        } else {
+                            IconButton(onClick = onDownloadClicked) {
+                                Icon(
+                                    imageVector = Icons.Filled.Download,
+                                    contentDescription = null
+                                )
+                            }
                         }
                     }
                 }
@@ -382,8 +437,16 @@ private fun ChapterListItem(
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = Icons.Outlined.AccessTime, contentDescription = null,modifier = Modifier.padding(horizontal = space.small))
-                    Text(daysSinceCreation, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold))
+                    Icon(
+                        imageVector = Icons.Outlined.AccessTime,
+                        contentDescription = null
+                        ,modifier = Modifier.padding(horizontal = space.small)
+                    )
+                    Text(
+                        daysSinceCreation,
+                        style = MaterialTheme.typography.labelMedium
+                            .copy(fontWeight = FontWeight.SemiBold)
+                    )
                 }
             }
         }

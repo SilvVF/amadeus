@@ -15,6 +15,16 @@ data class ChapterEntity(
 
     val progressState: ProgressState = ProgressState.NotStarted,
 
+    val languageCode: String,
+
+    val scanlationGroupId: String?,
+
+    val scanlationGroup: String?,
+
+    val userId: String?,
+
+    val user: String?,
+
     val volume: String?,
 
     val title: String,

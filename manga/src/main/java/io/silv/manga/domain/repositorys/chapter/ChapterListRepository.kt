@@ -8,7 +8,7 @@ interface ChapterListRepository {
 
     val loadingVolumeArtIds: Flow<List<String>>
 
-    fun observeChapters(mangaId: String, page: Int, asc: Boolean): Flow<Resource<ChapterInfoResponse>>
+    fun observeChapters(mangaId: String, page: Int, asc: Boolean, languages: List<String> = listOf("en")): Flow<Resource<ChapterInfoResponse>>
 
     suspend fun loadVolumeArt(mangaId: String)
 }

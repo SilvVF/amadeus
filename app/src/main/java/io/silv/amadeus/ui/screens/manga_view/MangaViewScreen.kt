@@ -1,5 +1,7 @@
 package io.silv.amadeus.ui.screens.manga_view
 
+import android.annotation.SuppressLint
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -53,6 +56,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import com.google.accompanist.web.WebView
+import com.google.accompanist.web.rememberWebViewState
 import io.silv.amadeus.ui.composables.MainPoster
 import io.silv.amadeus.ui.composables.TranslatedLanguageTags
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
@@ -63,12 +68,36 @@ import io.silv.amadeus.ui.screens.manga_view.composables.MangaContent
 import io.silv.amadeus.ui.screens.manga_view.composables.chapterListItems
 import io.silv.amadeus.ui.screens.manga_view.composables.volumePosterItems
 import io.silv.amadeus.ui.shared.CenterBox
+import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
 import org.koin.core.parameter.parametersOf
 
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+fun LoadWebViewUrls(
+    base: String,
+) {
+    val webviewState = rememberWebViewState(url = base)
+
+    WebView(
+        modifier = Modifier
+            .fillMaxSize()
+            .systemBarsPadding(),
+        state = webviewState,
+        onCreated = {
+            it.settings.javaScriptEnabled = true
+            it.settings.blockNetworkImage = false
+            it.settings.javaScriptCanOpenWindowsAutomatically = true
+            it.settings.blockNetworkLoads = false
+            it.settings.loadsImagesAutomatically = true
+            it.settings.userAgentString = "Mozilla"
+            it.settings.domStorageEnabled = true
+        },
+    )
+}
 
 class MangaViewScreen(
   private val manga: SavableManga
@@ -84,6 +113,7 @@ class MangaViewScreen(
         val navigator = LocalNavigator.current
         val currentPage by sm.currentPage.collectAsStateWithLifecycle()
         val sortedAscending by sm.sortedByAsc.collectAsStateWithLifecycle()
+        val selectedLanguages by sm.languageList.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }
 
         sm.collectEvents { event ->
@@ -104,79 +134,108 @@ class MangaViewScreen(
             mutableStateOf(true)
         }
 
-        LaunchedEffect(Unit) { bottomBarVisible = false }
+        LaunchedEffect(Unit) {
+            bottomBarVisible = false
+        }
+
+        var webUrl by remember {
+            mutableStateOf<String?>(null)
+        }
+
+        BackHandler(
+            enabled = webUrl != null
+        ) {
+            webUrl = null
+        }
+
+        webUrl?.let {
+            LoadWebViewUrls(
+                base = it,
+            )
+            return
+        }
+
 
         Scaffold(
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
             contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.systemBars)
         ) { paddingValues ->
-            Column(Modifier
-                    .padding(paddingValues)
-                ) {
-                LazyColumn(
+                Column(
                     Modifier
-                        .fillMaxSize()
-                        .navigationBarsPadding()) {
-                    item {
-                        MainPoster(
-                            manga = manga,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    item {
-                        Column {
-                            MangaContent(
-                                manga = manga,
-                                bookmarked = mangaViewState.mangaState.manga.bookmarked,
-                                onBookmarkClicked = sm::bookmarkManga,
-                                onTagSelected = { tag ->
-                                    manga.tagToId[tag]?.let {id ->
-                                        navigator?.push(
-                                            MangaFilterScreen(tag, id)
-                                        )
-                                    }
-                                }
-                            )
-                            ChapterVolumeNavBar(
-                                chaptersShowing = chaptersShowing,
-                                onChange = {
-                                    chaptersShowing = it
-                                }
-                            )
-                        }
-                    }
-                    if (chaptersShowing) {
+                        .padding(paddingValues)
+                ) {
+                    LazyColumn(
+                        Modifier
+                            .fillMaxSize()
+                            .navigationBarsPadding()
+                    ) {
                         item {
-                            ChapterListHeader(
-                                onPageClick = sm::navigateToPage,
-                                page = currentPage + 1,
-                                lastPage = mangaViewState.chapterPageState.lastPage,
-                                sortedAscending = sortedAscending,
-                                onChangeDirection = sm::changeDirection
+                            MainPoster(
+                                manga = manga,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
-                        chapterListItems(
-                            chapterPageState = mangaViewState.chapterPageState,
-                            downloadingIds = downloading,
-                            onDownloadClicked = {
-                                sm.downloadChapterImages(it)
-                            },
-                            onDeleteClicked = {
-                                sm.deleteChapterImages(listOf(it))
-                            },
-                            onReadClicked = {
-                                navigator?.push(
-                                    MangaReaderScreen(manga.id, it)
+                        item {
+                            Column {
+                                MangaContent(
+                                    manga = manga,
+                                    bookmarked = mangaViewState.mangaState.manga.bookmarked,
+                                    onBookmarkClicked = sm::bookmarkManga,
+                                    onTagSelected = { tag ->
+                                        manga.tagToId[tag]?.let { id ->
+                                            navigator?.push(
+                                                MangaFilterScreen(tag, id)
+                                            )
+                                        }
+                                    }
+                                )
+                                ChapterVolumeNavBar(
+                                    chaptersShowing = chaptersShowing,
+                                    onChange = {
+                                        chaptersShowing = it
+                                    }
                                 )
                             }
-                        )
-                    } else {
-                        volumePosterItems(mangaViewState.mangaState)
+                        }
+                        if (chaptersShowing) {
+                            item {
+                                ChapterListHeader(
+                                    onPageClick = sm::navigateToPage,
+                                    page = currentPage + 1,
+                                    lastPage = mangaViewState.chapterPageState.lastPage,
+                                    sortedAscending = sortedAscending,
+                                    onChangeDirection = sm::changeDirection,
+                                    onLanguageSelected = sm::languageChanged,
+                                    selectedLanguages = remember(selectedLanguages) {
+                                        Language.values().filter { it.code in selectedLanguages }
+                                    }
+                                )
+                            }
+                            chapterListItems(
+                                chapterPageState = mangaViewState.chapterPageState,
+                                downloadingIds = downloading,
+                                onDownloadClicked = {
+                                    sm.downloadChapterImages(it)
+                                },
+                                onDeleteClicked = {
+                                    sm.deleteChapterImages(listOf(it))
+                                },
+                                onOpenWebView = {
+                                    webUrl = it
+                                },
+                                onReadClicked = {
+                                    navigator?.push(
+                                        MangaReaderScreen(manga.id, it)
+                                    )
+                                }
+                            )
+                        } else {
+                            volumePosterItems(mangaViewState.mangaState)
+                        }
                     }
                 }
             }
         }
-    }
 }
 
 

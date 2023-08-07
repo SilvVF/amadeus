@@ -58,11 +58,7 @@ dependencies {
     implementation(project(":manga"))
     implementation(project(":core"))
 
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.espresso.core)
-    testImplementation(libs.junit)
+    implementation("com.google.accompanist:accompanist-webview:0.30.1")
 
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)

@@ -1,11 +1,11 @@
 package io.silv.amadeus.ui.screens.search
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,8 +37,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -121,8 +123,8 @@ import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalPaddingValues
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.DomainAuthor
-import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.models.DomainTag
+import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.people.QueryResult
 import io.silv.manga.network.mangadex.models.ContentRating
 import io.silv.manga.network.mangadex.models.PublicationDemographic
@@ -163,10 +165,6 @@ class SearchScreen: Screen {
         val navigator = LocalNavigator.current
         var bottomBarVisibility by LocalBottomBarVisibility.current
         val topLevelPadding by LocalPaddingValues.current
-
-        LaunchedEffect(Unit) {
-            sm.isFiltering(false)
-        }
 
         LaunchedEffect(Unit) {
             var shownOnce = false
@@ -287,9 +285,7 @@ class SearchScreen: Screen {
 }
 
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class,
-    ExperimentalMaterial3Api::class
-)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun FilterScreen(
     hide: () -> Unit,
@@ -325,6 +321,10 @@ fun FilterScreen(
     selectedDemographics: List<PublicationDemographic>,
     onDemographicSelected: (PublicationDemographic) -> Unit
 ) {
+    BackHandler {
+        hide()
+    }
+
     val space = LocalSpacing.current
     val groupedTags = remember(tagsUiState) {
         tagsUiState.groupBy { it.group }
@@ -344,152 +344,138 @@ fun FilterScreen(
         FilterTopBar {
             hide()
         }
-        LazyColumn(
+        Column(
             Modifier
                 .fillMaxSize()
                 .padding(bottom = space.large)
+                .verticalScroll(rememberScrollState())
         ) {
-            item {
-                Column {
-                    Row(Modifier.fillMaxWidth()) {
-                        AuthorSearchBar(
-                            modifier = Modifier
-                                .padding(space.small)
-                                .weight(1f),
-                            label = "Authors",
-                            query = authorQuery,
-                            onQueryChange = onAuthorQueryChange,
-                            result = authorListState,
-                            onAuthorSelected = onAuthorSelected,
-                            selectedAuthors = selectedAuthors
-                        )
-                        AuthorSearchBar(
-                            modifier = Modifier
-                                .padding(space.small)
-                                .weight(1f),
-                            label = "Artists",
-                            query = artistQuery,
-                            addCords = true,
-                            onQueryChange = onArtistQueryChange,
-                            result = artistListState,
-                            onAuthorSelected = onArtistSelected,
-                            selectedAuthors = selectedArtists,
-                        )
-                    }
-                    Spacer(Modifier.height(space.med))
-                }
-            }
-            item {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = space.med)) {
-                    Text("Content Rating")
-                    FlowRow {
-                        contentRatings.forEach { rating ->
-                            FilterChip(
-                                selected = remember(contentRatings, selectedContentRatings) {
-                                    selectedContentRatings.contains(rating)
-                                },
-                                onClick = { onContentRatingSelected(rating) },
-                                label = { Text(rating.name) },
-                                modifier = Modifier.padding(horizontal = space.xs)
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                }
-            }
-            item {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = space.med)) {
-                    Text("Publication Status")
-                    FlowRow {
-                        statusList.forEach { status ->
-                            FilterChip(
-                                selected = remember(status, selectedStatus) {
-                                    selectedStatus.contains(status)
-                                },
-                                onClick = { onStatusSelected(status) },
-                                label = { Text(status.name) },
-                                modifier = Modifier.padding(horizontal = space.xs)
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(space.med))
-                }
-            }
-            item {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = space.med)) {
-                    val demographics = remember {
-                        PublicationDemographic.values().toList()
-                    }
-                    Text("Magazine Demographic")
-                    FlowRow {
-                        demographics.forEach { demographic ->
-                            FilterChip(
-                                selected = remember(demographic, selectedDemographics) {
-                                    selectedDemographics.contains(demographic)
-                                },
-                                onClick = { onDemographicSelected(demographic) },
-                                label = { Text(demographic.name) },
-                                modifier = Modifier.padding(horizontal = space.xs)
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(space.med))
-                }
-            }
-            item {
-                Column(Modifier.padding(horizontal = space.med)) {
-                    LanguageSelection(
-                        label = {
-                            Text("Original Language")
-                        },
-                        placeholder = "All Languages",
-                        selected = selectedOriginalLanguages,
-                        onLanguageSelected = onOriginalLanguageSelected,
+            Column {
+                Row(Modifier.fillMaxWidth()) {
+                    AuthorSearchBar(
+                        modifier = Modifier
+                            .padding(space.small)
+                            .weight(1f),
+                        label = "Authors",
+                        query = authorQuery,
+                        onQueryChange = onAuthorQueryChange,
+                        result = authorListState,
+                        onAuthorSelected = onAuthorSelected,
+                        selectedAuthors = selectedAuthors
                     )
-                    Spacer(Modifier.height(space.med))
-                    LanguageSelection(
-                        label = {
-                            Text("Translated Languages")
-                        },
-                        placeholder = "All Languages",
-                        selected = selectedTranslatedLanguages,
-                        onLanguageSelected = onTranslatedLanguageSelected,
+                    AuthorSearchBar(
+                        modifier = Modifier
+                            .padding(space.small)
+                            .weight(1f),
+                        label = "Artists",
+                        query = artistQuery,
+                        addCords = true,
+                        onQueryChange = onArtistQueryChange,
+                        result = artistListState,
+                        onAuthorSelected = onArtistSelected,
+                        selectedAuthors = selectedArtists
                     )
-                    Spacer(Modifier.height(space.med))
                 }
+                Spacer(Modifier.height(space.med))
             }
-            stickyHeader {
-               TagsFilterHeader(
-                   includedTagsMode = includedTagsMode,
-                   includedTagsModeChanged = includedTagsModeChanged,
-                   excludedTagsMode = excludedTagsMode,
-                   excludedTagsModeChanged = excludedTagsModeChanged,
-                   tagsVisible = tagsVisible,
-                   tagsVisibleChange = { tagsVisible = it },
-                   includedChange = { included = it },
-                   included = included
-               )
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = space.med)
+            ) {
+                Text("Content Rating")
+                FlowRow {
+                    contentRatings.forEach { rating ->
+                        FilterChip(
+                            selected = remember(contentRatings, selectedContentRatings) {
+                                selectedContentRatings.contains(rating)
+                            },
+                            onClick = { onContentRatingSelected(rating) },
+                            label = { Text(rating.name) },
+                            modifier = Modifier.padding(horizontal = space.xs)
+                        )
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
             }
-            item {
-                TagsList(
-                    tagsVisible = tagsVisible,
-                    included = included,
-                    groupedTags = groupedTags,
-                    includedIds = includedIds,
-                    includedSelected = includedSelected,
-                    excludedIds = excludedIds,
-                    excludedSelected = excludedSelected
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = space.med)
+            ) {
+                Text("Publication Status")
+                FlowRow {
+                    statusList.forEach { status ->
+                        FilterChip(
+                            selected = remember(status, selectedStatus) {
+                                selectedStatus.contains(status)
+                            },
+                            onClick = { onStatusSelected(status) },
+                            label = { Text(status.name) },
+                            modifier = Modifier.padding(horizontal = space.xs)
+                        )
+                    }
+                }
+                Spacer(Modifier.height(space.med))
+            }
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = space.med)
+            ) {
+                val demographics = remember {
+                    PublicationDemographic.values().toList()
+                }
+                Text("Magazine Demographic")
+                FlowRow {
+                    demographics.forEach { demographic ->
+                        FilterChip(
+                            selected = remember(demographic, selectedDemographics) {
+                                selectedDemographics.contains(demographic)
+                            },
+                            onClick = { onDemographicSelected(demographic) },
+                            label = { Text(demographic.name) },
+                            modifier = Modifier.padding(horizontal = space.xs)
+                        )
+                    }
+                }
+                Spacer(Modifier.height(space.med))
+            }
+            Column(Modifier.padding(horizontal = space.med)) {
+                LanguageSelection(
+                    label = { Text("Original Language") },
+                    placeholder = "All Languages",
+                    selected = selectedOriginalLanguages,
+                    onLanguageSelected = onOriginalLanguageSelected,
                 )
+                Spacer(Modifier.height(space.med))
+                LanguageSelection(
+                    label = { Text("Translated Languages") },
+                    placeholder = "All Languages",
+                    selected = selectedTranslatedLanguages,
+                    onLanguageSelected = onTranslatedLanguageSelected,
+                )
+                Spacer(Modifier.height(space.med))
             }
+            TagsFilterHeader(
+                includedTagsMode = includedTagsMode,
+                includedTagsModeChanged = includedTagsModeChanged,
+                excludedTagsMode = excludedTagsMode,
+                excludedTagsModeChanged = excludedTagsModeChanged,
+                tagsVisible = tagsVisible,
+                tagsVisibleChange = { tagsVisible = it },
+                includedChange = { included = it },
+                included = included
+            )
+            TagsList(
+                tagsVisible = tagsVisible,
+                included = included,
+                groupedTags = groupedTags,
+                includedIds = includedIds,
+                includedSelected = includedSelected,
+                excludedIds = excludedIds,
+                excludedSelected = excludedSelected
+            )
         }
     }
 }
@@ -497,6 +483,7 @@ fun FilterScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LanguageSelection(
+    modifier: Modifier = Modifier,
     label: (@Composable () -> Unit)? = null,
     placeholder: String,
     selected: List<Language>,
@@ -510,8 +497,7 @@ fun LanguageSelection(
     val space = LocalSpacing.current
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .wrapContentSize(Alignment.BottomStart)
     ) {
         Column(horizontalAlignment = Alignment.Start) {
@@ -622,7 +608,7 @@ fun TagsList(
     excludedSelected: (String) -> Unit
 ) {
     val space = LocalSpacing.current
-    Column {
+    Column(Modifier.padding(horizontal = space.med)) {
         AnimatedVisibility(
             visible = tagsVisible
         ) {

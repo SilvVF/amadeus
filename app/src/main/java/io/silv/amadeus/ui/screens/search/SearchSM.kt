@@ -12,7 +12,7 @@ import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaResourceQuery
-import io.silv.manga.domain.repositorys.base.LoadState
+import io.silv.manga.domain.repositorys.base.PagedLoadState
 import io.silv.manga.domain.repositorys.people.ArtistListRepository
 import io.silv.manga.domain.repositorys.people.AuthorListRepository
 import io.silv.manga.domain.repositorys.people.QueryResult
@@ -92,7 +92,7 @@ class SearchSM(
     private val mutableExcludedTagMode = MutableStateFlow(MangaRequest.TagsMode.OR)
     val excludedTagsMode = mutableExcludedTagMode
 
-    private val loadState = searchMangaRepository.loadState.stateInUi(LoadState.None)
+    private val loadState = searchMangaRepository.loadState.stateInUi(PagedLoadState.None)
 
     val tagsUiState = tagRepository.allTags().map {
         it.map { entity -> DomainTag(entity) }
@@ -184,20 +184,20 @@ class SearchSM(
             SavableManga(it, saved.find { s -> s.id ==  it.id})
         }
         when (load) {
-            LoadState.End -> {
+            PagedLoadState.End -> {
                 SearchMangaUiState.Success.EndOfPagination(
                     results = combinedManga,
                 )
             }
-            LoadState.Loading -> {
+            PagedLoadState.Loading -> {
                 SearchMangaUiState.Success.Loading(
                     results = combinedManga,
                 )
             }
-            LoadState.None -> SearchMangaUiState.Success.Idle(
+            PagedLoadState.None -> SearchMangaUiState.Success.Idle(
                 results = combinedManga,
             )
-            LoadState.Refreshing -> SearchMangaUiState.Refreshing
+            PagedLoadState.Refreshing, is PagedLoadState.Error -> SearchMangaUiState.Refreshing
         }
     }
         .stateInUi(SearchMangaUiState.WaitingForQuery)

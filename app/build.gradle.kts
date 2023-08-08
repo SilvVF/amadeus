@@ -60,6 +60,8 @@ dependencies {
 
     implementation("com.google.accompanist:accompanist-webview:0.30.1")
 
+    implementation(libs.androidx.material3.window.size)
+
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
@@ -77,14 +79,6 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    val paging_version = "3.1.1"
-
-    implementation(libs.androidx.paging.runtime)
-
-    // alternatively - without Android dependencies for tests
-    testImplementation(libs.androidx.paging.common)
-    // optional - Jetpack Compose integration
-    implementation("androidx.paging:paging-compose:3.2.0")
 
     val navVersion = "2.6.0"
 
@@ -116,14 +110,6 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil)
     implementation(libs.coil.svg)
-
-    //KTOR
-    implementation(libs.ktor.core)
-    implementation(libs.ktor.cio)
-    implementation(libs.ktor.serialization.json)
-    implementation(libs.ktor.logging)
-    implementation(libs.ktor.contentnegotiation)
-
 
     // KOTLIN
     implementation(libs.kotlinx.datetime)

@@ -68,7 +68,7 @@ dependencies {
 
     //KTOR
     implementation(libs.ktor.core)
-    implementation(libs.ktor.cio)
+    implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.serialization.json)
     implementation(libs.ktor.logging)
     implementation(libs.ktor.contentnegotiation)

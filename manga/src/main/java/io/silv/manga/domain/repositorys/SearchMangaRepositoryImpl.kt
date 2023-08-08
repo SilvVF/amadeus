@@ -26,7 +26,7 @@ internal class SearchMangaRepositoryImpl(
     dispatchers: AmadeusDispatchers,
 ): SearchMangaRepository, BasePaginatedRepository<SearchMangaResource, SearchMangaResourceQuery>(
     initialQuery = SearchMangaResourceQuery(),
-    MANGA_PAGE_LIMIT = 50
+    pageSize = 50
 ) {
 
     override val scope: CoroutineScope =
@@ -42,13 +42,8 @@ internal class SearchMangaRepositoryImpl(
 
     init {
         scope.launch {
-            refresh()
+            refresh(SearchMangaResourceQuery())
         }
-    }
-
-    override suspend fun refresh() {
-        resetPagination(SearchMangaResourceQuery())
-        loadNextPage()
     }
 
     override fun observeMangaResourceById(id: String): Flow<SearchMangaResource?> {
@@ -57,7 +52,7 @@ internal class SearchMangaRepositoryImpl(
 
     override fun observeMangaResources(resourceQuery: SearchMangaResourceQuery): Flow<List<SearchMangaResource>>  {
         return mangaResourceDao.observeAllSearchMangaResources().onStart {
-            if (resourceQuery != currentQuery) {
+            if (resourceQuery != latestQuery()) {
                 resetPagination(resourceQuery)
                 emit(emptyList())
                 loadNextPage()
@@ -71,40 +66,40 @@ internal class SearchMangaRepositoryImpl(
 
 
     override suspend fun loadNextPage() = loadPage { offset, query ->
-            val result = syncer.sync(
-                current = mangaResourceDao.observeAllSearchMangaResources().first(),
-                networkResponse = mangaDexApi.getMangaList(
-                    MangaRequest(
-                        offset = offset,
-                        limit = MANGA_PAGE_LIMIT,
-                        includes = listOf("cover_art","author", "artist"),
-                        includedTags = query.includedTags,
-                        excludedTags = query.excludedTags,
-                        title = query.title,
-                        includedTagsMode = query.includedTagsMode,
-                        excludedTagsMode = query.excludedTagsMode,
-                        status = query.publicationStatus?.map { it.name },
-                        availableTranslatedLanguage = query.translatedLanguages,
-                        contentRating = query.contentRating?.map { it.name },
-                        authors = query.authorIds,
-                        artists = query.artistIds,
-                        originalLanguage = query.originalLanguages,
-                        publicationDemographic = query.demographics?.map { it.name }
-                    )
+        val result = syncer.sync(
+            current = mangaResourceDao.observeAllSearchMangaResources().first(),
+            networkResponse = mangaDexApi.getMangaList(
+                MangaRequest(
+                    offset = offset,
+                    limit = pageSize,
+                    includes = listOf("cover_art","author", "artist"),
+                    includedTags = query.includedTags,
+                    excludedTags = query.excludedTags,
+                    title = query.title,
+                    includedTagsMode = query.includedTagsMode,
+                    excludedTagsMode = query.excludedTagsMode,
+                    status = query.publicationStatus?.map { it.name },
+                    availableTranslatedLanguage = query.translatedLanguages,
+                    contentRating = query.contentRating?.map { it.name },
+                    authors = query.authorIds,
+                    artists = query.artistIds,
+                    originalLanguage = query.originalLanguages,
+                    publicationDemographic = query.demographics?.map { it.name }
                 )
-                    .getOrThrow()
-                    .also {
-                        updateLastPage(it.total)
-                        Log.d("Search", "last page ${it.total}")
-                    }
-                    .data
             )
-            if (offset == 0) {
-                for(unhandled in result.unhandled) {
-                    if (!checkProtected(unhandled.id)) {
-                        mangaResourceDao.delete(unhandled)
-                    }
+                .getOrThrow()
+                .also {
+                    updateLastPage(it.total)
+                    Log.d("Search", "last page ${it.total}")
+                }
+                .data
+        )
+        if (offset == 0) {
+            for(unhandled in result.unhandled) {
+                if (!checkProtected(unhandled.id)) {
+                    mangaResourceDao.delete(unhandled)
                 }
             }
+        }
     }
 }

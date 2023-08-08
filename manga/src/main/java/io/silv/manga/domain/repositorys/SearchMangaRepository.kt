@@ -23,5 +23,3 @@ data class SearchMangaResourceQuery(
     val translatedLanguages: List<String>? = null,
     val demographics: List<PublicationDemographic>? = null
 )
-
-

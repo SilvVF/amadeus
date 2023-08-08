@@ -1,6 +1,7 @@
 package io.silv.amadeus.ui.screens.home
 
 import cafe.adriel.voyager.core.model.coroutineScope
+import io.silv.amadeus.ui.screens.manga_reader.combineToPair
 import io.silv.amadeus.ui.screens.search.SearchMangaUiState
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.DomainTag
@@ -11,6 +12,7 @@ import io.silv.manga.domain.repositorys.RecentMangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SeasonalMangaRepository
 import io.silv.manga.domain.repositorys.base.LoadState
+import io.silv.manga.domain.repositorys.base.PagedLoadState
 import io.silv.manga.domain.repositorys.base.toBool
 import io.silv.manga.domain.repositorys.tags.TagRepository
 import io.silv.manga.local.entity.Season
@@ -48,14 +50,7 @@ class HomeSM(
         .stateInUi(false)
 
     val refreshingSeasonal = seasonalMangaRepository.loadState
-        .map {
-            when(it) {
-                LoadState.End -> false
-                LoadState.Loading -> false
-                LoadState.None -> false
-                LoadState.Refreshing -> true
-            }
-        }
+        .map { it is LoadState.Refreshing }
         .stateInUi(false)
 
 
@@ -65,10 +60,21 @@ class HomeSM(
         }
     }
         .stateInUi(emptyList())
+
+    private var startFlag: Boolean = false
+
+    private val startFlow = MutableStateFlow(false)
+
+    fun startSearch() {
+        startFlag = true
+        startFlow.update { !it}
+    }
+
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private val mangaSearchFlow = searchQuery
-        .debounce { 1000L }
-        .flatMapLatest { query ->
+        .combineToPair(startFlow)
+        .debounce { if (startFlag.also { startFlag = false }) 0L else 1000L }
+        .flatMapLatest { (query, _) ->
             searchMangaRepository.observeMangaResources(query)
         }
         .onStart {
@@ -78,7 +84,7 @@ class HomeSM(
             )
         }
 
-    private val loadState = searchMangaRepository.loadState.stateInUi(LoadState.None)
+    private val loadState = searchMangaRepository.loadState.stateInUi(PagedLoadState.None)
 
     val searchMangaUiState = combine(
         mangaSearchFlow,
@@ -89,20 +95,20 @@ class HomeSM(
             SavableManga(it, saved.find { s -> s.id ==  it.id})
         }
         when (load) {
-            LoadState.End -> {
+            PagedLoadState.End -> {
                 SearchMangaUiState.Success.EndOfPagination(
                     results = combinedManga,
                 )
             }
-            LoadState.Loading -> {
+            PagedLoadState.Loading -> {
                 SearchMangaUiState.Success.Loading(
                     results = combinedManga,
                 )
             }
-            LoadState.None -> SearchMangaUiState.Success.Idle(
+            PagedLoadState.None -> SearchMangaUiState.Success.Idle(
                 results = combinedManga,
             )
-            LoadState.Refreshing -> SearchMangaUiState.Refreshing
+            PagedLoadState.Refreshing, is PagedLoadState.Error -> SearchMangaUiState.Refreshing
         }
     }
         .stateInUi(SearchMangaUiState.WaitingForQuery)

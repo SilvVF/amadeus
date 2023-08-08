@@ -53,6 +53,7 @@ data class SavableChapter(
         ableToDownload = entity.externalUrl == null || implementedImageSources.any { it in entity.externalUrl },
     )
 
+
     companion object {
         val implementedImageSources = listOf(
             "mangaplus.shueisha",

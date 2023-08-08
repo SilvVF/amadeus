@@ -9,30 +9,33 @@ import kotlinx.coroutines.launch
 
 abstract class BasePaginatedRepository<ResourceType: MangaResource, ResourceQuery>(
     private val initialQuery: ResourceQuery,
-    protected val MANGA_PAGE_LIMIT: Int = 50
+    protected val pageSize: Int = 50
 ) : PaginatedResourceRepository<ResourceType, ResourceQuery> {
 
     abstract val scope: CoroutineScope
 
-    override fun latestQuery(): ResourceQuery = currentQuery
+    override fun latestQuery(): ResourceQuery = query
 
-    override val loadState = MutableStateFlow<LoadState>(LoadState.None)
+    override val loadState = MutableStateFlow<PagedLoadState>(PagedLoadState.None)
 
-    protected var currentQuery: ResourceQuery = initialQuery
-    private var currentOffset = 0
-
+    private var query: ResourceQuery = initialQuery
+    private var offset = 0
     private var lastPage = Int.MAX_VALUE
-
     private val loadPageJobs = mutableListOf<Job>()
 
     protected fun resetPagination(query: ResourceQuery) {
         loadPageJobs.onEach { it.cancel() }
         loadState.update {
-            LoadState.None
+            PagedLoadState.None
         }
-        currentOffset = 0
-        currentQuery = query
+        offset = 0
+        this.query = query
         lastPage = Int.MAX_VALUE
+    }
+
+    override suspend fun refresh(resourceQuery: ResourceQuery?) {
+        resetPagination(resourceQuery ?: initialQuery)
+        loadNextPage()
     }
 
     fun updateLastPage(last: Int) {
@@ -44,31 +47,30 @@ abstract class BasePaginatedRepository<ResourceType: MangaResource, ResourceQuer
     ) {
         loadPageJobs.add(
             scope.launch {
-                val offset = currentOffset
-                if (loadState.value != LoadState.None || offset >= lastPage) {
+                if (loadState.value != PagedLoadState.None || offset >= lastPage) {
                     return@launch
                 }
                 loadState.update {
                     if (offset == 0)
-                        LoadState.Refreshing
+                        PagedLoadState.Refreshing
                     else
-                        LoadState.Loading
+                        PagedLoadState.Loading
                 }
                 runCatching {
-                    loadCatching(offset, currentQuery)
+                    loadCatching(offset, query)
                 }
                     .onSuccess {
-                        currentOffset = offset + MANGA_PAGE_LIMIT
+                        offset += pageSize
                         loadState.update {
-                            if (offset + MANGA_PAGE_LIMIT >= lastPage) {
-                                LoadState.End
+                            if (offset >= lastPage) {
+                                PagedLoadState.End
                             } else {
-                                LoadState.None
+                                PagedLoadState.None
                             }
                         }
                     }
-                    .onFailure {
-                        loadState.update { LoadState.None }
+                    .onFailure { throwable ->
+                        loadState.update { PagedLoadState.Error(throwable) }
                     }
             }
         )

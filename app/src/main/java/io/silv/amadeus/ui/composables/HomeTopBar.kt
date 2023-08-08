@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -39,12 +37,13 @@ import io.silv.manga.domain.models.SavableManga
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun HomeTopBar(
+    modifier: Modifier = Modifier,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     searchItems: SearchMangaUiState,
     searchGridState: LazyGridState,
     onBookmarkClick: (manga: SavableManga) -> Unit,
-    onMangaClick: (manga: SavableManga) -> Unit
+    onMangaClick: (manga: SavableManga) -> Unit,
 ) {
     var searchBarActive by rememberSaveable {
         mutableStateOf(false)
@@ -53,15 +52,11 @@ fun HomeTopBar(
         mutableStateOf(true)
     }
     val space = LocalSpacing.current
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
-        modifier = if (searchBarActive)
-            Modifier.fillMaxWidth()
-        else
-            Modifier
-                .fillMaxWidth()
-                .systemBarsPadding()
+        modifier =   if (searchBarActive) Modifier.fillMaxSize() else  modifier
     ) {
         if(!searchBarActive) {
             Text(
@@ -71,12 +66,9 @@ fun HomeTopBar(
         }
         AnimatedContent(targetState = showSearchBar, label = "search") {
             when (it) {
-                false ->   Row {
+                false -> Row {
                     IconButton(onClick = { showSearchBar = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.KeyboardArrowLeft,
-                            contentDescription = null
-                        )
+                        Icon(imageVector = Icons.Filled.KeyboardArrowLeft, contentDescription = null)
                     }
                 }
                 true -> SearchBar(
@@ -88,15 +80,10 @@ fun HomeTopBar(
                     onActiveChange = {
                         searchBarActive = it
                     },
-                    placeholder = {
-                        Text("Quick Search")
-                    },
+                    placeholder = { Text("Quick Search") },
                     leadingIcon = {
                         if (!searchBarActive) {
-                            Icon(
-                                imageVector = Icons.Filled.Search,
-                                contentDescription = null
-                            )
+                            Icon(imageVector = Icons.Filled.Search, contentDescription = null)
                         } else {
                             IconButton(onClick = {
                                 searchBarActive = false
@@ -136,7 +123,7 @@ fun HomeTopBar(
                             searchMangaUiState = searchItems,
                             onMangaClick = onMangaClick,
                             onBookmarkClick = onBookmarkClick,
-                        )
+                            )
                     }
                 }
             }

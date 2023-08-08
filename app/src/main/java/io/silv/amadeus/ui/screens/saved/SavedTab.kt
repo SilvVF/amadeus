@@ -3,8 +3,11 @@ package io.silv.amadeus.ui.screens.saved
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,6 +41,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
@@ -55,11 +59,21 @@ import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.shadow
+import io.silv.amadeus.ui.theme.AmadeusTheme
 import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalPaddingValues
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableChapter
 import io.silv.manga.domain.models.SavableManga
+import io.silv.manga.local.entity.ProgressState
+import io.silv.manga.local.entity.ReadingStatus
+import io.silv.manga.network.mangadex.models.ContentRating
+import io.silv.manga.network.mangadex.models.PublicationDemographic
+import io.silv.manga.network.mangadex.models.Status
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 object SavedTab: Tab {
     override val options: TabOptions
@@ -251,6 +265,167 @@ private fun ReadingListItem(
             Text("Chapter ${furthestChapter?.chapter ?: 0} / ${manga.lastChapter ?: chapters.size}")
             Divider(modifier.fillMaxWidth(), thickness = 1.dp, MaterialTheme.colorScheme.primary)
             Text("Chapter  ${furthestChapter?.chapter ?: 0} page : ${manga.chapterToLastReadPage[furthestChapter?.id]  ?: 0}")
+        }
+    }
+}
+
+@Composable
+fun ContinueReadingItem(
+    modifier: Modifier,
+    manga: SavableManga
+) {
+    val context = LocalContext.current
+    val space = LocalSpacing.current
+    Column(
+        modifier
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(manga.coverArt)
+                .build(),
+            contentDescription = null,
+            modifier = Modifier
+                .clip(
+                    RoundedCornerShape(12.dp)
+                )
+                .fillMaxWidth(),
+            contentScale = ContentScale.Fit,
+        )
+        val time = remember(manga) {
+            val dateTime = Instant.fromEpochSeconds(manga.savedLocalAtEpochSeconds)
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+            "${dateTime.dayOfMonth} / ${dateTime.month} / ${dateTime.year}"
+        }
+        Column(
+            Modifier
+                .border(
+                    color = MaterialTheme.colorScheme.primary,
+                    width = 1.dp,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .padding(space.med)
+        ) {
+            Row(
+                Modifier
+                    .height(IntrinsicSize.Min)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = manga.readingStatus.name,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    modifier = Modifier.weight(1f).padding(space.med)
+                )
+                Divider(
+                    Modifier
+                        .fillMaxHeight()
+                        .width(2.dp)
+                )
+                Text(
+                    "${manga.readChapters.size} / ${manga.lastChapter}" ,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    modifier = Modifier.weight(1f).padding(space.med)
+                )
+                Divider(
+                    Modifier
+                        .fillMaxHeight()
+                        .width(2.dp)
+                )
+                Text(
+                    text = "score",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    modifier = Modifier.weight(1f).padding(space.med)
+                )
+            }
+            Divider()
+            Row(
+                Modifier
+                    .height(IntrinsicSize.Min)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Column(Modifier.weight(1f).padding(space.med)) {
+                    Text(
+                        "start date",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = MaterialTheme.colorScheme.onBackground
+                        ),
+                    )
+                    Text(
+                        time,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        ),
+                    )
+                }
+                Divider(
+                    Modifier
+                        .fillMaxHeight()
+                        .width(2.dp))
+                Column(Modifier.weight(1f).padding(space.med)) {
+                    Text("finish date",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        time,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun ContinueReadingItemPreview() {
+    AmadeusTheme {
+        CenterBox(Modifier.fillMaxSize()) {
+            ContinueReadingItem(
+                manga = SavableManga(
+                    id = "dsafsdf",
+                    bookmarked  = false,
+                    description = "kjdsfkajsld;fjaskldjflkasjfklasjkl;dfj",
+                    progressState = ProgressState.Reading,
+                    readingStatus = ReadingStatus.Reading,
+                    coverArt = "https://upload.wikimedia.org/wikipedia/en/e/e4/Steins%3BGate_cover_art.jpg",
+                    titleEnglish = "steins gate",
+                    alternateTitles = emptyMap(),
+                    originalLanguage = "en",
+                    availableTranslatedLanguages = listOf("en"),
+                    status = Status.completed,
+                    publicationDemographic = PublicationDemographic.shounen,
+                    tagToId = emptyMap(),
+                    contentRating = ContentRating.safe,
+                    lastVolume = "12",
+                    lastChapter = "34",
+                    version = 1,
+                    createdAt = "",
+                    updatedAt = "",
+                    volumeToCoverArtUrl = emptyMap(),
+                    readChapters = emptyList(),
+                    authors = emptyList(),
+                    artists = emptyList(),
+                    year = 2020,
+                    savedLocalAtEpochSeconds = Clock.System.now().epochSeconds,
+                    chapterToLastReadPage = emptyMap()
+                ),
+                modifier = Modifier.fillMaxWidth(0.7f)
+            )
         }
     }
 }

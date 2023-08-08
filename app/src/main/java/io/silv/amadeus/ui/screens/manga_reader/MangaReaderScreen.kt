@@ -2,6 +2,7 @@
 
 package io.silv.amadeus.ui.screens.manga_reader
 
+import android.graphics.drawable.ColorDrawable
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -38,19 +39,28 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import coil.decode.DecodeResult
+import coil.decode.Decoder
+import coil.imageLoader
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalPaddingValues
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.core.lerp
 import io.silv.manga.domain.models.SavableChapter
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 import kotlin.math.absoluteValue
@@ -58,7 +68,7 @@ import kotlin.math.absoluteValue
 
 class MangaReaderScreen(
     private val mangaId: String,
-    private val chapterId: String
+    private val chapterId: String,
 ): Screen {
 
     @Composable
@@ -121,6 +131,27 @@ fun MangaReader(
                 }
             }
 
+            val context = LocalContext.current
+            val imageLoader = context.imageLoader
+
+            LaunchedEffect(Unit) {
+                launch {
+                    var furthestLoad = 0
+                    snapshotFlow { state.pages }.collectLatest {
+                        for (page in it.take(30)) {
+                            val request = ImageRequest.Builder(context)
+                                .data(page)
+                                .memoryCachePolicy(CachePolicy.DISABLED)
+                                // Set a custom `Decoder.Factory` that skips the decoding step.
+                                .decoderFactory { _, _, _ ->
+                                    Decoder { DecodeResult(ColorDrawable(Color.Black.toArgb()), false) }
+                                }
+                                   .build()
+                            imageLoader.enqueue(request)
+                        }
+                    }
+                }
+            }
 
             LaunchedEffect(horizontalPagerState) {
                 suspend fun update(page: Int) {

@@ -13,4 +13,3 @@ interface MangaResourceRepository<ResourceType: MangaResource> {
 
     val loadState: Flow<LoadState>
 }
-

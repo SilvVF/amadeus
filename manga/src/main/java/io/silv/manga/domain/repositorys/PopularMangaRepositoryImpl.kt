@@ -50,18 +50,13 @@ internal class PopularMangaRepositoryImpl(
         return mangaResourceDao.getPopularMangaResources()
     }
 
-    override suspend fun refresh() {
-        resetPagination(null)
-        loadNextPage()
-    }
-
     override suspend fun loadNextPage() = loadPage { offset, _ ->
             val result = syncer.sync(
                 current = mangaResourceDao.getPopularMangaResources().first(),
                 networkResponse = mangaDexApi.getMangaList(
                     MangaRequest(
                         offset = offset,
-                        limit = MANGA_PAGE_LIMIT,
+                        limit = pageSize,
                         includes = listOf("cover_art", "author", "artist"),
                         order = mapOf("followedCount" to "desc"),
                         availableTranslatedLanguage = listOf("en"),

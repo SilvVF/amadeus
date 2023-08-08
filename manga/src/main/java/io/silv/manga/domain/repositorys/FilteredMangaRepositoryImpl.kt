@@ -17,7 +17,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 
 data class FilteredResourceQuery(
@@ -34,7 +33,7 @@ internal class FilteredMangaRepositoryImpl(
 ) {
 
     override val scope: CoroutineScope =
-         CoroutineScope(dispatchers.io) + CoroutineName("FilteredMangaRepositoryImpl")
+        CoroutineScope(dispatchers.io) + CoroutineName("FilteredMangaRepositoryImpl")
 
     private val syncer = syncerForEntity<FilteredMangaResource, Manga, String>(
         networkToKey = { it.id },
@@ -56,18 +55,12 @@ internal class FilteredMangaRepositoryImpl(
         return resourceDao.getFilteredMangaResources()
     }
 
-    override suspend fun refresh() {
-        resetPagination(currentQuery)
-        loadNextPage()
-    }
-
     override fun observeMangaResources(resourceQuery: FilteredResourceQuery?): Flow<List<FilteredMangaResource>> {
         return resourceDao.getFilteredMangaResources()
             .onStart {
-                if (resourceQuery != currentQuery) {
+                if (resourceQuery != latestQuery()) {
                     emit(emptyList())
-                    resetPagination(resourceQuery)
-                    scope.launch { loadNextPage() }
+                    refresh(resourceQuery)
                 }
             }
     }
@@ -79,7 +72,7 @@ internal class FilteredMangaRepositoryImpl(
                   networkResponse = mangaDexApi.getMangaList(
                       MangaRequest(
                           offset = offset,
-                          limit = MANGA_PAGE_LIMIT,
+                          limit = pageSize,
                           includes = listOf("cover_art","author", "artist"),
                           availableTranslatedLanguage = listOf("en"),
                           hasAvailableChapters = true,

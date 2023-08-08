@@ -86,6 +86,12 @@ class MangaViewSM(
         chapterInfoRepository.loadingVolumeArtIds,
     ) { chaptersList, combinedSavableMangaWithChapters, loadingVolumeArtIds ->
         val (savableManga, chapterEntities) = combinedSavableMangaWithChapters
+        if (savableManga == null) {
+            return@combine MangaViewUiState(
+                ChapterPageState.Loading,
+                MangaState.Loading(initialManga),
+            )
+        }
         MangaViewUiState(
             mangaState = MangaState.Success(
                     loadingArt = savableManga.id in loadingVolumeArtIds,

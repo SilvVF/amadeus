@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -66,8 +67,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -85,6 +90,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -133,7 +140,9 @@ import io.silv.manga.network.mangadex.requests.MangaRequest
 
 class SearchScreen: Screen {
 
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalAnimationApi::class)
+    @OptIn(ExperimentalComposeUiApi::class, ExperimentalAnimationApi::class,
+        ExperimentalMaterial3Api::class
+    )
     @Composable
     override fun Content() {
 
@@ -187,14 +196,39 @@ class SearchScreen: Screen {
                 }
             }
         }
+        val space = LocalSpacing.current
+        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
+            state = rememberTopAppBarState(),
+            snapAnimationSpec = spring()
+        )
 
         Scaffold(
-            contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.systemBars)
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            contentWindowInsets = ScaffoldDefaults
+                .contentWindowInsets.exclude(WindowInsets.systemBars),
+            topBar = {
+                if (!filtering) {
+                    TopAppBar(
+                        scrollBehavior = scrollBehavior,
+                        title = {
+                            SearchMangaTopBar(
+                                modifier = Modifier.fillMaxWidth(),
+                                searchText = searchText,
+                                onSearchTextValueChange = {
+                                    sm.searchTextChanged(it)
+                                },
+                                onBackArrowClicked = {
+                                    tabNavigator.current = HomeTab
+                                },
+                                onFilterIconClick = {
+                                    sm.isFiltering(true)
+                                }
+                            )
+                        }
+                    )
+                }
+            }
         ) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-            ) {
                 AnimatedContent(
                     targetState = filtering,
                     label = "filter"
@@ -234,50 +268,21 @@ class SearchScreen: Screen {
                             selectedDemographics = selectedDemographics,
                             onDemographicSelected = sm::selectDemographic
                         )
-                        false -> Column(
-                            Modifier.systemBarsPadding()
-                        ) {
-                            SearchMangaTopBar(
-                                searchText = searchText,
-                                onSearchTextValueChange = {
-                                    sm.searchTextChanged(it)
-                                },
-                                onBackArrowClicked = {
-                                    tabNavigator.current = HomeTab
-                                },
-                                includedTags = tagsUiState,
-                                excludedTags = tagsUiState,
-                                selectedIncludedIds = includedIds,
-                                selectedExcludedIds = excludedIds,
-                                onExcludedTagSelected =  {
-                                    sm.excludeTagSelected(it)
-                                },
-                                onIncludedTagSelected = {
-                                    sm.includeTagSelected(it)
-                                },
-                                onFilterIconClick = {
-                                    sm.isFiltering(true)
-                                }
-                            )
-                            SearchItems(
-                                modifier = Modifier
-                                    .padding(topLevelPadding)
-                                    .padding(it)
-                                    .fillMaxWidth()
-                                    .weight(1f),
-                                searchMangaUiState = searchMangaUiState,
-                                gridState = lazyGridState,
-                                onMangaClick = {
-                                    navigator?.push(
-                                        MangaViewScreen(it)
-                                    )
-                                },
-                                onBookmarkClick = {
-                                    sm.bookmarkManga(it.id)
-                                }
-                            )
-                        }
-                    }
+                        false -> SearchItems(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(it),
+                            searchMangaUiState = searchMangaUiState,
+                            gridState = lazyGridState,
+                            onMangaClick = {
+                                navigator?.push(
+                                    MangaViewScreen(it)
+                                )
+                            },
+                            onBookmarkClick = {
+                                sm.bookmarkManga(it.id)
+                            }
+                        )
                 }
             }
         }
@@ -1076,87 +1081,43 @@ private fun TextItems() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchMangaTopBar(
+    modifier: Modifier = Modifier,
     searchText: String,
-    includedTags: List<DomainTag>,
-    selectedIncludedIds: List<String>,
-    excludedTags: List<DomainTag>,
-    selectedExcludedIds: List<String>,
-    onIncludedTagSelected: (id: String) -> Unit,
-    onExcludedTagSelected: (id: String) -> Unit,
     onSearchTextValueChange: (String) -> Unit,
     onFilterIconClick: () -> Unit,
     onBackArrowClicked: () -> Unit,
 ) {
-    val selectedExcluded = remember(excludedTags, selectedExcludedIds) {
-        excludedTags.filter { it.id in selectedExcludedIds }
-    }
-
-    val selectedIncluded = remember(includedTags, selectedIncludedIds) {
-        includedTags.filter { it.id in selectedIncludedIds }
-    }
-
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        SearchBar(
-            query = searchText,
-            onQueryChange = onSearchTextValueChange,
-            onSearch = {},
-            placeholder = {
-                          Text("Search for manga...")
-            },
-            active = false,
-            onActiveChange = {},
-            leadingIcon = {
-                IconButton(onClick = onBackArrowClicked) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = null
-                        )
-                    }
-                },
-                trailingIcon = {
-                    IconButton(
-                        onClick = onFilterIconClick
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.FilterAlt,
-                            contentDescription = "filter"
-                        )
-                    }
-                }
-            ){}
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-            if (selectedIncluded.isNotEmpty()) {
-                Text("included tags", style = MaterialTheme.typography.labelSmall)
+    SearchBar(
+        query = searchText,
+        onQueryChange = onSearchTextValueChange,
+        onSearch = {},
+        placeholder = { Text("Search for manga...") },
+        modifier = modifier,
+        active = false,
+        colors = SearchBarDefaults.colors(
+            containerColor = Color.Transparent
+        ),
+        shape = RectangleShape,
+        onActiveChange = {},
+        leadingIcon = {
+            IconButton(onClick = onBackArrowClicked) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = null
+                )
             }
-            LazyRow {
-                items(
-                    items = selectedIncluded,
-                    key = { tag -> tag.id }
-                ) {tag ->
-                    FilterChip(
-                        onClick = { onIncludedTagSelected(tag.id) },
-                        label = { Text(text = tag.name) },
-                        selected = true
-                    )
-                }
-            }
-            if (selectedExcluded.isNotEmpty()) {
-                Text("excluded tags", style = MaterialTheme.typography.labelSmall)
-            }
-            LazyRow {
-                items(
-                    items = selectedExcluded,
-                    key = { tag -> tag.id }
-                ) {tag ->
-                    FilterChip(
-                        onClick = { onExcludedTagSelected(tag.id) },
-                        label = { Text(text = tag.name) },
-                        selected = true
-                    )
-                }
+        },
+        trailingIcon = {
+            IconButton(
+                onClick = onFilterIconClick
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.FilterAlt,
+                    contentDescription = "filter"
+                )
             }
         }
-    }
+    ){}
 }
 
 
@@ -1236,3 +1197,4 @@ fun SearchItems(
         }
     }
 }
+

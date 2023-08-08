@@ -5,20 +5,22 @@ package io.silv.amadeus
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import cafe.adriel.voyager.navigator.tab.CurrentTab
@@ -30,47 +32,51 @@ import io.silv.amadeus.ui.screens.library.LibraryTab
 import io.silv.amadeus.ui.screens.saved.SavedTab
 import io.silv.amadeus.ui.screens.search.SearchTab
 import io.silv.amadeus.ui.theme.AmadeusTheme
-import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
-import io.silv.amadeus.ui.theme.LocalPaddingValues
 
 class MainActivity : ComponentActivity() {
 
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
+
+            val windowSizeClass = calculateWindowSizeClass(this)
+
+
             AmadeusTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    TabNavigator(HomeTab) {
-                        Scaffold(
-                            bottomBar = {
-                                val visible by LocalBottomBarVisibility.current
-                                if (visible) {
-                                    NavigationBar(
-                                        Modifier
-                                            .fillMaxWidth()
-                                    ) {
-                                        TabNavigationItem(HomeTab)
-                                        TabNavigationItem(SearchTab)
-                                        TabNavigationItem(SavedTab)
-                                        TabNavigationItem(LibraryTab)
-                                    }
-                                }
-                            },
-                            content = { paddingValues ->
-                                var localPadding by LocalPaddingValues.current
-                                localPadding = paddingValues
-                                CurrentTab()
-                            }
-                        )
+                    CompositionLocalProvider(
+                        LocalWindowSizeClass providesDefault windowSizeClass
+                    ) {
+                        TabNavigator(HomeTab) {
+                            CurrentTab()
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+val LocalWindowSizeClass = compositionLocalOf<WindowSizeClass?> { null }
+
+@Composable
+fun AmadeusBottomBar(
+    modifier: Modifier = Modifier,
+    visible: Boolean = true
+) {
+    AnimatedVisibility(visible = visible) {
+        NavigationBar(modifier) {
+            TabNavigationItem(HomeTab)
+            TabNavigationItem(SearchTab)
+            TabNavigationItem(SavedTab)
+            TabNavigationItem(LibraryTab)
         }
     }
 }

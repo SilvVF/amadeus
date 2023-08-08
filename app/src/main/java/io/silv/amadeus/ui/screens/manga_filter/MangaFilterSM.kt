@@ -7,7 +7,7 @@ import io.silv.manga.domain.repositorys.FilteredMangaRepository
 import io.silv.manga.domain.repositorys.FilteredResourceQuery
 import io.silv.manga.domain.repositorys.FilteredYearlyMangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
-import io.silv.manga.domain.repositorys.base.LoadState
+import io.silv.manga.domain.repositorys.base.PagedLoadState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,8 +22,8 @@ class MangaFilterSM(
     tagId: String
 ): AmadeusScreenModel<MangaFilterEvent>() {
 
-    private val yearlyLoadState = filteredYearlyMangaRepository.loadState.stateInUi(LoadState.None)
-    private val timeLoadState = filteredMangaRepository.loadState.stateInUi(LoadState.None)
+    private val yearlyLoadState = filteredYearlyMangaRepository.loadState.stateInUi(PagedLoadState.None)
+    private val timeLoadState = filteredMangaRepository.loadState.stateInUi(PagedLoadState.None)
 
     val yearlyFilteredUiState = combine(
         yearlyLoadState,
@@ -31,7 +31,7 @@ class MangaFilterSM(
         savedMangaRepository.getSavedMangas()
     ) { loadState, resources, saved ->
         when (loadState) {
-            LoadState.Refreshing, LoadState.Loading -> YearlyFilteredUiState.Loading
+            PagedLoadState.Refreshing, PagedLoadState.Loading -> YearlyFilteredUiState.Loading
             else -> {
                 YearlyFilteredUiState.Success(
                     resources.map { r ->
@@ -58,7 +58,7 @@ class MangaFilterSM(
         savedMangaRepository.getSavedMangas()
     ) { loadState, resources, saved ->
         when (loadState) {
-            LoadState.Refreshing -> TimeFilteredUiState.Loading
+            PagedLoadState.Refreshing -> TimeFilteredUiState.Loading
             else -> {
                 TimeFilteredUiState.Success(
                     resources.map { r ->

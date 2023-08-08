@@ -42,7 +42,7 @@ internal class RecentMangaRepositoryImpl(
 
     init {
         scope.launch {
-            refresh()
+            refresh(null)
         }
     }
 
@@ -54,18 +54,13 @@ internal class RecentMangaRepositoryImpl(
         return mangaResourceDao.getRecentMangaResources()
     }
 
-    override suspend fun refresh() {
-        resetPagination(null)
-        loadNextPage()
-    }
-
     override suspend fun loadNextPage() = loadPage { offset, _ ->
             val result = syncer.sync(
                 current = mangaResourceDao.getRecentMangaResources().first(),
                 networkResponse = mangaDexApi.getMangaList(
                     MangaRequest(
                         offset = offset,
-                        limit = MANGA_PAGE_LIMIT,
+                        limit = pageSize,
                         includes = listOf("cover_art","author", "artist"),
                         availableTranslatedLanguage = listOf("en"),
                         order = mapOf("createdAt" to "desc")

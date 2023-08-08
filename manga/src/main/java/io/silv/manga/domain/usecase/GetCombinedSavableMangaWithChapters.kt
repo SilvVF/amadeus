@@ -38,9 +38,10 @@ class GetCombinedSavableMangaWithChapters(
             savedMangaRepository.getSavedManga(id),
             chapterInfoRepository.getChapters(id),
         ).map { (popular, recent, seasonal, search, filtered, yearly, quick, saved, chapterInfo) ->
-            val resources = listOfNotNull(popular, recent, seasonal, search, filtered, yearly, quick)
+            val resources = listOfNotNull(popular, recent, seasonal, search, filtered, yearly, quick).ifEmpty { null }
+
             SavableMangaWithChapters(
-                savableManga = SavableManga(resources, saved),
+                savableManga = resources?.let { SavableManga(it, saved) },
                 chapters = chapterInfo
             )
         }
@@ -48,6 +49,6 @@ class GetCombinedSavableMangaWithChapters(
 }
 
 data class SavableMangaWithChapters(
-    val savableManga: SavableManga,
+    val savableManga: SavableManga?,
     val chapters: List<ChapterEntity>
 )

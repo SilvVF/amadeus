@@ -43,21 +43,15 @@ internal class QuickSearchMangaRepositoryImpl(
         }
     }
 
-    override suspend fun refresh() {
-        resetPagination("")
-        loadNextPage()
-    }
-
     override fun observeMangaResourceById(id: String): Flow<QuickSearchMangaResource?> {
         return mangaResourceDao.observeQuickSearchMangaResourceById(id)
     }
 
     override fun observeMangaResources(resourceQuery: String): Flow<List<QuickSearchMangaResource>>  {
         return mangaResourceDao.observeAllSearchMangaResources().onStart {
-            if (resourceQuery != currentQuery) {
-                resetPagination(resourceQuery)
+            if (resourceQuery != latestQuery()) {
                 emit(emptyList())
-                loadNextPage()
+                refresh(resourceQuery)
             }
         }
     }
@@ -73,7 +67,7 @@ internal class QuickSearchMangaRepositoryImpl(
             networkResponse = mangaDexApi.getMangaList(
                 MangaRequest(
                     offset = offset,
-                    limit = MANGA_PAGE_LIMIT,
+                    limit = pageSize,
                     includes = listOf("cover_art","author", "artist"),
                     title = query,
                 )

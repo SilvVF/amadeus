@@ -19,6 +19,8 @@ val screenModule = module {
         MangaReaderSM(
             get(),
             get(),
+            get(),
+            get(),
             mangaId,
             chapterId
         )

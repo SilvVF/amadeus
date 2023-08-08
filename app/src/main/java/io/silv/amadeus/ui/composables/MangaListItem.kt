@@ -65,7 +65,7 @@ fun MangaListItem(
                     .build(),
                 contentDescription = null,
                 modifier = Modifier
-                    .size(240.dp)
+                    .size(200.dp)
                     .clip(
                         RoundedCornerShape(12.dp)
                     ),

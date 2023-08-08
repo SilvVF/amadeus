@@ -30,7 +30,6 @@ import io.silv.manga.local.workers.handlers.BiliHandler
 import io.silv.manga.local.workers.handlers.ComikeyHandler
 import io.silv.manga.local.workers.handlers.MangaHotHandler
 import io.silv.manga.local.workers.handlers.MangaPlusHandler
-import io.silv.manga.network.dohCloudflare
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.requests.ChapterListRequest
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,14 +37,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
-import okhttp3.OkHttpClient
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
 import java.net.URL
 import java.time.Duration
-import java.util.concurrent.TimeUnit
 
 const val ChapterDownloadWorkerTag = "ChapterDownloadWorker"
 
@@ -89,27 +85,17 @@ class ChapterDownloadWorker(
 
     private val logTag = ChapterDownloadWorkerTag
 
-    private val  client = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
-        .callTimeout(1, TimeUnit.MINUTES)
-        .apply {
-            dohCloudflare()
-        }
-        .build()
-
     private val dispatchers by inject<AmadeusDispatchers>()
     private val chapterDao by inject<ChapterDao>()
     private val getMangaResourcesById by inject<GetMangaResourcesById>()
     private val savedMangaDao by inject<SavedMangaDao>()
     private val mangaDexApi by inject<MangaDexApi>()
-    private val json by inject<Json>()
 
-    private val azukiHandler = AzukiHandler(client)
-    private val mangaPlusHandler = MangaPlusHandler(client)
-    private val mangaHotHandler = MangaHotHandler(client)
-    private val comikeyHandler = ComikeyHandler(client)
-    private val biliHandler = BiliHandler(client, json)
+    private val azukiHandler by inject<AzukiHandler>()
+    private val mangaPlusHandler by inject<MangaPlusHandler>()
+    private val mangaHotHandler by inject<MangaHotHandler>()
+    private val comikeyHandler by inject<ComikeyHandler>()
+    private val biliHandler by inject<BiliHandler>()
 
     private val downloader = ImageDownloader(appContext, dispatchers)
 
@@ -206,17 +192,17 @@ class ChapterDownloadWorker(
                             Log.d(logTag, "Trying to get Urls from comikey.com")
                             comikeyHandler.fetchImageUrls(externalUrl)
                         }
-                        chapter.externalUrl != null -> {
-                            Log.d(logTag, "No handler implemented for given external url $externalUrl")
-                            return@forEach
-                        }
-                        else -> {
+                        externalUrl.isBlank() -> {
                             Log.d(logTag, "Trying to get Urls from mangadex api")
                             val response = mangaDexApi.getChapterImages(chapter.id)
                                 .getOrThrow()
                             response.chapter.data.map {
                                 "${response.baseUrl}/data/${response.chapter.hash}/$it"
                             }
+                        }
+                        else -> {
+                            Log.d(logTag, "No handler implemented for given external url $externalUrl")
+                            return@forEach
                         }
                     }
                     Log.d(logTag, "found urls $chapterImageUrls")

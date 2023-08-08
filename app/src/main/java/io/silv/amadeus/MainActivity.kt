@@ -7,12 +7,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -79,6 +82,37 @@ fun AmadeusBottomBar(
             TabNavigationItem(LibraryTab)
         }
     }
+}
+
+@Composable
+fun AmadeusNavRail(
+    modifier: Modifier = Modifier,
+    visible: Boolean = true
+) {
+    AnimatedVisibility(visible = visible) {
+        NavigationRail(modifier) {
+            TabNavigationItem(HomeTab)
+            TabNavigationItem(SearchTab)
+            TabNavigationItem(SavedTab)
+            TabNavigationItem(LibraryTab)
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.TabNavigationItem(tab: Tab) {
+    val tabNavigator = LocalTabNavigator.current
+
+    NavigationRailItem(
+        label = { Text(tab.options.title) },
+        alwaysShowLabel = false,
+        selected = tabNavigator.current == tab,
+        onClick = { tabNavigator.current = tab },
+        icon = { Icon(
+            painter = tab.options.icon ?: return@NavigationRailItem,
+            contentDescription = tab.options.title)
+        }
+    )
 }
 
 @Composable

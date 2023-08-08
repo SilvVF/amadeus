@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -22,11 +21,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,13 +38,14 @@ import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItem
+import io.silv.amadeus.ui.screens.home.AmadeusScaffold
 import io.silv.amadeus.ui.screens.home.MangaPager
+import io.silv.amadeus.ui.screens.home.PageLoader
 import io.silv.amadeus.ui.screens.home.header
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.FilteredMangaRepository
-import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 
 class MangaFilterScreen(
@@ -64,40 +67,60 @@ class MangaFilterScreen(
         val yearlyItemsState by sm.yearlyFilteredUiState.collectAsStateWithLifecycle()
         val timePeriodItemsState by sm.timePeriodFilteredUiState.collectAsStateWithLifecycle()
         val lazyGridState = rememberLazyGridState()
+        val timeLoadState by sm.timeLoadState.collectAsStateWithLifecycle()
+
+        PageLoader(
+            loadState = timeLoadState,
+            state = lazyGridState,
+            listSize = timePeriodItemsState.resources.size,
+            loadNextPage = sm::loadNextPage
+        )
 
         LaunchedEffect(Unit) {
-            launch {
-                snapshotFlow { lazyGridState.firstVisibleItemIndex }.collect { idx ->
-                    if (idx >= timePeriodItemsState.resources.lastIndex - 5)  {
-                        sm.loadNextPage()
-                    }
-                }
-            }
+            sm.updateTagId(tagId, tag)
         }
 
-        Column(
-            Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
-        ) {
-            IconButton(
-                onClick = { navigator?.pop() },
-                modifier = Modifier.padding(space.small)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = null
+        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
+            state = rememberTopAppBarState()
+        )
+
+        AmadeusScaffold(
+            scrollBehavior = scrollBehavior,
+            topBar = {
+                TopAppBar(
+                    scrollBehavior = scrollBehavior,
+                    navigationIcon = {
+                        IconButton(
+                            onClick = { navigator?.pop() },
+                            modifier = Modifier.padding(space.small)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowBack,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    title = {
+                        Text(sm.currentTag)
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent,
+                    )
                 )
             }
+        ) {
             LazyVerticalGrid(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it),
                 state = lazyGridState,
                 columns = GridCells.Fixed(2)
             ) {
                 header {
                     Column {
                         Text(
-                            "$tag trending this year",
+                            "${sm.currentTag} trending this year",
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold
                             ),
@@ -120,8 +143,7 @@ class MangaFilterScreen(
                                     sm.bookmarkManga(it.id)
                                 },
                                 onTagClick = { name, tag ->
-                                    if (tag != tagId)
-                                        navigator?.replace(MangaFilterScreen(name, tag))
+                                    sm.updateTagId(tag, name)
                                 },
                             )
                         }
@@ -169,11 +191,7 @@ class MangaFilterScreen(
                                 },
                             onTagClick = { name ->
                                 manga.tagToId[name]?.let {
-                                    if (name != tag && it != tagId) {
-                                        navigator?.replace(
-                                            MangaFilterScreen(name, it)
-                                        )
-                                    }
+                                    sm.updateTagId(it, name)
                                 }
                             },
                             onBookmarkClick = {

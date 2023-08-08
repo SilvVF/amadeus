@@ -56,7 +56,6 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.theme.LocalPaddingValues
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.core.lerp
 import io.silv.manga.domain.models.SavableChapter
@@ -95,7 +94,7 @@ class MangaReaderScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MangaReader(
     state: MangaReaderState,
@@ -121,7 +120,6 @@ fun MangaReader(
             )
             val pageNumberPagerState = rememberPagerState()
             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-            val paddingLocal by LocalPaddingValues.current
             val navigator = LocalNavigator.current
             val space = LocalSpacing.current
 
@@ -264,7 +262,6 @@ fun MangaReader(
                     Column(
                         Modifier
                             .fillMaxSize()
-                            .padding(paddingLocal)
                             .padding(paddingValues)
                     ) {
                         CenterBox(

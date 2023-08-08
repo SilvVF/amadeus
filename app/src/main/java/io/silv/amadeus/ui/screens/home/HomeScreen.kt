@@ -1,15 +1,23 @@
 package io.silv.amadeus.ui.screens.home
 
-import android.graphics.drawable.ColorDrawable
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +35,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
 import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -34,25 +44,36 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BookmarkRemove
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.outlined.BookmarkAdd
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SearchBar
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
+import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,8 +88,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
@@ -84,13 +107,12 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.AsyncImage
-import coil.decode.DecodeResult
-import coil.decode.Decoder
 import coil.imageLoader
-import coil.request.CachePolicy
 import coil.request.ImageRequest
+import io.silv.amadeus.AmadeusBottomBar
+import io.silv.amadeus.AmadeusNavRail
+import io.silv.amadeus.LocalWindowSizeClass
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
-import io.silv.amadeus.ui.composables.ConfirmCloseAppPopup
 import io.silv.amadeus.ui.composables.MangaGenreTags
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.composables.TranslatedLanguageTags
@@ -102,15 +124,16 @@ import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
-import kotlinx.coroutines.flow.collectLatest
+import io.silv.manga.domain.repositorys.base.PagedLoadState
 import kotlinx.coroutines.launch
 
 
 class HomeScreen: Screen {
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
+
         val sm = getScreenModel<HomeSM>()
 
         val recentMangaState by sm.recentMangaUiState.collectAsStateWithLifecycle()
@@ -121,266 +144,460 @@ class HomeScreen: Screen {
         val refreshingSeasonal by sm.refreshingSeasonal.collectAsStateWithLifecycle()
         val searchMangaState by sm.searchMangaUiState.collectAsStateWithLifecycle()
         val searchQuery by sm.searchQuery.collectAsStateWithLifecycle()
-        val tagsState by sm.tagsUiState.collectAsStateWithLifecycle()
         val space = LocalSpacing.current
         val navigator = LocalNavigator.current
         val recentListState = rememberLazyGridState()
         val popularMangaListState = rememberLazyListState()
         val searchListState = rememberLazyGridState()
         val context = LocalContext.current
+        val windowSizeClass = LocalWindowSizeClass.current
 
-        LaunchedEffect(popularMangaListState) {
-            snapshotFlow { popularMangaListState.firstVisibleItemIndex }.collect { idx ->
-                if (idx >= popularMangaState.size - 5) {
-                    sm.loadNextPopularPage()
-                }
-            }
-        }
+        PageLoader(
+            state = popularMangaListState,
+            listSize = popularMangaState.size,
+            loadState = loadingPopular,
+            loadNextPage = sm::loadNextPopularPage
+        )
 
-        LaunchedEffect(searchListState) {
-            snapshotFlow { searchListState.firstVisibleItemIndex }.collect { idx ->
-                val listSize = ((searchMangaState as? SearchMangaUiState.Success)?.results?.size ?: 0)
-                if (idx >= listSize - 5) {
-                    sm.loadNextSearchPage()
-                }
-            }
-        }
+        PageLoader(
+            state = recentListState,
+            listSize = recentMangaState.size,
+            loadState = loadingRecent,
+            loadNextPage = sm::loadNextRecentPage
+        )
 
-        LaunchedEffect(recentListState) {
-            snapshotFlow { recentListState.firstVisibleItemIndex }.collect { idx ->
-                if (idx >= recentMangaState.size - 5 - 3) {
-                    sm.loadNextRecentPage()
-                }
-            }
-        }
+        PageLoader(
+            state = searchListState,
+            list = searchMangaState,
+            loadState = loadingRecent,
+            loadNextPage = sm::loadNextSearchPage
+        )
 
         val imageLoader = LocalContext.current.imageLoader
 
-        LaunchedEffect(Unit) {
-            var prevList = emptyList<SavableManga>()
-            snapshotFlow { recentMangaState }.collectLatest {
-                for (manga in it.filterNot { it in prevList }.also { prevList = it }) {
-                    val request = ImageRequest.Builder(context)
-                        .data(manga.coverArt).memoryCachePolicy(CachePolicy.DISABLED)
-                        // Set a custom `Decoder.Factory` that skips the decoding step.
-                        .decoderFactory { _, _, _ ->
-                            Decoder { DecodeResult(ColorDrawable(Color.Black.toArgb()), false) }
-                        }
-                        .build()
-                    imageLoader.enqueue(request)
-                }
-            }
+        var searching by rememberSaveable {
+            mutableStateOf(false)
         }
-
-
-        ConfirmCloseAppPopup()
-
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
-            state = rememberTopAppBarState(),
-            snapAnimationSpec = spring()
-        )
+                state = rememberTopAppBarState()
+            )
 
-        var active by remember {
-            mutableStateOf(false    )
-        }
-
-
-
-
-        Column(
-            Modifier
-                .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
-        ) {
-            var selectedIndex by rememberSaveable {
-                mutableStateOf(0)
-            }
-
-            if (!active) {
-                TopAppBar(
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent
-                    ),
-                    title = {
-                        if (!active) {
-                            Text("Home")
-                        }
-                    },
+        AmadeusScaffold(
+            scrollBehavior = scrollBehavior,
+            topBar = {
+                HomeSearchTopAppBar(
                     scrollBehavior = scrollBehavior,
-                    actions = {
-                        IconButton(onClick = { active = !active }) {
-                            Icon(imageVector = Icons.Filled.Search, contentDescription =null )
-                        }
+                    onSearchText = sm::updateSearchQuery,
+                    color = Color.Transparent,
+                    navigationIconLabel = "",
+                    navigationIcon = Icons.Filled.KeyboardArrowLeft,
+                    onNavigationIconClicked = { searching = false },
+                    actions = {},
+                    searchText = searchQuery,
+                    showTextField = searching,
+                    onSearchChanged = {
+                        searching = it
                     }
                 )
             }
-
-            if (active) {
-                SearchBar(
-                    query = searchQuery,
-                    modifier = Modifier.fillMaxWidth(),
-                    onQueryChange = sm::updateSearchQuery,
-                    onSearch = { sm.startSearch() },
-                    placeholder = { Text("Search for manga...") },
-                    active = active,
-                    onActiveChange = { active = it },
-                    leadingIcon = {
-                        IconButton(onClick = {active = !active}) {
-                            Icon(
-                                imageVector = Icons.Filled.ArrowBack,
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    trailingIcon = {
-                        IconButton(
-                            onClick = {}
+        ) { paddingValues ->
+            Column(Modifier.padding(paddingValues)) {
+                AnimatedContent(
+                    targetState = searching,
+                    label = "searching"
+                ) {
+                    if (it) {
+                        SearchItems(
+                            modifier = Modifier.fillMaxSize(1f),
+                            searchMangaUiState = searchMangaState,
+                            gridState = searchListState,
+                            onMangaClick = {
+                                navigator?.push(MangaViewScreen(it))
+                            },
+                            onBookmarkClick = {
+                                sm.bookmarkManga(it.id)
+                            },
+                        )
+                    } else {
+                        LazyVerticalGrid(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            state = recentListState,
+                            columns = GridCells.Fixed(2)
                         ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Search,
-                                contentDescription = "search"
+                            seasonalMangaLists(
+                                refreshingSeasonal = refreshingSeasonal,
+                                seasonalMangaState = seasonalMangaState,
+                                onBookmarkClick = {
+                                    sm.bookmarkManga(it.id)
+                                }
                             )
+                            header {
+                                TrendingMangaList(
+                                    trendingManga = popularMangaState,
+                                    loading = loadingPopular,
+                                    state = popularMangaListState,
+                                    onMangaClick = {
+                                        navigator?.push(
+                                            MangaViewScreen(it)
+                                        )
+                                    },
+                                    onBookmarkClick = {
+                                        sm.bookmarkManga(it.id)
+                                    }
+                                )
+                            }
+                            header {
+                                Text(
+                                    text = "Recently Updated",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    modifier = Modifier.padding(space.med)
+                                )
+                            }
+                            items(
+                                items = recentMangaState,
+                                key = {item: SavableManga -> item.id }
+                            ) { manga ->
+                                MangaListItem(
+                                    manga = manga,
+                                    modifier = Modifier
+                                        .padding(space.large)
+                                        .clickable {
+                                            navigator?.push(
+                                                MangaViewScreen(manga)
+                                            )
+                                        },
+                                    onTagClick = { name ->
+                                        manga.tagToId[name]?.let {
+                                            navigator?.push(
+                                                MangaFilterScreen(name, it)
+                                            )
+                                        }
+                                    },
+                                    onBookmarkClick = { sm.bookmarkManga(manga.id) }
+                                )
+                            }
+                            if (loadingRecent !is PagedLoadState.Refreshing) {
+                                header {
+                                    Row(Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        repeat(2) {
+                                            AnimatedBoxShimmer(Modifier.size(220.dp))
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+fun LazyGridScope.seasonalMangaLists(
+    refreshingSeasonal: Boolean,
+    seasonalMangaState: SeasonalMangaUiState,
+    onBookmarkClick: (manga: SavableManga) -> Unit,
+) {
+    header {
+        val space = LocalSpacing.current
+        val navigator = LocalNavigator.current
+        var selectedIndex by rememberSaveable {
+            mutableStateOf(0)
+        }
+        Column {
+            Text(
+                "seasonal lists",
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.padding(space.xs)
+            )
+            if (refreshingSeasonal) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    SearchItems(
-                        modifier = Modifier.weight(1f),
-                        searchMangaUiState = searchMangaState,
-                        gridState = searchListState,
-                        onMangaClick = {},
-                        onBookmarkClick = {}
+                    repeat(4) {
+                        AnimatedBoxShimmer(
+                            Modifier
+                                .weight(1f)
+                                .height(40.dp))
+                    }
+                }
+                AnimatedBoxShimmer(
+                    Modifier
+                        .height(240.dp)
+                        .fillMaxWidth()
+                )
+            } else {
+                LazyRow {
+                    itemsIndexed(
+                        seasonalMangaState.seasonalLists,
+                        key = { _, list -> list.id }
+                    ) { index, seasonalList ->
+                        FilterChip(
+                            selected = index == selectedIndex,
+                            onClick = { selectedIndex = index },
+                            label = {
+                                Text(
+                                    "${seasonalList.season.name}  ${seasonalList.year.toString().takeLast(2)}",
+                                    fontSize = 12.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(space.xs)
+                        )
+                    }
+                }
+                MangaPager(
+                    mangaList = seasonalMangaState.seasonalLists.getOrNull(selectedIndex)?.mangas ?: emptyList(),
+                    onTagClick = { name , id ->
+                        navigator?.push(
+                            MangaFilterScreen(name, id)
+                        )
+                    },
+                    onMangaClick = {
+                        navigator?.push(
+                            MangaViewScreen(it)
+                        )
+                    },
+                    onBookmarkClick = {
+                        onBookmarkClick(it)
+                    },
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HomeSearchTopAppBar(
+    onSearchText: (String) -> Unit,
+    color: Color,
+    showTextField: Boolean,
+    navigationIconLabel: String,
+    navigationIcon: ImageVector,
+    onNavigationIconClicked: () -> Unit,
+    actions: @Composable (RowScope.() -> Unit),
+    scrollBehavior: TopAppBarScrollBehavior,
+    searchText: String,
+    onSearchChanged: (active: Boolean) -> Unit,
+) {
+    var alreadyRequestedFocus by rememberSaveable { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+    val space = LocalSpacing.current
+
+    TopAppBar(
+        title = {
+            if (!showTextField) {
+                Text("Home")
+            }
+        },
+        modifier = Modifier.statusBarsPadding(),
+        navigationIcon = {
+            if (showTextField) {
+                IconButton(
+                    onClick = onNavigationIconClicked,
+                ) {
+                    Icon(
+                        imageVector = navigationIcon,
+                        contentDescription = navigationIconLabel
                     )
                 }
             }
-            LazyVerticalGrid(
-                modifier = Modifier.fillMaxSize(),
-                state = recentListState,
-                columns = GridCells.Fixed(2)
-            ) {
-                header {
-                    Column {
-                        Text(
-                            "seasonal lists",
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(space.xs)
-                        )
-                        if (refreshingSeasonal) {
-                            Row(
-                                horizontalArrangement = Arrangement.SpaceEvenly,
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
+        },
+        actions = {
+            AnimatedVisibility(visible = showTextField, enter = fadeIn() + slideInVertically(), exit = fadeOut() + slideOutVertically()) {
+                OutlinedTextField(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(top = space.small, bottom = space.small, start = space.xlarge)
+                        .focusRequester(focusRequester),
+                    value = searchText,
+                    placeholder = { Text("Search Manga...") },
+                    onValueChange = {
+                        onSearchText(it)
+                    },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        cursorColor = LocalContentColor.current,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    ),
+                    trailingIcon = {
+                        AnimatedVisibility(visible = searchText.isNotBlank(), enter = fadeIn(), exit = fadeOut()) {
+                            IconButton(
+                                onClick = { onSearchText("") }
                             ) {
-                                repeat(4) {
-                                    AnimatedBoxShimmer(
-                                        Modifier
-                                            .weight(1f)
-                                            .height(40.dp))
-                                }
+                                Icon(imageVector = Icons.Filled.Clear, contentDescription = null)
                             }
-                            AnimatedBoxShimmer(
-                                Modifier
-                                    .height(240.dp)
-                                    .fillMaxWidth()
-                            )
-                        } else {
-                            LazyRow {
-                                itemsIndexed(
-                                    seasonalMangaState.seasonalLists,
-                                    key = { _, list -> list.id }
-                                ) { index, seasonalList ->
-                                    FilterChip(
-                                        selected = index == selectedIndex,
-                                        onClick = { selectedIndex = index },
-                                        label = {
-                                            Text(
-                                                "${seasonalList.season.name}  ${seasonalList.year.toString().takeLast(2)}",
-                                                fontSize = 12.sp,
-                                                textAlign = TextAlign.Center
-                                            )
-                                        },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(space.xs)
-                                    )
-                                }
-                            }
-                            MangaPager(
-                                mangaList = seasonalMangaState.seasonalLists.getOrNull(selectedIndex)?.mangas ?: emptyList(),
-                                onTagClick = { name , id ->
-                                    navigator?.push(
-                                        MangaFilterScreen(name, id)
-                                    )
-                                },
-                                onMangaClick = {
-                                    navigator?.push(
-                                        MangaViewScreen(it)
-                                    )
-                                },
-                                onBookmarkClick = {
-                                    sm.bookmarkManga(it.id)
-                                },
-                            )
                         }
+
+                    },
+                    maxLines = 1,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            onSearchText(searchText)
+                        },
+                    ),
+                )
+                LaunchedEffect(Unit) {
+                    if (!alreadyRequestedFocus) {
+                        focusRequester.requestFocus()
+                        alreadyRequestedFocus = true
+                    }
+                    if (searchText.isNotBlank()) {
+                        onSearchText(searchText)
                     }
                 }
-                header {
-                    TrendingMangaList(
-                        trendingManga = popularMangaState,
-                        loading = loadingPopular,
-                        state = popularMangaListState,
-                        onMangaClick = {
-                            navigator?.push(
-                                MangaViewScreen(it)
-                            )
-                        },
-                        onBookmarkClick = {
-                            sm.bookmarkManga(it.id)
-                        }
-                    )
-                }
-                header {
-                    Text(
-                        text = "Recently Updated",
-                        style = MaterialTheme.typography.headlineMedium,
-                        modifier = Modifier.padding(space.med)
-                    )
-                }
-                items(
-                    items = recentMangaState,
-                    key = {item: SavableManga -> item.id }
-                ) { manga ->
-                    MangaListItem(
-                        manga = manga,
-                        modifier = Modifier
-                            .padding(space.large)
-                            .clickable {
-                                navigator?.push(
-                                    MangaViewScreen(manga)
-                                )
-                            },
-                        onTagClick = { name ->
-                            manga.tagToId[name]?.let {
-                                navigator?.push(
-                                    MangaFilterScreen(name, it)
-                                )
-                            }
-                        },
-                        onBookmarkClick = { sm.bookmarkManga(manga.id) }
-                    )
-                }
-                if (loadingRecent) {
-                    header {
-                        Row(Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            repeat(2) {
-                                AnimatedBoxShimmer(Modifier.size(20.dp))
-                            }
-                        }
-                    }
-                }
+            }
+            val icon = when (showTextField) {
+                true -> Icons.Filled.SearchOff
+                false -> Icons.Filled.Search
+            }
+            IconButton(
+                onClick = {
+                    onSearchText("")
+                    alreadyRequestedFocus = false
+                    onSearchChanged(!showTextField)
+                },
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null
+                )
+            }
+            actions()
+        },
+        colors = topAppBarColors(
+            containerColor = color,
+            scrolledContainerColor = color,
+        ),
+        scrollBehavior = scrollBehavior,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AmadeusScaffold(
+    scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState()),
+    showBottomBar: Boolean = true,
+    modifier: Modifier = Modifier,
+    topBar: @Composable () -> Unit = {},
+    snackbarHost: @Composable () -> Unit = {},
+    containerColor: Color = MaterialTheme.colorScheme.background,
+    contentColor: Color = contentColorFor(containerColor),
+    contentWindowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
+    content: @Composable (PaddingValues) -> Unit
+) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    if (shouldShowBottomBar(windowSizeClass)) {
+        Scaffold(
+            topBar = {
+                topBar()
+            },
+            bottomBar = {
+                AmadeusBottomBar()
+            },
+            snackbarHost = snackbarHost,
+            contentColor = contentColor,
+            contentWindowInsets = contentWindowInsets,
+            modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        ) {
+            content(it)
+        }
+    } else {
+        Row {
+            AmadeusNavRail(visible = showBottomBar)
+            Scaffold(
+                topBar = {
+                    topBar()
+                },
+                snackbarHost = snackbarHost,
+                contentColor = contentColor,
+                contentWindowInsets = contentWindowInsets,
+                modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            ) {
+                content(it)
+            }
+        }
+    }
+}
+
+@Composable
+fun HomeScreenContent(
+    seasonalMangaState: SeasonalMangaUiState,
+    recentMangaState: List<SavableManga>,
+    popularMangaState: List<SavableManga>,
+    loadingPopular: PagedLoadState,
+    loadingRecent: PagedLoadState,
+    refreshingSeasonal: Boolean,
+
+) {
+
+}
+
+fun shouldShowBottomBar(windowSizeClass: WindowSizeClass?): Boolean {
+    return (windowSizeClass?.widthSizeClass ?: return true) == WindowWidthSizeClass.Compact
+}
+
+@Composable
+fun PageLoader(
+   loadState: PagedLoadState,
+   state: LazyListState,
+   listSize: Int,
+   loadNextPage: suspend () -> Unit,
+) {
+    LaunchedEffect(state) {
+        snapshotFlow { state.firstVisibleItemIndex }.collect { idx ->
+            if (loadState !is PagedLoadState.Error || loadState !is PagedLoadState.Loading && idx >= listSize - 10) {
+                loadNextPage()
+            }
+        }
+    }
+}
+
+
+@Composable
+fun PageLoader(
+    loadState: PagedLoadState,
+    state: LazyGridState,
+    list: SearchMangaUiState,
+    loadNextPage: suspend () -> Unit,
+) {
+    LaunchedEffect(state) {
+        snapshotFlow { state.firstVisibleItemIndex }.collect { idx ->
+            if (loadState !is PagedLoadState.Error || loadState !is PagedLoadState.Loading && idx >= ((list as? SearchMangaUiState.Success)?.results?.size ?: 0) - 10) {
+                loadNextPage()
+            }
+        }
+    }
+}
+
+@Composable
+fun PageLoader(
+    loadState: PagedLoadState,
+    state: LazyGridState,
+    listSize: Int,
+    loadNextPage: suspend () -> Unit,
+) {
+    LaunchedEffect(state) {
+        snapshotFlow { state.firstVisibleItemIndex }.collect { idx ->
+            if (loadState !is PagedLoadState.Error || loadState !is PagedLoadState.Loading && idx >= listSize - 10) {
+                loadNextPage()
             }
         }
     }
@@ -602,7 +819,7 @@ fun BlurImageBackground(modifier: Modifier, url: String, content: @Composable ()
 @Composable
 fun TrendingMangaList(
     trendingManga: List<SavableManga>,
-    loading: Boolean,
+    loading: PagedLoadState,
     state: LazyListState = rememberLazyListState(),
     onMangaClick: (manga: SavableManga) -> Unit,
     onBookmarkClick: (manga: SavableManga) -> Unit
@@ -657,7 +874,7 @@ fun TrendingMangaList(
                     )
                 }
             }
-            if (loading) {
+            if (loading is PagedLoadState.Refreshing) {
                 items(5) {
                     AnimatedBoxShimmer(
                         Modifier

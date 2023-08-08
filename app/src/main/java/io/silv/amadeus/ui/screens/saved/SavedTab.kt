@@ -60,8 +60,6 @@ import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.shadow
 import io.silv.amadeus.ui.theme.AmadeusTheme
-import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
-import io.silv.amadeus.ui.theme.LocalPaddingValues
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableChapter
 import io.silv.manga.domain.models.SavableManga
@@ -131,21 +129,14 @@ fun Saved(
     bookmarkManga: (id: String) -> Unit
 ) {
 
-    var bottomBarVisible by LocalBottomBarVisibility.current
-
-    LaunchedEffect(Unit) {
-        bottomBarVisible = true
-    }
 
     val space = LocalSpacing.current
-    val topLevelPadding by LocalPaddingValues.current
     val navigator = LocalNavigator.current
 
     Scaffold { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(topLevelPadding)
                 .padding(paddingValues)
         ) {
             item {

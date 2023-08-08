@@ -13,7 +13,6 @@ import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SeasonalMangaRepository
 import io.silv.manga.domain.repositorys.base.LoadState
 import io.silv.manga.domain.repositorys.base.PagedLoadState
-import io.silv.manga.domain.repositorys.base.toBool
 import io.silv.manga.domain.repositorys.tags.TagRepository
 import io.silv.manga.local.entity.Season
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,12 +41,10 @@ class HomeSM(
     val searchQuery = mutableSearchQuery.asStateFlow()
 
     val loadingPopularManga = popularMangaRepository.loadState
-        .map(::toBool)
-        .stateInUi(false)
+        .stateInUi(PagedLoadState.None)
 
     val loadingRecentManga = recentMangaRepository.loadState
-        .map(::toBool)
-        .stateInUi(false)
+        .stateInUi(PagedLoadState.None)
 
     val refreshingSeasonal = seasonalMangaRepository.loadState
         .map { it is LoadState.Refreshing }

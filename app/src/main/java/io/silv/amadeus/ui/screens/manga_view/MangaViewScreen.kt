@@ -41,7 +41,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,7 +69,6 @@ import io.silv.amadeus.ui.screens.manga_view.composables.volumePosterItems
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.collectEvents
-import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
 import org.koin.core.parameter.parametersOf
@@ -107,7 +105,6 @@ class MangaViewScreen(
     override fun Content() {
 
         val sm = getScreenModel<MangaViewSM> { parametersOf(manga) }
-        var bottomBarVisible by LocalBottomBarVisibility.current
         val mangaViewState by sm.mangaViewStateUiState.collectAsStateWithLifecycle()
         val downloading by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.current
@@ -134,9 +131,6 @@ class MangaViewScreen(
             mutableStateOf(true)
         }
 
-        LaunchedEffect(Unit) {
-            bottomBarVisible = false
-        }
 
         var webUrl by remember {
             mutableStateOf<String?>(null)

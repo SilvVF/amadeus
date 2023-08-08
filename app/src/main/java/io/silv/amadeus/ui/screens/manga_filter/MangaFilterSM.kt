@@ -1,6 +1,10 @@
 package io.silv.amadeus.ui.screens.manga_filter
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.core.model.coroutineScope
+import io.silv.amadeus.ui.screens.manga_reader.combineToPair
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.FilteredMangaRepository
@@ -13,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MangaFilterSM(
@@ -23,11 +28,25 @@ class MangaFilterSM(
 ): AmadeusScreenModel<MangaFilterEvent>() {
 
     private val yearlyLoadState = filteredYearlyMangaRepository.loadState.stateInUi(PagedLoadState.None)
-    private val timeLoadState = filteredMangaRepository.loadState.stateInUi(PagedLoadState.None)
+    val timeLoadState = filteredMangaRepository.loadState.stateInUi(PagedLoadState.None)
+
+    private val currentTagId = MutableStateFlow(tagId)
+    var currentTag by mutableStateOf("")
+        private set
+
+    fun updateTagId(id: String, name: String) {
+        currentTag = name
+        currentTagId.update { id }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val yearlManga = currentTagId.flatMapLatest {
+        filteredYearlyMangaRepository.getYearlyTopResources(it)
+    }
 
     val yearlyFilteredUiState = combine(
         yearlyLoadState,
-        filteredYearlyMangaRepository.getYearlyTopResources(tagId),
+        yearlManga,
         savedMangaRepository.getSavedMangas()
     ) { loadState, resources, saved ->
         when (loadState) {
@@ -48,8 +67,8 @@ class MangaFilterSM(
     val timePeriod = mutableTimePeriod.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val timePeriodFilteredResources = mutableTimePeriod.flatMapLatest {
-        filteredMangaRepository.observeMangaResources(FilteredResourceQuery(tagId, it))
+    private val timePeriodFilteredResources = mutableTimePeriod.combineToPair(currentTagId).flatMapLatest {(time, tag) ->
+        filteredMangaRepository.observeMangaResources(FilteredResourceQuery(tag, time))
     }
 
     val timePeriodFilteredUiState = combine(

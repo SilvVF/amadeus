@@ -126,8 +126,6 @@ import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.noRippleClickable
-import io.silv.amadeus.ui.theme.LocalBottomBarVisibility
-import io.silv.amadeus.ui.theme.LocalPaddingValues
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.DomainAuthor
 import io.silv.manga.domain.models.DomainTag
@@ -172,13 +170,10 @@ class SearchScreen: Screen {
         val keyboardController = LocalSoftwareKeyboardController.current
         val tabNavigator = LocalTabNavigator.current
         val navigator = LocalNavigator.current
-        var bottomBarVisibility by LocalBottomBarVisibility.current
-        val topLevelPadding by LocalPaddingValues.current
 
         LaunchedEffect(Unit) {
             var shownOnce = false
             snapshotFlow { filtering }.collect {
-                bottomBarVisibility = !it
                 if (shownOnce && !it) { sm.startSearch() }
                 if (it) {
                     shownOnce = true
@@ -196,7 +191,7 @@ class SearchScreen: Screen {
                 }
             }
         }
-        val space = LocalSpacing.current
+
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
             state = rememberTopAppBarState(),
             snapAnimationSpec = spring()

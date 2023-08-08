@@ -29,7 +29,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -170,12 +169,9 @@ private fun ChapterListItem(
             }
         }
         AnimatedVisibility(visible = expanded) {
-            val date = remember(chapter) {
-                chapter.createdAt.split("-", "T")
-            }
             Column {
                 Text(text = "Pages - ${chapter.pages}")
-                Text(text = "created at ${date.getOrNull(1)}/${date.getOrNull(2)}/${date.getOrNull(0)}")
+                Text(text = "created at ${chapter.createdAt.month}/${chapter.createdAt.dayOfMonth}/${chapter.createdAt.year}")
                 Text(text = "version - ${chapter.version}")
             }
         }

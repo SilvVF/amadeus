@@ -6,6 +6,8 @@ import io.silv.manga.domain.repositorys.base.ProtectedResources
 import io.silv.manga.network.mangadex.models.LocalizedString
 import io.silv.manga.network.mangadex.models.manga.Manga
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import java.time.Duration
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.toKotlinDuration
@@ -104,6 +106,10 @@ val Manga.alternateTitles: Map<String, String>
             }
         }
     }
+
+fun epochSeconds() = Clock.System.now().epochSeconds
+
+fun timeNow() = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
 fun timeStringMinus(duration: kotlin.time.Duration): String {
     return Clock.System.now()

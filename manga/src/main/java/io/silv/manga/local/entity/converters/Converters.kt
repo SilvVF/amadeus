@@ -1,6 +1,11 @@
 package io.silv.manga.local.entity.converters
 
 import androidx.room.TypeConverter
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import java.util.TreeMap
 
 class Converters {
@@ -72,6 +77,16 @@ class Converters {
             }
             res
         }
+    }
+
+    @TypeConverter
+    fun fromLongToLocalDateTime(epochSeconds: Long): LocalDateTime {
+        return Instant.fromEpochSeconds(epochSeconds).toLocalDateTime(TimeZone.currentSystemDefault())
+    }
+
+    @TypeConverter
+    fun fromLocalDateTimeToLong(localDateTime: LocalDateTime): Long {
+        return localDateTime.toInstant(TimeZone.currentSystemDefault()).epochSeconds
     }
 
     @TypeConverter

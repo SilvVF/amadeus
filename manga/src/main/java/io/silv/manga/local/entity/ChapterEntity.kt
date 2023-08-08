@@ -3,7 +3,8 @@ package io.silv.manga.local.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlinx.datetime.Clock
+import io.silv.manga.domain.timeNow
+import kotlinx.datetime.LocalDateTime
 
 @Entity
 data class ChapterEntity(
@@ -25,21 +26,25 @@ data class ChapterEntity(
 
     val user: String?,
 
-    val volume: String?,
+    val volume: Int = -1,
+
+    val lastPageRead: Long,
 
     val title: String,
 
     val pages: Int,
 
-    val chapterNumber: Double = 0.0,
+    val bookmarked: Boolean,
+
+    val chapterNumber: Long = -1L,
 
     val chapterImages: List<String> = emptyList(),
 
-    val createdAt: String,
+    val createdAt: LocalDateTime,
 
-    val updatedAt: String,
+    val updatedAt: LocalDateTime,
 
-    val readableAt: String,
+    val readableAt: LocalDateTime,
 
     val uploader: String?,
 
@@ -47,8 +52,15 @@ data class ChapterEntity(
 
     val version: Int,
 
-    val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
+    val savedLocalAt: LocalDateTime = timeNow()
+
 ): AmadeusEntity<Any?> {
+
+    val isRecognizedNumber: Boolean
+        get() = chapterNumber >= 0f
+
+    val read: Boolean
+        get() = progressState == ProgressState.Finished
 
     val downloaded: Boolean
         get() = chapterImages.isNotEmpty()

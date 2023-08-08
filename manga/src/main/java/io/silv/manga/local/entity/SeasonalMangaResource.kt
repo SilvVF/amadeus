@@ -3,10 +3,11 @@ package io.silv.manga.local.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import io.silv.manga.domain.timeNow
 import io.silv.manga.network.mangadex.models.ContentRating
 import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status
-import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDateTime
 
 @Entity
 data class SeasonalMangaResource(
@@ -31,25 +32,25 @@ data class SeasonalMangaResource(
 
     override val contentRating: ContentRating,
 
-    override val lastVolume: String? = null,
+    override val lastVolume: Int,
 
-    override val lastChapter: String? = null,
+    override val lastChapter: Long,
 
     override val version: Int,
 
-    override val createdAt: String,
+    override val createdAt: LocalDateTime,
 
-    override val updatedAt: String,
+    override val updatedAt: LocalDateTime,
 
     override val publicationDemographic: PublicationDemographic?,
 
     override val volumeToCoverArt: Map<String, String> = emptyMap(),
 
-    override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds,
+    override val savedAtLocal: LocalDateTime = timeNow(),
 
     @ColumnInfo("season_id")val seasonId: String,
 
-    override val year: Int?,
+    override val year: Int,
     override val latestUploadedChapter: String?,
     override val authors: List<String>,
     override val artists: List<String>

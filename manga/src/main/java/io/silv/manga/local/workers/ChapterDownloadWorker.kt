@@ -133,7 +133,7 @@ class ChapterDownloadWorker(
             savedMangaDao.upsertSavedManga(
                 SavedMangaEntity(
                     mangaResource = resources
-                        .maxBy { it.first.savedLocalAtEpochSeconds }
+                        .maxBy { it.first.savedAtLocal }
                         .first
                 )
             )

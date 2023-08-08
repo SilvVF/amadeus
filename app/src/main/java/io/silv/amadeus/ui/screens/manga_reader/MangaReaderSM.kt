@@ -41,10 +41,10 @@ class MangaReaderSM(
 
     fun goToNextChapter(chapter: SavableChapter) = coroutineScope.launch {
         chapterId.update { id ->
-            val chapterNumber = chapter.chapter?.toIntOrNull() ?: 0
+            val chapterNumber = chapter.chapter
             (mangaWithChapters.value as? MangaReaderState.Success)?.let { state ->
                 state.chapters.find {
-                    it.chapter?.toIntOrNull() == chapterNumber + 1
+                    it.chapter == chapterNumber + 1
                 }?.id ?: id
             } ?: id
         }
@@ -52,10 +52,10 @@ class MangaReaderSM(
 
     fun goToPrevChapter(chapter: SavableChapter) = coroutineScope.launch {
         chapterId.update { id ->
-            val chapterNumber = chapter.chapter?.toIntOrNull() ?: 0
+            val chapterNumber = chapter.chapter ?: 0
             (mangaWithChapters.value as? MangaReaderState.Success)?.let { state ->
                 state.chapters.find {
-                    it.chapter?.toIntOrNull() == chapterNumber - 1
+                    it.chapter == chapterNumber - 1
                 }?.id ?: id
             } ?: id
         }

@@ -8,6 +8,7 @@ import io.silv.manga.domain.MangaToSeasonalMangaResourceMapper
 import io.silv.manga.domain.checkProtected
 import io.silv.manga.domain.repositorys.base.LoadState
 import io.silv.manga.domain.suspendRunCatching
+import io.silv.manga.domain.timeNow
 import io.silv.manga.local.dao.SeasonalListDao
 import io.silv.manga.local.dao.SeasonalMangaResourceDao
 import io.silv.manga.local.entity.Season
@@ -33,9 +34,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 
 internal class SeasonalMangaRepositoryTest(
     private val mangaDexTestApi: MangaDexTestApi
@@ -172,7 +170,7 @@ internal class SeasonalMangaRepositoryImpl(
 
     private fun getLatestLists() = scope.launch {
         loadState.update { LoadState.Refreshing }
-        val year = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).year
+        val year = timeNow().year
         val toRequest = Season.values().map { it to year } + Season.values().map { it to year - 1}
         updateSeason(
             request = toRequest

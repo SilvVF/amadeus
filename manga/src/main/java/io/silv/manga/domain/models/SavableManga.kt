@@ -1,5 +1,6 @@
 package io.silv.manga.domain.models
 
+import android.os.Parcel
 import android.os.Parcelable
 import io.silv.manga.local.entity.MangaResource
 import io.silv.manga.local.entity.ProgressState
@@ -8,8 +9,14 @@ import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.network.mangadex.models.ContentRating
 import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status
-import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.parcelize.Parceler
 import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.TypeParceler
 import java.io.Serializable
 
 @Parcelize
@@ -28,18 +35,21 @@ data class SavableManga(
     val publicationDemographic: PublicationDemographic?,
     val tagToId: Map<String, String>,
     val contentRating: ContentRating,
-    val lastVolume: String? = null,
-    val lastChapter: String? = null,
+    val lastVolume: Int,
+    val lastChapter: Long,
     val version: Int,
-    val createdAt: String,
-    val updatedAt: String,
-    val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds,
+    @TypeParceler<LocalDateTime, LocalDateTimeParceler>
+    val createdAt: LocalDateTime,
+    @TypeParceler<LocalDateTime, LocalDateTimeParceler>
+    val updatedAt: LocalDateTime,
+    @TypeParceler<LocalDateTime, LocalDateTimeParceler>
+    val savedLocalAtEpochSeconds: LocalDateTime,
     val volumeToCoverArtUrl: Map<String, String>,
     val readChapters: List<String>,
     val chapterToLastReadPage: Map<String, Int>,
     val authors: List<String>,
     val artists: List<String>,
-    val year: Int?,
+    val year: Int,
 ): Parcelable, Serializable {
     constructor(savedManga: SavedMangaEntity) : this(
         id = savedManga.id,
@@ -59,7 +69,7 @@ data class SavableManga(
         version = savedManga.version,
         createdAt = savedManga.createdAt,
         updatedAt = savedManga.updatedAt,
-        savedLocalAtEpochSeconds = savedManga.savedLocalAtEpochSeconds,
+        savedLocalAtEpochSeconds = savedManga.savedAtLocal,
         volumeToCoverArtUrl = savedManga.volumeToCoverArt,
         readChapters = savedManga.readChapters,
         chapterToLastReadPage = savedManga.chapterToLastReadPage,
@@ -87,7 +97,7 @@ data class SavableManga(
         version = mangaResource.version,
         createdAt = mangaResource.createdAt,
         updatedAt = mangaResource.updatedAt,
-        savedLocalAtEpochSeconds = mangaResource.savedLocalAtEpochSeconds,
+        savedLocalAtEpochSeconds = mangaResource.savedAtLocal,
         volumeToCoverArtUrl = savedManga?.volumeToCoverArt ?: emptyMap(),
         readChapters = savedManga?.readChapters ?: emptyList(),
         chapterToLastReadPage = savedManga?.chapterToLastReadPage ?: emptyMap(),
@@ -100,7 +110,7 @@ data class SavableManga(
     constructor(
         mangaResources: List<MangaResource>,
         savedManga: SavedMangaEntity?,
-        newest: MangaResource = mangaResources.maxBy { it.savedLocalAtEpochSeconds }
+        newest: MangaResource = mangaResources.maxBy { it.savedAtLocal }
     ) : this(
         id = newest.id,
         bookmarked = savedManga?.bookmarked ?: false,
@@ -119,7 +129,7 @@ data class SavableManga(
         version = newest.version,
         createdAt = newest.createdAt,
         updatedAt = newest.updatedAt,
-        savedLocalAtEpochSeconds = newest.savedLocalAtEpochSeconds,
+        savedLocalAtEpochSeconds = newest.savedAtLocal,
         volumeToCoverArtUrl = buildMap {
             savedManga?.volumeToCoverArt?.let { putAll(it) }
             mangaResources.map { it.volumeToCoverArt }.forEach { putAll(it) }
@@ -132,4 +142,16 @@ data class SavableManga(
         authors = newest.authors,
         artists = newest.artists
     )
+
+}
+
+object LocalDateTimeParceler : Parceler<LocalDateTime> {
+    override fun create(parcel: Parcel): LocalDateTime {
+        val date = parcel.readLong()
+        return Instant.fromEpochSeconds(date).toLocalDateTime(TimeZone.currentSystemDefault())
+    }
+
+    override fun LocalDateTime.write(parcel: Parcel, flags: Int) {
+        parcel.writeLong(this.toInstant(TimeZone.currentSystemDefault()).epochSeconds)
+    }
 }

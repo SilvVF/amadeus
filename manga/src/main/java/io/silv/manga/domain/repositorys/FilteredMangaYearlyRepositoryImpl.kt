@@ -5,6 +5,7 @@ import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.MangaToFilteredYearlyMangaResourceMapper
 import io.silv.manga.domain.checkProtected
 import io.silv.manga.domain.repositorys.base.LoadState
+import io.silv.manga.domain.timeNow
 import io.silv.manga.domain.timeStringMinus
 import io.silv.manga.local.dao.FilteredMangaYearlyResourceDao
 import io.silv.manga.local.entity.FilteredMangaYearlyResource
@@ -24,8 +25,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
-import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import java.time.Duration
+import kotlin.time.toKotlinDuration
 
 internal class FilteredMangaYearlyRepositoryTest(
     private val mangaDexTestApi: MangaDexTestApi
@@ -102,11 +105,14 @@ internal class FilteredYearlyMangaRepositoryImpl(
 
     private suspend fun loadYearlyTopManga(tagId: String) {
         val yearly = yearlyResourceDao.getFilteredMangaYearlyResources().first()
-        val lastUpdated = yearly
+        val instant = timeNow().toInstant(TimeZone.currentSystemDefault())
+        val lastUpdated = (yearly
             .filter { it.topTags.contains(tagId) }
             .takeIf { it.isNotEmpty() }
-            ?.minBy { it.savedLocalAtEpochSeconds }?.savedLocalAtEpochSeconds ?: 0L
-        if (Clock.System.now().epochSeconds - lastUpdated < 60 * 60 * 24 * 30) {
+            ?.minByOrNull { it.savedAtLocal }?.savedAtLocal ?: timeNow()
+        )
+            .toInstant(TimeZone.currentSystemDefault())
+        if (instant.minus(lastUpdated) < Duration.ofDays(1).toKotlinDuration()) {
             return
         }
         loadState.emit(LoadState.Loading)

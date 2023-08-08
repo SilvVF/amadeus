@@ -66,11 +66,9 @@ import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableChapter
 import io.silv.manga.domain.models.SavableManga
-import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDateTime
+import io.silv.manga.domain.subtract
+import io.silv.manga.domain.timeNow
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
 
 @Composable
 fun ChapterVolumeNavBar(
@@ -286,12 +284,8 @@ private fun ChapterInfoHeader(
         ) {
             val maxToMin = remember(chapters) {
                 Pair(
-                    chapters.minBy {
-                        it.chapter?.trim()?.toDoubleOrNull() ?: Double.MAX_VALUE
-                    }.chapter,
-                    chapters.maxBy {
-                        it.chapter?.toDoubleOrNull() ?: Double.MIN_VALUE
-                    }.chapter
+                    chapters.minBy { it.chapter }.chapter,
+                    chapters.maxBy { it.chapter }.chapter
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -415,11 +409,8 @@ private fun ChapterListItem(
                     }
                 }
                 val daysSinceCreation = remember(chapter) {
-                    val tz = TimeZone.currentSystemDefault()
-                    val text = chapter.createdAt.dropWhile{ it == '0' }.replaceAfter('+', "").dropLast(1)
-                    val parsed = LocalDateTime.parse(text).toInstant(tz)
-                    val timeNow = Clock.System.now().toLocalDateTime(tz)
-                    val days = timeNow.toInstant(tz).minus(parsed).inWholeDays
+                    val tz =  TimeZone.currentSystemDefault()
+                    val days = timeNow().subtract(chapter.createdAt).inWholeDays
                     if (days >= 365) {
                         val yearsAgo = days / 365
                         if (yearsAgo <= 1.0) {

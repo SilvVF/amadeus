@@ -123,9 +123,9 @@ sealed class MangaViewState(
         val chapters: List<SavableChapter>
     ) : MangaViewState(manga) {
         val volumeToChapter: Map<Int, List<SavableChapter>>
-            get() = this.chapters.groupBy { it.volume?.toIntOrNull() ?: 0 }
+            get() = this.chapters.groupBy { it.volume}
                 .mapValues {(k, v) ->
-                    v.sortedBy { it.chapter?.toDoubleOrNull() ?: 0.0 }
+                    v.sortedBy { it.chapter }
                 }
     }
 

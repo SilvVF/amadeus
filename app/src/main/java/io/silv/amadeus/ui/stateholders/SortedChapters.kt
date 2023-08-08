@@ -19,24 +19,24 @@ class SortedChapters(
 
     val sortedChapters by derivedStateOf {
         if (sortBy == SortBy.Asc) {
-            chapters.sortedBy { it.chapter?.toDoubleOrNull() ?: 0.0 }
+            chapters.sortedBy { it.chapter }
         } else {
-            chapters.sortedByDescending { it.chapter?.toDoubleOrNull() ?: 0.0 }
+            chapters.sortedByDescending { it.chapter}
         }
     }
 
     val sortedVolumes by derivedStateOf {
-        val grouped = chapters.groupBy { it.volume?.toDoubleOrNull() ?: 0.0 }
+        val grouped = chapters.groupBy { it.volume }
         return@derivedStateOf if (sortBy == SortBy.Asc) {
             buildMap {
                 grouped.keys.sorted().forEach {
-                    put(it, (grouped[it]?.sortedBy { it.chapter?.toDoubleOrNull() ?: 0.0 } ?: emptyList<SavableChapter>()))
+                    put(it, (grouped[it]?.sortedBy { it.chapter } ?: emptyList<SavableChapter>()))
                 }
             }
         } else {
             buildMap {
                 grouped.keys.sortedDescending().forEach {
-                    put(it, (grouped[it]?.sortedByDescending { it.chapter?.toDoubleOrNull() ?: 0.0 } ?: emptyList<SavableChapter>()))
+                    put(it, (grouped[it]?.sortedByDescending { it.chapter } ?: emptyList<SavableChapter>()))
                 }
             }
         }

@@ -1,8 +1,8 @@
 package io.silv.manga.sync
 
+import io.silv.manga.domain.epochSeconds
 import io.silv.manga.domain.suspendRunCatching
 import io.silv.manga.local.entity.AmadeusEntity
-import kotlinx.datetime.Clock
 import java.time.Duration
 
 interface Synchronizer {
@@ -26,7 +26,7 @@ internal suspend fun <Key, Local: AmadeusEntity<Key>, Network> Synchronizer.sync
     val toUpdate = mutableListOf<Pair<Network, Local>>()
     val toDelete = mutableListOf<Local>()
 
-    if (Clock.System.now().epochSeconds - lastUpdatedEpochSeconds() > Duration.ofDays(30).seconds) {
+    if (epochSeconds() - lastUpdatedEpochSeconds() > Duration.ofDays(30).seconds) {
        val network = getNetworkWithVersion()
        val local = getLocalWithVersions()
        val networkWithKey = network.map { it to networkToKey(it.second) }

@@ -2,10 +2,11 @@ package io.silv.manga.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import io.silv.manga.domain.timeNow
 import io.silv.manga.network.mangadex.models.ContentRating
 import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status
-import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDateTime
 
 @Entity
 data class SavedMangaEntity(
@@ -38,9 +39,9 @@ data class SavedMangaEntity(
 
     override val contentRating: ContentRating,
 
-    override val lastVolume: String? = null,
+    override val lastVolume: Int,
 
-    override val lastChapter: String? = null,
+    override val lastChapter: Long,
 
     override val version: Int,
 
@@ -48,14 +49,14 @@ data class SavedMangaEntity(
 
     override val publicationDemographic: PublicationDemographic?,
 
-    override val createdAt: String,
+    override val createdAt: LocalDateTime,
 
-    override val updatedAt: String,
+    override val updatedAt: LocalDateTime,
 
     override val volumeToCoverArt: Map<String, String>,
 
-    override val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds,
-    override val year: Int?,
+    override val savedAtLocal: LocalDateTime = timeNow(),
+    override val year: Int,
     override val latestUploadedChapter: String?,
     override val authors: List<String>,
     override val artists: List<String>
@@ -91,7 +92,7 @@ data class SavedMangaEntity(
 
     constructor(
         mangaResources: List<MangaResource>,
-        recent: MangaResource = mangaResources.maxBy { it.savedLocalAtEpochSeconds }
+        recent: MangaResource = mangaResources.maxBy { it.savedAtLocal }
     ): this(
             id = recent.id,
             progressState = ProgressState.NotStarted,
@@ -116,7 +117,7 @@ data class SavedMangaEntity(
             publicationDemographic = recent.publicationDemographic,
             volumeToCoverArt = mangaResources
                 .filter { it.volumeToCoverArt.isNotEmpty() }
-                .maxBy { it.savedLocalAtEpochSeconds }
+                .maxBy { it.savedAtLocal }
                 .volumeToCoverArt,
             latestUploadedChapter = recent.latestUploadedChapter,
             year = recent.year,

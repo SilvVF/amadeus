@@ -6,7 +6,9 @@ import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.ChapterToChapterEntityMapper
 import io.silv.manga.domain.coverArtUrl
+import io.silv.manga.domain.subtract
 import io.silv.manga.domain.suspendRunCatching
+import io.silv.manga.domain.timeNow
 import io.silv.manga.domain.usecase.GetMangaResourcesById
 import io.silv.manga.domain.usecase.UpdateChapterWithArt
 import io.silv.manga.domain.usecase.UpdateInfo
@@ -33,6 +35,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlin.time.toKotlinDuration
 
 
 internal class OfflineFirstChapterInfoRepository(
@@ -59,12 +64,24 @@ internal class OfflineFirstChapterInfoRepository(
         }
     )
 
+    private fun Long.lastUpdatedOver(hours: Long): Boolean {
+        return Clock.System.now().minus(Instant.fromEpochSeconds(this)).inWholeHours > hours
+    }
 
+    private suspend fun shouldUpdate(mangaId: String): Boolean = withContext(dispatchers.io) {
+        val chapters = chapterDao.getChaptersByMangaId(mangaId).firstOrNull()?.ifEmpty { null }
+        chapters == null || chapters.any { timeNow().subtract(it.savedLocalAt) > java.time.Duration.ofHours(12).toKotlinDuration() }
+    }
 
     override fun getChapters(mangaId: String): Flow<List<ChapterEntity>> {
         return chapterDao.getChaptersByMangaId(mangaId).onStart {
-            updateFromNetwork(mangaId)
-            updateVolumeArt(mangaId)
+            if (shouldUpdate(mangaId)) {
+                Log.d("ChapterEntityRepository","Updating from network")
+                updateFromNetwork(mangaId)
+                updateVolumeArt(mangaId)
+            } else {
+                Log.d("ChapterEntityRepository","Skipped Fetch From network")
+            }
         }
     }
 

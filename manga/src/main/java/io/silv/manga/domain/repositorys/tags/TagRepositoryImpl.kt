@@ -1,6 +1,7 @@
 package io.silv.manga.domain.repositorys.tags
 
 import io.silv.ktor_response_mapper.getOrThrow
+import io.silv.manga.domain.epochSeconds
 import io.silv.manga.local.dao.TagDao
 import io.silv.manga.local.entity.TagEntity
 import io.silv.manga.network.mangadex.MangaDexApi
@@ -42,7 +43,7 @@ internal class TagRepositoryImpl(
                         group = network.attributes.group,
                         version =  network.attributes.version,
                         name = network.attributes.name["en"] ?: network.attributes.name.values.first(),
-                        lastUpdatedEpochSeconds = Clock.System.now().epochSeconds
+                        lastUpdatedEpochSeconds = epochSeconds()
                     )
                 )
             },

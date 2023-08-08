@@ -62,15 +62,6 @@ import io.silv.amadeus.ui.theme.AmadeusTheme
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableChapter
 import io.silv.manga.domain.models.SavableManga
-import io.silv.manga.local.entity.ProgressState
-import io.silv.manga.local.entity.ReadingStatus
-import io.silv.manga.network.mangadex.models.ContentRating
-import io.silv.manga.network.mangadex.models.PublicationDemographic
-import io.silv.manga.network.mangadex.models.Status
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 
 object SavedTab: Tab {
     override val options: TabOptions
@@ -249,11 +240,11 @@ private fun ReadingListItem(
             val furthestChapter = remember(manga) {
                 chapters.find {
                     it.id == manga.readChapters.maxByOrNull { id ->
-                        chapters.find {  c -> c.id == id }?.chapter?.toIntOrNull() ?: 0
+                        chapters.find {  c -> c.id == id }?.chapter ?: 0L
                     }
                 }
             }
-            Text("Chapter ${furthestChapter?.chapter ?: 0} / ${manga.lastChapter ?: chapters.size}")
+            Text("Chapter ${furthestChapter?.chapter ?: 0} / ${manga.lastChapter}")
             Divider(modifier.fillMaxWidth(), thickness = 1.dp, MaterialTheme.colorScheme.primary)
             Text("Chapter  ${furthestChapter?.chapter ?: 0} page : ${manga.chapterToLastReadPage[furthestChapter?.id]  ?: 0}")
         }
@@ -283,9 +274,7 @@ fun ContinueReadingItem(
             contentScale = ContentScale.Fit,
         )
         val time = remember(manga) {
-            val dateTime = Instant.fromEpochSeconds(manga.savedLocalAtEpochSeconds)
-                .toLocalDateTime(TimeZone.currentSystemDefault())
-            "${dateTime.dayOfMonth} / ${dateTime.month} / ${dateTime.year}"
+            "${manga.createdAt.dayOfMonth} / ${manga.createdAt.month} / ${manga.createdAt.year}"
         }
         Column(
             Modifier
@@ -398,37 +387,7 @@ fun ContinueReadingItem(
 fun ContinueReadingItemPreview() {
     AmadeusTheme {
         CenterBox(Modifier.fillMaxSize()) {
-            ContinueReadingItem(
-                manga = SavableManga(
-                    id = "dsafsdf",
-                    bookmarked  = false,
-                    description = "kjdsfkajsld;fjaskldjflkasjfklasjkl;dfj",
-                    progressState = ProgressState.Reading,
-                    readingStatus = ReadingStatus.Reading,
-                    coverArt = "https://upload.wikimedia.org/wikipedia/en/e/e4/Steins%3BGate_cover_art.jpg",
-                    titleEnglish = "steins gate",
-                    alternateTitles = emptyMap(),
-                    originalLanguage = "en",
-                    availableTranslatedLanguages = listOf("en"),
-                    status = Status.completed,
-                    publicationDemographic = PublicationDemographic.shounen,
-                    tagToId = emptyMap(),
-                    contentRating = ContentRating.safe,
-                    lastVolume = "12",
-                    lastChapter = "34",
-                    version = 1,
-                    createdAt = "",
-                    updatedAt = "",
-                    volumeToCoverArtUrl = emptyMap(),
-                    readChapters = emptyList(),
-                    authors = emptyList(),
-                    artists = emptyList(),
-                    year = 2020,
-                    savedLocalAtEpochSeconds = Clock.System.now().epochSeconds,
-                    chapterToLastReadPage = emptyMap()
-                ),
-                modifier = Modifier.fillMaxWidth(0.7f)
-            )
+
         }
     }
 }

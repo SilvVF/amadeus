@@ -1,5 +1,6 @@
 package io.silv.manga.domain
 
+import android.util.Log
 import io.silv.core.Mapper
 import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.FilteredMangaResource
@@ -14,9 +15,26 @@ import io.silv.manga.local.entity.SearchMangaResource
 import io.silv.manga.local.entity.SeasonalMangaResource
 import io.silv.manga.network.mangadex.models.chapter.Chapter
 import io.silv.manga.network.mangadex.models.manga.Manga
-import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlin.time.Duration
 
 typealias ChapterWithPrevEntity = Pair<Chapter, ChapterEntity?>
+
+private fun String.parseMangaDexTimeToDateTime(): LocalDateTime {
+   // "2021-10-10T23:19:03+00:00",
+    Log.d("Parse", this)
+    val text = this.replaceAfter('+', "").dropLast(1)
+    return LocalDateTime.parse(text).also {
+        Log.d("Parse", it.year.toString())
+    }
+}
+
+fun LocalDateTime.subtract(localDateTime: LocalDateTime): Duration {
+    val tz = TimeZone.currentSystemDefault()
+    return this.toInstant(tz).minus(localDateTime.toInstant(tz))
+}
 
 object ChapterToChapterEntityMapper: Mapper<ChapterWithPrevEntity, ChapterEntity> {
     override fun map(from: ChapterWithPrevEntity): ChapterEntity {
@@ -26,14 +44,14 @@ object ChapterToChapterEntityMapper: Mapper<ChapterWithPrevEntity, ChapterEntity
             mangaId = chapter.relationships.find { it.type == "manga" }?.id
                 ?: throw IllegalStateException("Chapter had no related manga id"),
             progressState = prev?.progressState ?: ProgressState.NotStarted,
-            volume = chapter.attributes.volume,
+            volume = chapter.attributes.volume?.toIntOrNull() ?: -1,
             title = chapter.attributes.title ?: "",
             pages = chapter.attributes.pages,
-            chapterNumber = chapter.attributes.chapter?.toDoubleOrNull() ?: 0.0,
+            chapterNumber = chapter.attributes.chapter?.toLongOrNull() ?: -1L,
             chapterImages = prev?.chapterImages ?: emptyList(),
-            createdAt = chapter.attributes.createdAt,
-            updatedAt = chapter.attributes.updatedAt,
-            readableAt = chapter.attributes.readableAt,
+            createdAt = chapter.attributes.createdAt.parseMangaDexTimeToDateTime(),
+            updatedAt = chapter.attributes.updatedAt.parseMangaDexTimeToDateTime(),
+            readableAt = chapter.attributes.readableAt.parseMangaDexTimeToDateTime(),
             uploader = chapter.attributes.uploader,
             externalUrl = chapter.attributes.externalUrl,
             languageCode = chapter.attributes.translatedLanguage ?: "",
@@ -41,7 +59,9 @@ object ChapterToChapterEntityMapper: Mapper<ChapterWithPrevEntity, ChapterEntity
             scanlationGroup = chapter.relationships.find { it.type == "scanlation_group" }?.attributes?.name,
             scanlationGroupId = chapter.relationships.find { it.type == "scanlation_group" }?.id,
             user = chapter.relationships.find { it.type == "user" }?.attributes?.username,
-            userId = chapter.relationships.find { it.type == "user" }?.id
+            userId = chapter.relationships.find { it.type == "user" }?.id,
+            bookmarked = prev?.bookmarked ?: false,
+            lastPageRead = prev?.lastPageRead ?: 0L
         )
     }
 }
@@ -62,16 +82,16 @@ object MangaToSeasonalMangaResourceMapper: Mapper<Pair<Manga, SeasonalMangaResou
                     .filterNotNull(),
                 status = attributes.status,
                 contentRating = attributes.contentRating,
-                lastVolume = attributes.lastVolume,
-                lastChapter = attributes.lastChapter,
+                lastVolume = attributes.lastVolume?.toIntOrNull() ?: -1,
+                lastChapter = attributes.lastChapter?.toLongOrNull() ?: -1L,
                 version = attributes.version,
-                createdAt = attributes.createdAt,
-                updatedAt = attributes.updatedAt,
+                createdAt = attributes.createdAt.parseMangaDexTimeToDateTime(),
+                updatedAt = attributes.updatedAt.parseMangaDexTimeToDateTime(),
                 tagToId = tagToId,
                 seasonId = "",
                 publicationDemographic = manga.attributes.publicationDemographic,
                 latestUploadedChapter = attributes.latestUploadedChapter,
-                year = attributes.year,
+                year = attributes.year ?: -1,
                 authors = authors,
                 artists = artists
             )
@@ -95,15 +115,15 @@ object MangaToPopularMangaResourceMapper: Mapper<Pair<Manga, PopularMangaResourc
                     .filterNotNull(),
                 status = attributes.status,
                 contentRating = attributes.contentRating,
-                lastVolume = attributes.lastVolume,
-                lastChapter = attributes.lastChapter,
+                lastVolume = attributes.lastVolume?.toIntOrNull() ?: - 1,
+                lastChapter = attributes.lastChapter?.toLongOrNull() ?: -1L,
                 version = attributes.version,
-                createdAt = attributes.createdAt,
-                updatedAt = attributes.updatedAt,
+                createdAt = attributes.createdAt.parseMangaDexTimeToDateTime(),
+                updatedAt = attributes.updatedAt.parseMangaDexTimeToDateTime(),
                 tagToId = tagToId,
                 publicationDemographic = manga.attributes.publicationDemographic,
                 latestUploadedChapter = attributes.latestUploadedChapter,
-                year = attributes.year,
+                year = attributes.year ?: -1,
                 authors = authors,
                 artists = artists
             )
@@ -128,15 +148,15 @@ object MangaToQuickSearchMangaResourceMapper: Mapper<Pair<Manga, QuickSearchMang
                     .filterNotNull(),
                 status = attributes.status,
                 contentRating = attributes.contentRating,
-                lastVolume = attributes.lastVolume,
-                lastChapter = attributes.lastChapter,
+                lastVolume = attributes.lastVolume?.toIntOrNull() ?: - 1,
+                lastChapter = attributes.lastChapter?.toLongOrNull() ?: -1L,
                 version = attributes.version,
-                createdAt = attributes.createdAt,
-                updatedAt = attributes.updatedAt,
+                createdAt = attributes.createdAt.parseMangaDexTimeToDateTime(),
+                updatedAt = attributes.updatedAt.parseMangaDexTimeToDateTime(),
                 tagToId = tagToId,
                 publicationDemographic = manga.attributes.publicationDemographic,
                 latestUploadedChapter = attributes.latestUploadedChapter,
-                year = attributes.year,
+                year = attributes.year ?: -1,
                 authors = authors,
                 artists = artists
             )
@@ -160,15 +180,15 @@ object MangaToSearchMangaResourceMapper: Mapper<Pair<Manga, SearchMangaResource?
                     .filterNotNull(),
                 status = attributes.status,
                 contentRating = attributes.contentRating,
-                lastVolume = attributes.lastVolume,
-                lastChapter = attributes.lastChapter,
+                lastVolume = attributes.lastVolume?.toIntOrNull() ?: -1,
+                lastChapter = attributes.lastChapter?.toLongOrNull() ?: -1L,
                 version = attributes.version,
-                createdAt = attributes.createdAt,
-                updatedAt = attributes.updatedAt,
+                createdAt = attributes.createdAt.parseMangaDexTimeToDateTime(),
+                updatedAt = attributes.updatedAt.parseMangaDexTimeToDateTime(),
                 tagToId = tagToId,
                 publicationDemographic = manga.attributes.publicationDemographic,
                 latestUploadedChapter = attributes.latestUploadedChapter,
-                year = attributes.year,
+                year = attributes.year ?: -1,
                 authors = authors,
                 artists = artists
             )
@@ -192,18 +212,18 @@ object MangaToFilteredYearlyMangaResourceMapper: Mapper<Pair<Manga, FilteredMang
                 availableTranslatedLanguages = attributes.availableTranslatedLanguages.filterNotNull(),
                 status = attributes.status,
                 contentRating = attributes.contentRating,
-                lastVolume = attributes.lastVolume,
-                lastChapter = attributes.lastChapter,
+                lastVolume = attributes.lastVolume?.toIntOrNull() ?: -1,
+                lastChapter = attributes.lastChapter?.toLongOrNull() ?: -1L,
                 version = attributes.version,
-                createdAt = attributes.createdAt,
-                updatedAt = attributes.updatedAt,
+                createdAt = attributes.createdAt.parseMangaDexTimeToDateTime(),
+                updatedAt = attributes.updatedAt.parseMangaDexTimeToDateTime(),
                 tagToId = tagToId,
-                savedLocalAtEpochSeconds = saved?.savedLocalAtEpochSeconds ?: Clock.System.now().epochSeconds,
+                savedAtLocal = timeNow(),
                 topTags = saved?.topTags ?: emptyList(),
                 topTagPlacement = saved?.topTagPlacement ?: emptyMap(),
                 publicationDemographic = manga.attributes.publicationDemographic,
                 latestUploadedChapter = attributes.latestUploadedChapter,
-                year = attributes.year,
+                year = attributes.year ?: -1,
                 authors = authors,
                 artists = artists
             )
@@ -227,16 +247,16 @@ object MangaToFilteredMangaResourceMapper: Mapper<Pair<Manga, FilteredMangaResou
                     .filterNotNull(),
                 status = attributes.status,
                 contentRating = attributes.contentRating,
-                lastVolume = attributes.lastVolume,
-                lastChapter = attributes.lastChapter,
+                lastVolume = attributes.lastVolume?.toIntOrNull() ?: -1,
+                lastChapter = attributes.lastChapter?.toLongOrNull() ?: -1L,
                 version = attributes.version,
-                createdAt = attributes.createdAt,
-                updatedAt = attributes.updatedAt,
+                createdAt = attributes.createdAt.parseMangaDexTimeToDateTime(),
+                updatedAt = attributes.updatedAt.parseMangaDexTimeToDateTime(),
                 tagToId = tagToId,
                 publicationDemographic = manga.attributes.publicationDemographic,
-                savedLocalAtEpochSeconds = saved?.savedLocalAtEpochSeconds ?: Clock.System.now().epochSeconds,
+                savedAtLocal = timeNow(),
                 latestUploadedChapter = attributes.latestUploadedChapter,
-                year = attributes.year,
+                year = attributes.year ?: -1,
                 authors = authors,
                 artists = artists
             )
@@ -262,15 +282,15 @@ object MangaToRecentMangaResourceMapper: Mapper<Pair<Manga, RecentMangaResource?
                 publicationDemographic = manga.attributes.publicationDemographic,
                 status = attributes.status,
                 contentRating = attributes.contentRating,
-                lastVolume = attributes.lastVolume,
-                lastChapter = attributes.lastChapter,
+                lastVolume = attributes.lastVolume?.toIntOrNull() ?: - 1,
+                lastChapter = attributes.lastChapter?.toLongOrNull() ?: -1L,
                 version = attributes.version,
-                createdAt = attributes.createdAt,
-                updatedAt = attributes.updatedAt,
+                createdAt = attributes.createdAt.parseMangaDexTimeToDateTime(),
+                updatedAt = attributes.updatedAt.parseMangaDexTimeToDateTime(),
                 tagToId = tagToId,
                 authors = authors,
                 artists = artists,
-                year = attributes.year,
+                year = attributes.year ?: -1,
                 latestUploadedChapter = attributes.latestUploadedChapter
             )
         }
@@ -296,19 +316,19 @@ object MangaEntityMapper: Mapper<Pair<Manga, SavedMangaEntity?>, SavedMangaEntit
                 .filterNotNull(),
             status = network.attributes.status,
             contentRating = network.attributes.contentRating,
-            lastChapter = network.attributes.lastChapter,
-            lastVolume = network.attributes.lastVolume,
+            lastVolume = network.attributes.lastVolume?.toIntOrNull() ?: - 1,
+            lastChapter = network.attributes.lastChapter?.toLongOrNull() ?: -1L,
             version = network.attributes.version,
             bookmarked = saved?.bookmarked ?: false,
             volumeToCoverArt = saved?.volumeToCoverArt ?: emptyMap(),
-            createdAt = network.attributes.createdAt,
-            updatedAt = network.attributes.updatedAt,
+            createdAt = network.attributes.createdAt.parseMangaDexTimeToDateTime(),
+            updatedAt = network.attributes.updatedAt.parseMangaDexTimeToDateTime(),
             tagToId = network.tagToId,
             publicationDemographic = network.attributes.publicationDemographic,
             readingStatus = saved?.readingStatus ?: ReadingStatus.None,
             authors = network.authors,
             artists = network.artists,
-            year = network.attributes.year,
+            year = network.attributes.year ?: -1,
             latestUploadedChapter = network.attributes.latestUploadedChapter
         )
     }

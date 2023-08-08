@@ -4,6 +4,8 @@ import android.util.Log
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.MangaEntityMapper
+import io.silv.manga.domain.subtract
+import io.silv.manga.domain.timeNow
 import io.silv.manga.domain.usecase.GetMangaResourcesById
 import io.silv.manga.domain.usecase.UpdateChapterWithArt
 import io.silv.manga.local.dao.ChapterDao
@@ -21,7 +23,8 @@ import io.silv.manga.sync.syncWithSyncer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
+import java.time.Duration
+import kotlin.time.toKotlinDuration
 
 internal class SavedMangaRepositoryImpl(
     private val savedMangaDao: SavedMangaDao,
@@ -68,7 +71,7 @@ internal class SavedMangaRepositoryImpl(
                 }
             }
                 ?: run {
-                    getMangaResourceById(id).maxBy { it.first.savedLocalAtEpochSeconds }.let { resource ->
+                    getMangaResourceById(id).maxBy { it.first.savedAtLocal }.let { resource ->
                         log("No Saved found using resource $id")
                         val entity =  SavedMangaEntity(resource.first).copy(bookmarked = true)
                         savedMangaDao.upsertSavedManga(entity)
@@ -78,7 +81,7 @@ internal class SavedMangaRepositoryImpl(
     }
 
     override suspend fun saveManga(id: String): Unit = withContext(dispatchers.io) {
-        getMangaResourceById(id).maxBy { it.first.savedLocalAtEpochSeconds }.let { resource ->
+        getMangaResourceById(id).maxBy { it.first.savedAtLocal }.let { resource ->
             log("No Saved found using resource $id")
             val entity =  SavedMangaEntity(resource.first)
             savedMangaDao.upsertSavedManga(entity)
@@ -146,7 +149,7 @@ internal class SavedMangaRepositoryImpl(
             getNetwork = {
                 saved.mapNotNull { saved ->
                     saved.takeIf {
-                        Clock.System.now().epochSeconds - saved.savedLocalAtEpochSeconds > 60 * 60 * 1
+                        timeNow().subtract(saved.savedAtLocal) > Duration.ofDays(4).toKotlinDuration()
                                 && saved.status != Status.cancelled
                                 && saved.status != Status.completed
                     }

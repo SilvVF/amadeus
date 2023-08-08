@@ -64,6 +64,7 @@ dependencies {
 
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
+    implementation("androidx.compose.ui:ui-util")
     implementation(composeBom)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling)
@@ -83,7 +84,6 @@ dependencies {
     val navVersion = "2.6.0"
 
     implementation(libs.androidx.navigation.compose)
-
 
     //ROOM
     ksp(libs.room.ksp)

@@ -75,6 +75,7 @@ dependencies {
     // Kotlin + coroutines
     implementation(libs.androidx.work.runtime.ktx)
 
+    implementation(libs.token.bucket)
     // optional - RxJava2 support
     implementation(libs.androidx.work.rxjava2)
 

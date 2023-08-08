@@ -50,17 +50,18 @@ abstract class BasePaginatedRepository<ResourceType: MangaResource, ResourceQuer
                 if (loadState.value != PagedLoadState.None || offset >= lastPage) {
                     return@launch
                 }
+                val offsetCopy = offset
                 loadState.update {
-                    if (offset == 0)
+                    if (offsetCopy == 0)
                         PagedLoadState.Refreshing
                     else
                         PagedLoadState.Loading
                 }
                 runCatching {
-                    loadCatching(offset, query)
+                    loadCatching(offsetCopy, query)
                 }
                     .onSuccess {
-                        offset += pageSize
+                        offset = offsetCopy + pageSize
                         loadState.update {
                             if (offset >= lastPage) {
                                 PagedLoadState.End

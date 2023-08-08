@@ -49,6 +49,7 @@ val networkModule = module {
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
             .callTimeout(1, TimeUnit.MINUTES)
+            .rateLimit(permits = 300, period = 1, unit = TimeUnit.MINUTES)
             .apply {
                 dohCloudflare()
             }

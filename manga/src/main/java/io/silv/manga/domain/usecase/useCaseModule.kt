@@ -26,5 +26,7 @@ val useCaseModule = module {
     factoryOf(::UpdateMangaResourceWithArt)
 
     factoryOf(::GetMangaResourcesById)
+
+    factoryOf(::GetCombinedMangaResources)
 }
 

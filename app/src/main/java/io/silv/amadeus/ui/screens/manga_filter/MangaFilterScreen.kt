@@ -36,12 +36,12 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import io.silv.amadeus.ui.composables.AmadeusScaffold
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItem
-import io.silv.amadeus.ui.screens.home.AmadeusScaffold
+import io.silv.amadeus.ui.composables.PageLoader
+import io.silv.amadeus.ui.composables.header
 import io.silv.amadeus.ui.screens.home.MangaPager
-import io.silv.amadeus.ui.screens.home.PageLoader
-import io.silv.amadeus.ui.screens.home.header
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga

@@ -65,7 +65,7 @@ fun coverArtUrl(
 
 val Manga.titleEnglish: String
     get() = attributes.title.getOrElse("en") {
-        attributes.altTitles.firstNotNullOfOrNull { it["ja-ro"] } ?: "No english title"
+        attributes.altTitles.firstNotNullOfOrNull { it["en"] ?: it["ja-ro"] ?: it["ja"] } ?: ""
     }
 
 val Manga.tagToId: Map<String, String>

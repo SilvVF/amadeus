@@ -2,7 +2,6 @@ package io.silv.amadeus.ui.screens.home
 
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.ui.screens.manga_reader.combineToPair
-import io.silv.amadeus.ui.screens.search.SearchMangaUiState
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.DomainTag
 import io.silv.manga.domain.models.SavableManga
@@ -40,11 +39,6 @@ class HomeSM(
     private val mutableSearchQuery = MutableStateFlow(searchMangaRepository.latestQuery())
     val searchQuery = mutableSearchQuery.asStateFlow()
 
-    val loadingPopularManga = popularMangaRepository.loadState
-        .stateInUi(PagedLoadState.None)
-
-    val loadingRecentManga = recentMangaRepository.loadState
-        .stateInUi(PagedLoadState.None)
 
     val refreshingSeasonal = seasonalMangaRepository.loadState
         .map { it is LoadState.Refreshing }
@@ -61,6 +55,13 @@ class HomeSM(
     private var startFlag: Boolean = false
 
     private val startFlow = MutableStateFlow(false)
+
+    init {
+        coroutineScope.launch {
+            popularMangaRepository.refresh(null)
+            recentMangaRepository.refresh(null)
+        }
+    }
 
     fun startSearch() {
         startFlag = true
@@ -85,50 +86,66 @@ class HomeSM(
 
     val searchMangaUiState = combine(
         mangaSearchFlow,
-        loadState,
         savedMangaRepository.getSavedMangas(),
-    ) { resources, load, saved ->
-        val combinedManga = resources.map {
-            SavableManga(it, saved.find { s -> s.id ==  it.id})
+        loadState,
+    ) { resource, saved, loadState ->
+        val resources = resource.map {
+            SavableManga(it, saved.find { manga -> manga.id == it.id })
         }
-        when (load) {
-            PagedLoadState.End -> {
-                SearchMangaUiState.Success.EndOfPagination(
-                    results = combinedManga,
-                )
-            }
-            PagedLoadState.Loading -> {
-                SearchMangaUiState.Success.Loading(
-                    results = combinedManga,
-                )
-            }
-            PagedLoadState.None -> SearchMangaUiState.Success.Idle(
-                results = combinedManga,
+        when (loadState) {
+            PagedLoadState.End -> PaginatedListState.Success(resources, end = true, loading = false)
+            is PagedLoadState.Error -> PaginatedListState.Error(
+                resources,
+                loadState.throwable.localizedMessage ?: "unkown error"
             )
-            PagedLoadState.Refreshing, is PagedLoadState.Error -> SearchMangaUiState.Refreshing
+            PagedLoadState.Loading -> PaginatedListState.Success(resources, end = false, loading = true)
+            PagedLoadState.None -> PaginatedListState.Success(resources, end = false, loading = false)
+            PagedLoadState.Refreshing -> PaginatedListState.Refreshing
         }
     }
-        .stateInUi(SearchMangaUiState.WaitingForQuery)
+        .stateInUi(PaginatedListState.Refreshing)
 
     val popularMangaUiState = combine(
         popularMangaRepository.observeAllMangaResources(),
-        savedMangaRepository.getSavedMangas()
-    ) { resources, saved ->
-        resources.map {
+        savedMangaRepository.getSavedMangas(),
+        popularMangaRepository.loadState,
+    ) { resource, saved, loadState ->
+        val resources = resource.map {
             SavableManga(it, saved.find { manga -> manga.id == it.id })
         }
+        when (loadState) {
+            PagedLoadState.End -> PaginatedListState.Success(resources, end = true, loading = false)
+            is PagedLoadState.Error -> PaginatedListState.Error(
+                resources,
+                loadState.throwable.localizedMessage ?: "unkown error"
+            )
+            PagedLoadState.Loading -> PaginatedListState.Success(resources, end = false, loading = true)
+            PagedLoadState.None -> PaginatedListState.Success(resources, end = false, loading = false)
+            PagedLoadState.Refreshing -> PaginatedListState.Refreshing
+        }
     }
-        .stateInUi(emptyList())
+        .stateInUi(PaginatedListState.Refreshing)
 
     val recentMangaUiState = combine(
         recentMangaRepository.observeAllMangaResources(),
-        savedMangaRepository.getSavedMangas()
-    ) { resources, saved ->
-        resources.map {
+        savedMangaRepository.getSavedMangas(),
+        recentMangaRepository.loadState
+    ) { resource, saved, loadState ->
+        val resources = resource.map {
             SavableManga(it, saved.find { manga -> manga.id == it.id })
+        }.chunked(2)
+        when (loadState) {
+            PagedLoadState.End -> PaginatedListState.Success(resources, end = true, loading = false)
+            is PagedLoadState.Error -> PaginatedListState.Error(
+                resources,
+                loadState.throwable.localizedMessage ?: "unkown error"
+            )
+            PagedLoadState.Loading -> PaginatedListState.Success(resources, end = false, loading = true)
+            PagedLoadState.None -> PaginatedListState.Success(resources, end = false, loading = false)
+            PagedLoadState.Refreshing -> PaginatedListState.Refreshing
         }
     }
-        .stateInUi(emptyList())
+        .stateInUi(PaginatedListState.Refreshing)
 
     val seasonalMangaUiState = combine(
         seasonalMangaRepository.getSeasonalLists(),
@@ -179,6 +196,12 @@ class HomeSM(
 data class SeasonalMangaUiState(
     val seasonalLists: List<SeasonalList> = emptyList()
 )
+
+sealed class PaginatedListState<out T> {
+    object Refreshing: PaginatedListState<Nothing>()
+    data class Success<T>(val data: T, val end: Boolean = false, val loading: Boolean = false): PaginatedListState<T>()
+    data class Error<T>(val data: T, val message: String) : PaginatedListState<T>()
+}
 
 data class SeasonalList(
     val id: String,

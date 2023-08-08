@@ -16,6 +16,7 @@ import io.silv.manga.local.entity.SeasonalMangaResource
 import io.silv.manga.local.entity.relations.SeasonListWithManga
 import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
+import io.silv.manga.network.mangadex.MangaDexTestApi
 import io.silv.manga.network.mangadex.models.list.Data
 import io.silv.manga.network.mangadex.models.manga.Manga
 import io.silv.manga.network.mangadex.requests.MangaRequest
@@ -23,8 +24,10 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -33,6 +36,34 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+
+internal class SeasonalMangaRepositoryTest(
+    private val mangaDexTestApi: MangaDexTestApi
+): SeasonalMangaRepository {
+    override suspend fun updateSeasonList(season: Season, year: Int) {
+
+    }
+
+    override fun getSeasonalLists(): Flow<List<SeasonListWithManga>> {
+        return emptyFlow()
+    }
+
+    override fun observeMangaResourceById(id: String): Flow<SeasonalMangaResource?> {
+        return emptyFlow()
+    }
+
+    override fun observeAllMangaResources(): Flow<List<SeasonalMangaResource>> {
+        return emptyFlow()
+    }
+
+    override suspend fun refresh() {
+
+    }
+
+    override val loadState: Flow<LoadState>
+        get() =  flowOf(LoadState.Loading)
+
+}
 
 internal class SeasonalMangaRepositoryImpl(
     private val mangaResourceDao: SeasonalMangaResourceDao,

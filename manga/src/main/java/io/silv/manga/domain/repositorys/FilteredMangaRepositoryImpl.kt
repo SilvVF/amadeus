@@ -10,14 +10,65 @@ import io.silv.manga.local.dao.FilteredMangaResourceDao
 import io.silv.manga.local.entity.FilteredMangaResource
 import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
+import io.silv.manga.network.mangadex.MangaDexTestApi
 import io.silv.manga.network.mangadex.models.manga.Manga
 import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.plus
+
+internal class FilteredMangaRepositoryTest(
+    private val mangaDexTestApi: MangaDexTestApi
+): FilteredMangaRepository, BasePaginatedRepository<FilteredMangaResource, FilteredResourceQuery?>(
+initialQuery = null
+){
+    override val scope: CoroutineScope
+        get() = CoroutineScope(Dispatchers.IO)
+
+    override fun observeMangaResourceById(id: String): Flow<FilteredMangaResource?> {
+        return emptyFlow<FilteredMangaResource?>().onStart {
+           emit(
+               MangaToFilteredMangaResourceMapper.map(
+                   mangaDexTestApi.getMangaList().data.first() to null
+               )
+           )
+        }
+    }
+
+    override fun observeAllMangaResources(): Flow<List<FilteredMangaResource>> {
+        return emptyFlow<List<FilteredMangaResource>>().onStart {
+            emit(
+                mangaDexTestApi.getMangaList().data.map {
+                    MangaToFilteredMangaResourceMapper.map(
+                       it to null
+                    )
+                }
+            )
+        }
+    }
+
+    override suspend fun loadNextPage() {
+
+    }
+
+    override fun observeMangaResources(resourceQuery: FilteredResourceQuery?): Flow<List<FilteredMangaResource>> {
+        return emptyFlow<List<FilteredMangaResource>>().onStart {
+            emit(
+                mangaDexTestApi.getMangaList().data.map {
+                    MangaToFilteredMangaResourceMapper.map(
+                        it to null
+                    )
+                }
+            )
+        }
+    }
+
+}
 
 data class FilteredResourceQuery(
     val tagId: String,

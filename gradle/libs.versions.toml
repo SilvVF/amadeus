@@ -30,6 +30,7 @@ junit= "4.13.2"
 koinVersion="3.4.0"
 koinCompose="3.3.0"
 coil = "2.4.0"
+tokenBucket = "1.2"
 voyager="1.0.0-rc06"
 ktor="2.3.1"
 kotlinserialization="1.5.1"
@@ -101,6 +102,7 @@ androidx-test-espresso-core= { module="androidx.test.espresso:espresso-core", ve
 androidx-test-junit = {module = "androidx.test.ext:junit", version.ref="testJunit"}
 junit={module = "junit:junit", version.ref ="junit"}
 
+token-bucket = { module = "org.isomorphism:token-bucket", version.ref = "tokenBucket" }
 voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyager" }
 voyager-bottomSheetNavigator = { module = "cafe.adriel.voyager:voyager-bottom-sheet-navigator", version.ref = "voyager" }
 voyager-tabNavigator = { module = "cafe.adriel.voyager:voyager-tab-navigator", version.ref = "voyager" }

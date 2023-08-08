@@ -121,6 +121,7 @@ import com.skydoves.orbital.rememberContentWithOrbitalScope
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.screens.home.HomeTab
+import io.silv.amadeus.ui.screens.home.PaginatedListState
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
@@ -1154,6 +1155,57 @@ fun SearchItemsList(
                     }
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun SearchItems(
+    modifier: Modifier,
+    searchMangaUiState: PaginatedListState<List<SavableManga>>,
+    gridState: LazyGridState,
+    onMangaClick: (SavableManga) -> Unit,
+    onBookmarkClick: (SavableManga) -> Unit
+) {
+    when(searchMangaUiState) {
+        is PaginatedListState.Error -> {
+            if (searchMangaUiState.data.isNotEmpty()) {
+                Column {
+                    SearchItemsList(
+                        state = gridState,
+                        modifier = modifier.weight(1f),
+                        items = searchMangaUiState.data,
+                        onMangaClick = onMangaClick,
+                        onBookmarkClick = onBookmarkClick
+                    )
+                    Text(text = "Failed To load recent Query")
+                }
+            }
+        }
+        PaginatedListState.Refreshing -> {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+            ) {
+                items(4) {
+                    AnimatedBoxShimmer(Modifier.size(300.dp))
+                }
+            }
+        }
+        is PaginatedListState.Success -> {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
+                SearchItemsList(
+                    state = gridState,
+                    modifier = modifier.weight(1f),
+                    items = searchMangaUiState.data,
+                    onMangaClick = onMangaClick,
+                    onBookmarkClick = onBookmarkClick
+                )
+                if (searchMangaUiState.loading) {
+                    CircularProgressIndicator()
+                } else if (searchMangaUiState.end) {
+                    Text("End of pagination")
+                }
+            }
         }
     }
 }

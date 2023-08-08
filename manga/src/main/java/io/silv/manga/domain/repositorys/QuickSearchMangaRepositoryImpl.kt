@@ -10,15 +10,58 @@ import io.silv.manga.local.dao.QuickSearchMangaResourceDao
 import io.silv.manga.local.entity.QuickSearchMangaResource
 import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
+import io.silv.manga.network.mangadex.MangaDexTestApi
 import io.silv.manga.network.mangadex.models.manga.Manga
 import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
+
+internal class QuickSearchMangaRepositoryTest(
+    private val mangaDexTestApi: MangaDexTestApi
+) : QuickSearchMangaRepository, BasePaginatedRepository<QuickSearchMangaResource, String>(
+    initialQuery = "",
+    pageSize = 50
+) {
+    override val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+
+    override fun observeMangaResourceById(id: String): Flow<QuickSearchMangaResource?> {
+        return emptyFlow<List<QuickSearchMangaResource>>().onStart {
+            emit(
+            mangaDexTestApi.getMangaList().data.map { MangaToQuickSearchMangaResourceMapper.map(it to null) }
+            )
+        }.map { list ->
+            list.firstOrNull { it.id == id }
+        }
+    }
+
+    override fun observeAllMangaResources(): Flow<List<QuickSearchMangaResource>> {
+        return emptyFlow<List<QuickSearchMangaResource>>().onStart {
+            emit(
+            mangaDexTestApi.getMangaList().data.map { MangaToQuickSearchMangaResourceMapper.map(it to null) }
+            )
+        }
+    }
+
+    override suspend fun loadNextPage() {
+
+    }
+
+    override fun observeMangaResources(resourceQuery: String): Flow<List<QuickSearchMangaResource>> {
+        return emptyFlow<List<QuickSearchMangaResource>>().onStart {
+            emit(
+            mangaDexTestApi.getMangaList().data.map { MangaToQuickSearchMangaResourceMapper.map(it to null) }
+            )
+        }
+    }
+}
 
 internal class QuickSearchMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,

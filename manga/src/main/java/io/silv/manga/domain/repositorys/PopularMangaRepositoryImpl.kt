@@ -10,14 +10,59 @@ import io.silv.manga.local.dao.PopularMangaResourceDao
 import io.silv.manga.local.entity.PopularMangaResource
 import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
+import io.silv.manga.network.mangadex.MangaDexTestApi
 import io.silv.manga.network.mangadex.models.manga.Manga
 import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.plus
 import java.time.Duration
+
+internal class PopularMangaRepositoryTest(
+    private val mangaDexTestApi: MangaDexTestApi
+) : PopularMangaRepository, BasePaginatedRepository<PopularMangaResource, Any?>(
+initialQuery = "",
+pageSize = 50
+) {
+    override val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+
+    override fun observeMangaResourceById(id: String): Flow<PopularMangaResource?> {
+        return emptyFlow<List<PopularMangaResource>>().onStart {
+            emit(
+            mangaDexTestApi.getMangaList().data.map { MangaToPopularMangaResourceMapper.map(it to null) }
+            )
+        }.map { list ->
+            list.firstOrNull { it.id == id }
+        }
+    }
+
+    override fun observeAllMangaResources(): Flow<List<PopularMangaResource>> {
+        return emptyFlow<List<PopularMangaResource>>().onStart {
+            emit(
+            mangaDexTestApi.getMangaList().data.map { MangaToPopularMangaResourceMapper.map(it to null) }
+            )
+        }
+    }
+
+    override suspend fun loadNextPage() {
+
+    }
+
+    override fun observeMangaResources(resourceQuery: Any?): Flow<List<PopularMangaResource>> {
+        return emptyFlow<List<PopularMangaResource>>().onStart {
+            emit(
+            mangaDexTestApi.getMangaList().data.map { MangaToPopularMangaResourceMapper.map(it to null) }
+            )
+        }
+    }
+}
+
 
 internal class PopularMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,

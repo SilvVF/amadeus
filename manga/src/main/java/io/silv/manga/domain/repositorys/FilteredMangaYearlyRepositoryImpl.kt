@@ -10,19 +10,58 @@ import io.silv.manga.local.dao.FilteredMangaYearlyResourceDao
 import io.silv.manga.local.entity.FilteredMangaYearlyResource
 import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
+import io.silv.manga.network.mangadex.MangaDexTestApi
 import io.silv.manga.network.mangadex.models.manga.Manga
 import io.silv.manga.network.mangadex.requests.MangaRequest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.datetime.Clock
 import java.time.Duration
+
+internal class FilteredMangaYearlyRepositoryTest(
+    private val mangaDexTestApi: MangaDexTestApi
+): FilteredYearlyMangaRepository {
+    override fun getYearlyTopResources(tag: String): Flow<List<FilteredMangaYearlyResource>> {
+        return emptyFlow<List<FilteredMangaYearlyResource>>().onStart {
+            emit(
+            mangaDexTestApi.getMangaList().data.map { MangaToFilteredYearlyMangaResourceMapper.map(it to null) }
+            )
+        }
+    }
+
+    override fun observeMangaResourceById(id: String): Flow<FilteredMangaYearlyResource?> {
+        return emptyFlow<FilteredMangaYearlyResource?>().onStart {
+            emit(
+                mangaDexTestApi.getMangaList().data.map { MangaToFilteredYearlyMangaResourceMapper.map(it to null) }.firstOrNull()
+            )
+        }
+    }
+
+    override fun observeAllMangaResources(): Flow<List<FilteredMangaYearlyResource>> {
+        return emptyFlow<List<FilteredMangaYearlyResource>>().onStart {
+            emit(
+            mangaDexTestApi.getMangaList().data.map { MangaToFilteredYearlyMangaResourceMapper.map(it to null) }
+            )
+        }
+    }
+
+    override suspend fun refresh() {
+
+    }
+
+    override val loadState: Flow<LoadState>
+        get() = flowOf(LoadState.None)
+
+}
 
 internal class FilteredYearlyMangaRepositoryImpl(
     private val yearlyResourceDao: FilteredMangaYearlyResourceDao,

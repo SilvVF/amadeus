@@ -63,7 +63,9 @@ class ChapterImageRepositoryImpl(
         emit(Resource.Loading)
         getImages(id)
             .onSuccess {
-                emit(Resource.Success(it))
+                emit(
+                    Resource.Success(it)
+                )
             }
             .onFailure {
                 emit(

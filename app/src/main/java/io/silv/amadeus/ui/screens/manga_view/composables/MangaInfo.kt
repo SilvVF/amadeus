@@ -57,8 +57,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
-import io.silv.amadeus.ui.screens.manga_view.ChapterPageState
-import io.silv.amadeus.ui.screens.manga_view.MangaState
+import io.silv.amadeus.ui.screens.manga_view.MangaViewState
 import io.silv.amadeus.ui.screens.manga_view.Pagination
 import io.silv.amadeus.ui.screens.manga_view.TagsAndLanguages
 import io.silv.amadeus.ui.screens.search.LanguageSelection
@@ -76,7 +75,7 @@ import kotlinx.datetime.toLocalDateTime
 @Composable
 fun ChapterVolumeNavBar(
     chaptersShowing: Boolean,
-    onChange: (Boolean) -> Unit 
+    onChange: (Boolean) -> Unit
 ) {
     NavigationBar(
         Modifier.fillMaxWidth(),
@@ -186,21 +185,21 @@ fun ChapterListHeader(
 
 @OptIn(ExperimentalFoundationApi::class)
 fun LazyListScope.chapterListItems(
-    chapterPageState: ChapterPageState,
+    mangaViewState: MangaViewState,
     downloadingIds: List<String>,
     onDownloadClicked: (ids: List<String>) -> Unit,
     onDeleteClicked: (id: String) -> Unit,
     onOpenWebView: (url: String) -> Unit,
     onReadClicked: (id: String) -> Unit
 ) {
-    when (chapterPageState) {
-        ChapterPageState.Loading -> {
+    when (mangaViewState) {
+        is MangaViewState.Loading -> {
             item {
                 ChapterItemPlaceHolder()
             }
         }
-        is ChapterPageState.Success -> {
-            chapterPageState.volumeToChapters.forEach { (volume, chapters) ->
+        is MangaViewState.Success -> {
+            mangaViewState.volumeToChapter.forEach { (volume, chapters) ->
                 stickyHeader {
                     ChapterInfoHeader(
                         chapters = chapters,
@@ -454,13 +453,13 @@ private fun ChapterListItem(
 }
 
 fun LazyListScope.volumePosterItems(
-    mangaState: MangaState
+    mangaState: MangaViewState
 ) {
     when (mangaState) {
-        is MangaState.Loading -> item {
+        is MangaViewState.Loading -> item {
             VolumePostersPlaceHolder()
         }
-        is MangaState.Success -> {
+        is MangaViewState.Success -> {
             items(mangaState.volumeToArt.toList().chunked(2)) {
                 val context = LocalContext.current
                 val space = LocalSpacing.current

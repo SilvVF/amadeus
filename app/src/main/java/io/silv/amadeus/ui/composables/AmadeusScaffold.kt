@@ -40,7 +40,9 @@ fun AmadeusScaffold(
                 topBar()
             },
             bottomBar = {
-                AmadeusBottomBar()
+                if (showBottomBar) {
+                    AmadeusBottomBar()
+                }
             },
             snackbarHost = snackbarHost,
             contentColor = contentColor,
@@ -51,7 +53,9 @@ fun AmadeusScaffold(
         }
     } else {
         Row {
-            AmadeusNavRail(visible = showBottomBar)
+            if (showBottomBar) {
+                AmadeusNavRail(visible = showBottomBar)
+            }
             Scaffold(
                 topBar = {
                     topBar()

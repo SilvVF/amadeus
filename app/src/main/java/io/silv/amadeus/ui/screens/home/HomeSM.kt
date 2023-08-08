@@ -1,9 +1,7 @@
 package io.silv.amadeus.ui.screens.home
 
 import cafe.adriel.voyager.core.model.coroutineScope
-import io.silv.amadeus.ui.screens.manga_reader.combineToPair
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.domain.models.DomainTag
 import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.PopularMangaRepository
 import io.silv.manga.domain.repositorys.QuickSearchMangaRepository
@@ -12,7 +10,6 @@ import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SeasonalMangaRepository
 import io.silv.manga.domain.repositorys.base.LoadState
 import io.silv.manga.domain.repositorys.base.PagedLoadState
-import io.silv.manga.domain.repositorys.tags.TagRepository
 import io.silv.manga.local.entity.Season
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -33,46 +30,19 @@ class HomeSM(
     seasonalMangaRepository: SeasonalMangaRepository,
     private val savedMangaRepository: SavedMangaRepository,
     private val searchMangaRepository: QuickSearchMangaRepository,
-    tagRepository: TagRepository
 ): AmadeusScreenModel<HomeEvent>() {
 
     private val mutableSearchQuery = MutableStateFlow(searchMangaRepository.latestQuery())
     val searchQuery = mutableSearchQuery.asStateFlow()
 
-
     val refreshingSeasonal = seasonalMangaRepository.loadState
         .map { it is LoadState.Refreshing }
         .stateInUi(false)
 
-
-    val tagsUiState = tagRepository.allTags().map {
-        it.map { tag ->
-            DomainTag(tag)
-        }
-    }
-        .stateInUi(emptyList())
-
-    private var startFlag: Boolean = false
-
-    private val startFlow = MutableStateFlow(false)
-
-    init {
-        coroutineScope.launch {
-            popularMangaRepository.refresh(null)
-            recentMangaRepository.refresh(null)
-        }
-    }
-
-    fun startSearch() {
-        startFlag = true
-        startFlow.update { !it}
-    }
-
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private val mangaSearchFlow = searchQuery
-        .combineToPair(startFlow)
-        .debounce { if (startFlag.also { startFlag = false }) 0L else 1000L }
-        .flatMapLatest { (query, _) ->
+        .debounce {  1000L }
+        .flatMapLatest { query ->
             searchMangaRepository.observeMangaResources(query)
         }
         .onStart {

@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.Flow
 
 interface ChapterEntityRepository: Syncable {
 
+    val loadingVolumeArtIds: Flow<List<String>>
+
     fun getChapters(mangaId: String): Flow<List<ChapterEntity>>
 }
 

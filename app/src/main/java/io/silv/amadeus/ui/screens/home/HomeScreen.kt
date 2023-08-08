@@ -116,7 +116,8 @@ import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 
 
@@ -143,7 +144,9 @@ class HomeScreen: Screen {
         LaunchedEffect(popularMangaListState) {
             snapshotFlow { popularMangaListState.firstVisibleItemIndex }.collect { idx ->
                 if (idx >= ((popularMangaState as? PaginatedListState.Success<List<SavableManga>>)?.data?.size ?: 0) - 5) {
-                    sm.loadNextPopularPage()
+                    if (searchMangaState !is PaginatedListState.Error<List<SavableManga>>) {
+                        sm.loadNextPopularPage()
+                    }
                 }
             }
         }
@@ -151,7 +154,9 @@ class HomeScreen: Screen {
         LaunchedEffect(searchListState) {
             snapshotFlow { searchListState.firstVisibleItemIndex }.collect {idx ->
                 if (idx >= ((searchMangaState as? PaginatedListState.Success<List<SavableManga>>)?.data?.size ?: 0) - 5) {
-                    sm.loadNextSearchPage()
+                    if (searchMangaState !is PaginatedListState.Error<List<SavableManga>>) {
+                        sm.loadNextSearchPage()
+                    }
                 }
             }
         }
@@ -159,7 +164,9 @@ class HomeScreen: Screen {
         LaunchedEffect(recentListState) {
             snapshotFlow { recentListState.firstVisibleItemIndex }.collect { idx ->
                 if (idx >= ((recentMangaState as? PaginatedListState.Success<List<List<SavableManga>>>)?.data?.size ?: 0) - 5) {
-                    sm.loadNextRecentPage()
+                    if (searchMangaState !is PaginatedListState.Error<List<SavableManga>>) {
+                        sm.loadNextRecentPage()
+                    }
                 }
             }
         }
@@ -168,9 +175,14 @@ class HomeScreen: Screen {
             mutableStateOf(false)
         }
 
-        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
-                state = rememberTopAppBarState()
-            )
+        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState())
+
+        ImageCache(
+            list = remember (recentMangaState) {
+                (recentMangaState as? PaginatedListState.Success<List<List<SavableManga>>>)?.data?.flatten() ?: emptyList()
+            },
+            lazyListState = recentListState
+        )
 
         AmadeusScaffold(
             scrollBehavior = scrollBehavior,
@@ -278,7 +290,32 @@ fun LazyListScope.recentMangaList(
 ) {
     when (recentMangaStateUiState) {
         is PaginatedListState.Error -> {
-
+            recentMangaStateUiState.data.fastForEach {
+                item(
+                    key = it.joinToString { it.id }
+                ) {
+                    val space = LocalSpacing.current
+                    Row {
+                        for(manga in it) {
+                            MangaListItem(
+                                manga = manga,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(space.large)
+                                    .clickable {
+                                        onMangaClick(manga)
+                                    },
+                                onTagClick = { name ->
+                                    onTagClick(manga, name)
+                                },
+                                onBookmarkClick = {
+                                    onBookmarkClick(manga)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
         PaginatedListState.Refreshing -> {
             repeat(2) {
@@ -522,6 +559,7 @@ fun shouldShowBottomBar(windowSizeClass: WindowSizeClass?): Boolean {
 }
 
 
+@OptIn(FlowPreview::class)
 @Composable
 fun  ImageCache(
     list: List<SavableManga>,
@@ -536,8 +574,8 @@ fun  ImageCache(
     }
 
     LaunchedEffect(Unit) {
-        snapshotFlow { lazyListState.firstVisibleItemIndex }.collectLatest {
-            val preload = (runCatching { list.subList(it, it + 10) }.getOrNull() ?: emptyList()).filterNot { it.id in prevIds }
+        snapshotFlow { lazyListState.firstVisibleItemIndex }.debounce(10).collect {
+            val preload = (runCatching { list.subList(it, it + 30) }.getOrNull() ?: emptyList()).filterNot { it.id in prevIds }
             if (toDisk) {
                 for(manga in preload) {
                     prevIds.add(manga.id)
@@ -824,6 +862,8 @@ fun TrendingMangaList(
             }
         }
         is PaginatedListState.Success -> {
+            ImageCache(list = trendingMangaUiState.data, lazyListState =state )
+
             Column {
                 Text(
                     text = "Trending",
@@ -832,7 +872,9 @@ fun TrendingMangaList(
                 )
                 LazyRow(
                     state = state,
-                    modifier = Modifier.fillMaxWidth().wrapContentHeight()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight()
                 ) {
                     trendingMangaUiState.data.fastForEachIndexed { i, manga ->
                         item(

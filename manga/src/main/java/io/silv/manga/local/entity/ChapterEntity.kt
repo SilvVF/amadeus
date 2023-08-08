@@ -48,4 +48,8 @@ data class ChapterEntity(
     val version: Int,
 
     val savedLocalAtEpochSeconds: Long = Clock.System.now().epochSeconds
-): AmadeusEntity<Any?>
+): AmadeusEntity<Any?> {
+
+    val downloaded: Boolean
+        get() = chapterImages.isNotEmpty()
+}

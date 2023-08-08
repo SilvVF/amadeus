@@ -24,8 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,6 +51,7 @@ import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import io.silv.amadeus.ui.composables.AmadeusScaffold
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.composables.vertical
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
@@ -119,6 +120,7 @@ class SavedScreen: Screen {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Saved(
     bookmarked: List<Pair<SavableManga, List<SavableChapter>>>,
@@ -131,7 +133,7 @@ fun Saved(
     val space = LocalSpacing.current
     val navigator = LocalNavigator.current
 
-    Scaffold { paddingValues ->
+    AmadeusScaffold { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -306,7 +308,9 @@ fun ContinueReadingItem(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onBackground
                     ),
-                    modifier = Modifier.weight(1f).padding(space.med)
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(space.med)
                 )
                 Divider(
                     Modifier
@@ -319,7 +323,9 @@ fun ContinueReadingItem(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onBackground
                     ),
-                    modifier = Modifier.weight(1f).padding(space.med)
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(space.med)
                 )
                 Divider(
                     Modifier
@@ -332,7 +338,9 @@ fun ContinueReadingItem(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onBackground
                     ),
-                    modifier = Modifier.weight(1f).padding(space.med)
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(space.med)
                 )
             }
             Divider()
@@ -342,7 +350,10 @@ fun ContinueReadingItem(
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                Column(Modifier.weight(1f).padding(space.med)) {
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .padding(space.med)) {
                     Text(
                         "start date",
                         style = MaterialTheme.typography.labelSmall.copy(
@@ -361,7 +372,10 @@ fun ContinueReadingItem(
                     Modifier
                         .fillMaxHeight()
                         .width(2.dp))
-                Column(Modifier.weight(1f).padding(space.med)) {
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .padding(space.med)) {
                     Text("finish date",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onBackground

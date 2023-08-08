@@ -26,8 +26,6 @@ import io.silv.manga.domain.repositorys.SeasonalMangaRepositoryTest
 import io.silv.manga.domain.repositorys.chapter.ChapterEntityRepository
 import io.silv.manga.domain.repositorys.chapter.ChapterImageRepository
 import io.silv.manga.domain.repositorys.chapter.ChapterImageRepositoryImpl
-import io.silv.manga.domain.repositorys.chapter.ChapterListRepository
-import io.silv.manga.domain.repositorys.chapter.ChapterListRepositoryImpl
 import io.silv.manga.domain.repositorys.chapter.OfflineFirstChapterInfoRepository
 import io.silv.manga.domain.repositorys.people.ArtistListRepository
 import io.silv.manga.domain.repositorys.people.ArtistListRepositoryImpl
@@ -93,17 +91,11 @@ val repositoryModule = module {
             bind<ArtistListRepository>()
         }
 
-        singleOf(::ChapterListRepositoryImpl) withOptions {
-            bind<ChapterListRepository>()
-        }
 
         singleOf(::QuickSearchMangaRepositoryTest) withOptions {
             bind<QuickSearchMangaRepository>()
         }
 
-        singleOf(::ChapterImageRepositoryImpl) withOptions {
-            bind<ChapterImageRepository>()
-        }
     } else {
         singleOf(::RecentMangaRepositoryImpl) withOptions {
             bind<RecentMangaRepository>()
@@ -150,9 +142,6 @@ val repositoryModule = module {
             bind<ArtistListRepository>()
         }
 
-        singleOf(::ChapterListRepositoryImpl) withOptions {
-            bind<ChapterListRepository>()
-        }
 
         singleOf(::QuickSearchMangaRepositoryImpl) withOptions {
             bind<QuickSearchMangaRepository>()

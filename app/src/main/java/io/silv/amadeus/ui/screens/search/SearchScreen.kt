@@ -18,15 +18,12 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
@@ -64,8 +61,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Surface
@@ -118,6 +113,7 @@ import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
+import io.silv.amadeus.ui.composables.AmadeusScaffold
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.screens.home.HomeTab
@@ -198,10 +194,10 @@ class SearchScreen: Screen {
             snapAnimationSpec = spring()
         )
 
-        Scaffold(
+        AmadeusScaffold(
+            scrollBehavior = scrollBehavior,
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            contentWindowInsets = ScaffoldDefaults
-                .contentWindowInsets.exclude(WindowInsets.systemBars),
+            showBottomBar = !filtering,
             topBar = {
                 if (!filtering) {
                     TopAppBar(
@@ -1221,6 +1217,7 @@ fun SearchItems(
     when(searchMangaUiState) {
         is SearchMangaUiState.Refreshing -> {
             LazyVerticalGrid(
+                modifier = modifier,
                 columns = GridCells.Fixed(2),
             ) {
                 items(4) {

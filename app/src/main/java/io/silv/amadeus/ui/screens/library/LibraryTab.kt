@@ -1,13 +1,16 @@
 package io.silv.amadeus.ui.screens.library
 
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +31,7 @@ import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import io.silv.amadeus.ui.composables.AmadeusScaffold
 import io.silv.amadeus.ui.screens.manga_reader.ChapterList
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
 import io.silv.amadeus.ui.shared.CenterBox
@@ -64,51 +68,57 @@ object LibraryTab: Tab {
 
 class LibraryScreen: Screen {
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val sm = getScreenModel<LibrarySM>()
         val navigator = LocalNavigator.current
         val mangasToChapters by sm.mangaWithDownloadedChapters.collectAsStateWithLifecycle()
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+        
+        AmadeusScaffold(
+            modifier = Modifier.fillMaxSize()
         ) {
-            items(
-                items = mangasToChapters,
-                key = { item -> item.first.id }
-            ) { (manga, chapters) ->
+            LazyVerticalGrid(
+                modifier = Modifier.fillMaxSize().padding(it),
+                columns = GridCells.Fixed(2),
+            ) {
+                items(
+                    items = mangasToChapters,
+                    key = { item -> item.first.id }
+                ) { (manga, chapters) ->
 
-                var expanded by rememberSaveable {
-                    mutableStateOf(false)
-                }
+                    var expanded by rememberSaveable {
+                        mutableStateOf(false)
+                    }
 
-                val ctx = LocalContext.current
-                val sortedChapters = rememberSortedChapters(chapters = chapters)
-                CenterBox(
-                    Modifier.noRippleClickable { expanded = !expanded }
-                ) {
-                    if (expanded) {
-                        ChapterList(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(300.dp),
-                            sortedChapters = sortedChapters,
-                            onChapterClicked = {
-                                navigator?.push(
-                                    MangaReaderScreen(
-                                        it.mangaId, it.id
+                    val ctx = LocalContext.current
+                    val sortedChapters = rememberSortedChapters(chapters = chapters)
+                    CenterBox(
+                        Modifier.noRippleClickable { expanded = !expanded }
+                    ) {
+                        if (expanded) {
+                            ChapterList(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp),
+                                sortedChapters = sortedChapters,
+                                onChapterClicked = {
+                                    navigator?.push(
+                                        MangaReaderScreen(
+                                            it.mangaId, it.id
+                                        )
                                     )
-                                )
-                            }
-                        )
-                    } else {
-                        AsyncImage(
-                            model = ImageRequest.Builder(ctx)
-                                .data(manga.coverArt)
-                                .build(),
-                            contentDescription = null,
-                            modifier = Modifier.height(300.dp)
-                        )
+                                }
+                            )
+                        } else {
+                            AsyncImage(
+                                model = ImageRequest.Builder(ctx)
+                                    .data(manga.coverArt)
+                                    .build(),
+                                contentDescription = null,
+                                modifier = Modifier.height(300.dp)
+                            )
+                        }
                     }
                 }
             }

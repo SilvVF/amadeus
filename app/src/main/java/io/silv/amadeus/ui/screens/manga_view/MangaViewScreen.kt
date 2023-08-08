@@ -98,7 +98,7 @@ fun LoadWebViewUrls(
 }
 
 class MangaViewScreen(
-  private val manga: SavableManga
+    private val manga: SavableManga
 ): Screen {
 
     @Composable
@@ -154,82 +154,82 @@ class MangaViewScreen(
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
             contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.systemBars)
         ) { paddingValues ->
-                Column(
+            Column(
+                Modifier
+                    .padding(paddingValues)
+            ) {
+                LazyColumn(
                     Modifier
-                        .padding(paddingValues)
+                        .fillMaxSize()
+                        .navigationBarsPadding()
                 ) {
-                    LazyColumn(
-                        Modifier
-                            .fillMaxSize()
-                            .navigationBarsPadding()
-                    ) {
-                        item {
-                            MainPoster(
+                    item {
+                        MainPoster(
+                            manga = manga,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    item {
+                        Column {
+                            MangaContent(
                                 manga = manga,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                        item {
-                            Column {
-                                MangaContent(
-                                    manga = manga,
-                                    bookmarked = mangaViewState.mangaState.manga.bookmarked,
-                                    onBookmarkClicked = sm::bookmarkManga,
-                                    onTagSelected = { tag ->
-                                        manga.tagToId[tag]?.let { id ->
-                                            navigator?.push(
-                                                MangaFilterScreen(tag, id)
-                                            )
-                                        }
+                                bookmarked = mangaViewState.manga.bookmarked,
+                                onBookmarkClicked = sm::bookmarkManga,
+                                onTagSelected = { tag ->
+                                    manga.tagToId[tag]?.let { id ->
+                                        navigator?.push(
+                                            MangaFilterScreen(tag, id)
+                                        )
                                     }
-                                )
-                                ChapterVolumeNavBar(
-                                    chaptersShowing = chaptersShowing,
-                                    onChange = {
-                                        chaptersShowing = it
-                                    }
-                                )
-                            }
-                        }
-                        if (chaptersShowing) {
-                            item {
-                                ChapterListHeader(
-                                    onPageClick = sm::navigateToPage,
-                                    page = currentPage + 1,
-                                    lastPage = mangaViewState.chapterPageState.lastPage,
-                                    sortedAscending = sortedAscending,
-                                    onChangeDirection = sm::changeDirection,
-                                    onLanguageSelected = sm::languageChanged,
-                                    selectedLanguages = remember(selectedLanguages) {
-                                        Language.values().filter { it.code in selectedLanguages }
-                                    }
-                                )
-                            }
-                            chapterListItems(
-                                chapterPageState = mangaViewState.chapterPageState,
-                                downloadingIds = downloading,
-                                onDownloadClicked = {
-                                    sm.downloadChapterImages(it)
-                                },
-                                onDeleteClicked = {
-                                    sm.deleteChapterImages(listOf(it))
-                                },
-                                onOpenWebView = {
-                                    webUrl = it
-                                },
-                                onReadClicked = {
-                                    navigator?.push(
-                                        MangaReaderScreen(manga.id, it)
-                                    )
                                 }
                             )
-                        } else {
-                            volumePosterItems(mangaViewState.mangaState)
+                            ChapterVolumeNavBar(
+                                chaptersShowing = chaptersShowing,
+                                onChange = {
+                                    chaptersShowing = it
+                                }
+                            )
                         }
+                    }
+                    if (chaptersShowing) {
+                        item {
+                            ChapterListHeader(
+                                onPageClick = {},
+                                page = currentPage + 1,
+                                lastPage = mangaViewState.success?.chapters?.size ?: 1,
+                                sortedAscending = sortedAscending,
+                                onChangeDirection = sm::changeDirection,
+                                onLanguageSelected = sm::languageChanged,
+                                selectedLanguages = remember(selectedLanguages) {
+                                    Language.values().filter { it.code in selectedLanguages }
+                                }
+                            )
+                        }
+                        chapterListItems(
+                            mangaViewState = mangaViewState,
+                            downloadingIds = downloading,
+                            onDownloadClicked = {
+                                sm.downloadChapterImages(it)
+                            },
+                            onDeleteClicked = {
+                                sm.deleteChapterImages(listOf(it))
+                            },
+                            onOpenWebView = {
+                                webUrl = it
+                            },
+                            onReadClicked = {
+                                navigator?.push(
+                                    MangaReaderScreen(manga.id, it)
+                                )
+                            }
+                        )
+                    } else {
+                        volumePosterItems(mangaViewState)
                     }
                 }
             }
         }
+    }
 }
 
 
@@ -435,4 +435,3 @@ fun PageItem(
         Text(text = "$page")
     }
 }
-

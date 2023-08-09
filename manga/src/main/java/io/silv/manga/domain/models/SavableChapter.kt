@@ -1,6 +1,8 @@
 package io.silv.manga.domain.models
 
 import android.os.Parcelable
+import io.silv.manga.domain.minus
+import io.silv.manga.domain.timeNow
 import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.ProgressState
 import kotlinx.datetime.LocalDateTime
@@ -57,6 +59,30 @@ data class SavableChapter(
         userToId = if (entity.user != null && entity.userId != null) { entity.user to entity.userId } else null,
         ableToDownload = entity.externalUrl == null || implementedImageSources.any { it in entity.externalUrl },
     )
+
+    val daysSinceCreated: Long
+        get() = timeNow().minus(this.createdAt).inWholeDays
+
+    val validNumber: Boolean
+        get() = this.chapter >= 0
+
+    val daysSinceCreatedString: String
+        get() = daysSinceCreated.run {
+            return@run if (this >= 365) {
+                val yearsAgo = this / 365
+                if (yearsAgo <= 1.0) {
+                    "last year"
+                } else {
+                    "${this/365} years ago"
+                }
+            } else {
+                if (this <= 0.9) {
+                    "today"
+                } else {
+                    "$this days ago"
+                }
+            }
+        }
 
 
     companion object {

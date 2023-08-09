@@ -113,7 +113,7 @@ import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
-import io.silv.amadeus.ui.composables.AmadeusScaffold
+import io.silv.amadeus.AmadeusScaffold
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.screens.home.HomeTab

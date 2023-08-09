@@ -25,7 +25,6 @@ import io.silv.manga.network.mangadex.requests.CoverArtRequest
 import io.silv.manga.network.mangadex.requests.MangaFeedRequest
 import io.silv.manga.network.mangadex.requests.Order
 import io.silv.manga.network.mangadex.requests.OrderBy
-import kotlinx.coroutines.flow.first
 import java.time.Duration
 
 internal data class UpdateInfo(
@@ -161,7 +160,7 @@ private suspend fun getMangaFeedAndUpdateChapter(
             chapterListResponse.data.forEach {
                 chapterDao.upsertChapter(
                     ChapterToChapterEntityMapper.map(
-                        it to chapterDao.getChapterById(it.id).first()
+                        it to chapterDao.getChapterById(it.id)
                     )
                 )
             }

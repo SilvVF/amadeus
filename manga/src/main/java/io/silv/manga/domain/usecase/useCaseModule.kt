@@ -21,6 +21,10 @@ val useCaseModule = module {
         UpdateChapterWithArt.defaultImpl()
     }
 
+    factory {
+        GetMangaAggregate.defaultImpl(get(), get())
+    }
+
     factoryOf(::GetCombinedSavableMangaWithChapters)
 
     factoryOf(::UpdateMangaResourceWithArt)

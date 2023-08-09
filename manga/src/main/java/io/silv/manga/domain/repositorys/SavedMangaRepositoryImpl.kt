@@ -4,10 +4,9 @@ import android.util.Log
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.MangaEntityMapper
-import io.silv.manga.domain.subtract
+import io.silv.manga.domain.minus
 import io.silv.manga.domain.timeNow
 import io.silv.manga.domain.usecase.GetMangaResourcesById
-import io.silv.manga.domain.usecase.UpdateChapterWithArt
 import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.ProgressState
@@ -32,7 +31,6 @@ internal class SavedMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,
     private val dispatchers: AmadeusDispatchers,
     private val chapterDao: ChapterDao,
-    private val updateChapter: UpdateChapterWithArt
 ): SavedMangaRepository {
 
     private val TAG = "SavedMangaRepositoryImpl"
@@ -108,7 +106,7 @@ internal class SavedMangaRepositoryImpl(
 
     override suspend fun updateLastReadPage(mangaId: String, chapterId: String, page: Int) {
         withContext(dispatchers.io) {
-            val chapter = chapterDao.getChapterById(chapterId).first() ?: return@withContext
+            val chapter = chapterDao.getChapterById(chapterId) ?: return@withContext
             chapterDao.updateChapter(
                 chapter.copy(
                     progressState = when(page) {
@@ -149,7 +147,7 @@ internal class SavedMangaRepositoryImpl(
             getNetwork = {
                 saved.mapNotNull { saved ->
                     saved.takeIf {
-                        timeNow().subtract(saved.savedAtLocal) > Duration.ofDays(4).toKotlinDuration()
+                        timeNow().minus(saved.savedAtLocal) > Duration.ofDays(4).toKotlinDuration()
                                 && saved.status != Status.cancelled
                                 && saved.status != Status.completed
                     }

@@ -109,7 +109,9 @@ val Manga.alternateTitles: Map<String, String>
 
 fun epochSeconds() = Clock.System.now().epochSeconds
 
-fun timeNow() = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+fun timeZone() = TimeZone.currentSystemDefault()
+
+fun timeNow() = Clock.System.now().toLocalDateTime(timeZone())
 
 fun timeStringMinus(duration: kotlin.time.Duration): String {
     return Clock.System.now()

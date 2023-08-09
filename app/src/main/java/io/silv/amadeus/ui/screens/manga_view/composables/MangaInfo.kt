@@ -66,9 +66,6 @@ import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableChapter
 import io.silv.manga.domain.models.SavableManga
-import io.silv.manga.domain.subtract
-import io.silv.manga.domain.timeNow
-import kotlinx.datetime.TimeZone
 
 @Composable
 fun ChapterVolumeNavBar(
@@ -321,14 +318,14 @@ private fun ChapterListItem(
             horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.fillMaxWidth(0.5f)) {
                 Text(
-                    text = "Chapter ${chapter.chapter ?: "extra"}",
+                    text = "Chapter ${chapter.chapter.takeIf { chapter.validNumber } ?: "extra"}",
                     style = MaterialTheme.typography.labelLarge.copy(
                         fontWeight = FontWeight.Bold
                     ),
                     modifier = Modifier.padding(vertical = space.xs)
                 )
                 Text(
-                    text = chapter.title ?: "Ch. ${chapter.chapter}",
+                    text = chapter.title.ifBlank { "Ch. ${chapter.chapter}" },
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Bold
                     ),
@@ -408,24 +405,6 @@ private fun ChapterListItem(
                         )
                     }
                 }
-                val daysSinceCreation = remember(chapter) {
-                    val tz =  TimeZone.currentSystemDefault()
-                    val days = timeNow().subtract(chapter.createdAt).inWholeDays
-                    if (days >= 365) {
-                        val yearsAgo = days / 365
-                        if (yearsAgo <= 1.0) {
-                            "last year"
-                        } else {
-                            "${days/365} years ago"
-                        }
-                    } else {
-                        if (days <= 0.9) {
-                            "today"
-                        } else {
-                            "$days days ago"
-                        }
-                    }
-                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Outlined.AccessTime,
@@ -433,7 +412,7 @@ private fun ChapterListItem(
                         ,modifier = Modifier.padding(horizontal = space.small)
                     )
                     Text(
-                        daysSinceCreation,
+                        text = chapter.daysSinceCreatedString,
                         style = MaterialTheme.typography.labelMedium
                             .copy(fontWeight = FontWeight.SemiBold)
                     )

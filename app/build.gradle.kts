@@ -81,7 +81,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
 
 
-    val navVersion = "2.6.0"
+    implementation("androidx.compose.animation:animation")
+    implementation("androidx.compose.animation:animation-graphics")
+
 
     implementation(libs.androidx.navigation.compose)
 

@@ -51,7 +51,7 @@ import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.silv.amadeus.ui.composables.AmadeusScaffold
+import io.silv.amadeus.AmadeusScaffold
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.composables.vertical
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen

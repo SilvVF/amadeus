@@ -1,6 +1,7 @@
 package io.silv.amadeus.ui.screens.home
 
 import cafe.adriel.voyager.core.model.coroutineScope
+import io.silv.amadeus.ui.screens.manga_reader.combineToPair
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.PopularMangaRepository
@@ -39,10 +40,15 @@ class HomeSM(
         .map { it is LoadState.Refreshing }
         .stateInUi(false)
 
+    private val forceSearchFlow = MutableStateFlow(false)
+
+    private var startFlag = false
+
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private val mangaSearchFlow = searchQuery
-        .debounce {  1000L }
-        .flatMapLatest { query ->
+        .combineToPair(forceSearchFlow)
+        .debounce { if (startFlag.also { startFlag = false }) {  0L } else 2000L }
+        .flatMapLatest { (query, _) ->
             searchMangaRepository.observeMangaResources(query)
         }
         .onStart {
@@ -51,6 +57,11 @@ class HomeSM(
                     .first()
             )
         }
+
+    fun startSearching() {
+        startFlag = true
+        forceSearchFlow.update { !it }
+    }
 
     private val loadState = searchMangaRepository.loadState.stateInUi(PagedLoadState.None)
 

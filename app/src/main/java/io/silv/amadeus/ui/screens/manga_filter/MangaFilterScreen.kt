@@ -36,7 +36,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
-import io.silv.amadeus.ui.composables.AmadeusScaffold
+import io.silv.amadeus.AmadeusScaffold
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.composables.PageLoader

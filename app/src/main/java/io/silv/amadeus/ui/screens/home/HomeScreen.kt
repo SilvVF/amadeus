@@ -102,7 +102,7 @@ import coil.decode.Decoder
 import coil.imageLoader
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-import io.silv.amadeus.ui.composables.AmadeusScaffold
+import io.silv.amadeus.AmadeusScaffold
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.BlurImageBackground
 import io.silv.amadeus.ui.composables.MangaGenreTags
@@ -199,6 +199,9 @@ class HomeScreen: Screen {
                     showTextField = searching,
                     onSearchChanged = {
                         searching = it
+                    },
+                    onForceSearch = {
+                        sm.startSearching()
                     }
                 )
             }
@@ -213,71 +216,98 @@ class HomeScreen: Screen {
                             modifier = Modifier.fillMaxSize(1f),
                             searchMangaUiState = searchMangaState,
                             gridState = searchListState,
-                            onMangaClick = {
-                                navigator?.push(MangaViewScreen(it))
+                            onMangaClick = { manga ->
+                                navigator?.push(
+                                    MangaViewScreen(manga)
+                                )
                             },
-                            onBookmarkClick = {
-                                sm.bookmarkManga(it.id)
+                            onBookmarkClick = { manga ->
+                                sm.bookmarkManga(manga.id)
                             },
                         )
                     } else {
-                        LazyColumn(
+                        BrowseMangaContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f),
-                            state = recentListState,
-                        ) {
-                            seasonalMangaLists(
-                                refreshingSeasonal = refreshingSeasonal,
-                                seasonalMangaState = seasonalMangaState,
-                                onBookmarkClick = {
-                                    sm.bookmarkManga(it.id)
-                                }
-                            )
-                            item {
-                                TrendingMangaList(
-                                    trendingMangaUiState = popularMangaState,
-                                    state = popularMangaListState,
-                                    onMangaClick = {
-                                        navigator?.push(
-                                            MangaViewScreen(it)
-                                        )
-                                    },
-                                    onBookmarkClick = {
-                                        sm.bookmarkManga(it.id)
-                                    }
-                                )
-                            }
-                            item {
-                                Text(
-                                    text = "Recently Updated",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    modifier = Modifier.padding(space.med)
-                                )
-                            }
-                            recentMangaList(
-                                recentMangaStateUiState = recentMangaState,
-                                onBookmarkClick = { manga ->
-                                    sm.bookmarkManga(manga.id)
-                                },
-                                onTagClick = { manga, name ->
-                                    manga.tagToId[name]?.let {id ->
-                                        navigator?.push(
-                                            MangaFilterScreen(name, id)
-                                        )
-                                    }
-                                },
-                                onMangaClick = { manga ->
-                                    navigator?.push(
-                                        MangaViewScreen(manga)
-                                    )
-                                }
-                            )
-                        }
+                            recentMangaLazyListState = recentListState,
+                            recentMangaList = recentMangaState,
+                            popularMangaLazyListState = popularMangaListState,
+                            popularMangaList = popularMangaState,
+                            seasonalMangaList = seasonalMangaState,
+                            seasonalRefreshing = refreshingSeasonal,
+                            onBookmarkClick = sm::bookmarkManga
+                        )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun BrowseMangaContent(
+    modifier: Modifier,
+    recentMangaLazyListState: LazyListState,
+    recentMangaList: PaginatedListState<List<List<SavableManga>>>,
+    seasonalMangaList: SeasonalMangaUiState,
+    seasonalRefreshing: Boolean,
+    popularMangaList: PaginatedListState<List<SavableManga>>,
+    popularMangaLazyListState: LazyListState,
+    onBookmarkClick: (mangaId: String) -> Unit
+) {
+    val space = LocalSpacing.current
+    val navigator = LocalNavigator.current
+    LazyColumn(
+        modifier = modifier,
+        state = recentMangaLazyListState,
+    ) {
+        seasonalMangaLists(
+            refreshingSeasonal = seasonalRefreshing,
+            seasonalMangaState = seasonalMangaList,
+            onBookmarkClick = {
+                onBookmarkClick(it.id)
+            }
+        )
+        item {
+            TrendingMangaList(
+                trendingMangaUiState = popularMangaList,
+                state = popularMangaLazyListState,
+                onMangaClick = {
+                    navigator?.push(
+                        MangaViewScreen(it)
+                    )
+                },
+                onBookmarkClick = {
+                    onBookmarkClick(it.id)
+                }
+            )
+        }
+        item {
+            Text(
+                text = "Recently Updated",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(space.med)
+            )
+        }
+        recentMangaList(
+            recentMangaStateUiState = recentMangaList,
+            onBookmarkClick = { manga ->
+                onBookmarkClick(manga.id)
+            },
+            onTagClick = { manga, name ->
+                manga.tagToId[name]?.let { id ->
+                    navigator?.push(
+                        MangaFilterScreen(name, id)
+                    )
+                }
+            },
+            onMangaClick = { manga ->
+                navigator?.push(
+                    MangaViewScreen(manga)
+                )
+            }
+        )
     }
 }
 
@@ -453,6 +483,7 @@ private fun HomeSearchTopAppBar(
     actions: @Composable (RowScope.() -> Unit),
     scrollBehavior: TopAppBarScrollBehavior,
     searchText: String,
+    onForceSearch: () -> Unit,
     onSearchChanged: (active: Boolean) -> Unit,
 ) {
     var alreadyRequestedFocus by rememberSaveable { mutableStateOf(false) }
@@ -513,7 +544,7 @@ private fun HomeSearchTopAppBar(
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
                     keyboardActions = KeyboardActions(
                         onSearch = {
-                            onSearchText(searchText)
+                            onForceSearch()
                         },
                     ),
                 )

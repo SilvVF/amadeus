@@ -34,7 +34,6 @@ import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.requests.ChapterListRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
@@ -149,6 +148,8 @@ class ChapterDownloadWorker(
         val chaptersToGet = inputData.getStringArray(CHAPTERS_KEY)?.toList()
             ?: return Result.failure().also { Log.d(logTag, "chaptersToGet was null") }
 
+        val imageUrls = inputData.getStringArray(CHAPTERS_KEY)?.toList()
+
         Log.d(logTag, "starting work with $mangaId manga id $chaptersToGet chapter ids")
 
         downloadingIds.update { it + chaptersToGet }
@@ -167,8 +168,40 @@ class ChapterDownloadWorker(
         if (unsavedChapterIds.isNotEmpty()) {
            fetchAndSaveChapters(unsavedChapterIds)
         }
+
+        if (!imageUrls.isNullOrEmpty()) {
+            val result = suspendRunCatching {
+                withContext(dispatchers.io) {
+                    val chapter = chapterDao.getChapterById(chaptersToGet.first()) ?: error("No chapter found")
+                    imageUrls.chunked(4).forEachIndexed { index, urls ->
+                        val uris = urls.mapIndexed { i, url ->
+                            downloader.write(mangaId, chapter.id, (index * 4 + i), url).toString()
+                        }
+                        val prevEntity =
+                            chapterDao.getChapterById(chapter.id)?: return@forEachIndexed
+                        Log.d(
+                            logTag,
+                            "updating chapter images with $uris \nchunk#$index, endPage = ${(index * 4) + uris.size}"
+                        )
+                        chapterDao.updateChapter(
+                            prevEntity.copy(
+                                chapterImages = prevEntity.chapterImages + uris,
+                                pages = imageUrls.size
+                            )
+                        )
+                    }
+                }
+            }
+            downloadingIds.update { it.filter { id -> id !in chaptersToGet } }
+            return if (result.isSuccess) {
+                Result.success()
+            } else  {
+                Result.failure()
+            }
+        }
+
         val result = suspendRunCatching {
-            chaptersToGet.mapNotNull { chapterDao.getChapterById(it).firstOrNull() }
+            chaptersToGet.mapNotNull { chapterDao.getChapterById(it) }
                 .forEach { chapter ->
                     val externalUrl = chapter.externalUrl?.replace("\\", "") ?: ""
                     val chapterImageUrls = when {
@@ -211,7 +244,7 @@ class ChapterDownloadWorker(
                             downloader.write(mangaId, chapter.id, (index * 4 + i), url).toString()
                         }
                         val prevEntity =
-                            chapterDao.getChapterById(chapter.id).first() ?: return@forEachIndexed
+                            chapterDao.getChapterById(chapter.id) ?: return@forEachIndexed
                         Log.d(
                             logTag,
                             "updating chapter images with $uris \nchunk#$index, endPage = ${(index * 4) + uris.size}"
@@ -219,7 +252,7 @@ class ChapterDownloadWorker(
                         chapterDao.updateChapter(
                             prevEntity.copy(
                                 chapterImages = prevEntity.chapterImages + uris,
-                                pages = (index * 4) + uris.size
+                                pages = chapterImageUrls.size
                             )
                         )
                     }
@@ -235,6 +268,7 @@ class ChapterDownloadWorker(
     companion object {
         const val MANGA_ID = "MANGA_ID"
         const val CHAPTERS_KEY = "CHAPTERS_KEY"
+        const val IMAGES_URLS_KEY = "IMAGES_URLS_KEY"
 
         val downloadingIds = MutableStateFlow<List<String>>(emptyList())
 
@@ -244,7 +278,11 @@ class ChapterDownloadWorker(
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
-        fun downloadWorkRequest(chapterIds: List<String>, mangaId: String): OneTimeWorkRequest {
+        fun downloadWorkRequest(
+            chapterIds: List<String>,
+            mangaId: String,
+            imageUrls: List<String> = emptyList()
+        ): OneTimeWorkRequest {
             return OneTimeWorkRequestBuilder<ChapterDownloadWorker>()
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .setBackoffCriteria(
@@ -255,6 +293,7 @@ class ChapterDownloadWorker(
                     Data.Builder()
                         .putString(MANGA_ID, mangaId)
                         .putStringArray(CHAPTERS_KEY, chapterIds.toTypedArray())
+                        .putStringArray(IMAGES_URLS_KEY, imageUrls.toTypedArray())
                         .build()
                 )
                 .setConstraints(SyncConstraints)

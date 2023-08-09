@@ -12,7 +12,6 @@ import androidx.work.WorkerParameters
 import io.silv.core.AmadeusDispatchers
 import io.silv.core.pForEach
 import io.silv.manga.local.dao.ChapterDao
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -23,7 +22,7 @@ import java.time.Duration
 const val ChapterDeletionWorkerTag = "ChapterDeletionWorkerTag"
 
 class ChapterDeletionWorker(
-    private val appContext: Context,
+    appContext: Context,
     workerParameters: WorkerParameters,
 ): CoroutineWorker(appContext, workerParameters), KoinComponent {
 
@@ -39,7 +38,7 @@ class ChapterDeletionWorker(
         val result = runCatching {
             withContext(dispatchers.io) {
                 chaptersToDelete.pForEach(this) { id ->
-                    val chapter = chapterDao.getChapterById(id).first() ?: return@pForEach
+                    val chapter = chapterDao.getChapterById(id) ?: return@pForEach
                     val deleted = chapter.chapterImages.map { uri ->
                         val file = File(uri.toUri().path ?: error("No path for $uri"))
                         file.delete() to uri

@@ -16,7 +16,6 @@ import io.silv.manga.local.entity.SeasonalMangaResource
 import io.silv.manga.network.mangadex.models.chapter.Chapter
 import io.silv.manga.network.mangadex.models.manga.Manga
 import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlin.time.Duration
 
@@ -31,10 +30,13 @@ private fun String.parseMangaDexTimeToDateTime(): LocalDateTime {
     }
 }
 
-fun LocalDateTime.subtract(localDateTime: LocalDateTime): Duration {
-    val tz = TimeZone.currentSystemDefault()
-    return this.toInstant(tz).minus(localDateTime.toInstant(tz))
+infix fun  LocalDateTime.minus(localDateTime: LocalDateTime): Duration {
+    return this.toInstant(timeZone())
+        .minus(
+            localDateTime.toInstant(timeZone())
+        )
 }
+
 
 object ChapterToChapterEntityMapper: Mapper<ChapterWithPrevEntity, ChapterEntity> {
     override fun map(from: ChapterWithPrevEntity): ChapterEntity {

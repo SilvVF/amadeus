@@ -196,7 +196,9 @@ class MangaViewScreen(
                             ChapterListHeader(
                                 onPageClick = {},
                                 page = currentPage + 1,
-                                lastPage = mangaViewState.success?.chapters?.size ?: 1,
+                                lastPage = remember(mangaViewState.success?.chapters) {
+                                    mangaViewState.success?.chapters?.size?.div(97) ?: 1
+                                },
                                 sortedAscending = sortedAscending,
                                 onChangeDirection = sm::changeDirection,
                                 onLanguageSelected = sm::languageChanged,
@@ -249,7 +251,7 @@ fun TagsAndLanguages(
     Text("Tags", style = MaterialTheme.typography.labelSmall)
     FlowRow {
         if (!expanded) {
-            list.runCatching { take(3) }.getOrDefault(list).forEach {name ->
+            list.take(3).forEach {name ->
                 AssistChip(
                     onClick = { navigate(name)},
                     label = { Text(name) },

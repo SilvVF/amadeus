@@ -6,7 +6,7 @@ import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.ChapterToChapterEntityMapper
 import io.silv.manga.domain.coverArtUrl
-import io.silv.manga.domain.subtract
+import io.silv.manga.domain.minus
 import io.silv.manga.domain.suspendRunCatching
 import io.silv.manga.domain.timeNow
 import io.silv.manga.domain.usecase.GetMangaResourcesById
@@ -30,13 +30,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlin.time.toKotlinDuration
 
 
@@ -64,17 +63,19 @@ internal class OfflineFirstChapterInfoRepository(
         }
     )
 
-    private fun Long.lastUpdatedOver(hours: Long): Boolean {
-        return Clock.System.now().minus(Instant.fromEpochSeconds(this)).inWholeHours > hours
-    }
 
     private suspend fun shouldUpdate(mangaId: String): Boolean = withContext(dispatchers.io) {
-        val chapters = chapterDao.getChaptersByMangaId(mangaId).firstOrNull()?.ifEmpty { null }
-        chapters == null || chapters.any { timeNow().subtract(it.savedLocalAt) > java.time.Duration.ofHours(12).toKotlinDuration() }
+        val chapters = chapterDao.getChaptersByMangaId(mangaId).ifEmpty { null }
+            .also { Log.d("ChapterEntityRepository", "${it?.size} $mangaId") }
+        chapters == null || chapters.any {
+            timeNow().minus(it.savedLocalAt) > java.time.Duration.ofHours(
+                12
+            ).toKotlinDuration()
+        }.also { Log.d("ChapterEntityRepository", "${it}") }
     }
 
     override fun getChapters(mangaId: String): Flow<List<ChapterEntity>> {
-        return chapterDao.getChaptersByMangaId(mangaId).onStart {
+        return chapterDao.observeChaptersByMangaId(mangaId).onStart {
             if (shouldUpdate(mangaId)) {
                 Log.d("ChapterEntityRepository","Updating from network")
                 updateFromNetwork(mangaId)
@@ -82,6 +83,8 @@ internal class OfflineFirstChapterInfoRepository(
             } else {
                 Log.d("ChapterEntityRepository","Skipped Fetch From network")
             }
+        }.onEach {
+
         }
     }
 
@@ -92,6 +95,7 @@ internal class OfflineFirstChapterInfoRepository(
                 translatedLanguage = langs,
                 offset = 0,
                 limit = 500,
+                includes = listOf("scanlation_group", "user"),
                 order = mapOf(Order.chapter to OrderBy.asc)
             )
         )
@@ -108,6 +112,7 @@ internal class OfflineFirstChapterInfoRepository(
                         translatedLanguage = langs,
                         offset = it * response.limit,
                         limit = 500,
+                        includes = listOf("scanlation_group", "user"),
                         order = mapOf(Order.chapter to OrderBy.asc)
                     )
                 )
@@ -122,10 +127,16 @@ internal class OfflineFirstChapterInfoRepository(
         getInitialChapterList(mangaId)
             .fold(
                 onSuccess = {
-                    syncer.sync(
-                        current = chapterDao.getChaptersByMangaId(mangaId).firstOrNull() ?: emptyList(),
+                    val result = syncer.sync(
+                        current = chapterDao.observeChaptersByMangaId(mangaId).firstOrNull() ?: emptyList(),
                         networkResponse =  it.data + getRestOfChapters(it, mangaId)
                     )
+                    for (chapter in result.unhandled) {
+                        if (!chapter.downloaded) {
+                            Log.d("ChapterEntityRepository", "deleted ${chapter.id}")
+                            chapterDao.deleteChapter(chapter)
+                        }
+                    }
                 },
                 onFailure = {
 
@@ -183,19 +194,16 @@ internal class OfflineFirstChapterInfoRepository(
     }
 
     override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
+
         val savedManga = savedMangaDao.getSavedManga().first()
         val savedChapters = chapterDao.getChapterEntities().first()
-        // Delete any chapter that is not associated with a saved manga
-        // and that has no chapter images downloaded
-        val savedChaptersAfterDeletion = savedChapters.filter { chapter ->
-            savedManga.none { it.id == chapter.id } && chapter.chapterImages.isEmpty()
-                .also { unused ->
-                    if (unused) chapterDao.deleteChapter(chapter)
-                }
-        }
+            .filter {
+                // filter chapters that could have had an update
+                it.savedLocalAt.minus(it.readableAt).inWholeSeconds >= 0
+            }
 
         return runCatching {
-            for (chapterEntity in savedChaptersAfterDeletion) {
+            for (chapterEntity in savedChapters) {
                 updateChapter(
                     UpdateInfo(
                         id = chapterEntity.mangaId,

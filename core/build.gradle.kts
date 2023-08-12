@@ -17,4 +17,6 @@ dependencies {
     implementation(kotlin("reflect"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.7.2")
     implementation(project(":ktor-response-mapper"))
+    implementation(libs.flow.combinetuple.kt)
+    implementation(libs.tuples.kt)
 }

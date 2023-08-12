@@ -140,10 +140,10 @@ internal class SavedMangaRepositoryImpl(
     }
 
     override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
-        val saved = savedMangaDao.getSavedManga().first()
+        val saved = emptyList<SavedMangaEntity>()
         return synchronizer.syncWithSyncer(
             syncer = syncer,
-            getCurrent = { saved },
+            getCurrent = { emptyList() },
             getNetwork = {
                 saved.mapNotNull { saved ->
                     saved.takeIf {

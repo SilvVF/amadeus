@@ -48,6 +48,9 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
 
+    implementation(libs.flow.combinetuple.kt)
+    implementation(libs.tuples.kt)
+
     //ROOM
     ksp(libs.room.ksp)
     implementation(libs.room.runtime)

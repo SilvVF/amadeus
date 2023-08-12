@@ -22,7 +22,7 @@ val useCaseModule = module {
     }
 
     factory {
-        GetMangaAggregate.defaultImpl(get(), get())
+        GetMangaAggregate.defaultImpl(get(), get(), get())
     }
 
     factoryOf(::GetCombinedSavableMangaWithChapters)

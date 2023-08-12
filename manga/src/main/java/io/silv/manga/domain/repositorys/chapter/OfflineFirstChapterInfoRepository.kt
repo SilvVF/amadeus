@@ -11,7 +11,6 @@ import io.silv.manga.domain.suspendRunCatching
 import io.silv.manga.domain.timeNow
 import io.silv.manga.domain.usecase.GetMangaResourcesById
 import io.silv.manga.domain.usecase.UpdateChapterWithArt
-import io.silv.manga.domain.usecase.UpdateInfo
 import io.silv.manga.domain.usecase.UpdateMangaResourceWithArt
 import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.SavedMangaDao
@@ -195,28 +194,29 @@ internal class OfflineFirstChapterInfoRepository(
 
     override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
 
-        val savedManga = savedMangaDao.getSavedManga().first()
-        val savedChapters = chapterDao.getChapterEntities().first()
-            .filter {
-                // filter chapters that could have had an update
-                it.savedLocalAt.minus(it.readableAt).inWholeSeconds >= 0
-            }
-
-        return runCatching {
-            for (chapterEntity in savedChapters) {
-                updateChapter(
-                    UpdateInfo(
-                        id = chapterEntity.mangaId,
-                        chapterDao = chapterDao,
-                        savedMangaDao = savedMangaDao,
-                        mangaDexApi = mangaDexApi,
-                        entity = savedManga.find { it.id == chapterEntity.mangaId } ?: continue,
-                        page = 0,
-                        fetchLatest = true
-                    )
-                )
-            }
-        }
-            .isSuccess
+//        val savedManga = savedMangaDao.getSavedManga().first()
+//        val savedChapters = chapterDao.getChapterEntities().first()
+//            .filter {
+//                // filter chapters that could have had an update
+//                it.savedLocalAt.minus(it.readableAt).inWholeSeconds >= 0
+//            }
+//
+//        return runCatching {
+//            for (chapterEntity in savedChapters) {
+//                updateChapter(
+//                    UpdateInfo(
+//                        id = chapterEntity.mangaId,
+//                        chapterDao = chapterDao,
+//                        savedMangaDao = savedMangaDao,
+//                        mangaDexApi = mangaDexApi,
+//                        entity = savedManga.find { it.id == chapterEntity.mangaId } ?: continue,
+//                        page = 0,
+//                        fetchLatest = true
+//                    )
+//                )
+//            }
+//        }
+//            .isSuccess
+        return true
     }
 }

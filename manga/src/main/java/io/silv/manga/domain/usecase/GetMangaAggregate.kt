@@ -4,6 +4,7 @@ import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.ApiResponse
 import io.silv.ktor_response_mapper.message
 import io.silv.manga.domain.repositorys.base.Resource
+import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.models.manga.MangaAggregateResponse
 import io.silv.manga.network.mangadex.requests.MangaAggregateRequest
@@ -16,8 +17,9 @@ fun interface GetMangaAggregate: (String) -> Flow<Resource<MangaAggregateRespons
     companion object {
         internal fun defaultImpl(
             mangaDexApi: MangaDexApi,
-            dispatchers: AmadeusDispatchers
-        ) = getMangaAggregateImpl(mangaDexApi, dispatchers)
+            dispatchers: AmadeusDispatchers,
+            chapterDao: ChapterDao
+        ) = getMangaAggregateImpl(mangaDexApi,chapterDao, dispatchers)
     }
 }
 
@@ -26,6 +28,7 @@ private val keyOrder = ArrayDeque<String>()
 
 private fun getMangaAggregateImpl(
     mangaDexApi: MangaDexApi,
+    chapterDao: ChapterDao,
     dispatchers: AmadeusDispatchers
 ) = GetMangaAggregate { id ->
     flow {
@@ -37,7 +40,8 @@ private fun getMangaAggregateImpl(
         val result = mangaDexApi.getMangaAggregate(
             mangaId = id,
             MangaAggregateRequest(
-                translatedLanguage = listOf("en")
+                translatedLanguage = listOf("en"),
+                groups =  chapterDao.getChaptersByMangaId(id).mapNotNull { it.scanlationGroupId }.ifEmpty { null }
             )
         )
         when(result) {

@@ -1,6 +1,7 @@
 package io.silv.amadeus.ui.screens.manga_view
 
 import android.annotation.SuppressLint
+import android.os.Parcelable
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -71,6 +72,7 @@ import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
+import kotlinx.parcelize.Parcelize
 import org.koin.core.parameter.parametersOf
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -97,9 +99,10 @@ fun LoadWebViewUrls(
     )
 }
 
+@Parcelize
 class MangaViewScreen(
     private val manga: SavableManga
-): Screen {
+): Screen, Parcelable {
 
     @Composable
     override fun Content() {

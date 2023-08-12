@@ -1,10 +1,12 @@
 package io.silv.amadeus.ui.screens.manga_reader
 
+import android.util.Log
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
+import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.core.combineTuple
+import io.silv.core.filterUnique
 import io.silv.manga.domain.models.SavableChapter
 import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.SavedMangaRepository
@@ -39,38 +41,35 @@ class MangaReaderSM(
     val mangaReaderState = combineTuple(
         chapterId,
         getCombinedSavableMangaWithChapters(mangaId),
-        getMangaAggregate(mangaId)
-    ).map { (chapterId, savableWithChapters, aggregateResource) ->
+        //getMangaAggregate(mangaId)
+    ).map { (chapterId, savableWithChapters) ->
             val (manga, chapters) = savableWithChapters
             if (manga == null) {
                 return@map MangaReaderState.Failure("manga not found")
             }
             val chapter = chapters.find { c -> c.id == chapterId } ?: return@map MangaReaderState.Failure("chapter not found")
+            var dec = -1
+            val sortedChapters = chapters
+                .map { SavableChapter(it) }
+                .sortedBy { it.chapter }
+                .filterUnique { if(it.chapter == -1L || chapter.id == it.id) dec-- else it.chapter }
             if (chapter.downloaded) {
                 MangaReaderState.Success(
                     manga = manga,
                     chapter = SavableChapter(chapter),
-                    chapters = when(aggregateResource) {
-                        is Resource.Failure, Resource.Loading -> chapters.map { SavableChapter(it) }
-                        is Resource.Success -> combineAggregateAndChapter(
-                            aggregateResource.result,
-                            chapter,
-                            chapters
-                        )
-                            .values.flatten()
-                    },
+                    chapters = sortedChapters,
                     pages = chapter.chapterImages
                 )
             } else {
                 chapterImageRepository.getChapterImages(chapterId)
-                    .fold<Resource<Pair<Chapter, List<String>>>, MangaReaderState>(MangaReaderState.Loading) { initial, resource ->
+                    .fold<Resource<Pair<Chapter, List<String>>>, MangaReaderState>(MangaReaderState.Loading) { _, resource ->
                     when (resource) {
                         is Resource.Failure -> MangaReaderState.Failure(resource.message)
                         Resource.Loading -> MangaReaderState.Loading
                         is Resource.Success -> MangaReaderState.Success(
                             manga = manga,
                             chapter = SavableChapter(chapter),
-                            chapters = chapters.map { SavableChapter(it) },
+                            chapters = sortedChapters,
                             pages = resource.result.second
                         )
                     }
@@ -81,29 +80,25 @@ class MangaReaderSM(
 
 
     fun goToNextChapter(chapter: SavableChapter) = coroutineScope.launch {
-        chapterId.update { id ->
-            val chapterNumber = chapter.chapter
-            mangaReaderState.value.success?.let { state ->
-                state.chapters.find {
-                    it.chapter == chapterNumber + 1
-                }?.id ?: id
-            } ?: id
+        mangaReaderState.value.success?.let {
+            val idx = it.chapters.indexOf(chapter)
+            it.chapters.getOrNull(idx + 1)?.let { next ->
+                chapterId.update { next.id }
+            }
         }
     }
 
     fun goToPrevChapter(chapter: SavableChapter) = coroutineScope.launch {
-        chapterId.update { id ->
-            val chapterNumber = chapter.chapter ?: 0
-            mangaReaderState.value.success?.let { state ->
-                state.chapters.find {
-                    it.chapter == chapterNumber - 1
-                }?.id ?: id
-            } ?: id
+        mangaReaderState.value.success?.let {
+            val idx = it.chapters.indexOf(chapter)
+            it.chapters.getOrNull(idx - 1)?.let { prev ->
+                chapterId.update { prev.id }
+            }
         }
     }
 
     fun goToChapter(id: String) = coroutineScope.launch {
-        chapterId.emit(id)
+        chapterId.update { id }
     }
 
     fun updateChapterPage(page: Int) = coroutineScope.launch {
@@ -128,7 +123,7 @@ private fun combineAggregateAndChapter(
     viewingChapter: ChapterEntity,
     savedChapters: List<ChapterEntity>
 ): Map<Int, List<SavableChapter>> {
-    val volumeToChapters = aggregateResponse.volumes
+    val volumeToChapters = aggregateResponse.volumes.also { Log.d("Aggregate", "$it") }
         .mapKeys { (volumeNumber, _) -> volumeNumber.toIntOrNull() ?: -1 }
         .mapValues { (_, volume) ->
             return@mapValues buildList {
@@ -148,7 +143,7 @@ private fun combineAggregateAndChapter(
                 }
             }
         }
-    return volumeToChapters
+    return volumeToChapters.also { Log.d("Aggregate", it.toString()) }
 }
 
 fun <T, V> Flow<T>.combineToPair(other: Flow<V>): Flow<Pair<T, V>> = this.combine(other) { t, v -> Pair(t, v) }

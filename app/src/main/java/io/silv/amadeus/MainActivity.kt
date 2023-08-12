@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
@@ -81,20 +82,25 @@ class MainActivity : ComponentActivity() {
                             mutableStateOf(true)
                         }
                     ) {
-                        TabNavigator(HomeTab) {
+                        val showBar by LocalBottomBarVisibility.current
+
+                        TabNavigator(
+                            tab = HomeTab,
+                            disposeNestedNavigators = false,
+                        ) {
                             Scaffold(
                                 bottomBar = {
-                                    val showBar by LocalBottomBarVisibility.current
                                     if (showBar) {
                                         AmadeusBottomBar()
                                     }
                                 }
-                            ) { incomingPadding ->
+                            ) { incoming ->
                                 Box(
                                     Modifier
                                         .padding(
-                                            incomingPadding.calculateBottomPadding()
+                                            bottom = (incoming.calculateBottomPadding() - 16.dp).coerceAtLeast(0.dp)
                                         )
+                                        .fillMaxSize()
                                 ) {
                                     CurrentTab()
                                 }

@@ -148,7 +148,7 @@ class ChapterDownloadWorker(
         val chaptersToGet = inputData.getStringArray(CHAPTERS_KEY)?.toList()
             ?: return Result.failure().also { Log.d(logTag, "chaptersToGet was null") }
 
-        val imageUrls = inputData.getStringArray(CHAPTERS_KEY)?.toList()
+        val imageUrls = inputData.getStringArray(IMAGES_URLS_KEY)?.toList()
 
         Log.d(logTag, "starting work with $mangaId manga id $chaptersToGet chapter ids")
 
@@ -170,6 +170,7 @@ class ChapterDownloadWorker(
         }
 
         if (!imageUrls.isNullOrEmpty()) {
+            Log.d(logTag, imageUrls.toString())
             val result = suspendRunCatching {
                 withContext(dispatchers.io) {
                     val chapter = chapterDao.getChapterById(chaptersToGet.first()) ?: error("No chapter found")

@@ -564,7 +564,6 @@ private fun HomeSearchTopAppBar(
             }
             IconButton(
                 onClick = {
-                    onSearchText("")
                     alreadyRequestedFocus = false
                     onSearchChanged(!showTextField)
                 },

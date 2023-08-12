@@ -1,6 +1,5 @@
 package io.silv.manga.domain
 
-import android.util.Log
 import io.silv.core.Mapper
 import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.FilteredMangaResource
@@ -23,11 +22,8 @@ typealias ChapterWithPrevEntity = Pair<Chapter, ChapterEntity?>
 
 private fun String.parseMangaDexTimeToDateTime(): LocalDateTime {
    // "2021-10-10T23:19:03+00:00",
-    Log.d("Parse", this)
     val text = this.replaceAfter('+', "").dropLast(1)
-    return LocalDateTime.parse(text).also {
-        Log.d("Parse", it.year.toString())
-    }
+    return LocalDateTime.parse(text)
 }
 
 infix fun  LocalDateTime.minus(localDateTime: LocalDateTime): Duration {

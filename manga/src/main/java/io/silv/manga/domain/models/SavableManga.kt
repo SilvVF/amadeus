@@ -14,12 +14,18 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.parcelize.Parceler
 import kotlinx.parcelize.Parcelize
-import kotlinx.parcelize.TypeParceler
-import java.io.Serializable
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.Json
 
 @Parcelize
+@Serializable
 data class SavableManga(
     val id: String,
     val bookmarked: Boolean = false,
@@ -38,11 +44,11 @@ data class SavableManga(
     val lastVolume: Int,
     val lastChapter: Long,
     val version: Int,
-    @TypeParceler<LocalDateTime, LocalDateTimeParceler>
+    @Serializable(with=DateTimeAsLongSerializer::class)
     val createdAt: LocalDateTime,
-    @TypeParceler<LocalDateTime, LocalDateTimeParceler>
+    @Serializable(with=DateTimeAsLongSerializer::class)
     val updatedAt: LocalDateTime,
-    @TypeParceler<LocalDateTime, LocalDateTimeParceler>
+    @Serializable(with=DateTimeAsLongSerializer::class)
     val savedLocalAtEpochSeconds: LocalDateTime,
     val volumeToCoverArtUrl: Map<String, String>,
     val readChapters: List<String>,
@@ -50,7 +56,23 @@ data class SavableManga(
     val authors: List<String>,
     val artists: List<String>,
     val year: Int,
-): Parcelable, Serializable {
+): Parcelable {
+
+    companion object : kotlinx.parcelize.Parceler<SavableManga>   {
+        override fun SavableManga.write(parcel: Parcel, flags: Int) {
+            parcel.writeString(
+                Json.encodeToString(
+                    serializer(),
+                    this
+                )
+            )
+        }
+
+        override fun create(parcel: Parcel): SavableManga {
+            return Json.decodeFromString(serializer(), parcel.readString() ?: "")
+        }
+    }
+
     constructor(savedManga: SavedMangaEntity) : this(
         id = savedManga.id,
         bookmarked = savedManga.bookmarked,
@@ -107,6 +129,8 @@ data class SavableManga(
         artists = mangaResource.artists,
         authors = mangaResource.authors
     )
+
+
     constructor(
         mangaResources: List<MangaResource>,
         savedManga: SavedMangaEntity?,
@@ -142,16 +166,56 @@ data class SavableManga(
         authors = newest.authors,
         artists = newest.artists
     )
-
 }
 
-object LocalDateTimeParceler : Parceler<LocalDateTime> {
-    override fun create(parcel: Parcel): LocalDateTime {
-        val date = parcel.readLong()
-        return Instant.fromEpochSeconds(date).toLocalDateTime(TimeZone.currentSystemDefault())
+fun SavedMangaEntity.toSavable(
+    mangaResources: List<MangaResource>?,
+    newest: MangaResource? = mangaResources?.maxByOrNull { it.savedAtLocal }
+): SavableManga {
+    return SavableManga(
+    id = this.id,
+    bookmarked = this.bookmarked ,
+    description = newest?.description ?: this.description,
+    progressState = this.progressState,
+    coverArt = newest?.coverArt ?: this.coverArt,
+    titleEnglish = newest?.titleEnglish ?: this.titleEnglish,
+    alternateTitles = newest?.alternateTitles ?: this.alternateTitles,
+    originalLanguage = newest?.originalLanguage ?: this.originalLanguage,
+    availableTranslatedLanguages = newest?.availableTranslatedLanguages ?: this.availableTranslatedLanguages,
+    status = newest?.status ?: this.status,
+    tagToId = newest?.tagToId ?: this.tagToId,
+    contentRating = newest?.contentRating ?: this.contentRating,
+    lastVolume = newest?.lastVolume ?: this.lastVolume,
+    lastChapter = newest?.lastChapter ?: this.lastChapter,
+    version = newest?.version ?: this.version,
+    createdAt = newest?.createdAt ?: this.createdAt,
+    updatedAt = newest?.updatedAt ?: this.updatedAt,
+    savedLocalAtEpochSeconds = newest?.savedAtLocal ?: this.savedAtLocal  ,
+    volumeToCoverArtUrl = buildMap {
+        putAll(this@toSavable.volumeToCoverArt)
+        mangaResources?.map { it.volumeToCoverArt }?.forEach { putAll(it) }
+    },
+    readChapters = this.readChapters,
+    chapterToLastReadPage = this.chapterToLastReadPage,
+    publicationDemographic = newest?.publicationDemographic,
+    readingStatus = this.readingStatus,
+    year = newest?.year ?: this.year,
+    authors = newest?.authors ?: this.authors,
+    artists = newest?.artists ?: this.artists
+    )
+}
+
+
+object DateTimeAsLongSerializer : KSerializer<LocalDateTime> {
+
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Date", PrimitiveKind.LONG)
+
+    override fun serialize(encoder: Encoder, value: LocalDateTime) {
+        encoder.encodeLong(value.toInstant(TimeZone.currentSystemDefault()).epochSeconds)
     }
 
-    override fun LocalDateTime.write(parcel: Parcel, flags: Int) {
-        parcel.writeLong(this.toInstant(TimeZone.currentSystemDefault()).epochSeconds)
+    override fun deserialize(decoder: Decoder): LocalDateTime {
+        return Instant.fromEpochSeconds(decoder.decodeLong()).toLocalDateTime(TimeZone.currentSystemDefault())
     }
 }
+

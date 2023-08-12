@@ -3,9 +3,9 @@
 package io.silv.amadeus.ui.screens.search
 
 import cafe.adriel.voyager.core.model.coroutineScope
+import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.amadeus.ui.shared.Language
-import io.silv.core.combineTuple
 import io.silv.manga.domain.models.DomainAuthor
 import io.silv.manga.domain.models.DomainTag
 import io.silv.manga.domain.models.SavableManga

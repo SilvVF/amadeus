@@ -60,6 +60,9 @@ dependencies {
 
     implementation("com.google.accompanist:accompanist-webview:0.30.1")
 
+    implementation(libs.flow.combinetuple.kt)
+    implementation(libs.tuples.kt)
+
     implementation(libs.androidx.material3.window.size)
 
     // COMPOSE

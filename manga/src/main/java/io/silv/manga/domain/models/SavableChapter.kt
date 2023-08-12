@@ -1,5 +1,6 @@
 package io.silv.manga.domain.models
 
+import android.os.Parcel
 import android.os.Parcelable
 import io.silv.manga.domain.minus
 import io.silv.manga.domain.timeNow
@@ -7,10 +8,18 @@ import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.ProgressState
 import kotlinx.datetime.LocalDateTime
 import kotlinx.parcelize.Parcelize
-import kotlinx.parcelize.TypeParceler
-import java.io.Serializable
+import kotlinx.serialization.json.Json
+
+private val implementedImageSources = listOf(
+    "mangaplus.shueisha",
+    "azuki.co",
+    "mangahot.jp",
+    "bilibilicomics.com",
+    "comikey.com"
+)
 
 @Parcelize
+@kotlinx.serialization.Serializable
 data class SavableChapter(
     val id: String,
     val downloaded: Boolean,
@@ -27,14 +36,14 @@ data class SavableChapter(
     val scanlationGroupToId: Pair<String, String>? = null,
     val userToId: Pair<String,String>? = null,
     val version: Int,
-    @TypeParceler<LocalDateTime, LocalDateTimeParceler>
+    @kotlinx.serialization.Serializable(with = DateTimeAsLongSerializer::class)
     val createdAt: LocalDateTime,
-    @TypeParceler<LocalDateTime, LocalDateTimeParceler>
+    @kotlinx.serialization.Serializable(with = DateTimeAsLongSerializer::class)
     val updatedAt: LocalDateTime,
-    @TypeParceler<LocalDateTime, LocalDateTimeParceler>
+    @kotlinx.serialization.Serializable(with = DateTimeAsLongSerializer::class)
     val readableAt: LocalDateTime,
     val ableToDownload: Boolean,
-): Parcelable, Serializable {
+): Parcelable {
 
     constructor(entity: ChapterEntity): this(
         id = entity.id,
@@ -84,14 +93,18 @@ data class SavableChapter(
             }
         }
 
+    companion object : kotlinx.parcelize.Parceler<SavableChapter> {
+        override fun SavableChapter.write(parcel: Parcel, flags: Int) {
+            parcel.writeString(
+                Json.encodeToString(
+                    serializer(),
+                    this
+                )
+            )
+        }
 
-    companion object {
-        val implementedImageSources = listOf(
-            "mangaplus.shueisha",
-            "azuki.co",
-            "mangahot.jp",
-            "bilibilicomics.com",
-            "comikey.com"
-        )
+        override fun create(parcel: Parcel): SavableChapter {
+            return Json.decodeFromString(serializer(), parcel.readString() ?: "")
+        }
     }
 }

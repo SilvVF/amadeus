@@ -5,7 +5,11 @@ import androidx.compose.foundation.lazy.grid.LazyGridItemScope
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.DpSize
 
 fun LazyGridScope.header(
     content: @Composable LazyGridItemScope.() -> Unit
@@ -24,3 +28,17 @@ fun Modifier.vertical() =
             )
         }
     }
+
+fun Modifier.getSize(onChange: (DpSize) -> Unit) = composed {
+    val density = LocalDensity.current
+    onGloballyPositioned {
+        with(density) {
+            onChange(
+                DpSize(
+                    width = it.size.width.toDp(),
+                    height = it.size.height.toDp()
+                )
+            )
+        }
+    }
+}

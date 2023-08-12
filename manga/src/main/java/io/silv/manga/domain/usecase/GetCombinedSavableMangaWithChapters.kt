@@ -1,7 +1,8 @@
 package io.silv.manga.domain.usecase
 
-import io.silv.core.combineTuple
+import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.manga.domain.models.SavableManga
+import io.silv.manga.domain.models.toSavable
 import io.silv.manga.domain.repositorys.FilteredMangaRepository
 import io.silv.manga.domain.repositorys.FilteredYearlyMangaRepository
 import io.silv.manga.domain.repositorys.PopularMangaRepository
@@ -28,7 +29,12 @@ class GetCombinedSavableMangaWithChapters(
             savedMangaRepository.getSavedManga(id),
             chapterInfoRepository.getChapters(id),
         ) { resources, saved, chapterInfo ->
-            SavableMangaWithChapters(
+            return@combine saved?.let {
+                SavableMangaWithChapters(
+                    savableManga = it.toSavable(resources.ifEmpty { null }, saved),
+                    chapters = chapterInfo
+                )
+            } ?: SavableMangaWithChapters(
                 savableManga = SavableManga(resources, saved),
                 chapters = chapterInfo
             )

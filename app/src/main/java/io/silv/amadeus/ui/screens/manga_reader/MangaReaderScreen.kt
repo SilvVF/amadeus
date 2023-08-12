@@ -3,18 +3,23 @@
 package io.silv.amadeus.ui.screens.manga_reader
 
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
@@ -23,13 +28,21 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.FormatListNumbered
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -42,6 +55,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -53,6 +67,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -71,6 +86,7 @@ import io.silv.manga.domain.models.SavableChapter
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
 
 
 class MangaReaderScreen(
@@ -131,6 +147,13 @@ fun MangaReaderContent(
                 onNavigationIconClick = {},
                 chapter = state.chapter,
                 chapters = state.chapters,
+                onPageChange = {
+                    scope.launch {
+                        horizontalReaderState.animateScrollToPage(it)
+                    }
+                },
+                currentPage = horizontalReaderState.currentPage,
+                mangaTitle = state.manga.titleEnglish
             ) {
                 MangaReader(
                     viewing = state.chapter,
@@ -161,24 +184,31 @@ data class ReaderSettings(
 @Composable
 fun MangaMenuBox(
     modifier: Modifier,
+    mangaTitle: String,
     chapter: SavableChapter,
     chapters: List<SavableChapter>,
+    currentPage: Int,
+    onPageChange: (page: Int) -> Unit,
     onNextPageGesture: () -> Unit,
     onPrevPageGesture: () -> Unit,
     onNavigationIconClick: () -> Unit,
     content: @Composable () -> Unit
 ) {
+    val space = LocalSpacing.current
     var visible by rememberSaveable {
         mutableStateOf(false)
     }
+    val scope = rememberCoroutineScope()
+
 
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
-            initialValue = SheetValue.PartiallyExpanded,
             confirmValueChange = { it != SheetValue.Hidden }
         )
     )
+
     var maxX by remember { mutableStateOf(0.dp) }
+
     Box(
         modifier = modifier
             .getSize { size ->
@@ -211,47 +241,158 @@ fun MangaMenuBox(
         if (visible) {
             BottomSheetScaffold(
                 topBar = {
-                  TopAppBar(
-                      title = {
-                          Text(chapter.title)
-                      },
-                      navigationIcon = {
-                          IconButton(onClick = onNavigationIconClick) {
-                              Icon(
-                                  imageVector = Icons.Default.ArrowBack,
-                                  contentDescription = null
-                              )
-                          }
-                      }
-                  )
+                    CenterAlignedTopAppBar(
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.DarkGray.copy(alpha = 0.7f),
+                            scrolledContainerColor = Color.DarkGray.copy(alpha = 0.7f),
+                        ),
+                        title = {
+                            Column(Modifier.fillMaxWidth(0.8f),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(mangaTitle, textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(chapter.title, color = Color.LightGray, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = onNavigationIconClick) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowBack,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                      )
                 },
                 sheetContainerColor = Color.Transparent,
                 scaffoldState = scaffoldState,
                 containerColor = Color.Transparent,
+                sheetPeekHeight = 172.dp,
+                sheetTonalElevation = 0.dp,
                 sheetDragHandle = {},
-                sheetPeekHeight = 120.dp,
                 sheetContent = {
+
+                    val backgroundColor by animateColorAsState(
+                        targetValue = if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
+                            Color.Black.copy(alpha = 0.9f)
+                        } else {
+                            Color.DarkGray.copy(alpha = 0.9f)
+                        },
+                        label = "background-color-for-sheet"
+                    )
+
                     Column {
-                        Box(modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp)
-                            .clip(RoundedCornerShape(100))
-                            .background(
-                                Color.DarkGray.copy(alpha = 0.8f)
-                            )
-                        )
-                        Spacer(Modifier.height(20.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight(0.4f).fillMaxWidth()
+                        AnimatedVisibility(visible = scaffoldState.bottomSheetState.currentValue != SheetValue.Expanded) {
+                            Row(modifier = Modifier
+                                .fillMaxWidth()
+                                .height(70.dp)
+                                .clip(RoundedCornerShape(100))
                                 .background(
-                                    Color.DarkGray.copy(alpha = 0.5f)
+                                    Color.DarkGray.copy(alpha = 0.9f)
+                                ),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                IconButton(
+                                    onClick = {},
+                                    modifier = Modifier.padding(space.small)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.SkipPrevious,
+                                        contentDescription = null
+                                    )
+                                }
+                                Text(
+                                    (currentPage + 1).toString(),
+                                    modifier = Modifier.padding(space.small)
                                 )
+                                Slider(
+                                    valueRange = 0f..chapter.pages.toFloat(),
+                                    value = currentPage.toFloat(),
+                                    onValueChange = {
+                                        onPageChange(it.roundToInt())
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(space.small),
+                                    steps = chapter.pages
+                                )
+                                Text(chapter.pages.toString(), modifier = Modifier.padding(space.small))
+                                IconButton(
+                                    onClick = {},
+                                    modifier = Modifier.padding(space.small)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.SkipNext,
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(20.dp))
+                        Column(
+                            modifier = Modifier
+                                .fillMaxHeight(0.4f)
+                                .fillMaxWidth()
+                                .clip(
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .background(backgroundColor)
                         ) {
+                            Row(Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        scope.launch {
+                                            when (scaffoldState.bottomSheetState.currentValue) {
+                                                SheetValue.Hidden -> scaffoldState.bottomSheetState.show()
+                                                SheetValue.Expanded -> scaffoldState.bottomSheetState.partialExpand()
+                                                SheetValue.PartiallyExpanded -> scaffoldState.bottomSheetState.expand()
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.FormatListNumbered,
+                                        contentDescription = null
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {}
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Tune,
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
                             LazyColumn {
                                 chapters.fastForEach {
                                     item(it) {
-                                        Text(text = it.title)
+                                        Column {
+                                            Row(
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(space.med),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Column {
+                                                    Text(text = "Vol.${it.volume} Ch.${it.chapter} - ${it.title}")
+                                                    Text(text = "${it.createdAt.month.name} ${it.createdAt.dayOfMonth}, ${it.createdAt.year} * ${it.scanlationGroupToId?.first}")
+                                                }
+                                                IconButton(onClick = { }) {
+                                                    Icon(
+                                                        imageVector = Icons.Filled.BookmarkBorder,
+                                                        contentDescription = null
+                                                    )
+                                                }
+                                            }
+                                            Divider()
+                                        }
                                     }
                                 }
                             }

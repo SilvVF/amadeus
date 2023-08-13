@@ -87,6 +87,9 @@ dependencies {
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.animation:animation-graphics")
 
+    //Datastore
+    implementation(libs.androidx.datastore.preferences)
+
 
     implementation(libs.androidx.navigation.compose)
 

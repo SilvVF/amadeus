@@ -28,7 +28,7 @@ data class ChapterEntity(
 
     val volume: Int = -1,
 
-    val lastPageRead: Long,
+    val lastPageRead: Int,
 
     val title: String,
 
@@ -58,6 +58,7 @@ data class ChapterEntity(
 
     val isRecognizedNumber: Boolean
         get() = chapterNumber >= 0f
+
 
     val read: Boolean
         get() = progressState == ProgressState.Finished

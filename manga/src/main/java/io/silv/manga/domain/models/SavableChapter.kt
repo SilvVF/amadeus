@@ -22,6 +22,7 @@ private val implementedImageSources = listOf(
 @kotlinx.serialization.Serializable
 data class SavableChapter(
     val id: String,
+    val bookmarked: Boolean,
     val downloaded: Boolean,
     val progress: ProgressState,
     val mangaId: String,
@@ -30,6 +31,7 @@ data class SavableChapter(
     val volume: Int,
     val chapter: Long,
     val pages: Int = 0,
+    val lastReadPage: Int,
     val translatedLanguage: String,
     val uploader: String,
     val externalUrl: String? = null,
@@ -47,6 +49,7 @@ data class SavableChapter(
 
     constructor(entity: ChapterEntity): this(
         id = entity.id,
+        bookmarked = entity.bookmarked,
         downloaded = entity.chapterImages.isNotEmpty(),
         progress = entity.progressState,
         mangaId = entity.mangaId,
@@ -58,6 +61,7 @@ data class SavableChapter(
         translatedLanguage = entity.languageCode,
         uploader = entity.uploader ?: "",
         externalUrl = entity.externalUrl,
+        lastReadPage = entity.lastPageRead,
         version = entity.version,
         createdAt = entity.createdAt,
         updatedAt = entity.updatedAt,

@@ -15,10 +15,6 @@ data class SavedMangaEntity(
 
     val progressState: ProgressState = ProgressState.NotStarted,
 
-    val readChapters: List<String>,
-
-    val chapterToLastReadPage: Map<String, Int>,
-
     val readingStatus: ReadingStatus,
 
     override val coverArt: String,
@@ -56,16 +52,19 @@ data class SavedMangaEntity(
     override val volumeToCoverArt: Map<String, String>,
 
     override val savedAtLocal: LocalDateTime = timeNow(),
+
     override val year: Int,
+
     override val latestUploadedChapter: String?,
+
     override val authors: List<String>,
+
     override val artists: List<String>
+
 ): AmadeusEntity<Any?>, MangaResource {
     constructor(mangaResource: MangaResource): this(
         id = mangaResource.id,
         progressState = ProgressState.NotStarted,
-        chapterToLastReadPage = emptyMap(),
-        readChapters = emptyList(),
         readingStatus = ReadingStatus.None,
         coverArt = mangaResource.coverArt,
         description = mangaResource.description,
@@ -96,9 +95,7 @@ data class SavedMangaEntity(
     ): this(
             id = recent.id,
             progressState = ProgressState.NotStarted,
-            chapterToLastReadPage = emptyMap(),
             readingStatus = ReadingStatus.None,
-            readChapters = emptyList(),
             coverArt = recent.coverArt,
             description = recent.description,
             titleEnglish = recent.titleEnglish,

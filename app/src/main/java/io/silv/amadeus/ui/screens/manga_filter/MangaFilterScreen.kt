@@ -27,6 +27,7 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -39,7 +40,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.amadeus.AmadeusScaffold
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItem
-import io.silv.amadeus.ui.composables.PageLoader
 import io.silv.amadeus.ui.composables.header
 import io.silv.amadeus.ui.screens.home.MangaPager
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
@@ -69,12 +69,15 @@ class MangaFilterScreen(
         val lazyGridState = rememberLazyGridState()
         val timeLoadState by sm.timeLoadState.collectAsStateWithLifecycle()
 
-        PageLoader(
-            loadState = timeLoadState,
-            state = lazyGridState,
-            listSize = timePeriodItemsState.resources.size,
-            loadNextPage = sm::loadNextPage
-        )
+        LaunchedEffect(lazyGridState) {
+            snapshotFlow { lazyGridState.firstVisibleItemIndex }.collect {
+                if (it >= timePeriodItemsState.resources.size - 6) {
+                    sm.loadNextPage()
+                }
+            }
+        }
+
+
 
         LaunchedEffect(Unit) {
             sm.updateTagId(tagId, tag)

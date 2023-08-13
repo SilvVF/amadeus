@@ -59,7 +59,7 @@ object ChapterToChapterEntityMapper: Mapper<ChapterWithPrevEntity, ChapterEntity
             user = chapter.relationships.find { it.type == "user" }?.attributes?.username,
             userId = chapter.relationships.find { it.type == "user" }?.id,
             bookmarked = prev?.bookmarked ?: false,
-            lastPageRead = prev?.lastPageRead ?: 0L
+            lastPageRead = prev?.lastPageRead ?: 0
         )
     }
 }
@@ -302,8 +302,6 @@ object MangaEntityMapper: Mapper<Pair<Manga, SavedMangaEntity?>, SavedMangaEntit
         val (network, saved) = from
         return SavedMangaEntity(
             id = network.id,
-            readChapters = saved?.readChapters ?: emptyList(),
-            chapterToLastReadPage = saved?.chapterToLastReadPage ?: emptyMap(),
             progressState = saved?.progressState ?: ProgressState.NotStarted,
             coverArt = coverArtUrl(network),
             description = network.descriptionEnglish,

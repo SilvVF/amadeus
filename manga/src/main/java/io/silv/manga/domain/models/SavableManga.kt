@@ -51,8 +51,6 @@ data class SavableManga(
     @Serializable(with=DateTimeAsLongSerializer::class)
     val savedLocalAtEpochSeconds: LocalDateTime,
     val volumeToCoverArtUrl: Map<String, String>,
-    val readChapters: List<String>,
-    val chapterToLastReadPage: Map<String, Int>,
     val authors: List<String>,
     val artists: List<String>,
     val year: Int,
@@ -77,7 +75,7 @@ data class SavableManga(
         id = savedManga.id,
         bookmarked = savedManga.bookmarked,
         description = savedManga.description,
-        progressState = savedManga.progressState ,
+        progressState = savedManga.progressState,
         coverArt = savedManga.coverArt,
         titleEnglish = savedManga.titleEnglish,
         alternateTitles = savedManga.alternateTitles,
@@ -93,8 +91,6 @@ data class SavableManga(
         updatedAt = savedManga.updatedAt,
         savedLocalAtEpochSeconds = savedManga.savedAtLocal,
         volumeToCoverArtUrl = savedManga.volumeToCoverArt,
-        readChapters = savedManga.readChapters,
-        chapterToLastReadPage = savedManga.chapterToLastReadPage,
         publicationDemographic = savedManga.publicationDemographic,
         readingStatus = savedManga.readingStatus,
         year = savedManga.year,
@@ -121,8 +117,6 @@ data class SavableManga(
         updatedAt = mangaResource.updatedAt,
         savedLocalAtEpochSeconds = mangaResource.savedAtLocal,
         volumeToCoverArtUrl = savedManga?.volumeToCoverArt ?: emptyMap(),
-        readChapters = savedManga?.readChapters ?: emptyList(),
-        chapterToLastReadPage = savedManga?.chapterToLastReadPage ?: emptyMap(),
         publicationDemographic = mangaResource.publicationDemographic,
         readingStatus = savedManga?.readingStatus ?: ReadingStatus.None,
         year = mangaResource.year,
@@ -158,8 +152,6 @@ data class SavableManga(
             savedManga?.volumeToCoverArt?.let { putAll(it) }
             mangaResources.map { it.volumeToCoverArt }.forEach { putAll(it) }
         },
-        readChapters = savedManga?.readChapters ?: emptyList(),
-        chapterToLastReadPage = savedManga?.chapterToLastReadPage ?: emptyMap(),
         publicationDemographic = newest.publicationDemographic,
         readingStatus = savedManga?.readingStatus ?: ReadingStatus.None,
         year = newest.year,
@@ -195,8 +187,6 @@ fun SavedMangaEntity.toSavable(
         putAll(this@toSavable.volumeToCoverArt)
         mangaResources?.map { it.volumeToCoverArt }?.forEach { putAll(it) }
     },
-    readChapters = this.readChapters,
-    chapterToLastReadPage = this.chapterToLastReadPage,
     publicationDemographic = newest?.publicationDemographic,
     readingStatus = this.readingStatus,
     year = newest?.year ?: this.year,

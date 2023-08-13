@@ -53,7 +53,6 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.amadeus.ui.screens.home.HomeTab
 import io.silv.amadeus.ui.screens.home.shouldShowBottomBar
 import io.silv.amadeus.ui.screens.library.LibraryTab
-import io.silv.amadeus.ui.screens.saved.SavedTab
 import io.silv.amadeus.ui.screens.search.SearchTab
 import io.silv.amadeus.ui.theme.AmadeusTheme
 
@@ -178,7 +177,6 @@ fun AmadeusBottomBar(
         NavigationBar(modifier) {
             TabNavigationItem(HomeTab)
             TabNavigationItem(SearchTab)
-            TabNavigationItem(SavedTab)
             TabNavigationItem(LibraryTab)
         }
     }
@@ -193,7 +191,6 @@ fun AmadeusNavRail(
         NavigationRail(modifier) {
             TabNavigationItem(HomeTab)
             TabNavigationItem(SearchTab)
-            TabNavigationItem(SavedTab)
             TabNavigationItem(LibraryTab)
         }
     }

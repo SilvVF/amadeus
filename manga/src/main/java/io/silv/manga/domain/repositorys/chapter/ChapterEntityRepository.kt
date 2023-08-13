@@ -8,6 +8,10 @@ interface ChapterEntityRepository: Syncable {
 
     val loadingVolumeArtIds: Flow<List<String>>
 
+    suspend fun bookmarkChapter(id: String)
+
+    suspend fun updateLastReadPage(chapterId: String, page: Int, lastPage: Int)
+
     fun getChapters(mangaId: String): Flow<List<ChapterEntity>>
 }
 

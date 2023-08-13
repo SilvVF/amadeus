@@ -1,11 +1,13 @@
 package io.silv.amadeus.ui.composables
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,9 +27,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -35,6 +40,7 @@ import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.shadow
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.amadeus.ui.theme.Pastel
 import io.silv.manga.domain.models.SavableManga
 
 @Composable
@@ -62,10 +68,11 @@ fun MangaListItem(
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(manga.coverArt)
+                    .placeholder(Pastel.getColorLight())
                     .build(),
                 contentDescription = null,
                 modifier = Modifier
-                    .size(200.dp)
+                    .size(180.dp)
                     .clip(
                         RoundedCornerShape(12.dp)
                     ),
@@ -90,6 +97,71 @@ fun MangaListItem(
         Text(
             text = manga.titleEnglish,
             style = MaterialTheme.typography.titleMedium
+        )
+    }
+}
+
+@Composable
+fun MangaListItemSideTitle(
+    modifier: Modifier = Modifier,
+    index: Int,
+    manga: SavableManga,
+    onTagClick: (tag: String) -> Unit,
+    onBookmarkClick: () -> Unit
+) {
+
+    val context = LocalContext.current
+    val space = LocalSpacing.current
+
+    Column(modifier) {
+        Row {
+            Text(
+                modifier = Modifier
+                    .vertical()
+                    .rotate(-90f)
+                    .width(180.dp)
+                    .align(Alignment.Top),
+                text = "${index + 1} ${manga.titleEnglish}",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.ExtraBold
+                ),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(manga.coverArt)
+                    .placeholder(Pastel.getColorLight())
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(180.dp)
+                    .clip(
+                        RoundedCornerShape(12.dp)
+                    )
+                    .shadow(
+                        color = Color.DarkGray,
+                        blurRadius = 12.dp,
+                        offsetY = space.xs,
+                        offsetX = space.xs
+                    )
+                    .padding(space.xs),
+                contentScale = ContentScale.Crop
+            )
+        }
+        Spacer(modifier = Modifier.height(space.small))
+        TranslatedLanguageTagsWithBookmark(
+            tags = manga.availableTranslatedLanguages,
+            onBookmarkClick = onBookmarkClick,
+            bookmarked = manga.bookmarked,
+            modifier = Modifier.fillMaxWidth()
+        )
+        MangaGenreTags(
+            tags = manga.tagToId.keys.toList(),
+            modifier = Modifier.fillMaxWidth(),
+            onTagClick = { name ->
+                onTagClick(name)
+            }
         )
     }
 }

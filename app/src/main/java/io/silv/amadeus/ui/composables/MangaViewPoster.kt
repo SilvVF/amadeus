@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.ui.shared.fillMaxAfterMesaure
@@ -43,6 +44,7 @@ fun MainPoster(
 ) {
     val ctx = LocalContext.current
     val space = LocalSpacing.current
+    val navigator = LocalNavigator.current
 
     Box(modifier = modifier) {
         BackgroundImageDarkened(

@@ -47,7 +47,7 @@ abstract class BasePaginatedRepository<ResourceType: MangaResource, ResourceQuer
     ) {
         loadPageJobs.add(
             scope.launch {
-                if (loadState.value != PagedLoadState.None || offset >= lastPage) {
+                if (loadState.value == PagedLoadState.Loading  || offset >= lastPage) {
                     return@launch
                 }
                 val offsetCopy = offset

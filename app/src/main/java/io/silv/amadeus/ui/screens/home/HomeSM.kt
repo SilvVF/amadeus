@@ -1,7 +1,7 @@
 package io.silv.amadeus.ui.screens.home
 
 import cafe.adriel.voyager.core.model.coroutineScope
-import io.silv.amadeus.ui.screens.manga_reader.combineToPair
+import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.PopularMangaRepository
@@ -16,7 +16,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -44,9 +43,9 @@ class HomeSM(
 
     private var startFlag = false
 
+
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-    private val mangaSearchFlow = searchQuery
-        .combineToPair(forceSearchFlow)
+    private val mangaSearchFlow = combineTuple(searchQuery, forceSearchFlow)
         .debounce { if (startFlag.also { startFlag = false }) {  0L } else 2000L }
         .flatMapLatest { (query, _) ->
             searchMangaRepository.observeMangaResources(query)
@@ -65,11 +64,11 @@ class HomeSM(
 
     private val loadState = searchMangaRepository.loadState.stateInUi(PagedLoadState.None)
 
-    val searchMangaUiState = combine(
+    val searchMangaUiState = combineTuple(
         mangaSearchFlow,
         savedMangaRepository.getSavedMangas(),
         loadState,
-    ) { resource, saved, loadState ->
+    ).map { (resource, saved, loadState) ->
         val resources = resource.map {
             SavableManga(it, saved.find { manga -> manga.id == it.id })
         }
@@ -86,11 +85,11 @@ class HomeSM(
     }
         .stateInUi(PaginatedListState.Refreshing)
 
-    val popularMangaUiState = combine(
+    val popularMangaUiState = combineTuple(
         popularMangaRepository.observeAllMangaResources(),
         savedMangaRepository.getSavedMangas(),
         popularMangaRepository.loadState,
-    ) { resource, saved, loadState ->
+    ).map { (resource, saved, loadState) ->
         val resources = resource.map {
             SavableManga(it, saved.find { manga -> manga.id == it.id })
         }
@@ -107,11 +106,11 @@ class HomeSM(
     }
         .stateInUi(PaginatedListState.Refreshing)
 
-    val recentMangaUiState = combine(
+    val recentMangaUiState = combineTuple(
         recentMangaRepository.observeAllMangaResources(),
         savedMangaRepository.getSavedMangas(),
         recentMangaRepository.loadState
-    ) { resource, saved, loadState ->
+    ).map { (resource, saved, loadState) ->
         val resources = resource.map {
             SavableManga(it, saved.find { manga -> manga.id == it.id })
         }.chunked(2)
@@ -128,10 +127,10 @@ class HomeSM(
     }
         .stateInUi(PaginatedListState.Refreshing)
 
-    val seasonalMangaUiState = combine(
+    val seasonalMangaUiState = combineTuple(
         seasonalMangaRepository.getSeasonalLists(),
         savedMangaRepository.getSavedMangas()
-    ) { seasonWithManga, saved ->
+    ).map { (seasonWithManga, saved)->
         val yearLists = seasonWithManga.map {
             SeasonalList(
                 id = it.list.id,
@@ -143,7 +142,7 @@ class HomeSM(
             .sortedByDescending { it.year * 10000 + it.season.ordinal }
             .takeIf { it.size >= 4 }
             ?.take(8)
-            ?: return@combine SeasonalMangaUiState(
+            ?: return@map SeasonalMangaUiState(
                 emptyList()
             )
         SeasonalMangaUiState(
@@ -178,10 +177,20 @@ data class SeasonalMangaUiState(
     val seasonalLists: List<SeasonalList> = emptyList()
 )
 
-sealed class PaginatedListState<out T> {
+sealed class PaginatedListState<out T>() {
     object Refreshing: PaginatedListState<Nothing>()
     data class Success<T>(val data: T, val end: Boolean = false, val loading: Boolean = false): PaginatedListState<T>()
     data class Error<T>(val data: T, val message: String) : PaginatedListState<T>()
+
+    val getData: T?
+        get() = when(this) {
+            is Error -> this.data
+            Refreshing -> null
+            is Success -> this.data
+        }
+
+    val success: Success<out T>?
+        get() = this as? Success<T>
 }
 
 data class SeasonalList(

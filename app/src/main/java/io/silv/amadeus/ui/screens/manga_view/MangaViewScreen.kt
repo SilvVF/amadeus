@@ -155,7 +155,7 @@ class MangaViewScreen(
 
         Scaffold(
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-            contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.systemBars)
+            contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.systemBars),
         ) { paddingValues ->
             Column(
                 Modifier

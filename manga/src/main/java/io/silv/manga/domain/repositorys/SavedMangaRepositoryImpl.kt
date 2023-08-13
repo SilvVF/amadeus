@@ -7,7 +7,7 @@ import io.silv.manga.domain.MangaEntityMapper
 import io.silv.manga.domain.minus
 import io.silv.manga.domain.timeNow
 import io.silv.manga.domain.usecase.GetMangaResourcesById
-import io.silv.manga.local.dao.ChapterDao
+import io.silv.manga.domain.usecase.UpdateChapterList
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.ProgressState
 import io.silv.manga.local.entity.SavedMangaEntity
@@ -30,7 +30,7 @@ internal class SavedMangaRepositoryImpl(
     private val getMangaResourceById: GetMangaResourcesById,
     private val mangaDexApi: MangaDexApi,
     private val dispatchers: AmadeusDispatchers,
-    private val chapterDao: ChapterDao,
+    private val updateChapterList: UpdateChapterList,
 ): SavedMangaRepository {
 
     private val TAG = "SavedMangaRepositoryImpl"
@@ -84,6 +84,7 @@ internal class SavedMangaRepositoryImpl(
             val entity =  SavedMangaEntity(resource.first)
             savedMangaDao.upsertSavedManga(entity)
             log("Inserted Saved manga using resource $id and set bookmarked true")
+            updateChapterList(entity.id)
         }
     }
 
@@ -102,41 +103,6 @@ internal class SavedMangaRepositoryImpl(
 
     override fun getSavedManga(id: String): Flow<SavedMangaEntity?> {
         return savedMangaDao.getSavedMangaById(id)
-    }
-
-    override suspend fun updateLastReadPage(mangaId: String, chapterId: String, page: Int) {
-        withContext(dispatchers.io) {
-            val chapter = chapterDao.getChapterById(chapterId) ?: return@withContext
-            chapterDao.updateChapter(
-                chapter.copy(
-                    progressState = when(page) {
-                        chapter.pages -> ProgressState.Finished
-                        in 1..chapter.pages -> {
-                            if (chapter.progressState != ProgressState.Finished)
-                                ProgressState.Reading
-                            else
-                                ProgressState.Finished
-                        }
-                        else -> ProgressState.NotStarted
-                    }
-                )
-            )
-            savedMangaDao.getSavedMangaById(mangaId).first()?.let { entity ->
-                savedMangaDao.updateSavedManga(
-                    entity.copy(
-                        chapterToLastReadPage = entity.chapterToLastReadPage.toMutableMap().apply {
-                            if ((this[chapterId] ?: -1) < page)
-                                this[chapterId] = page
-                        },
-                        readChapters = if (page == chapter.pages) {
-                            entity.readChapters + chapterId
-                        } else {
-                            entity.readChapters
-                        }
-                    )
-                )
-            }
-        }
     }
 
     override suspend fun syncWith(synchronizer: Synchronizer): Boolean {

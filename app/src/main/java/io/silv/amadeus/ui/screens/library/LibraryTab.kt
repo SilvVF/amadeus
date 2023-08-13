@@ -5,20 +5,37 @@ import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,11 +51,12 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.AmadeusScaffold
 import io.silv.amadeus.R
-import io.silv.amadeus.ui.screens.manga_reader.ChapterList
+import io.silv.amadeus.ui.screens.home.SearchTopAppBar
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
+import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.noRippleClickable
-import io.silv.amadeus.ui.stateholders.rememberSortedChapters
+import io.silv.amadeus.ui.theme.LocalSpacing
 
 object LibraryTab: Tab {
 
@@ -49,7 +67,7 @@ object LibraryTab: Tab {
             val isSelected = LocalTabNavigator.current.current.key == key
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_library_enter)
             return TabOptions(
-                index = 3u,
+                index = 2u,
                 title = "Library",
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
@@ -69,52 +87,110 @@ class LibraryScreen: Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
+
         val sm = getScreenModel<LibrarySM>()
         val navigator = LocalNavigator.current
         val mangasToChapters by sm.mangaWithDownloadedChapters.collectAsStateWithLifecycle()
-        
+        val space = LocalSpacing.current
+
+
+        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState())
+
+        var searching by rememberSaveable {
+            mutableStateOf(false)
+        }
+
+        var searchText by rememberSaveable {
+            mutableStateOf("")
+        }
+
         AmadeusScaffold(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            scrollBehavior = scrollBehavior,
+            topBar = {
+                SearchTopAppBar(
+                    title = "Library",
+                    scrollBehavior = scrollBehavior,
+                    onSearchText = { searchText = it },
+                    color = Color.Transparent,
+                    navigationIconLabel = "",
+                    navigationIcon = Icons.Filled.KeyboardArrowLeft,
+                    onNavigationIconClicked = { searching = false },
+                    actions = {},
+                    searchText = searchText,
+                    showTextField = searching ,
+                    onSearchChanged = { searching = it },
+                    onForceSearch = {}
+                )
+            }
         ) {
             LazyVerticalGrid(
-                modifier = Modifier.fillMaxSize().padding(it),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it)
+                    .padding(space.large),
                 columns = GridCells.Fixed(2),
             ) {
                 items(
                     items = mangasToChapters,
-                    key = { item -> item.first.id }
-                ) { (manga, chapters) ->
-
-                    var expanded by rememberSaveable {
-                        mutableStateOf(false)
-                    }
-
+                    key = { item -> item.savableManga.id }
+                ) {item ->
+                    val (manga, chapters) = item
                     val ctx = LocalContext.current
-                    val sortedChapters = rememberSortedChapters(chapters = chapters)
+
                     CenterBox(
-                        Modifier.noRippleClickable { expanded = !expanded }
+                        Modifier.padding(space.large)
                     ) {
-                        if (expanded) {
-                            ChapterList(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(300.dp),
-                                sortedChapters = sortedChapters,
-                                onChapterClicked = {
+                        AsyncImage(
+                            model = ImageRequest.Builder(ctx)
+                                .data(manga.coverArt)
+                                .build(),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .noRippleClickable {
+                                    navigator?.push(
+                                        MangaViewScreen(manga)
+                                    )
+                                }
+                        )
+                        FilterChip(
+                            onClick = {},
+                            selected = true,
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .offset(
+                                    x = -(space.large),
+                                    y = -(space.large)
+                                ),
+                            label = {
+                                Text(
+                                    text = item.unread.toString()
+                                )
+                            }
+                        )
+                        IconButton(
+                            onClick = {
+                                item.lastReadChapter?.let {
                                     navigator?.push(
                                         MangaReaderScreen(
-                                            it.mangaId, it.id
+                                            mangaId = manga.id,
+                                            chapterId = it.id
                                         )
                                     )
                                 }
-                            )
-                        } else {
-                            AsyncImage(
-                                model = ImageRequest.Builder(ctx)
-                                    .data(manga.coverArt)
-                                    .build(),
-                                contentDescription = null,
-                                modifier = Modifier.height(300.dp)
+                            },
+                            modifier = Modifier
+                                .size(18.dp)
+                                .align(Alignment.BottomEnd)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.secondaryContainer)
+
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.MenuBook,
+                                contentDescription = null
                             )
                         }
                     }

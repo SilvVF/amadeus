@@ -151,6 +151,12 @@ class HomeSM(
     }
         .stateInUi(SeasonalMangaUiState(emptyList()))
 
+
+    fun refresh() = coroutineScope.launch {
+        recentMangaRepository.refresh()
+        popularMangaRepository.refresh()
+    }
+
     fun updateSearchQuery(query: String) {
         mutableSearchQuery.update { query }
     }

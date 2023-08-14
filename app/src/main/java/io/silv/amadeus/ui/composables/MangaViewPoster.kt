@@ -12,6 +12,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Photo
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,7 +45,8 @@ import io.silv.manga.network.mangadex.models.Status
 @Composable
 fun MainPoster(
     manga: SavableManga,
-    modifier: Modifier
+    modifier: Modifier,
+    viewMangaArtClick: () -> Unit,
 ) {
     val ctx = LocalContext.current
     val space = LocalSpacing.current
@@ -50,7 +56,7 @@ fun MainPoster(
         BackgroundImageDarkened(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxAfterMesaure(this, 0.8f)
+                .fillMaxAfterMesaure(this, 0.95f)
                 .align(TopStart),
             url = manga.coverArt
         )
@@ -73,7 +79,8 @@ fun MainPoster(
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = space.med),
-                manga = manga
+                manga = manga,
+                viewMangaArtClick = viewMangaArtClick
             )
         }
     }
@@ -82,7 +89,8 @@ fun MainPoster(
 @Composable
 fun MangaInfo(
     modifier: Modifier = Modifier,
-    manga: SavableManga
+    manga: SavableManga,
+    viewMangaArtClick: () -> Unit
 ) {
     val space = LocalSpacing.current
     Column(
@@ -100,6 +108,20 @@ fun MangaInfo(
             authors = remember(manga) { (manga.authors + manga.artists).filterUnique { it }.joinToString() }
         )
         PublicationStatusIndicator(status = manga.status, year = manga.year)
+        Button(
+            shape = RoundedCornerShape(12.dp),
+            onClick = viewMangaArtClick,
+            modifier = Modifier
+                .padding(space.med)
+                .align(Alignment.End)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Photo,
+                contentDescription = null,
+                modifier = Modifier.padding(horizontal = space.small)
+            )
+            Text("Artwork")
+        }
     }
 }
 

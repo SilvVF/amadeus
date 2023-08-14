@@ -1,5 +1,6 @@
 package io.silv.amadeus.ui.composables
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -80,17 +81,13 @@ fun MangaListItem(
             )
         }
         Spacer(modifier = Modifier.height(space.small))
-        TranslatedLanguageTagsWithBookmark(
-            tags = manga.availableTranslatedLanguages,
+        GenreTagsWithBookmark(
+            tags = manga.tagToId.keys.toList(),
             onBookmarkClick = onBookmarkClick,
             bookmarked = manga.bookmarked,
-            modifier = Modifier.fillMaxWidth()
-        )
-        MangaGenreTags(
-            tags = manga.tagToId.keys.toList(),
             modifier = Modifier.fillMaxWidth(),
-            onTagClick = {name ->
-                onTagClick(name)
+            onTagClick = {
+                onTagClick(it)
             }
         )
         Spacer(modifier = Modifier.height(space.small))
@@ -128,40 +125,38 @@ fun MangaListItemSideTitle(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(manga.coverArt)
-                    .placeholder(Pastel.getColorLight())
-                    .build(),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(180.dp)
-                    .clip(
-                        RoundedCornerShape(12.dp)
-                    )
-                    .shadow(
-                        color = Color.DarkGray,
-                        blurRadius = 12.dp,
-                        offsetY = space.xs,
-                        offsetX = space.xs
-                    )
-                    .padding(space.xs),
-                contentScale = ContentScale.Crop
+            CenterBox(
+                Modifier.shadow(
+                    color = Color.DarkGray,
+                    blurRadius = 12.dp,
+                    offsetY = space.xs,
+                    offsetX = space.xs
             )
+            .padding(space.xs)
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(manga.coverArt)
+                        .placeholder(Pastel.getColorLight())
+                        .build(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(180.dp)
+                        .clip(
+                            RoundedCornerShape(12.dp)
+                        )
+                        .padding(space.xs),
+                    contentScale = ContentScale.Crop
+                )
+            }
         }
         Spacer(modifier = Modifier.height(space.small))
-        TranslatedLanguageTagsWithBookmark(
-            tags = manga.availableTranslatedLanguages,
+        GenreTagsWithBookmark(
+            tags =  manga.tagToId.keys.toList(),
             onBookmarkClick = onBookmarkClick,
             bookmarked = manga.bookmarked,
-            modifier = Modifier.fillMaxWidth()
-        )
-        MangaGenreTags(
-            tags = manga.tagToId.keys.toList(),
             modifier = Modifier.fillMaxWidth(),
-            onTagClick = { name ->
-                onTagClick(name)
-            }
+            onTagClick = onTagClick
         )
     }
 }
@@ -222,6 +217,43 @@ fun TranslatedLanguageTags(
                 label = { Text(text) },
                 modifier = Modifier.padding(horizontal = space.small)
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun GenreTagsWithBookmark(
+    modifier: Modifier = Modifier,
+    tags: List<String>,
+    bookmarked: Boolean,
+    onBookmarkClick: () -> Unit,
+    onTagClick: (tag: String) -> Unit = {}
+) {
+    val space = LocalSpacing.current
+
+    Row(modifier) {
+        IconButton(onClick = onBookmarkClick) {
+            if (bookmarked) Icon(
+                imageVector = Icons.Filled.BookmarkRemove,
+                contentDescription = null
+            )
+            else Icon(
+                imageVector = Icons.Outlined.BookmarkAdd,
+                contentDescription = null
+            )
+        }
+        LazyRow(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            items(
+                items = tags,
+                key = { item -> item }
+            ) {tag ->
+                SuggestionChip(
+                    onClick = { onTagClick(tag) },
+                    label = { Text(tag) },
+                    modifier = Modifier.padding(horizontal = space.small)
+                )
+            }
         }
     }
 }

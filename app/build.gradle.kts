@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
+    implementation("androidx.compose.material:material:1.4.0")
     androidTestImplementation(libs.androidx.compose.ui.test.junit)
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
@@ -82,7 +83,6 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
-
 
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.animation:animation-graphics")

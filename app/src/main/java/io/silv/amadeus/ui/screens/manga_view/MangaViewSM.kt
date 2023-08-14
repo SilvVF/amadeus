@@ -3,8 +3,8 @@ package io.silv.amadeus.ui.screens.manga_view
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
+import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.amadeus.ui.shared.Language
 import io.silv.manga.domain.models.SavableChapter
 import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.SavedMangaRepository
@@ -48,18 +48,14 @@ class MangaViewSM(
     }
         .stateInUi(emptyList())
 
-    private val mutableCurrentPage = MutableStateFlow(0)
-    val currentPage = mutableCurrentPage.asStateFlow()
-
     private val mutableSortedByAsc = MutableStateFlow(false)
     val sortedByAsc = mutableSortedByAsc.asStateFlow()
 
-    private val mutableLanguageList = MutableStateFlow(listOf("en"))
-    val languageList = mutableLanguageList.asStateFlow()
-
-
-    val mangaViewStateUiState = getCombinedSavableMangaWithChapters(initialManga.id)
-        .map { combinedSavableMangaWithChapters ->
+    val mangaViewStateUiState = combineTuple(
+        getCombinedSavableMangaWithChapters(initialManga.id),
+        mutableSortedByAsc
+    )
+        .map { (combinedSavableMangaWithChapters, asc) ->
             combinedSavableMangaWithChapters.savableManga?.let {
                 MangaViewState.Success(
                     loadingArt = false,
@@ -68,6 +64,7 @@ class MangaViewSM(
                     chapters = combinedSavableMangaWithChapters.chapters.map { entity ->
                         SavableChapter(entity)
                     }
+                        .sortedBy { chapter -> if (asc) chapter.chapter else -chapter.chapter }
                 )
             } ?: MangaViewState.Loading(initialManga)
     }
@@ -96,13 +93,6 @@ class MangaViewSM(
                 initialManga.id
             )
         )
-    }
-
-    fun languageChanged(language: Language)  {
-        mutableLanguageList.update {
-            if (language.code in it) it - language.code
-            else it + language.code
-        }
     }
 
 

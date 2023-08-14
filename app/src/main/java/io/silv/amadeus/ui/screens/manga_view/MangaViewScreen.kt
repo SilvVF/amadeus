@@ -30,17 +30,21 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,13 +66,10 @@ import io.silv.amadeus.ui.composables.MainPoster
 import io.silv.amadeus.ui.composables.TranslatedLanguageTags
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
-import io.silv.amadeus.ui.screens.manga_view.composables.ChapterListHeader
-import io.silv.amadeus.ui.screens.manga_view.composables.ChapterVolumeNavBar
 import io.silv.amadeus.ui.screens.manga_view.composables.MangaContent
 import io.silv.amadeus.ui.screens.manga_view.composables.chapterListItems
 import io.silv.amadeus.ui.screens.manga_view.composables.volumePosterItems
 import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
@@ -104,16 +105,15 @@ class MangaViewScreen(
     private val manga: SavableManga
 ): Screen, Parcelable {
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
 
         val sm = getScreenModel<MangaViewSM> { parametersOf(manga) }
         val mangaViewState by sm.mangaViewStateUiState.collectAsStateWithLifecycle()
+        val sortedByAsc by sm.sortedByAsc.collectAsStateWithLifecycle()
         val downloading by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.current
-        val currentPage by sm.currentPage.collectAsStateWithLifecycle()
-        val sortedAscending by sm.sortedByAsc.collectAsStateWithLifecycle()
-        val selectedLanguages by sm.languageList.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }
 
         sm.collectEvents { event ->
@@ -130,8 +130,8 @@ class MangaViewScreen(
             }
         }
 
-        var chaptersShowing by rememberSaveable {
-            mutableStateOf(true)
+        var showArtBottomSheet by rememberSaveable {
+            mutableStateOf(false)
         }
 
 
@@ -152,6 +152,20 @@ class MangaViewScreen(
             return
         }
 
+        if (showArtBottomSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showArtBottomSheet = false },
+                sheetState = rememberModalBottomSheetState(
+                    skipPartiallyExpanded = true,
+                ),
+
+                ) {
+                LazyColumn {
+                    volumePosterItems(mangaViewState)
+                }
+            }
+        }
+        val space = LocalSpacing.current
 
         Scaffold(
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -169,7 +183,10 @@ class MangaViewScreen(
                     item {
                         MainPoster(
                             manga = manga,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            viewMangaArtClick = {
+                                showArtBottomSheet = !showArtBottomSheet
+                            }
                         )
                     }
                     item {
@@ -186,51 +203,38 @@ class MangaViewScreen(
                                     }
                                 }
                             )
-                            ChapterVolumeNavBar(
-                                chaptersShowing = chaptersShowing,
-                                onChange = {
-                                    chaptersShowing = it
-                                }
-                            )
-                        }
-                    }
-                    if (chaptersShowing) {
-                        item {
-                            ChapterListHeader(
-                                onPageClick = {},
-                                page = currentPage + 1,
-                                lastPage = remember(mangaViewState.success?.chapters) {
-                                    mangaViewState.success?.chapters?.size?.div(97) ?: 1
-                                },
-                                sortedAscending = sortedAscending,
-                                onChangeDirection = sm::changeDirection,
-                                onLanguageSelected = sm::languageChanged,
-                                selectedLanguages = remember(selectedLanguages) {
-                                    Language.values().filter { it.code in selectedLanguages }
-                                }
-                            )
-                        }
-                        chapterListItems(
-                            mangaViewState = mangaViewState,
-                            downloadingIds = downloading,
-                            onDownloadClicked = {
-                                sm.downloadChapterImages(it)
-                            },
-                            onDeleteClicked = {
-                                sm.deleteChapterImages(listOf(it))
-                            },
-                            onOpenWebView = {
-                                webUrl = it
-                            },
-                            onReadClicked = {
-                                navigator?.push(
-                                    MangaReaderScreen(manga.id, it)
+                            Button(
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.padding(space.med),
+                                onClick = { sm.changeDirection() }
+                            ) {
+                                Text(
+                                    text = if(sortedByAsc)
+                                        "Ascending"
+                                    else
+                                        "Descending"
                                 )
                             }
-                        )
-                    } else {
-                        volumePosterItems(mangaViewState)
+                        }
                     }
+                    chapterListItems(
+                        mangaViewState = mangaViewState,
+                        downloadingIds = downloading,
+                        onDownloadClicked = {
+                            sm.downloadChapterImages(it)
+                        },
+                        onDeleteClicked = {
+                            sm.deleteChapterImages(listOf(it))
+                        },
+                        onOpenWebView = {
+                            webUrl = it
+                        },
+                        onReadClicked = {
+                            navigator?.push(
+                                MangaReaderScreen(manga.id, it)
+                            )
+                        }
+                    )
                 }
             }
         }

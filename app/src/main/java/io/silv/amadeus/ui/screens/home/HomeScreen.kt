@@ -106,6 +106,7 @@ import io.silv.amadeus.ui.composables.BlurImageBackground
 import io.silv.amadeus.ui.composables.MangaGenreTags
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.composables.MangaListItemSideTitle
+import io.silv.amadeus.ui.composables.PullRefresh
 import io.silv.amadeus.ui.composables.TranslatedLanguageTags
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
@@ -215,21 +216,29 @@ class HomeScreen: Screen {
                             },
                         )
                     } else {
-                        BrowseMangaContent(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            recentMangaLazyListState = recentListState,
-                            recentMangaList = recentMangaState,
-                            popularMangaLazyListState = popularMangaListState,
-                            popularMangaList = popularMangaState,
-                            seasonalMangaList = seasonalMangaState,
-                            seasonalRefreshing = refreshingSeasonal,
-                            onBookmarkClick = sm::bookmarkManga,
-                            refreshTrending = {
-                                sm.loadNextPopularPage()
-                            }
-                        )
+                        PullRefresh(
+                            refreshing = popularMangaState is PaginatedListState.Refreshing || recentMangaState is PaginatedListState.Refreshing,
+                            onRefresh = { sm.refresh() }
+                        ) {
+                            BrowseMangaContent(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                recentMangaLazyListState = recentListState,
+                                recentMangaList = recentMangaState,
+                                popularMangaLazyListState = popularMangaListState,
+                                popularMangaList = popularMangaState,
+                                seasonalMangaList = seasonalMangaState,
+                                seasonalRefreshing = refreshingSeasonal,
+                                onBookmarkClick = sm::bookmarkManga,
+                                retryLoadPopular = {
+                                    sm.loadNextPopularPage()
+                                },
+                                retryLoadRecent = {
+                                    sm.loadNextRecentPage()
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -246,7 +255,8 @@ fun BrowseMangaContent(
     seasonalRefreshing: Boolean,
     popularMangaList: PaginatedListState<List<SavableManga>>,
     popularMangaLazyListState: LazyListState,
-    refreshTrending: () -> Unit,
+    retryLoadPopular: () -> Unit,
+    retryLoadRecent: () -> Unit,
     onBookmarkClick: (mangaId: String) -> Unit
 ) {
     ImageCache(
@@ -275,7 +285,7 @@ fun BrowseMangaContent(
             TrendingMangaList(
                 trendingMangaUiState = popularMangaList,
                 state = popularMangaLazyListState,
-                refresh = refreshTrending,
+                refresh = retryLoadPopular,
                 onBookmarkClick = {
                     onBookmarkClick(it.id)
                 }
@@ -304,7 +314,8 @@ fun BrowseMangaContent(
                 navigator?.push(
                     MangaViewScreen(manga)
                 )
-            }
+            },
+            refresh = retryLoadRecent
         )
     }
 }
@@ -315,32 +326,24 @@ fun LazyListScope.recentMangaList(
     onTagClick: (manga: SavableManga, name: String) -> Unit,
     onBookmarkClick: (manga: SavableManga) -> Unit,
     onMangaClick: (manga: SavableManga) -> Unit,
+    refresh: () -> Unit
 ) {
     when (recentMangaStateUiState) {
         is PaginatedListState.Error -> {
-            recentMangaStateUiState.data.fastForEach {
-                item(
-                    key = it.joinToString { it.id }
+            recentMangaListItems(
+               items = recentMangaStateUiState.data,
+               onMangaClick = onMangaClick,
+               onBookmarkClick = onBookmarkClick,
+               onTagClick = onTagClick
+            )
+            item {
+                Column(Modifier.size(200.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val space = LocalSpacing.current
-                    Row {
-                        for(manga in it) {
-                            MangaListItem(
-                                manga = manga,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(space.large)
-                                    .clickable {
-                                        onMangaClick(manga)
-                                    },
-                                onTagClick = { name ->
-                                    onTagClick(manga, name)
-                                },
-                                onBookmarkClick = {
-                                    onBookmarkClick(manga)
-                                }
-                            )
-                        }
+                    Text(text = "Failed to load next page")
+                    Button(onClick = refresh) {
+                        Text(text = "Try again")
                     }
                 }
             }
@@ -357,30 +360,55 @@ fun LazyListScope.recentMangaList(
             }
         }
         is PaginatedListState.Success ->  {
-            recentMangaStateUiState.data.fastForEach {
-                item(
-                    key = it.joinToString { it.id }
+            recentMangaListItems(
+                items = recentMangaStateUiState.data,
+                onMangaClick = onMangaClick,
+                onBookmarkClick = onBookmarkClick,
+                onTagClick = onTagClick
+            )
+            item {
+                val space = LocalSpacing.current
+                CenterBox(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(90.dp)
+                        .padding(space.med)
                 ) {
-                    val space = LocalSpacing.current
-                    Row {
-                        for(manga in it) {
-                            MangaListItem(
-                                manga = manga,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(space.large)
-                                    .clickable {
-                                        onMangaClick(manga)
-                                    },
-                                onTagClick = { name ->
-                                    onTagClick(manga, name)
-                                },
-                                onBookmarkClick = {
-                                    onBookmarkClick(manga)
-                                }
-                            )
+                    CircularProgressIndicator()
+                }
+            }
+        }
+    }
+}
+
+private fun LazyListScope.recentMangaListItems(
+    items: List<List<SavableManga>>,
+    onMangaClick: (manga: SavableManga) -> Unit,
+    onTagClick: (manga: SavableManga, name: String) -> Unit,
+    onBookmarkClick: (manga: SavableManga) -> Unit,
+) {
+    items.fastForEach {
+        item(
+            key = it.joinToString { item -> item.id }
+        ) {
+            val space = LocalSpacing.current
+            Row {
+                for(manga in it) {
+                    MangaListItem(
+                        manga = manga,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(space.large)
+                            .clickable {
+                                onMangaClick(manga)
+                            },
+                        onTagClick = { name ->
+                            onTagClick(manga, name)
+                        },
+                        onBookmarkClick = {
+                            onBookmarkClick(manga)
                         }
-                    }
+                    )
                 }
             }
         }

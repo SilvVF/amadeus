@@ -27,7 +27,6 @@ import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
-import androidx.compose.material.icons.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.Web
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -35,8 +34,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,7 +44,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -67,34 +63,6 @@ import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableChapter
 import io.silv.manga.domain.models.SavableManga
 
-@Composable
-fun ChapterVolumeNavBar(
-    chaptersShowing: Boolean,
-    onChange: (Boolean) -> Unit
-) {
-    NavigationBar(
-        Modifier.fillMaxWidth(),
-        containerColor = Color.Transparent
-    ) {
-        NavigationBarItem(
-            selected = chaptersShowing,
-            onClick = { onChange(true) },
-            icon = { Icon(imageVector = Icons.Outlined.Article, null) },
-            label = { Text("Chapters") }
-        )
-        NavigationBarItem(
-            selected = !chaptersShowing,
-            onClick = { onChange(false) },
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.LibraryBooks,
-                    null
-                )
-            },
-            label = { Text("Volumes") }
-        )
-    }
-}
 
 @Composable
 fun MangaContent(

@@ -51,6 +51,9 @@ dependencies {
     implementation(libs.flow.combinetuple.kt)
     implementation(libs.tuples.kt)
 
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.common)
+
     //ROOM
     ksp(libs.room.ksp)
     implementation(libs.room.runtime)

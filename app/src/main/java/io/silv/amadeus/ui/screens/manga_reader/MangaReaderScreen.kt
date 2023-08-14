@@ -201,8 +201,20 @@ fun MangaReaderContent(
                     Orientation.Horizontal -> horizontalReaderState.currentPage
                 },
                 mangaTitle = state.manga.titleEnglish,
-                onPrevClick = { goToPrevChapter(state.chapter) },
-                onNextClick = { goToNextChapter(state.chapter) },
+                onPrevClick = { 
+                    goToPrevChapter(state.chapter)
+                    scope.launch {
+                        horizontalReaderState.scrollToPage(0)
+                        verticalReaderState.scrollToItem(0)
+                    }
+                },
+                onNextClick = { 
+                    goToNextChapter(state.chapter)
+                    scope.launch {
+                        horizontalReaderState.scrollToPage(0)
+                        verticalReaderState.scrollToItem(0)
+                    }
+                },
                 readerSettings = readerSettings,
                 onSettingsChanged = onReaderSettingsChange,
                 onChapterBookmarked = onChapterBookmarked,
@@ -272,7 +284,8 @@ fun MangaReader(
                         .fillMaxWidth()
                         .height(50.dp),
                     mangaPagerState = horizontalReaderState,
-                    pageCount = images.size
+                    pageCount = images.size,
+                    hasPrev = prev != null
                 )
                 Spacer(modifier = Modifier.height(space.med))
             }
@@ -379,6 +392,7 @@ fun AnimatedPageNumber(
     modifier: Modifier = Modifier,
     state: PagerState = rememberPagerState(),
     mangaPagerState: PagerState,
+    hasPrev: Boolean,
     pageCount: Int,
 ) {
 
@@ -387,10 +401,7 @@ fun AnimatedPageNumber(
             state.animateScrollToPage(it)
         }
     }
-
-    var lastPage by remember {
-        mutableStateOf(0)
-    }
+    
     var offset by remember {
         mutableStateOf(0.dp)
     }
@@ -407,10 +418,6 @@ fun AnimatedPageNumber(
             horizontal = (screenWidth / 2f) - offset
         )
     ) { page ->
-        LaunchedEffect(Unit) {
-            lastPage = maxOf(page, lastPage)
-        }
-
         CenterBox(
             Modifier
                 .fillMaxSize()
@@ -431,10 +438,14 @@ fun AnimatedPageNumber(
                     alpha = interpolation
                 }
         ) {
-            Text(
-                text = (page + 1).toString(),
-                textAlign = TextAlign.Center
-            )
+            if (hasPrev && pageCount == 0) {
+               Text(text = " ")
+            } else {
+                Text(
+                    text = (page + if(!hasPrev) 1 else 0).toString(),
+                    textAlign = TextAlign.Center
+                )   
+            }
         }
     }
 }

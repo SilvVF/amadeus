@@ -67,7 +67,6 @@ initialQuery = null
             )
         }
     }
-
 }
 
 data class FilteredResourceQuery(

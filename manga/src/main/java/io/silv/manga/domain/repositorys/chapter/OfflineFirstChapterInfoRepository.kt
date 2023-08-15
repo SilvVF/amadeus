@@ -80,6 +80,10 @@ internal class OfflineFirstChapterInfoRepository(
         }
     }
 
+    override fun getAllChapters(): Flow<List<ChapterEntity>> {
+        return chapterDao.getChapterEntities()
+    }
+
     private suspend fun shouldUpdate(mangaId: String): Boolean = withContext(dispatchers.io) {
         val chapters = chapterDao.getChaptersByMangaId(mangaId).ifEmpty { null }
         chapters == null || chapters.any {

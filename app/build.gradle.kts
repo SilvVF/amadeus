@@ -84,6 +84,12 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
+    implementation("androidx.paging:paging-compose:3.2.0")
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.common)
+    // optional - Paging 3 Integration
+    implementation("androidx.room:room-paging:2.5.2")
+
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.animation:animation-graphics")
 

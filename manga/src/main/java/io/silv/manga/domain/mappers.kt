@@ -20,7 +20,7 @@ import kotlin.time.Duration
 
 typealias ChapterWithPrevEntity = Pair<Chapter, ChapterEntity?>
 
-private fun String.parseMangaDexTimeToDateTime(): LocalDateTime {
+fun String.parseMangaDexTimeToDateTime(): LocalDateTime {
    // "2021-10-10T23:19:03+00:00",
     val text = this.replaceAfter('+', "").dropLast(1)
     return LocalDateTime.parse(text)

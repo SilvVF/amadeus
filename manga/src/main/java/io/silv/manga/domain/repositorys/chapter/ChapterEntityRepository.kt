@@ -13,5 +13,7 @@ interface ChapterEntityRepository: Syncable {
     suspend fun updateLastReadPage(chapterId: String, page: Int, lastPage: Int)
 
     fun getChapters(mangaId: String): Flow<List<ChapterEntity>>
+
+    fun getAllChapters(): Flow<List<ChapterEntity>>
 }
 

@@ -16,6 +16,7 @@ import io.silv.manga.network.mangadex.models.list.UserIdListResponse
 import io.silv.manga.network.mangadex.models.manga.MangaAggregateResponse
 import io.silv.manga.network.mangadex.models.manga.MangaByIdResponse
 import io.silv.manga.network.mangadex.models.manga.MangaListResponse
+import io.silv.manga.network.mangadex.models.statistics.StatisticsByMangaIdResponse
 import io.silv.manga.network.mangadex.models.tags.TagResponse
 import io.silv.manga.network.mangadex.requests.AuthorListRequest
 import io.silv.manga.network.mangadex.requests.ChapterListRequest
@@ -56,6 +57,12 @@ class MangaDexApi(
                 }
             }
         }
+    }
+
+    suspend fun getMangaStatistics(id: String) = withContext(dispatchers.io) {
+        client.getWithCache<StatisticsByMangaIdResponse>(
+            "$mangaDexUrl/statistics/manga/$id"
+        )
     }
 
     suspend fun getListById(

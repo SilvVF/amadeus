@@ -1,5 +1,6 @@
 package io.silv.manga.local.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -28,6 +29,15 @@ internal interface RecentMangaResourceDao {
 
     @Delete
     suspend fun deleteRecentMangaResource(mangaResource: RecentMangaResource)
+
+    @Query("DELETE FROM RecentMangaResource")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(mangaResources: List<RecentMangaResource>)
+
+    @Query("SELECT * FROM RecentMangaResource")
+    fun pagingSource(): PagingSource<Int, RecentMangaResource>
 
     companion object {
         const val id: Int = 6

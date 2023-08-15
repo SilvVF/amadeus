@@ -25,6 +25,10 @@ val useCaseModule = module {
         GetMangaAggregate.defaultImpl(get(), get(), get())
     }
 
+    factoryOf(::GetSavedMangaWithChaptersList)
+
+    factoryOf(::GetMangaStatisticsById)
+
     factoryOf(::UpdateChapterList)
 
     factoryOf(::GetCombinedSavableMangaWithChapters)

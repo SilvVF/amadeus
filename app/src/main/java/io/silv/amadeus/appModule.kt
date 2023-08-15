@@ -11,7 +11,8 @@ val appModule = module {
     includes(
         screenModule,
         mangaModule,
-        dataModule
+        dataModule,
+        //testModule
     )
 
     single<AmadeusDispatchers> {

@@ -27,7 +27,10 @@ val screenModule = module {
 
     factory { (manga: SavableManga) ->
         MangaViewSM(
-            get(), get(), get(),
+            get(),
+            get(),
+            get(),
+            get(),
             manga
         )
     }

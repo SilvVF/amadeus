@@ -42,6 +42,26 @@ class GetCombinedSavableMangaWithChapters(
     }
 }
 
+class GetSavedMangaWithChaptersList(
+    private val savedMangaRepository: SavedMangaRepository,
+    private val chapterInfoRepository: ChapterEntityRepository,
+) {
+    operator fun invoke(): Flow<List<SavableMangaWithChapters>> {
+        return combine(
+            savedMangaRepository.getSavedMangas(),
+            chapterInfoRepository.getAllChapters(),
+        ) { saved, chapterInfo ->
+            saved.map { entity ->
+                SavableMangaWithChapters(
+                    savableManga = SavableManga(entity),
+                    chapters = chapterInfo.filter { it.mangaId == entity.id }
+                )
+            }
+        }
+    }
+}
+
+
 data class SavableMangaWithChapters(
     val savableManga: SavableManga?,
     val chapters: List<ChapterEntity>

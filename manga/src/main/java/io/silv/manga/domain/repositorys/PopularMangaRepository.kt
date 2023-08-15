@@ -1,7 +1,15 @@
 package io.silv.manga.domain.repositorys
 
-import io.silv.manga.domain.repositorys.base.PaginatedResourceRepository
+import androidx.paging.Pager
 import io.silv.manga.local.entity.PopularMangaResource
+import kotlinx.coroutines.flow.Flow
 
-interface PopularMangaRepository: PaginatedResourceRepository<PopularMangaResource, Any?>
+interface PopularMangaRepository {
+
+    val pager: Pager<Int, PopularMangaResource>
+
+    fun observeMangaResourceById(id: String): Flow<PopularMangaResource?>
+
+    fun observeAllMangaResources(): Flow<List<PopularMangaResource>>
+}
 

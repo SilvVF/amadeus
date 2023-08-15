@@ -114,6 +114,7 @@ class MangaViewScreen(
         val sortedByAsc by sm.sortedByAsc.collectAsStateWithLifecycle()
         val downloading by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.current
+        val statsUiState by sm.statsUiState.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }
 
         sm.collectEvents { event ->
@@ -186,7 +187,8 @@ class MangaViewScreen(
                             modifier = Modifier.fillMaxWidth(),
                             viewMangaArtClick = {
                                 showArtBottomSheet = !showArtBottomSheet
-                            }
+                            },
+                            statsState = statsUiState
                         )
                     }
                     item {

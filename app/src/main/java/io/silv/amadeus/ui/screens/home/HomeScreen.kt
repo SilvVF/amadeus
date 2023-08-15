@@ -1,6 +1,7 @@
 package io.silv.amadeus.ui.screens.home
 
 import android.graphics.drawable.ColorDrawable
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -23,7 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -88,9 +88,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -117,6 +121,8 @@ import io.silv.manga.domain.models.SavableManga
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
+import kotlin.math.ceil
+import kotlin.math.roundToInt
 
 
 class HomeScreen: Screen {
@@ -127,26 +133,17 @@ class HomeScreen: Screen {
 
         val sm = getScreenModel<HomeSM>()
 
-        val recentMangaState by sm.recentMangaUiState.collectAsStateWithLifecycle()
-        val popularMangaState by sm.popularMangaUiState.collectAsStateWithLifecycle()
+        val recentMangaItems = sm.recentMangaPagingFlow.collectAsLazyPagingItems()
+        val popularMangaItems = sm.popularMangaPagingFlow.collectAsLazyPagingItems()
+
         val seasonalMangaState by sm.seasonalMangaUiState.collectAsStateWithLifecycle()
         val refreshingSeasonal by sm.refreshingSeasonal.collectAsStateWithLifecycle()
         val searchMangaState by sm.searchMangaUiState.collectAsStateWithLifecycle()
         val searchQuery by sm.searchQuery.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.current
         val recentListState = rememberLazyListState()
-        val popularMangaListState = rememberLazyListState()
         val searchListState = rememberLazyGridState()
 
-        LaunchedEffect(popularMangaListState) {
-            snapshotFlow { popularMangaListState.firstVisibleItemIndex }.collect { idx ->
-                if (idx >= (popularMangaState.success?.data?.size ?: 0) - 8) {
-                    if (searchMangaState !is PaginatedListState.Error<List<SavableManga>>) {
-                        sm.loadNextPopularPage()
-                    }
-                }
-            }
-        }
 
         LaunchedEffect(searchListState) {
             snapshotFlow { searchListState.firstVisibleItemIndex }.collect {idx ->
@@ -158,15 +155,6 @@ class HomeScreen: Screen {
             }
         }
 
-        LaunchedEffect(recentListState) {
-            snapshotFlow { recentListState.firstVisibleItemIndex }.collect { idx ->
-                if (idx >= (recentMangaState.success?.data?.size ?: 0) - 8) {
-                    if (searchMangaState !is PaginatedListState.Error<List<SavableManga>>) {
-                        sm.loadNextRecentPage()
-                    }
-                }
-            }
-        }
 
         var searching by rememberSaveable {
             mutableStateOf(false)
@@ -217,26 +205,23 @@ class HomeScreen: Screen {
                         )
                     } else {
                         PullRefresh(
-                            refreshing = popularMangaState is PaginatedListState.Refreshing || recentMangaState is PaginatedListState.Refreshing,
-                            onRefresh = { sm.refresh() }
+                            refreshing = recentMangaItems.loadState.refresh is LoadState.Loading
+                                    && popularMangaItems.loadState.refresh == LoadState.Loading,
+                            onRefresh = {
+                                recentMangaItems.refresh()
+                                popularMangaItems.refresh()
+                            }
                         ) {
                             BrowseMangaContent(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f),
                                 recentMangaLazyListState = recentListState,
-                                recentMangaList = recentMangaState,
-                                popularMangaLazyListState = popularMangaListState,
-                                popularMangaList = popularMangaState,
+                                recentMangaList = recentMangaItems,
                                 seasonalMangaList = seasonalMangaState,
                                 seasonalRefreshing = refreshingSeasonal,
                                 onBookmarkClick = sm::bookmarkManga,
-                                retryLoadPopular = {
-                                    sm.loadNextPopularPage()
-                                },
-                                retryLoadRecent = {
-                                    sm.loadNextRecentPage()
-                                }
+                                popularMangaList = popularMangaItems
                             )
                         }
                     }
@@ -250,26 +235,15 @@ class HomeScreen: Screen {
 fun BrowseMangaContent(
     modifier: Modifier,
     recentMangaLazyListState: LazyListState,
-    recentMangaList: PaginatedListState<List<List<SavableManga>>>,
+    recentMangaList: LazyPagingItems<SavableManga>,
     seasonalMangaList: SeasonalMangaUiState,
     seasonalRefreshing: Boolean,
-    popularMangaList: PaginatedListState<List<SavableManga>>,
-    popularMangaLazyListState: LazyListState,
-    retryLoadPopular: () -> Unit,
-    retryLoadRecent: () -> Unit,
+    popularMangaList: LazyPagingItems<SavableManga>,
     onBookmarkClick: (mangaId: String) -> Unit
 ) {
-    ImageCache(
-        list = recentMangaList.success?.data?.flatten() ?: emptyList(),
-        lazyListState = recentMangaLazyListState
-    )
-    ImageCache(
-        list = popularMangaList.success?.data ?: emptyList(),
-        lazyListState = popularMangaLazyListState
-    )
-
     val space = LocalSpacing.current
     val navigator = LocalNavigator.current
+
     LazyColumn(
         modifier = modifier,
         state = recentMangaLazyListState,
@@ -283,9 +257,7 @@ fun BrowseMangaContent(
         )
         item {
             TrendingMangaList(
-                trendingMangaUiState = popularMangaList,
-                state = popularMangaLazyListState,
-                refresh = retryLoadPopular,
+                manga = popularMangaList,
                 onBookmarkClick = {
                     onBookmarkClick(it.id)
                 }
@@ -299,7 +271,7 @@ fun BrowseMangaContent(
             )
         }
         recentMangaList(
-            recentMangaStateUiState = recentMangaList,
+            manga = recentMangaList,
             onBookmarkClick = { manga ->
                 onBookmarkClick(manga.id)
             },
@@ -315,101 +287,41 @@ fun BrowseMangaContent(
                     MangaViewScreen(manga)
                 )
             },
-            refresh = retryLoadRecent
         )
     }
 }
 
 
 fun LazyListScope.recentMangaList(
-    recentMangaStateUiState: PaginatedListState<List<List<SavableManga>>>,
+    manga: LazyPagingItems<SavableManga>,
     onTagClick: (manga: SavableManga, name: String) -> Unit,
     onBookmarkClick: (manga: SavableManga) -> Unit,
     onMangaClick: (manga: SavableManga) -> Unit,
-    refresh: () -> Unit
 ) {
-    when (recentMangaStateUiState) {
-        is PaginatedListState.Error -> {
-            recentMangaListItems(
-               items = recentMangaStateUiState.data,
-               onMangaClick = onMangaClick,
-               onBookmarkClick = onBookmarkClick,
-               onTagClick = onTagClick
-            )
-            item {
-                Column(Modifier.size(200.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = "Failed to load next page")
-                    Button(onClick = refresh) {
-                        Text(text = "Try again")
-                    }
-                }
-            }
-        }
-        PaginatedListState.Refreshing -> {
-            repeat(2) {
-                item {
-                    Row {
-                        repeat(2) {
-                            AnimatedBoxShimmer(Modifier.size(300.dp))
-                        }
-                    }
-                }
-            }
-        }
-        is PaginatedListState.Success ->  {
-            recentMangaListItems(
-                items = recentMangaStateUiState.data,
-                onMangaClick = onMangaClick,
-                onBookmarkClick = onBookmarkClick,
-                onTagClick = onTagClick
-            )
-            item {
-                val space = LocalSpacing.current
-                CenterBox(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(90.dp)
-                        .padding(space.med)
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-        }
-    }
-}
-
-private fun LazyListScope.recentMangaListItems(
-    items: List<List<SavableManga>>,
-    onMangaClick: (manga: SavableManga) -> Unit,
-    onTagClick: (manga: SavableManga, name: String) -> Unit,
-    onBookmarkClick: (manga: SavableManga) -> Unit,
-) {
-    items.fastForEach {
-        item(
-            key = it.joinToString { item -> item.id }
-        ) {
-            val space = LocalSpacing.current
-            Row {
-                for(manga in it) {
-                    MangaListItem(
-                        manga = manga,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(space.large)
-                            .clickable {
-                                onMangaClick(manga)
-                            },
-                        onTagClick = { name ->
-                            onTagClick(manga, name)
+    items(
+        count = ceil(manga.itemCount / 2f).roundToInt(),
+        contentType = manga.itemContentType(),
+        key = manga.itemKey()
+    ) {
+        val space = LocalSpacing.current
+        val items = listOfNotNull(manga[it * 2], manga[(it * 2) + 1])
+        Row {
+            for(item in items) {
+                MangaListItem(
+                    manga = item,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(space.large)
+                        .clickable {
+                            onMangaClick(item)
                         },
-                        onBookmarkClick = {
-                            onBookmarkClick(manga)
-                        }
-                    )
-                }
+                    onTagClick = { name ->
+                        onTagClick(item, name)
+                    },
+                    onBookmarkClick = {
+                        onBookmarkClick(item)
+                    }
+                )
             }
         }
     }
@@ -808,102 +720,70 @@ fun MangaPager(
 
 @Composable
 fun TrendingMangaList(
-    trendingMangaUiState: PaginatedListState<List<SavableManga>>,
-    state: LazyListState = rememberLazyListState(),
-    refresh: () -> Unit,
+    manga: LazyPagingItems<SavableManga>,
     onBookmarkClick: (manga: SavableManga) -> Unit
 ) {
     val space = LocalSpacing.current
     val navigator = LocalNavigator.current
-    when (trendingMangaUiState) {
-        is PaginatedListState.Error -> {
-            Column {
-                Text(
-                    text = "Trending",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(space.med)
+    val context = LocalContext.current
+
+    LaunchedEffect(key1 = manga.loadState) {
+        if(manga.loadState.refresh is LoadState.Error) {
+            Toast.makeText(
+                context,
+                "Error: " + (manga.loadState.refresh as LoadState.Error).error.message,
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+    
+    if(manga.loadState.refresh is LoadState.Loading) {
+        Row {
+            repeat(4) {
+                AnimatedBoxShimmer(
+                    Modifier.size(200.dp)
                 )
-                LazyRow(
-                    state = state,
-                    modifier = Modifier
-                        .wrapContentHeight()
-                        .fillMaxWidth()
-                ) {
-                    trendingMangaList(
-                        mangaList = trendingMangaUiState.data,
-                        onMangaClick = {
-                            navigator?.push(MangaViewScreen(it))
-                        },
-                        onTagClick = { tag, id ->
-                            navigator?.push(MangaFilterScreen(tag, id))
-                        },
-                        onBookmarkClick  = {
-                            onBookmarkClick(it)
-                        }
-                    )
-                    item {
-                        Column(Modifier.size(200.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(text = "Failed to load next page")
-                            Button(onClick = refresh) {
-                                Text(text = "Try again")
-                            }
-                        }
-                    }
-                }
+                Spacer(modifier = Modifier.width(space.med))
             }
         }
-        PaginatedListState.Refreshing -> {
-            Column {
-                Text(
-                    text = "Trending",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(space.med)
-                )
-                Row {
-                    repeat(5) {
-                        AnimatedBoxShimmer(
-                            Modifier
-                                .width(220.dp)
-                                .height(220.dp))
-                    }
+    } else {
+        LazyRow(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            items(
+                count = manga.itemCount,
+                key = manga.itemKey(),
+                contentType = manga.itemContentType()
+            ) { i ->
+                manga[i]?.let {
+                    MangaListItemSideTitle(
+                        manga = it,
+                        modifier = Modifier.width(200.dp),
+                        onTagClick = { tag ->
+                            it.tagToId[tag]?.let {id ->
+                                navigator?.push(
+                                    MangaFilterScreen(tag, id)
+                                )
+                            }
+                        },
+                        onBookmarkClick = {
+                            onBookmarkClick(it)
+                        },
+                        index = i
+                    )
                 }
             }
-        }
-        is PaginatedListState.Success -> {
-            Column {
-                Text(
-                    text = "Trending",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(space.med)
-                )
-                LazyRow(
-                    state = state,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                ) {
-                    trendingMangaList(
-                        mangaList = trendingMangaUiState.data,
-                        onMangaClick = {
-                            navigator?.push(MangaViewScreen(it))
-                        },
-                        onTagClick = { tag, id ->
-                            navigator?.push(MangaFilterScreen(tag, id))
-                        },
-                        onBookmarkClick  = {
-                            onBookmarkClick(it)
-                        }
-                    )
-                    item {
-                        CenterBox(Modifier.size(200.dp)) {
-                            if (trendingMangaUiState.loading) {
-                                CircularProgressIndicator()
-                            } else if (trendingMangaUiState.end) {
-                                Text(text = "end of pagination")
-                            }
+            item {
+                if(manga.loadState.append is LoadState.Loading) {
+                    CenterBox(Modifier.size(200.dp)) {
+                        CircularProgressIndicator()
+                    }
+                }
+                if (manga.loadState.append is LoadState.Error || manga.loadState.refresh is LoadState.Error) {
+                    CenterBox(Modifier.size(200.dp)) {
+                        Button(onClick = { manga.retry() }) {
+                            Text("Retry loading manga")
                         }
                     }
                 }

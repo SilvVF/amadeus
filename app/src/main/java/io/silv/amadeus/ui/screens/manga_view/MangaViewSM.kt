@@ -1,15 +1,21 @@
 package io.silv.amadeus.ui.screens.manga_view
 
+import android.util.Log
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
+import io.silv.ktor_response_mapper.message
+import io.silv.ktor_response_mapper.suspendOnFailure
+import io.silv.ktor_response_mapper.suspendOnSuccess
 import io.silv.manga.domain.models.SavableChapter
 import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.base.ProtectedResources
 import io.silv.manga.domain.usecase.GetCombinedSavableMangaWithChapters
+import io.silv.manga.domain.usecase.GetMangaStatisticsById
+import io.silv.manga.domain.usecase.MangaStats
 import io.silv.manga.local.workers.ChapterDeletionWorker
 import io.silv.manga.local.workers.ChapterDeletionWorkerTag
 import io.silv.manga.local.workers.ChapterDownloadWorker
@@ -18,12 +24,15 @@ import io.silv.manga.sync.anyRunning
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+
 class MangaViewSM(
     getCombinedSavableMangaWithChapters: GetCombinedSavableMangaWithChapters,
+    getMangaStatisticsById: GetMangaStatisticsById,
     private val savedMangaRepository: SavedMangaRepository,
     private val workManager: WorkManager,
     private val initialManga: SavableManga
@@ -31,7 +40,25 @@ class MangaViewSM(
 
     init {
         ProtectedResources.ids.add(initialManga.id)
+        coroutineScope.launch {
+            getMangaStatisticsById(initialManga.id)
+                .suspendOnSuccess { Log.d("Stats", this.toString()) }
+                .suspendOnFailure { Log.d("Stats", this.toString()) }
+        }
     }
+
+    val statsUiState = flow {
+        emit(StatsUiState(loading = true, error = null, data = MangaStats()))
+        getMangaStatisticsById(initialManga.id)
+            .suspendOnFailure {
+                emit(StatsUiState(loading = false, error = message(), data = MangaStats()))
+            }
+            .suspendOnSuccess {
+                emit(StatsUiState(loading = false, error = null, data = data))
+            }
+    }
+        .stateInUi(StatsUiState(loading = true, null, MangaStats()))
+
 
     val downloadingOrDeleting = combine(
         workManager.getWorkInfosByTagFlow(ChapterDownloadWorkerTag)
@@ -122,6 +149,11 @@ sealed class MangaViewState(
     val success: Success?
         get() = this as? Success
 }
+data class StatsUiState(
+    val loading: Boolean,
+    val error: String?,
+    val data: MangaStats
+)
 
 sealed interface MangaViewEvent {
     data class FailedToLoadVolumeArt(val message: String): MangaViewEvent

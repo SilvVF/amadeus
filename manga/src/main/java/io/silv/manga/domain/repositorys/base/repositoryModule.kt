@@ -1,5 +1,6 @@
 package io.silv.manga.domain.repositorys.base
 
+import androidx.paging.ExperimentalPagingApi
 import io.silv.manga.domain.repositorys.FilteredMangaRepository
 import io.silv.manga.domain.repositorys.FilteredMangaRepositoryImpl
 import io.silv.manga.domain.repositorys.FilteredYearlyMangaRepository

@@ -3,22 +3,24 @@ package io.silv.amadeus.ui.screens.library
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.domain.models.SavableChapter
 import io.silv.manga.domain.models.SavableManga
-import io.silv.manga.domain.repositorys.SavedMangaRepository
+import io.silv.manga.domain.usecase.GetSavedMangaWithChaptersList
 import io.silv.manga.local.entity.ProgressState
 import kotlinx.coroutines.flow.map
 
 class LibrarySM(
-    savedMangaRepository: SavedMangaRepository
+    getSavedMangaWithChaptersList: GetSavedMangaWithChaptersList
 ): AmadeusScreenModel<LibraryEvent>() {
 
-    val mangaWithDownloadedChapters = savedMangaRepository
-        .getSavedMangaWithChapters()
+
+    val mangaWithDownloadedChapters = getSavedMangaWithChaptersList()
         .map { list ->
-            list.map { (manga, chapters) ->
-                LibraryManga(
-                    chapters = chapters.map { SavableChapter(it) },
-                    savableManga = SavableManga(manga)
-                )
+            list.mapNotNull { (manga, chapters) ->
+                manga?.let { saved ->
+                    LibraryManga(
+                        chapters = chapters.map { SavableChapter(it) },
+                        savableManga = saved
+                    )
+                }
             }
         }
         .stateInUi(emptyList())

@@ -47,7 +47,12 @@ data class PopularMangaResource(
 
     override val savedAtLocal: LocalDateTime = timeNow(),
     override val year: Int,
+
     override val latestUploadedChapter: String?,
+
     override val authors: List<String>,
-    override val artists: List<String>
+
+    override val artists: List<String>,
+
+    val offset: Int = 0,
 ): MangaResource, AmadeusEntity<Any?>

@@ -73,18 +73,21 @@ internal class SavedMangaRepositoryImpl(
                         log("No Saved found using resource $id")
                         val entity =  SavedMangaEntity(resource.first).copy(bookmarked = true)
                         savedMangaDao.upsertSavedManga(entity)
+                        updateChapterList(id)
                         log("Inserted Saved manga using resource $id and set bookmarked true")
                     }
                 }
     }
 
     override suspend fun saveManga(id: String): Unit = withContext(dispatchers.io) {
-        getMangaResourceById(id).maxBy { it.first.savedAtLocal }.let { resource ->
-            log("No Saved found using resource $id")
-            val entity =  SavedMangaEntity(resource.first)
-            savedMangaDao.upsertSavedManga(entity)
-            log("Inserted Saved manga using resource $id and set bookmarked true")
-            updateChapterList(entity.id)
+        getMangaResourceById(id)
+            .maxBy { it.first.savedAtLocal }
+            .let { resource ->
+                log("No Saved found using resource $id")
+                val entity =  SavedMangaEntity(resource.first)
+                savedMangaDao.upsertSavedManga(entity)
+                log("Inserted Saved manga using resource $id and set bookmarked true")
+                updateChapterList(id)
         }
     }
 

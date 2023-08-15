@@ -14,7 +14,10 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmarks
+import androidx.compose.material.icons.outlined.Comment
 import androidx.compose.material.icons.outlined.Photo
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,17 +39,21 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import io.silv.amadeus.ui.screens.manga_view.StatsUiState
 import io.silv.amadeus.ui.shared.fillMaxAfterMesaure
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.core.filterUnique
 import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.network.mangadex.models.Status
+import java.math.RoundingMode
+import java.text.DecimalFormat
 
 @Composable
 fun MainPoster(
     manga: SavableManga,
     modifier: Modifier,
     viewMangaArtClick: () -> Unit,
+    statsState: StatsUiState,
 ) {
     val ctx = LocalContext.current
     val space = LocalSpacing.current
@@ -66,15 +73,54 @@ fun MainPoster(
                 .systemBarsPadding()
                 .padding(space.large)
         ) {
-            AsyncImage(
-                model = ImageRequest.Builder(ctx)
-                    .data(manga.coverArt)
-                    .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxWidth(0.45f)
-            )
+            Column(Modifier
+                .fillMaxWidth(0.45f)
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(ctx)
+                        .data(manga.coverArt)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (statsState.loading) {
+                    AnimatedBoxShimmer(Modifier.size(30.dp))
+                } else if (statsState.error != null) {
+                    Text(text = statsState.error)
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val formated = remember(statsState.data.rating) {
+                            val df = DecimalFormat("#.##").apply {
+                                roundingMode = RoundingMode.DOWN
+                            }
+                            df.format(statsState.data.rating)
+                        }
+                        Icon(
+                            imageVector = Icons.Outlined.Star,
+                            contentDescription = null,
+                            Modifier.padding(space.small)
+                        )
+                        Text(text = formated,  Modifier.padding(space.small))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Outlined.Comment,
+                            contentDescription = null,
+                            Modifier.padding(space.small)
+                        )
+                        Text(text = statsState.data.comments.toString(),  Modifier.padding(space.small))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.Bookmarks,
+                            contentDescription = null,
+                            Modifier.padding(space.small)
+                        )
+                        Text(text = statsState.data.follows.toString(),  Modifier.padding(space.small))
+                    }
+                }
+            }
             MangaInfo(
                 modifier = Modifier
                     .weight(1f)

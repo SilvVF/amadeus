@@ -1,148 +1,110 @@
 package io.silv.manga.domain.repositorys
 
-import android.util.Log
+import androidx.paging.ExperimentalPagingApi
+import androidx.paging.LoadType
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingState
+import androidx.paging.RemoteMediator
+import androidx.room.withTransaction
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.MangaToSearchMangaResourceMapper
-import io.silv.manga.domain.checkProtected
-import io.silv.manga.domain.repositorys.base.BasePaginatedRepository
+import io.silv.manga.domain.suspendRunCatching
+import io.silv.manga.local.AmadeusDatabase
 import io.silv.manga.local.dao.SearchMangaResourceDao
 import io.silv.manga.local.entity.SearchMangaResource
-import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
-import io.silv.manga.network.mangadex.MangaDexTestApi
-import io.silv.manga.network.mangadex.models.manga.Manga
 import io.silv.manga.network.mangadex.requests.MangaRequest
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
+import kotlinx.coroutines.flow.flowOn
 
-internal class SearchMangaRepositoryTest(
-    private val mangaDexTestApi: MangaDexTestApi
-): SearchMangaRepository, BasePaginatedRepository<SearchMangaResource, SearchMangaResourceQuery>(
-    initialQuery = SearchMangaResourceQuery(),
-    pageSize = 50
-)  {
-    override val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+@OptIn(ExperimentalPagingApi::class)
+private class SearchRemoteMediator(
+    private val query: SearchMangaResourceQuery,
+    private val db: AmadeusDatabase,
+    private val mangaDexApi: MangaDexApi,
+): RemoteMediator<Int, SearchMangaResource>() {
 
-    override fun observeMangaResourceById(id: String): Flow<SearchMangaResource?> {
-        return emptyFlow<List<SearchMangaResource>>().onStart {
-            emit(
-            mangaDexTestApi.getMangaList().data.map { MangaToSearchMangaResourceMapper.map(it to null) }
+    private val dao = db.searchMangaResourceDao()
+
+    override suspend fun load(
+        loadType: LoadType,
+        state: PagingState<Int, SearchMangaResource>
+    ): MediatorResult {
+        return suspendRunCatching {
+            val offset = when(loadType) {
+                LoadType.REFRESH -> 0
+                LoadType.PREPEND -> return@suspendRunCatching MediatorResult.Success(
+                    endOfPaginationReached = true
+                )
+                LoadType.APPEND -> {
+                    val lastItem = state.lastItemOrNull()
+                    if(lastItem == null) { 0 } else {
+                        lastItem.offset + state.config.pageSize
+                    }
+                }
+            }
+            val response = mangaDexApi.getMangaList(
+                MangaRequest(
+                    offset = offset,
+                    limit = state.config.pageSize,
+                    includes = listOf("cover_art","author", "artist"),
+                    includedTags = query.includedTags.ifEmpty { null },
+                    excludedTags = query.excludedTags.ifEmpty { null },
+                    title = query.title.ifEmpty { null },
+                    includedTagsMode = query.includedTagsMode,
+                    excludedTagsMode = query.excludedTagsMode,
+                    status = query.publicationStatus.map { it.name }.ifEmpty { null },
+                    availableTranslatedLanguage = query.translatedLanguages.ifEmpty { null },
+                    contentRating = query.contentRating.map { it.name }.ifEmpty { null },
+                    authors = query.authorIds.ifEmpty { null },
+                    artists = query.artistIds.ifEmpty { null },
+                    originalLanguage = query.originalLanguages.ifEmpty { null },
+                    publicationDemographic = query.demographics.map { it.name }.ifEmpty { null }
+                )
             )
-        }.map { list ->
-            list.firstOrNull { it.id == id }
-        }
-    }
+                .getOrThrow()
 
-    override fun observeAllMangaResources(): Flow<List<SearchMangaResource>> {
-        return emptyFlow<List<SearchMangaResource>>().onStart {
-            emit(
-            mangaDexTestApi.getMangaList().data.map { MangaToSearchMangaResourceMapper.map(it to null) }
+            db.withTransaction {
+                if(loadType == LoadType.REFRESH) {
+                    dao.deleteAll()
+                }
+                val entities = response.data.map {
+                    MangaToSearchMangaResourceMapper.map(it to null).copy(offset = offset)
+                }
+                dao.upsertAll(entities)
+            }
+            MediatorResult.Success(
+                endOfPaginationReached = offset + response.data.size >= response.total
             )
-        }
-    }
-
-    override suspend fun loadNextPage() {
-
-    }
-
-    override fun observeMangaResources(resourceQuery: SearchMangaResourceQuery): Flow<List<SearchMangaResource>> {
-        return emptyFlow<List<SearchMangaResource>>().onStart {
-            emit(
-            mangaDexTestApi.getMangaList().data.map { MangaToSearchMangaResourceMapper.map(it to null) }
-            )
+        }.getOrElse {
+            MediatorResult.Error(it)
         }
     }
 }
 
 internal class SearchMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,
+    private val amadeusDatabase: AmadeusDatabase,
     private val mangaResourceDao: SearchMangaResourceDao,
-    dispatchers: AmadeusDispatchers,
-): SearchMangaRepository, BasePaginatedRepository<SearchMangaResource, SearchMangaResourceQuery>(
-    initialQuery = SearchMangaResourceQuery(),
-    pageSize = 50
-) {
+    private val dispatchers: AmadeusDispatchers,
+): SearchMangaRepository {
 
-    override val scope: CoroutineScope =
-        CoroutineScope(dispatchers.io) + CoroutineName("SearchMangaRepositoryImpl")
-
-    private val mapper = MangaToSearchMangaResourceMapper
-
-    private val syncer = syncerForEntity<SearchMangaResource, Manga, String>(
-        networkToKey = { n -> n.id },
-        mapper = { manga, resource -> mapper.map(manga to resource) },
-        upsert = { mangaResourceDao.upsertSearchMangaResource(it) }
-    )
-
-    init {
-        scope.launch {
-            refresh(SearchMangaResourceQuery())
-        }
+    @OptIn(ExperimentalPagingApi::class)
+    override fun pager(query: SearchMangaResourceQuery): Pager<Int, SearchMangaResource> {
+       return Pager(
+           config = PagingConfig(pageSize = 60),
+           remoteMediator = SearchRemoteMediator(SearchMangaResourceQuery(), amadeusDatabase, mangaDexApi),
+           pagingSourceFactory = { mangaResourceDao.pagingSource() }
+       )
     }
 
     override fun observeMangaResourceById(id: String): Flow<SearchMangaResource?> {
-        return mangaResourceDao.observeSearchMangaResourceById(id)
-    }
-
-    override fun observeMangaResources(resourceQuery: SearchMangaResourceQuery): Flow<List<SearchMangaResource>>  {
-        return mangaResourceDao.observeAllSearchMangaResources().onStart {
-            if (resourceQuery != latestQuery()) {
-                resetPagination(resourceQuery)
-                emit(emptyList())
-                loadNextPage()
-            }
-        }
+        return mangaResourceDao.observeSearchMangaResourceById(id).flowOn(dispatchers.io)
     }
 
     override fun observeAllMangaResources(): Flow<List<SearchMangaResource>> {
-        return mangaResourceDao.observeAllSearchMangaResources()
-    }
-
-
-    override suspend fun loadNextPage() = loadPage { offset, query ->
-        val result = syncer.sync(
-            current = mangaResourceDao.observeAllSearchMangaResources().first(),
-            networkResponse = mangaDexApi.getMangaList(
-                MangaRequest(
-                    offset = offset,
-                    limit = pageSize,
-                    includes = listOf("cover_art","author", "artist"),
-                    includedTags = query.includedTags,
-                    excludedTags = query.excludedTags,
-                    title = query.title,
-                    includedTagsMode = query.includedTagsMode,
-                    excludedTagsMode = query.excludedTagsMode,
-                    status = query.publicationStatus?.map { it.name },
-                    availableTranslatedLanguage = query.translatedLanguages,
-                    contentRating = query.contentRating?.map { it.name },
-                    authors = query.authorIds,
-                    artists = query.artistIds,
-                    originalLanguage = query.originalLanguages,
-                    publicationDemographic = query.demographics?.map { it.name }
-                )
-            )
-                .getOrThrow()
-                .also {
-                    updateLastPage(it.total)
-                    Log.d("Search", "last page ${it.total}")
-                }
-                .data
-        )
-        if (offset == 0) {
-            for(unhandled in result.unhandled) {
-                if (!checkProtected(unhandled.id)) {
-                    mangaResourceDao.delete(unhandled)
-                }
-            }
-        }
+        return mangaResourceDao.observeAllSearchMangaResources().flowOn(dispatchers.io)
     }
 }

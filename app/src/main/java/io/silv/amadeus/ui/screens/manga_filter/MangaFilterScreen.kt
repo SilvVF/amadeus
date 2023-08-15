@@ -11,10 +11,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -27,12 +27,15 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
@@ -43,8 +46,8 @@ import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.composables.header
 import io.silv.amadeus.ui.screens.home.MangaPager
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
+import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.FilteredMangaRepository
 import org.koin.core.parameter.parametersOf
 
@@ -65,19 +68,7 @@ class MangaFilterScreen(
         val space = LocalSpacing.current
         val timePeriod by sm.timePeriod.collectAsStateWithLifecycle()
         val yearlyItemsState by sm.yearlyFilteredUiState.collectAsStateWithLifecycle()
-        val timePeriodItemsState by sm.timePeriodFilteredUiState.collectAsStateWithLifecycle()
-        val lazyGridState = rememberLazyGridState()
-        val timeLoadState by sm.timeLoadState.collectAsStateWithLifecycle()
-
-        LaunchedEffect(lazyGridState) {
-            snapshotFlow { lazyGridState.firstVisibleItemIndex }.collect {
-                if (it >= timePeriodItemsState.resources.size - 6) {
-                    sm.loadNextPage()
-                }
-            }
-        }
-
-
+        val timePeriodItems = sm.timePeriodFilteredPagingFlow.collectAsLazyPagingItems()
 
         LaunchedEffect(Unit) {
             sm.updateTagId(tagId, tag)
@@ -117,7 +108,6 @@ class MangaFilterScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(it),
-                state = lazyGridState,
                 columns = GridCells.Fixed(2)
             ) {
                 header {
@@ -175,32 +165,54 @@ class MangaFilterScreen(
                         }
                     }
                 }
-                when(timePeriodItemsState) {
-                    TimeFilteredUiState.Loading -> items(4) {
-                        AnimatedBoxShimmer(Modifier.size(300.dp))
+                if(timePeriodItems.loadState.refresh is LoadState.Loading) {
+                    items(4) {
+                        AnimatedBoxShimmer(Modifier.size(200.dp))
                     }
-                    is TimeFilteredUiState.Success -> items(
-                        items = timePeriodItemsState.resources,
-                        key = { item: SavableManga -> item.id }
-                    ) { manga ->
-                        MangaListItem(
-                            manga = manga,
-                            modifier = Modifier
-                                .padding(space.large)
-                                .clickable {
-                                    navigator?.push(
-                                        MangaViewScreen(manga)
-                                    )
+                } else {
+                    items(
+                        count = timePeriodItems.itemCount,
+                        key = timePeriodItems.itemKey(),
+                        contentType = timePeriodItems.itemContentType()
+                    ) { i ->
+                        timePeriodItems[i]?.let { manga ->
+                            MangaListItem(
+                                manga = manga,
+                                modifier = Modifier
+                                    .padding(space.large)
+                                    .clickable {
+                                        navigator?.push(
+                                            MangaViewScreen(manga)
+                                        )
+                                    },
+                                onTagClick = { name ->
+                                    manga.tagToId[name]?.let {
+                                        sm.updateTagId(it, name)
+                                    }
                                 },
-                            onTagClick = { name ->
-                                manga.tagToId[name]?.let {
-                                    sm.updateTagId(it, name)
+                                onBookmarkClick = {
+                                    sm.bookmarkManga(manga.id)
                                 }
-                            },
-                            onBookmarkClick = {
-                                sm.bookmarkManga(manga.id)
+                            )
+                        }
+                    }
+                    if (timePeriodItems.loadState.append == LoadState.Loading) {
+                        header {
+                            CenterBox(Modifier.fillMaxWidth().padding(space.med)) {
+                                CircularProgressIndicator()
                             }
-                        )
+                        }
+                    }
+                    if (timePeriodItems.loadState.append is LoadState.Error || timePeriodItems.loadState.refresh is LoadState.Error) {
+                        header {
+                            CenterBox(Modifier.fillMaxWidth().padding(space.med)) {
+                                Button(
+                                    onClick = { timePeriodItems.retry() }
+                                ) {
+                                    Text("Retry loading items")
+                                }
+                            }
+                        }
                     }
                 }
             }

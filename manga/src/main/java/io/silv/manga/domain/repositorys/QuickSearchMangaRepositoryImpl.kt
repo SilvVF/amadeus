@@ -1,133 +1,100 @@
 package io.silv.manga.domain.repositorys
 
-import android.util.Log
+import androidx.paging.ExperimentalPagingApi
+import androidx.paging.LoadType
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingState
+import androidx.paging.RemoteMediator
+import androidx.room.withTransaction
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.MangaToQuickSearchMangaResourceMapper
-import io.silv.manga.domain.checkProtected
-import io.silv.manga.domain.repositorys.base.BasePaginatedRepository
+import io.silv.manga.domain.suspendRunCatching
+import io.silv.manga.local.AmadeusDatabase
 import io.silv.manga.local.dao.QuickSearchMangaResourceDao
 import io.silv.manga.local.entity.QuickSearchMangaResource
-import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
-import io.silv.manga.network.mangadex.MangaDexTestApi
-import io.silv.manga.network.mangadex.models.manga.Manga
 import io.silv.manga.network.mangadex.requests.MangaRequest
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
+import kotlinx.coroutines.flow.flowOn
 
-internal class QuickSearchMangaRepositoryTest(
-    private val mangaDexTestApi: MangaDexTestApi
-) : QuickSearchMangaRepository, BasePaginatedRepository<QuickSearchMangaResource, String>(
-    initialQuery = "",
-    pageSize = 50
-) {
-    override val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+@OptIn(ExperimentalPagingApi::class)
+private class QuickSearchRemoteMediator(
+    private val query: String,
+    private val db: AmadeusDatabase,
+    private val mangaDexApi: MangaDexApi,
+): RemoteMediator<Int, QuickSearchMangaResource>() {
 
-    override fun observeMangaResourceById(id: String): Flow<QuickSearchMangaResource?> {
-        return emptyFlow<List<QuickSearchMangaResource>>().onStart {
-            emit(
-            mangaDexTestApi.getMangaList().data.map { MangaToQuickSearchMangaResourceMapper.map(it to null) }
+    private val dao = db.quickSearchResourceDao()
+
+    override suspend fun load(
+        loadType: LoadType,
+        state: PagingState<Int, QuickSearchMangaResource>
+    ): MediatorResult {
+        return suspendRunCatching {
+            val offset = when(loadType) {
+                LoadType.REFRESH -> 0
+                LoadType.PREPEND -> return@suspendRunCatching MediatorResult.Success(
+                    endOfPaginationReached = true
+                )
+                LoadType.APPEND -> {
+                    val lastItem = state.lastItemOrNull()
+                    if(lastItem == null) { 0 } else {
+                        lastItem.offset + state.config.pageSize
+                    }
+                }
+            }
+            val response = mangaDexApi.getMangaList(
+                MangaRequest(
+                    offset = offset,
+                    limit = state.config.pageSize,
+                    title = query,
+                    includes = listOf("cover_art","author", "artist"),
+                    availableTranslatedLanguage = listOf("en"),
+                )
             )
-        }.map { list ->
-            list.firstOrNull { it.id == id }
-        }
-    }
+                .getOrThrow()
 
-    override fun observeAllMangaResources(): Flow<List<QuickSearchMangaResource>> {
-        return emptyFlow<List<QuickSearchMangaResource>>().onStart {
-            emit(
-            mangaDexTestApi.getMangaList().data.map { MangaToQuickSearchMangaResourceMapper.map(it to null) }
+            db.withTransaction {
+                if(loadType == LoadType.REFRESH) {
+                    dao.deleteAll()
+                }
+                val entities = response.data.map {
+                    MangaToQuickSearchMangaResourceMapper.map(it to null).copy(offset = offset)
+                }
+                dao.upsertAll(entities)
+            }
+            MediatorResult.Success(
+                endOfPaginationReached = offset + response.data.size >= response.total
             )
-        }
-    }
-
-    override suspend fun loadNextPage() {
-
-    }
-
-    override fun observeMangaResources(resourceQuery: String): Flow<List<QuickSearchMangaResource>> {
-        return emptyFlow<List<QuickSearchMangaResource>>().onStart {
-            emit(
-            mangaDexTestApi.getMangaList().data.map { MangaToQuickSearchMangaResourceMapper.map(it to null) }
-            )
+        }.getOrElse {
+            MediatorResult.Error(it)
         }
     }
 }
 
 internal class QuickSearchMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,
+    private val amadeusDatabase: AmadeusDatabase,
     private val mangaResourceDao: QuickSearchMangaResourceDao,
-    dispatchers: AmadeusDispatchers,
-): QuickSearchMangaRepository, BasePaginatedRepository<QuickSearchMangaResource, String>(initialQuery = "") {
+    private val dispatchers: AmadeusDispatchers,
+): QuickSearchMangaRepository {
 
-    override val scope: CoroutineScope =
-        CoroutineScope(dispatchers.io) + CoroutineName("QuickSearchMangaRepositoryImpl")
-
-    private val mapper = MangaToQuickSearchMangaResourceMapper
-
-    private val syncer = syncerForEntity<QuickSearchMangaResource, Manga, String>(
-        networkToKey = { n -> n.id },
-        mapper = { manga, resource -> mapper.map(manga to resource) },
-        upsert = { mangaResourceDao.upsertSearchMangaResource(it) }
+    @OptIn(ExperimentalPagingApi::class)
+    override fun pager(query: String) = Pager(
+        config = PagingConfig(pageSize = 60),
+        remoteMediator = QuickSearchRemoteMediator(query, amadeusDatabase, mangaDexApi),
+        pagingSourceFactory = {
+            mangaResourceDao.pagingSource()
+        }
     )
 
-    init {
-        scope.launch {
-            refresh()
-        }
-    }
-
     override fun observeMangaResourceById(id: String): Flow<QuickSearchMangaResource?> {
-        return mangaResourceDao.observeQuickSearchMangaResourceById(id)
-    }
-
-    override fun observeMangaResources(resourceQuery: String): Flow<List<QuickSearchMangaResource>>  {
-        return mangaResourceDao.observeAllSearchMangaResources().onStart {
-            if (resourceQuery != latestQuery()) {
-                emit(emptyList())
-                refresh(resourceQuery)
-            }
-        }
+        return mangaResourceDao.observeQuickSearchMangaResourceById(id).flowOn(dispatchers.io)
     }
 
     override fun observeAllMangaResources(): Flow<List<QuickSearchMangaResource>> {
-        return mangaResourceDao.observeAllSearchMangaResources()
-    }
-
-
-    override suspend fun loadNextPage() = loadPage { offset, query ->
-        val result = syncer.sync(
-            current = mangaResourceDao.observeAllSearchMangaResources().first(),
-            networkResponse = mangaDexApi.getMangaList(
-                MangaRequest(
-                    offset = offset,
-                    limit = pageSize,
-                    includes = listOf("cover_art","author", "artist"),
-                    title = query,
-                )
-            )
-                .getOrThrow()
-                .also {
-                    updateLastPage(it.total)
-                    Log.d("Search", "last page ${it.total}")
-                }
-                .data
-        )
-        if (offset == 0) {
-            for(unhandled in result.unhandled) {
-                if (!checkProtected(unhandled.id)) {
-                    mangaResourceDao.delete(unhandled)
-                }
-            }
-        }
+        return mangaResourceDao.observeAllSearchMangaResources().flowOn(dispatchers.io)
     }
 }

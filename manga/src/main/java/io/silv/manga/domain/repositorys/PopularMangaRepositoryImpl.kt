@@ -17,10 +17,8 @@ import io.silv.manga.local.dao.PopularMangaResourceDao
 import io.silv.manga.local.entity.PopularMangaResource
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.requests.MangaRequest
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.plus
+import kotlinx.coroutines.flow.flowOn
 import java.time.Duration
 
 @OptIn(ExperimentalPagingApi::class)
@@ -71,7 +69,7 @@ private class PopularMangaRemoteMediator(
                 dao.upsertAll(entities)
             }
             MediatorResult.Success(
-                endOfPaginationReached = offset >= response.total
+                endOfPaginationReached = offset + response.data.size >= response.total
             )
         }.getOrElse {
             MediatorResult.Error(it)
@@ -83,13 +81,10 @@ private class PopularMangaRemoteMediator(
 internal class PopularMangaRepositoryImpl(
     private val mangaResourceDao: PopularMangaResourceDao,
     private val popularMangaResourceDao: PopularMangaResourceDao,
+    private val dispatchers: AmadeusDispatchers,
     mangaDexApi: MangaDexApi,
     amadeusDatabase: AmadeusDatabase,
-    dispatchers: AmadeusDispatchers,
 ): PopularMangaRepository {
-
-    val scope: CoroutineScope =
-        CoroutineScope(dispatchers.io) + CoroutineName("PopularMangaRepositoryImpl")
 
     @OptIn(ExperimentalPagingApi::class)
     override val pager = Pager(
@@ -101,10 +96,10 @@ internal class PopularMangaRepositoryImpl(
     )
 
     override fun observeMangaResourceById(id: String): Flow<PopularMangaResource?> {
-        return mangaResourceDao.observePopularMangaResourceById(id)
+        return mangaResourceDao.observePopularMangaResourceById(id).flowOn(dispatchers.io)
     }
 
     override fun observeAllMangaResources(): Flow<List<PopularMangaResource>> {
-        return mangaResourceDao.getPopularMangaResources()
+        return mangaResourceDao.getPopularMangaResources().flowOn(dispatchers.io)
     }
 }

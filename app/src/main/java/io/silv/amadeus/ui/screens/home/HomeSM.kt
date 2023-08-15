@@ -12,17 +12,15 @@ import io.silv.manga.domain.repositorys.RecentMangaRepository
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SeasonalMangaRepository
 import io.silv.manga.domain.repositorys.base.LoadState
-import io.silv.manga.domain.repositorys.base.PagedLoadState
 import io.silv.manga.local.entity.Season
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -31,10 +29,10 @@ class HomeSM(
     popularMangaRepository: PopularMangaRepository,
     seasonalMangaRepository: SeasonalMangaRepository,
     private val savedMangaRepository: SavedMangaRepository,
-    private val searchMangaRepository: QuickSearchMangaRepository,
+    searchMangaRepository: QuickSearchMangaRepository,
 ): AmadeusScreenModel<HomeEvent>() {
 
-    private val mutableSearchQuery = MutableStateFlow(searchMangaRepository.latestQuery())
+    private val mutableSearchQuery = MutableStateFlow("")
     val searchQuery = mutableSearchQuery.asStateFlow()
 
     val refreshingSeasonal = seasonalMangaRepository.loadState
@@ -42,50 +40,30 @@ class HomeSM(
         .stateInUi(false)
 
     private val forceSearchFlow = MutableStateFlow(false)
-
     private var startFlag = false
-
-
-    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-    private val mangaSearchFlow = combineTuple(searchQuery, forceSearchFlow)
-        .debounce { if (startFlag.also { startFlag = false }) {  0L } else 2000L }
-        .flatMapLatest { (query, _) ->
-            searchMangaRepository.observeMangaResources(query)
-        }
-        .onStart {
-            emit(
-                searchMangaRepository.observeMangaResources(searchMangaRepository.latestQuery())
-                    .first()
-            )
-        }
 
     fun startSearching() {
         startFlag = true
         forceSearchFlow.update { !it }
     }
 
-    private val loadState = searchMangaRepository.loadState.stateInUi(PagedLoadState.None)
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    private val mangaSearchFlow = combineTuple(searchQuery, forceSearchFlow)
+        .debounce { if (startFlag.also { startFlag = false }) {  0L } else 2000L }
+        .distinctUntilChanged()
+        .flatMapLatest { (query, _) ->
+            searchMangaRepository.pager(query).flow.cachedIn(coroutineScope)
+        }
+            .cachedIn(coroutineScope)
 
-    val searchMangaUiState = combineTuple(
+    val searchMangaPagingFlow = combineTuple(
         mangaSearchFlow,
         savedMangaRepository.getSavedMangas(),
-        loadState,
-    ).map { (resource, saved, loadState) ->
-        val resources = resource.map {
-            SavableManga(it, saved.find { manga -> manga.id == it.id })
-        }
-        when (loadState) {
-            PagedLoadState.End -> PaginatedListState.Success(resources, end = true, loading = false)
-            is PagedLoadState.Error -> PaginatedListState.Error(
-                resources,
-                loadState.throwable.localizedMessage ?: "unkown error"
-            )
-            PagedLoadState.Loading -> PaginatedListState.Success(resources, end = false, loading = true)
-            PagedLoadState.None -> PaginatedListState.Success(resources, end = false, loading = false)
-            PagedLoadState.Refreshing -> PaginatedListState.Refreshing
+    ).map { (pagingData, saved) ->
+        pagingData.map {
+            SavableManga(it, saved.find { s -> s.id == it.id })
         }
     }
-        .stateInUi(PaginatedListState.Refreshing)
 
     val popularMangaPagingFlow = combineTuple(
         popularMangaRepository.pager.flow.cachedIn(coroutineScope),
@@ -136,10 +114,6 @@ class HomeSM(
 
     fun bookmarkManga(mangaId: String) = coroutineScope.launch {
         savedMangaRepository.bookmarkManga(mangaId)
-    }
-
-    fun loadNextSearchPage() = coroutineScope.launch {
-        searchMangaRepository.loadNextPage()
     }
 }
 

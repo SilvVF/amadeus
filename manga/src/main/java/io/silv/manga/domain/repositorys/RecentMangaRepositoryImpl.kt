@@ -65,7 +65,7 @@ private class RecentMangaRemoteMediator(
                 dao.upsertAll(entities)
             }
             MediatorResult.Success(
-                endOfPaginationReached = offset >= response.total
+                endOfPaginationReached = offset + response.data.size >= response.total
             )
         }.getOrElse {
             MediatorResult.Error(it)

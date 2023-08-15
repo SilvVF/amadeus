@@ -50,5 +50,6 @@ data class FilteredMangaResource(
     override val latestUploadedChapter: String?,
     override val authors: List<String>,
     override val artists: List<String>,
+    val offset: Int,
 ): MangaResource, AmadeusEntity<Any?>
 

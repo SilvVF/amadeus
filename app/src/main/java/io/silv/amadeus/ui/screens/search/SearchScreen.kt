@@ -1,5 +1,6 @@
 package io.silv.amadeus.ui.screens.search
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -50,6 +51,7 @@ import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -91,6 +93,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -106,6 +109,11 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -116,8 +124,8 @@ import com.skydoves.orbital.rememberContentWithOrbitalScope
 import io.silv.amadeus.AmadeusScaffold
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItem
+import io.silv.amadeus.ui.composables.header
 import io.silv.amadeus.ui.screens.home.HomeTab
-import io.silv.amadeus.ui.screens.home.PaginatedListState
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
@@ -143,7 +151,7 @@ class SearchScreen: Screen {
 
         val sm = getScreenModel<SearchSM>()
 
-        val searchMangaUiState by sm.searchMangaUiState.collectAsStateWithLifecycle()
+        val searchMangaPagingItems = sm.searchMangaPagingFlow.collectAsLazyPagingItems()
         val tagsUiState by sm.tagsUiState.collectAsStateWithLifecycle()
         val searchText by sm.searchText.collectAsStateWithLifecycle()
         val includedIds by sm.includedIds.collectAsStateWithLifecycle()
@@ -163,7 +171,6 @@ class SearchScreen: Screen {
         val selectedTranslatedLanguages by sm.selectedTransLang.collectAsStateWithLifecycle()
         val selectedDemographics by sm.selectedDemographics.collectAsStateWithLifecycle()
 
-        val lazyGridState = rememberLazyGridState()
         val keyboardController = LocalSoftwareKeyboardController.current
         val tabNavigator = LocalTabNavigator.current
         val navigator = LocalNavigator.current
@@ -176,16 +183,6 @@ class SearchScreen: Screen {
                     shownOnce = true
                 }
                 keyboardController?.hide()
-            }
-        }
-
-        LaunchedEffect(lazyGridState) {
-            snapshotFlow { lazyGridState.firstVisibleItemIndex }.collect { idx ->
-                (searchMangaUiState as? SearchMangaUiState.Success)?.let {
-                    if (idx >= it.results.lastIndex - 6) {
-                        sm.loadNextSearchPage()
-                    }
-                }
             }
         }
 
@@ -260,12 +257,11 @@ class SearchScreen: Screen {
                             selectedDemographics = selectedDemographics,
                             onDemographicSelected = sm::selectDemographic
                         )
-                        false -> SearchItems(
+                        false -> SearchItemsPagingList(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(it),
-                            searchMangaUiState = searchMangaUiState,
-                            gridState = lazyGridState,
+                            items = searchMangaPagingItems,
                             onMangaClick = {
                                 navigator?.push(
                                     MangaViewScreen(it)
@@ -1112,6 +1108,92 @@ fun SearchMangaTopBar(
     ){}
 }
 
+@Composable
+fun SearchItemsPagingList(
+    modifier: Modifier = Modifier,
+    items: LazyPagingItems<SavableManga>,
+    onMangaClick: (manga: SavableManga) -> Unit,
+    onBookmarkClick: (manga: SavableManga) -> Unit
+) {
+    val space = LocalSpacing.current
+    val navigator = LocalNavigator.current
+    val context = LocalContext.current
+
+    LaunchedEffect(key1 = items.loadState) {
+        if(items.loadState.refresh is LoadState.Error) {
+            Toast.makeText(
+                context,
+                "Error: " + (items.loadState.refresh as LoadState.Error).error.message,
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    if(items.loadState.refresh is LoadState.Loading) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceEvenly) {
+            repeat(4) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    repeat(2) {
+                        AnimatedBoxShimmer(
+                            Modifier
+                                .weight(1f)
+                                .height(200.dp)
+                        )
+                    }
+                }
+            }
+        }
+    } else {
+        LazyVerticalGrid(
+            modifier = modifier,
+            columns = GridCells.Fixed(2)
+        ) {
+            items(
+                count = items.itemCount,
+                key = items.itemKey(),
+                contentType = items.itemContentType()
+            ) { i ->
+                items[i]?.let {
+                    MangaListItem(
+                        manga = it,
+                        modifier = Modifier
+                            .padding(space.large)
+                            .clickable {
+                                onMangaClick(it)
+                            },
+                        onBookmarkClick = {
+                            onBookmarkClick(it)
+                        },
+                        onTagClick = { name ->
+                            it.tagToId[name]?.let { id ->
+                                navigator?.push(
+                                    MangaFilterScreen(name, id)
+                                )
+                            }
+                        }
+                    )
+                }
+            }
+            header {
+                if(items.loadState.append is LoadState.Loading) {
+                    CenterBox(Modifier.size(200.dp)) {
+                        CircularProgressIndicator()
+                    }
+                }
+                if (items.loadState.append is LoadState.Error || items.loadState.refresh is LoadState.Error) {
+                    CenterBox(Modifier.size(200.dp)) {
+                        Button(onClick = { items.retry() }) {
+                            Text("Retry loading manga")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun SearchItemsList(
@@ -1155,90 +1237,4 @@ fun SearchItemsList(
     }
 }
 
-@Composable
-fun SearchItems(
-    modifier: Modifier,
-    searchMangaUiState: PaginatedListState<List<SavableManga>>,
-    gridState: LazyGridState,
-    onMangaClick: (SavableManga) -> Unit,
-    onBookmarkClick: (SavableManga) -> Unit
-) {
-    when(searchMangaUiState) {
-        is PaginatedListState.Error -> {
-            if (searchMangaUiState.data.isNotEmpty()) {
-                Column {
-                    SearchItemsList(
-                        state = gridState,
-                        modifier = modifier.weight(1f),
-                        items = searchMangaUiState.data,
-                        onMangaClick = onMangaClick,
-                        onBookmarkClick = onBookmarkClick
-                    )
-                    Text(text = "Failed To load recent Query")
-                }
-            }
-        }
-        PaginatedListState.Refreshing -> {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-            ) {
-                items(4) {
-                    AnimatedBoxShimmer(Modifier.size(300.dp))
-                }
-            }
-        }
-        is PaginatedListState.Success -> {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
-                SearchItemsList(
-                    state = gridState,
-                    modifier = modifier.weight(1f),
-                    items = searchMangaUiState.data,
-                    onMangaClick = onMangaClick,
-                    onBookmarkClick = onBookmarkClick
-                )
-                if (searchMangaUiState.loading) {
-                    CircularProgressIndicator()
-                } else if (searchMangaUiState.end) {
-                    Text("End of pagination")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SearchItems(
-    modifier: Modifier,
-    searchMangaUiState: SearchMangaUiState,
-    gridState: LazyGridState,
-    onMangaClick: (SavableManga) -> Unit,
-    onBookmarkClick: (SavableManga) -> Unit
-) {
-    when(searchMangaUiState) {
-        is SearchMangaUiState.Refreshing -> {
-            LazyVerticalGrid(
-                modifier = modifier,
-                columns = GridCells.Fixed(2),
-            ) {
-                items(4) {
-                    AnimatedBoxShimmer(Modifier.size(300.dp))
-                }
-            }
-        }
-        is SearchMangaUiState.Success -> {
-            SearchItemsList(
-                state = gridState,
-                modifier = modifier,
-                items = searchMangaUiState.results,
-                onMangaClick = onMangaClick,
-                onBookmarkClick = onBookmarkClick
-            )
-        }
-        is SearchMangaUiState.WaitingForQuery -> {
-            CenterBox(modifier = Modifier.fillMaxSize()) {
-                Text("use filters to search for manga")
-            }
-        }
-    }
-}
 

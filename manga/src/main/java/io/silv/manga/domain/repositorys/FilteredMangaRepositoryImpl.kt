@@ -1,73 +1,84 @@
 package io.silv.manga.domain.repositorys
 
+import androidx.paging.ExperimentalPagingApi
+import androidx.paging.LoadType
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingState
+import androidx.paging.RemoteMediator
+import androidx.room.withTransaction
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.manga.domain.MangaToFilteredMangaResourceMapper
-import io.silv.manga.domain.checkProtected
-import io.silv.manga.domain.repositorys.base.BasePaginatedRepository
+import io.silv.manga.domain.suspendRunCatching
 import io.silv.manga.domain.timeString
+import io.silv.manga.local.AmadeusDatabase
 import io.silv.manga.local.dao.FilteredMangaResourceDao
 import io.silv.manga.local.entity.FilteredMangaResource
-import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
-import io.silv.manga.network.mangadex.MangaDexTestApi
-import io.silv.manga.network.mangadex.models.manga.Manga
 import io.silv.manga.network.mangadex.requests.MangaRequest
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.plus
+import kotlinx.coroutines.flow.flowOn
 
-internal class FilteredMangaRepositoryTest(
-    private val mangaDexTestApi: MangaDexTestApi
-): FilteredMangaRepository, BasePaginatedRepository<FilteredMangaResource, FilteredResourceQuery?>(
-initialQuery = null
-){
-    override val scope: CoroutineScope
-        get() = CoroutineScope(Dispatchers.IO)
+@OptIn(ExperimentalPagingApi::class)
+private class FilteredMangaRemoteMediator(
+    private val query: FilteredResourceQuery,
+    private val db: AmadeusDatabase,
+    private val mangaDexApi: MangaDexApi,
+): RemoteMediator<Int, FilteredMangaResource>() {
 
-    override fun observeMangaResourceById(id: String): Flow<FilteredMangaResource?> {
-        return emptyFlow<FilteredMangaResource?>().onStart {
-           emit(
-               MangaToFilteredMangaResourceMapper.map(
-                   mangaDexTestApi.getMangaList().data.first() to null
-               )
-           )
-        }
-    }
+    private val dao = db.filteredMangaResourceDao()
 
-    override fun observeAllMangaResources(): Flow<List<FilteredMangaResource>> {
-        return emptyFlow<List<FilteredMangaResource>>().onStart {
-            emit(
-                mangaDexTestApi.getMangaList().data.map {
-                    MangaToFilteredMangaResourceMapper.map(
-                       it to null
-                    )
+    override suspend fun load(
+        loadType: LoadType,
+        state: PagingState<Int, FilteredMangaResource>
+    ): MediatorResult {
+        return suspendRunCatching {
+            val offset = when(loadType) {
+                LoadType.REFRESH -> 0
+                LoadType.PREPEND -> return@suspendRunCatching MediatorResult.Success(
+                    endOfPaginationReached = true
+                )
+                LoadType.APPEND -> {
+                    val lastItem = state.lastItemOrNull()
+                    if(lastItem == null) { 0 } else {
+                        lastItem.offset + state.config.pageSize
+                    }
                 }
+            }
+            val response = mangaDexApi.getMangaList(
+                MangaRequest(
+                    offset = offset,
+                    limit = state.config.pageSize,
+                    includes = listOf("cover_art","author", "artist"),
+                    availableTranslatedLanguage = listOf("en"),
+                    hasAvailableChapters = true,
+                    order = mapOf("followedCount" to "desc"),
+                    includedTags = listOf(query.tagId),
+                    includedTagsMode = MangaRequest.TagsMode.AND,
+                    createdAtSince = query.timePeriod.timeString()
+                )
             )
-        }
-    }
+                .getOrThrow()
 
-    override suspend fun loadNextPage() {
-
-    }
-
-    override fun observeMangaResources(resourceQuery: FilteredResourceQuery?): Flow<List<FilteredMangaResource>> {
-        return emptyFlow<List<FilteredMangaResource>>().onStart {
-            emit(
-                mangaDexTestApi.getMangaList().data.map {
-                    MangaToFilteredMangaResourceMapper.map(
-                        it to null
-                    )
+            db.withTransaction {
+                if(loadType == LoadType.REFRESH) {
+                    dao.deleteAll()
                 }
+                val entities = response.data.map {
+                    MangaToFilteredMangaResourceMapper.map(it to null).copy(offset = offset)
+                }
+                dao.upsertAll(entities)
+            }
+            MediatorResult.Success(
+                endOfPaginationReached = offset + response.data.size >= response.total
             )
+        }.getOrElse {
+            MediatorResult.Error(it)
         }
     }
 }
+
 
 data class FilteredResourceQuery(
     val tagId: String,
@@ -76,75 +87,26 @@ data class FilteredResourceQuery(
 
 internal class FilteredMangaRepositoryImpl(
     private val resourceDao: FilteredMangaResourceDao,
+    private val amadeusDatabase: AmadeusDatabase,
     private val mangaDexApi: MangaDexApi,
-    dispatchers: AmadeusDispatchers,
-): FilteredMangaRepository, BasePaginatedRepository<FilteredMangaResource, FilteredResourceQuery?>(
-    initialQuery = null
-) {
+    private val dispatchers: AmadeusDispatchers,
+): FilteredMangaRepository {
 
-    override val scope: CoroutineScope =
-        CoroutineScope(dispatchers.io) + CoroutineName("FilteredMangaRepositoryImpl")
 
-    private val syncer = syncerForEntity<FilteredMangaResource, Manga, String>(
-        networkToKey = { it.id },
-        mapper = { manga, saved ->
-            MangaToFilteredMangaResourceMapper.map(
-                manga to saved
-            )
-        },
-        upsert = {
-            resourceDao.upsertFilteredMangaResource(it)
+    @OptIn(ExperimentalPagingApi::class)
+    override fun pager(query: FilteredResourceQuery)  = Pager(
+        config = PagingConfig(pageSize = 60),
+        remoteMediator = FilteredMangaRemoteMediator(query, amadeusDatabase, mangaDexApi),
+        pagingSourceFactory = {
+            resourceDao.pagingSource()
         }
     )
 
     override fun observeMangaResourceById(id: String): Flow<FilteredMangaResource?> {
-        return resourceDao.observeFilteredMangaResourceById(id)
+        return resourceDao.observeFilteredMangaResourceById(id).flowOn(dispatchers.io)
     }
 
     override fun observeAllMangaResources(): Flow<List<FilteredMangaResource>> {
-        return resourceDao.getFilteredMangaResources()
-    }
-
-    override fun observeMangaResources(resourceQuery: FilteredResourceQuery?): Flow<List<FilteredMangaResource>> {
-        return resourceDao.getFilteredMangaResources()
-            .onStart {
-                if (resourceQuery != latestQuery()) {
-                    emit(emptyList())
-                    refresh(resourceQuery)
-                }
-            }
-    }
-
-    override suspend fun loadNextPage() = loadPage { offset, query ->
-          query?.let {
-              val result = syncer.sync(
-                  current = resourceDao.getFilteredMangaResources().first(),
-                  networkResponse = mangaDexApi.getMangaList(
-                      MangaRequest(
-                          offset = offset,
-                          limit = pageSize,
-                          includes = listOf("cover_art","author", "artist"),
-                          availableTranslatedLanguage = listOf("en"),
-                          hasAvailableChapters = true,
-                          order = mapOf("followedCount" to "desc"),
-                          includedTags = listOf(query.tagId),
-                          includedTagsMode = MangaRequest.TagsMode.AND,
-                          createdAtSince = query.timePeriod.timeString()
-                      )
-                  )
-                      .getOrThrow()
-                      .also {
-                          updateLastPage(it.total)
-                      }
-                      .data
-              )
-              if (offset == 0) {
-                  for (unhandled in result.unhandled) {
-                      if (!checkProtected(unhandled.id)) {
-                          resourceDao.deleteFilteredMangaResource(unhandled)
-                      }
-                  }
-              }
-          }
+        return resourceDao.getFilteredMangaResources().flowOn(dispatchers.io)
     }
 }

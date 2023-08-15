@@ -232,7 +232,7 @@ object MangaToFilteredYearlyMangaResourceMapper: Mapper<Pair<Manga, FilteredMang
 object MangaToFilteredMangaResourceMapper: Mapper<Pair<Manga, FilteredMangaResource?>, FilteredMangaResource> {
 
     override fun map(from: Pair<Manga, FilteredMangaResource?>): FilteredMangaResource {
-        val (manga, saved) = from
+        val (manga, _) = from
         return with(manga) {
             FilteredMangaResource(
                 id = id,
@@ -256,7 +256,8 @@ object MangaToFilteredMangaResourceMapper: Mapper<Pair<Manga, FilteredMangaResou
                 latestUploadedChapter = attributes.latestUploadedChapter,
                 year = attributes.year ?: -1,
                 authors = authors,
-                artists = artists
+                artists = artists,
+                offset = 0
             )
         }
     }

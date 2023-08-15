@@ -54,6 +54,9 @@ fun MangaListItem(
 
     val context = LocalContext.current
     val space = LocalSpacing.current
+    val placeHolderColor = remember {
+        Pastel.getColorLight()
+    }
 
     Column(modifier) {
         CenterBox(
@@ -69,7 +72,7 @@ fun MangaListItem(
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(manga.coverArt)
-                    .placeholder(Pastel.getColorLight())
+                    .placeholder(placeHolderColor)
                     .build(),
                 contentDescription = null,
                 modifier = Modifier
@@ -126,13 +129,14 @@ fun MangaListItemSideTitle(
                 overflow = TextOverflow.Ellipsis
             )
             CenterBox(
-                Modifier.shadow(
-                    color = Color.DarkGray,
-                    blurRadius = 12.dp,
-                    offsetY = space.xs,
-                    offsetX = space.xs
-            )
-            .padding(space.xs)
+                Modifier
+                    .shadow(
+                        color = Color.DarkGray,
+                        blurRadius = 12.dp,
+                        offsetY = space.xs,
+                        offsetX = space.xs
+                    )
+                    .padding(space.xs)
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
@@ -254,42 +258,6 @@ fun GenreTagsWithBookmark(
                     modifier = Modifier.padding(horizontal = space.small)
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun TranslatedLanguageTagsWithBookmark(
-    modifier: Modifier = Modifier,
-    tags: List<String>,
-    bookmarked: Boolean,
-    onBookmarkClick: () -> Unit,
-    onLanguageClick: (language: String) -> Unit = {}
-) {
-    val space = LocalSpacing.current
-
-    LazyRow(modifier, verticalAlignment = Alignment.CenterVertically) {
-        item {
-            IconButton(onClick = onBookmarkClick) {
-                if (bookmarked) Icon(
-                    imageVector = Icons.Filled.BookmarkRemove,
-                    contentDescription = null
-                )
-                else Icon(
-                    imageVector = Icons.Outlined.BookmarkAdd,
-                    contentDescription = null
-                )
-            }
-        }
-        items(
-            items = tags,
-            key = { item -> item }
-        ) {language ->
-            SuggestionChip(
-                onClick = { onLanguageClick(language) },
-                label = { Text(language) },
-                modifier = Modifier.padding(space.small)
-            )
         }
     }
 }

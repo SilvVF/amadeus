@@ -24,12 +24,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
@@ -88,7 +86,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.fastForEachIndexed
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -114,7 +111,7 @@ import io.silv.amadeus.ui.composables.PullRefresh
 import io.silv.amadeus.ui.composables.TranslatedLanguageTags
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
-import io.silv.amadeus.ui.screens.search.SearchItems
+import io.silv.amadeus.ui.screens.search.SearchItemsPagingList
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
@@ -135,26 +132,13 @@ class HomeScreen: Screen {
 
         val recentMangaItems = sm.recentMangaPagingFlow.collectAsLazyPagingItems()
         val popularMangaItems = sm.popularMangaPagingFlow.collectAsLazyPagingItems()
+        val searchMangaState = sm.searchMangaPagingFlow.collectAsLazyPagingItems()
 
         val seasonalMangaState by sm.seasonalMangaUiState.collectAsStateWithLifecycle()
         val refreshingSeasonal by sm.refreshingSeasonal.collectAsStateWithLifecycle()
-        val searchMangaState by sm.searchMangaUiState.collectAsStateWithLifecycle()
         val searchQuery by sm.searchQuery.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.current
         val recentListState = rememberLazyListState()
-        val searchListState = rememberLazyGridState()
-
-
-        LaunchedEffect(searchListState) {
-            snapshotFlow { searchListState.firstVisibleItemIndex }.collect {idx ->
-                if (idx >= (searchMangaState.success?.data?.size ?: 0) - 8) {
-                    if (searchMangaState !is PaginatedListState.Error<List<SavableManga>>) {
-                        sm.loadNextSearchPage()
-                    }
-                }
-            }
-        }
-
 
         var searching by rememberSaveable {
             mutableStateOf(false)
@@ -190,10 +174,9 @@ class HomeScreen: Screen {
                     label = "searching"
                 ) {
                     if (it) {
-                        SearchItems(
-                            modifier = Modifier.fillMaxSize(1f),
-                            searchMangaUiState = searchMangaState,
-                            gridState = searchListState,
+                        SearchItemsPagingList(
+                            modifier = Modifier.fillMaxSize(),
+                            items = searchMangaState,
                             onMangaClick = { manga ->
                                 navigator?.push(
                                     MangaViewScreen(manga)
@@ -255,6 +238,13 @@ fun BrowseMangaContent(
                 onBookmarkClick(it.id)
             }
         )
+        item {
+            Text(
+                text = "Trending",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(space.med)
+            )
+        }
         item {
             TrendingMangaList(
                 manga = popularMangaList,
@@ -792,42 +782,6 @@ fun TrendingMangaList(
     }
 }
 
-fun LazyListScope.trendingMangaList(
-    mangaList: List<SavableManga>,
-    onMangaClick: (manga: SavableManga) -> Unit,
-    onTagClick: (name: String, id: String) -> Unit,
-    onBookmarkClick: (manga: SavableManga) -> Unit,
-) {
-    mangaList.fastForEachIndexed { i, manga ->
-        item(
-            key = manga.id
-        ) {
-            val space = LocalSpacing.current
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                modifier = Modifier
-                    .padding(space.med)
-                    .wrapContentSize()
-            ) {
-                MangaListItemSideTitle(
-                    manga = manga,
-                    index = i,
-                    modifier = Modifier
-                        .width(200.dp)
-                        .clickable {
-                            onMangaClick(manga)
-                        },
-                    onTagClick = { name ->
-                        manga.tagToId[name]?.let {
-                            onTagClick(name, it)
-                        }
-                    },
-                    onBookmarkClick = { onBookmarkClick(manga) }
-                )
-            }
-        }
-    }
-}
 
 
 

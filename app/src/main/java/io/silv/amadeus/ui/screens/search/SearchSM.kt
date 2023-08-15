@@ -2,6 +2,8 @@
 
 package io.silv.amadeus.ui.screens.search
 
+import androidx.paging.cachedIn
+import androidx.paging.map
 import cafe.adriel.voyager.core.model.coroutineScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
@@ -12,7 +14,6 @@ import io.silv.manga.domain.models.SavableManga
 import io.silv.manga.domain.repositorys.SavedMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaRepository
 import io.silv.manga.domain.repositorys.SearchMangaResourceQuery
-import io.silv.manga.domain.repositorys.base.PagedLoadState
 import io.silv.manga.domain.repositorys.people.ArtistListRepository
 import io.silv.manga.domain.repositorys.people.AuthorListRepository
 import io.silv.manga.domain.repositorys.people.QueryResult
@@ -25,13 +26,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.dropWhile
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -77,13 +76,13 @@ class SearchSM(
     private val mutableFiltering = MutableStateFlow(false)
     val filtering = mutableFiltering.asStateFlow()
 
-    private val mutableSearchText = MutableStateFlow(searchMangaRepository.latestQuery().title ?: "")
+    private val mutableSearchText = MutableStateFlow( "")
     val searchText = mutableSearchText.asStateFlow()
 
     private val mutableIncludedIds = MutableStateFlow(emptyList<String>())
     val includedIds = mutableIncludedIds.asStateFlow()
 
-    private val mutableExcludedIds = MutableStateFlow(emptyList<String>())
+    private val mutableExcludedIds = MutableStateFlow( emptyList<String>())
     val excludedIds = mutableExcludedIds.asStateFlow()
 
     private val mutableIncludedTagMode = MutableStateFlow(MangaRequest.TagsMode.AND)
@@ -91,8 +90,6 @@ class SearchSM(
 
     private val mutableExcludedTagMode = MutableStateFlow(MangaRequest.TagsMode.OR)
     val excludedTagsMode = mutableExcludedTagMode
-
-    private val loadState = searchMangaRepository.loadState.stateInUi(PagedLoadState.None)
 
     val tagsUiState = tagRepository.allTags().map {
         it.map { entity -> DomainTag(entity) }
@@ -123,7 +120,7 @@ class SearchSM(
         .stateInUi(QueryResult.Done(emptyList()))
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-    private val mangaSearchFlow = combineTuple(
+    private val searchResourceQuery = combineTuple(
         mutableFiltering,
         mutableIncludedIds,
         mutableExcludedIds,
@@ -138,73 +135,48 @@ class SearchSM(
         mutableSelectedTransLangs,
         mutableSelectedDemographics,
         startFlow,
-    ).map { (open, included, excluded, text, includedTagsMode, excludedTagsMode, authors, artists, rating, status, originalLangs, transLangs, demographics,_)  ->
+    ).map { (open, included, excluded, text, includedTagsMode, excludedTagsMode, authors, artists, rating, status, originalLangs, transLangs, demographics, _)  ->
         Pair(
             SearchMangaResourceQuery(
-                title = text.ifEmpty { null },
-                includedTags = included.ifEmpty { null },
-                excludedTags = excluded.ifEmpty { null },
+                title = text,
+                includedTags = included,
+                excludedTags = excluded,
                 includedTagsMode = includedTagsMode,
                 excludedTagsMode = excludedTagsMode,
-                authorIds = authors.map { it.id }.ifEmpty { null },
-                artistIds = artists.map { it.id }.ifEmpty { null },
-                contentRating = rating.ifEmpty { null },
-                publicationStatus = status.ifEmpty { null },
-                originalLanguages = originalLangs.map { it.code }.ifEmpty { null },
-                translatedLanguages = transLangs.map { it.code }.ifEmpty { null },
-                demographics = demographics.ifEmpty { null  }
-            ), open
+                authorIds = authors.map { it.id },
+                artistIds = artists.map { it.id },
+                contentRating = rating,
+                publicationStatus = status,
+                originalLanguages = originalLangs.map { it.code },
+                translatedLanguages = transLangs.map { it.code },
+                demographics = demographics
+            ),
+            open
         )
     }
         .dropWhile { (_, menuOpen) -> menuOpen && !start }
         .debounce {
-            if (start.also { start = false }) {
-                0L
-            } else
-                2000L
+            if (start.also { start = false }) { 0L } else 2000L
         }
-        .flatMapLatest { (query, _) ->
-            searchMangaRepository.observeMangaResources(query)
-        }
-        .onStart {
-            // emits initial search results prefetched for no query
-            // this will avoid the initial result being debounced by 3 seconds
-            emit(
-                searchMangaRepository.observeMangaResources(searchMangaRepository.latestQuery())
-                    .first()
-            )
-        }
+        .map { it.first }
+        .distinctUntilChanged()
 
-    val searchMangaUiState = combine(
-        mangaSearchFlow,
-        loadState,
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val searchManga = searchResourceQuery.flatMapLatest {
+        searchMangaRepository.pager(it).flow.cachedIn(coroutineScope)
+    }
+        .cachedIn(coroutineScope)
+
+    val searchMangaPagingFlow = combineTuple(
+        searchManga,
         savedMangaRepository.getSavedMangas(),
-    ) { resources, load, saved ->
-        val combinedManga = resources.map {
-            SavableManga(it, saved.find { s -> s.id ==  it.id})
-        }
-        when (load) {
-            PagedLoadState.End -> {
-                SearchMangaUiState.Success.EndOfPagination(
-                    results = combinedManga,
-                )
-            }
-            PagedLoadState.Loading -> {
-                SearchMangaUiState.Success.Loading(
-                    results = combinedManga,
-                )
-            }
-            PagedLoadState.None -> SearchMangaUiState.Success.Idle(
-                results = combinedManga,
-            )
-            PagedLoadState.Refreshing, is PagedLoadState.Error -> SearchMangaUiState.Refreshing
+    ).map { (pagingData, saved) ->
+        pagingData.map {
+            SavableManga(it, saved.find { s -> s.id == it.id })
         }
     }
-        .stateInUi(SearchMangaUiState.WaitingForQuery)
 
-    fun loadNextSearchPage() = coroutineScope.launch {
-        searchMangaRepository.loadNextPage()
-    }
+
 
     fun selectDemographic(demographic: PublicationDemographic) = coroutineScope.launch {
         mutableSelectedDemographics.update {

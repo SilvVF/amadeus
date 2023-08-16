@@ -48,6 +48,31 @@ internal class ImageDownloader(
     private val context: Context,
     private val dispatchers: AmadeusDispatchers
 ) {
+    suspend fun writeMangaCoverArt(
+        mangaId: String,
+        url: String,
+    ) = withContext(dispatchers.io) {
+        val image = URL(url)
+        val inputStream = image.openStream().buffered()
+        val bitmap = BitmapFactory.decodeStream(inputStream)
+
+        val ext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) "webp" else "png"
+
+        val fileName = "cover_art-$mangaId.$ext"
+
+        val file = File(context.filesDir, fileName)
+
+        file.outputStream().buffered().use {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, it)
+            } else {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+            }
+        }
+
+        file.toUri()
+    }
+
     suspend fun write(
         mangaId: String,
         chapterId: String,
@@ -61,7 +86,7 @@ internal class ImageDownloader(
 
         val ext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) "webp" else "png"
 
-        val fileName = "$mangaId-$chapterId-$pageNumber.$ext"
+        val fileName = "chapter_images-$mangaId-$chapterId-$pageNumber.$ext"
 
         val file = File(context.filesDir, fileName)
 
@@ -95,6 +120,7 @@ class ChapterDownloadWorker(
     private val mangaHotHandler by inject<MangaHotHandler>()
     private val comikeyHandler by inject<ComikeyHandler>()
     private val biliHandler by inject<BiliHandler>()
+    private val coverArtDownloadManager by inject<CoverArtDownloadManager>()
 
     private val downloader = ImageDownloader(appContext, dispatchers)
 
@@ -129,13 +155,13 @@ class ChapterDownloadWorker(
             if (resources.isEmpty()) {
                 return@withContext false
             }
-            savedMangaDao.upsertSavedManga(
-                SavedMangaEntity(
-                    mangaResource = resources
-                        .maxBy { it.first.savedAtLocal }
-                        .first
-                )
+            val saved =  SavedMangaEntity(
+                mangaResource = resources
+                    .maxBy { it.first.savedAtLocal }
+                    .first
             )
+            savedMangaDao.upsertSavedManga(saved)
+            coverArtDownloadManager.saveCover(saved.id, saved.originalCoverArtUrl)
             Log.d(logTag, "saved manga id=$mangaId")
         }
         true

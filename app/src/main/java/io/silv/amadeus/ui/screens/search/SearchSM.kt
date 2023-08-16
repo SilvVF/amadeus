@@ -2,6 +2,7 @@
 
 package io.silv.amadeus.ui.screens.search
 
+import android.util.Log
 import androidx.paging.cachedIn
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.coroutineScope
@@ -27,7 +28,6 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -96,9 +96,6 @@ class SearchSM(
     }
         .stateInUi(emptyList())
 
-    private var start: Boolean = false
-    private val startFlow = MutableStateFlow(false)
-
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     val authorListUiState = mutableAuthorQuery
         .debounce {
@@ -118,6 +115,9 @@ class SearchSM(
             artistListRepository.getArtistList(query)
         }
         .stateInUi(QueryResult.Done(emptyList()))
+
+    private var start: Boolean = false
+    private val startFlow = MutableStateFlow(false)
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private val searchResourceQuery = combineTuple(
@@ -154,16 +154,18 @@ class SearchSM(
             open
         )
     }
-        .dropWhile { (_, menuOpen) -> menuOpen && !start }
+        .dropWhile { (_, menuOpen) -> (menuOpen && !start).also {   Log.d("SEARCH PAGER", "dropped-$it") } }
         .debounce {
+            Log.d("SEARCH PAGER", "debouncing")
             if (start.also { start = false }) { 0L } else 2000L
         }
         .map { it.first }
-        .distinctUntilChanged()
+
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val searchManga = searchResourceQuery.flatMapLatest {
-        searchMangaRepository.pager(it).flow.cachedIn(coroutineScope)
+        Log.d("SEARCH PAGER", "flatmapLatest")
+        searchMangaRepository.pager(it).flow
     }
         .cachedIn(coroutineScope)
 

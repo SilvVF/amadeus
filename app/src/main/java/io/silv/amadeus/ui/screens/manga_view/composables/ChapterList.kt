@@ -4,8 +4,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,17 +15,14 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.ArrowCircleDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Article
-import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.KeyboardArrowDown
-import androidx.compose.material.icons.outlined.KeyboardArrowUp
-import androidx.compose.material.icons.outlined.Web
+import androidx.compose.material.icons.outlined.Downloading
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -37,118 +32,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.screens.manga_view.MangaViewState
-import io.silv.amadeus.ui.screens.manga_view.Pagination
-import io.silv.amadeus.ui.screens.manga_view.TagsAndLanguages
-import io.silv.amadeus.ui.screens.search.LanguageSelection
+import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.Language
-import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableChapter
-import io.silv.manga.domain.models.SavableManga
-
-
-@Composable
-fun MangaContent(
-    manga: SavableManga,
-    bookmarked: Boolean,
-    onBookmarkClicked: (String) -> Unit,
-    onTagSelected: (tag: String) -> Unit
-) {
-    var showMaxLines by rememberSaveable {
-        mutableStateOf(false)
-    }
-    val space = LocalSpacing.current
-    Column(Modifier.padding(horizontal = space.med)) {
-        MangaActions(
-            manga = manga,
-            bookmarked = bookmarked,
-            onBookmarkClicked = onBookmarkClicked,
-        )
-        MangaInfo(
-            manga = manga,
-            showMaxLines = showMaxLines,
-            showMaxLinesChange = {
-                showMaxLines = it
-            },
-            onTagSelected = onTagSelected
-        )
-    }
-}
-
-@Composable
-fun ChapterListHeader(
-    onPageClick: (Int) -> Unit,
-    page: Int,
-    lastPage: Int,
-    sortedAscending: Boolean,
-    onChangeDirection: () -> Unit,
-    selectedLanguages: List<Language>,
-    onLanguageSelected: (Language) -> Unit
-) {
-    val space = LocalSpacing.current
-    Column {
-        Pagination(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            page = page,
-            lastPage = lastPage,
-            onPageClick = onPageClick
-        )
-        Row(Modifier
-            .fillMaxWidth()
-            .padding(horizontal = space.med),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            LanguageSelection(
-                label = {
-                    Text("Translated Language")
-                },
-                placeholder = "All Languages",
-                selected = selectedLanguages,
-                onLanguageSelected = {
-                    onLanguageSelected(it)
-                },
-            )
-            Button(
-                shape = RoundedCornerShape(12.dp),
-                onClick = onChangeDirection,
-                modifier = Modifier.padding(horizontal = space.med)
-            ) {
-                Text(
-                    if (sortedAscending) {
-                        "Ascending"
-                    } else {
-                        "Descending"
-                    }
-                )
-            }
-        }
-    }
-}
-
 
 @OptIn(ExperimentalFoundationApi::class)
 fun LazyListScope.chapterListItems(
     mangaViewState: MangaViewState,
+    asc: Boolean,
     downloadingIds: List<String>,
     onDownloadClicked: (ids: List<String>) -> Unit,
     onDeleteClicked: (id: String) -> Unit,
@@ -169,7 +69,9 @@ fun LazyListScope.chapterListItems(
                         volume = volume,
                         onDownloadClicked = {
                             onDownloadClicked(chapters.map { it.id })
-                        }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        asc = asc
                     )
                 }
                 items(
@@ -180,6 +82,7 @@ fun LazyListScope.chapterListItems(
                     val space = LocalSpacing.current
                     ChapterListItem(
                         modifier = Modifier
+                            .animateItemPlacement()
                             .padding(
                                 vertical = space.med,
                                 horizontal = space.large
@@ -189,11 +92,6 @@ fun LazyListScope.chapterListItems(
                         downloading = chapter.id in downloadingIds,
                         onDownloadClicked = {
                             onDownloadClicked(listOf(chapter.id))
-                        },
-                        onViewOnWebClicked = {
-                            if (chapter.externalUrl != null && chapter.externalUrl?.contains("mangaplus.shueisha") != true) {
-                                onOpenWebView(chapter.externalUrl?.replace("\\","") ?: "")
-                            }
                         },
                         onDeleteClicked = {
                             onDeleteClicked(chapter.id)
@@ -231,12 +129,14 @@ private fun ChapterItemPlaceHolder() {
 
 @Composable
 private fun ChapterInfoHeader(
+    modifier: Modifier,
     chapters: List<SavableChapter>,
     volume: Int,
+    asc: Boolean,
     onDownloadClicked: () -> Unit,
 ) {
     Surface(
-        Modifier.fillMaxWidth(),
+        modifier,
         color = MaterialTheme.colorScheme.background
     ) {
         val space = LocalSpacing.current
@@ -248,9 +148,10 @@ private fun ChapterInfoHeader(
                 .padding(horizontal = space.large)
         ) {
             val maxToMin = remember(chapters) {
+                val valid = chapters.filter { it.validNumber }
                 Pair(
-                    chapters.minBy { it.chapter }.chapter,
-                    chapters.maxBy { it.chapter }.chapter
+                    valid.minBy { it.chapter }.chapter,
+                    valid.maxBy { it.chapter }.chapter
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -262,7 +163,10 @@ private fun ChapterInfoHeader(
                     )
                 }
             }
-            Text("Ch. ${maxToMin.second} - ${maxToMin.first}")
+            Text(
+                "Ch. ${if (asc) maxToMin.first else maxToMin.second} -" +
+                    " ${if (asc) maxToMin.second else maxToMin.first}"
+            )
         }
     }
 }
@@ -275,7 +179,6 @@ private fun ChapterListItem(
     onDownloadClicked: () -> Unit,
     onDeleteClicked: () -> Unit,
     onReadClicked: () -> Unit,
-    onViewOnWebClicked: () -> Unit,
 ) {
     val space = LocalSpacing.current
     Card(modifier) {
@@ -323,15 +226,6 @@ private fun ChapterListItem(
                     .weight(1f)
                     .fillMaxHeight()
             ) {
-                if (chapter.externalUrl != null && chapter.externalUrl?.contains("mangaplus.shueisha") != true) {
-                    Button(
-                        shape = RoundedCornerShape(12.dp),
-                        onClick = { onViewOnWebClicked() }
-                    ) {
-                        Icon(imageVector = Icons.Outlined.Web, contentDescription = null)
-                        Text("View on web")
-                    }
-                }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
                     Button(
                         shape = RoundedCornerShape(12.dp),
@@ -341,7 +235,15 @@ private fun ChapterListItem(
                         Text("Read")
                     }
                     if (downloading) {
-                        CircularProgressIndicator()
+                        CenterBox {
+                            IconButton(onClick = onDownloadClicked) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Downloading,
+                                    contentDescription = null
+                                )
+                            }
+                            CircularProgressIndicator()
+                        }
                     } else {
                         if (chapter.downloaded) {
                             IconButton(onClick = onDeleteClicked) {
@@ -353,7 +255,7 @@ private fun ChapterListItem(
                         } else {
                             IconButton(onClick = onDownloadClicked) {
                                 Icon(
-                                    imageVector = Icons.Filled.Download,
+                                    imageVector = Icons.Filled.ArrowCircleDown,
                                     contentDescription = null
                                 )
                             }
@@ -385,144 +287,6 @@ private fun ChapterListItem(
                             .copy(fontWeight = FontWeight.SemiBold)
                     )
                 }
-            }
-        }
-    }
-}
-
-fun LazyListScope.volumePosterItems(
-    mangaState: MangaViewState
-) {
-    when (mangaState) {
-        is MangaViewState.Loading -> item {
-            VolumePostersPlaceHolder()
-        }
-        is MangaViewState.Success -> {
-            items(mangaState.volumeToArt.toList().chunked(2)) {
-                val context = LocalContext.current
-                val space = LocalSpacing.current
-                Row(horizontalArrangement = Arrangement.Center) {
-                    it.forEach { (_, url) ->
-                        AsyncImage(
-                            model = ImageRequest.Builder(context).data(url.ifBlank { mangaState.manga.coverArt }).build(),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(300.dp)
-                                .padding(space.med),
-                            contentScale = ContentScale.Fit
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun VolumePostersPlaceHolder() {
-    FlowRow {
-        repeat(4) {
-            AnimatedBoxShimmer(modifier = Modifier
-                .fillMaxWidth(0.4f)
-                .height(200.dp)
-            )
-        }
-    }
-}
-
-
-@Composable
-private fun MangaActions(
-    manga: SavableManga,
-    bookmarked: Boolean,
-    onBookmarkClicked: (String) -> Unit
-) {
-    val space = LocalSpacing.current
-    Row(Modifier.fillMaxWidth()) {
-        IconButton(
-            onClick = { onBookmarkClicked(manga.id) },
-            modifier = Modifier.padding(horizontal = space.large)
-        ) {
-            Icon(
-                imageVector = if (bookmarked) {
-                    Icons.Filled.Bookmark
-                } else {
-                    Icons.Outlined.BookmarkBorder
-                },
-                contentDescription = null
-            )
-        }
-        Button(
-            onClick = { },
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = space.large)
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Article,
-                contentDescription = null,
-                modifier = Modifier.padding(horizontal = space.large)
-            )
-            Text(text = "Read Now", fontWeight = FontWeight.SemiBold)
-
-        }
-    }
-}
-
-@Composable
-private fun MangaInfo(
-    manga: SavableManga,
-    showMaxLines: Boolean,
-    showMaxLinesChange: (Boolean) -> Unit,
-    onTagSelected: (tag: String) -> Unit
-) {
-    TagsAndLanguages(
-        manga = manga,
-        navigate = onTagSelected
-    )
-    Column {
-        Text(
-            text = "Description",
-            style = MaterialTheme.typography.labelSmall
-        )
-        Text(
-            text = manga.description,
-            maxLines = if (showMaxLines) {
-                Int.MAX_VALUE
-            } else {
-                3
-            },
-            overflow = TextOverflow.Ellipsis
-        )
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .noRippleClickable {
-                    showMaxLinesChange(!showMaxLines)
-                },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = if (showMaxLines)
-                    "show less"
-                else
-                    "show more",
-                style = MaterialTheme.typography.labelSmall
-            )
-            IconButton(
-                onClick = { showMaxLinesChange(!showMaxLines) },
-            ) {
-                Icon(
-                    imageVector = if (showMaxLines)
-                        Icons.Outlined.KeyboardArrowUp
-                    else
-                        Icons.Outlined.KeyboardArrowDown,
-                    contentDescription = null
-                )
             }
         }
     }

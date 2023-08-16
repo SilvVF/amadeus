@@ -82,7 +82,10 @@ internal class RecentMangaRepositoryImpl(
 ): RecentMangaRepository {
     @OptIn(ExperimentalPagingApi::class)
     override val pager = Pager(
-        config = PagingConfig(pageSize = 60),
+        config = PagingConfig(
+            pageSize = 60,
+            initialLoadSize = 60
+        ),
         remoteMediator = RecentMangaRemoteMediator(amadeusDatabase, mangaDexApi),
         pagingSourceFactory = {
             mangaResourceDao.pagingSource()

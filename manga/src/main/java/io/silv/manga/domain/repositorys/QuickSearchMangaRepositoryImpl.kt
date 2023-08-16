@@ -83,7 +83,10 @@ internal class QuickSearchMangaRepositoryImpl(
 
     @OptIn(ExperimentalPagingApi::class)
     override fun pager(query: String) = Pager(
-        config = PagingConfig(pageSize = 60),
+        config = PagingConfig(
+            pageSize = 60,
+            initialLoadSize = 60
+        ),
         remoteMediator = QuickSearchRemoteMediator(query, amadeusDatabase, mangaDexApi),
         pagingSourceFactory = {
             mangaResourceDao.pagingSource()

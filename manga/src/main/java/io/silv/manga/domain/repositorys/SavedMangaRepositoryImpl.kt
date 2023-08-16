@@ -13,6 +13,7 @@ import io.silv.manga.local.entity.ProgressState
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.local.entity.relations.SavedMangaWithChapters
 import io.silv.manga.local.entity.syncerForEntity
+import io.silv.manga.local.workers.CoverArtDownloadManager
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.models.Status
 import io.silv.manga.network.mangadex.models.manga.Manga
@@ -31,6 +32,7 @@ internal class SavedMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,
     private val dispatchers: AmadeusDispatchers,
     private val updateChapterList: UpdateChapterList,
+    private val coverArtDownloadManager: CoverArtDownloadManager
 ): SavedMangaRepository {
 
     private val TAG = "SavedMangaRepositoryImpl"
@@ -41,7 +43,13 @@ internal class SavedMangaRepositoryImpl(
     private val syncer = syncerForEntity<SavedMangaEntity, Manga, String>(
         networkToKey = { manga -> manga.id },
         mapper = { network, saved -> mapper.map(network to saved) },
-        upsert = { savedMangaDao.upsertSavedManga(it) }
+        upsert = {
+            savedMangaDao.upsertSavedManga(it)
+            if (it.coverArt.isBlank()) {
+                coverArtDownloadManager.saveCover(it.id, it.originalCoverArtUrl)
+                updateChapterList(it.id)
+            }
+        }
     )
 
     override suspend fun bookmarkManga(id: String): Unit = withContext(dispatchers.io) {
@@ -60,6 +68,7 @@ internal class SavedMangaRepositoryImpl(
                     ) {
                         // delete if above is true
                         savedMangaDao.deleteSavedManga(manga)
+                        coverArtDownloadManager.deleteCover(manga.coverArt)
                     } else {
                         // need the saved manga to track progress and save the images
                         savedMangaDao.updateSavedManga(
@@ -73,13 +82,16 @@ internal class SavedMangaRepositoryImpl(
                         log("No Saved found using resource $id")
                         val entity =  SavedMangaEntity(resource.first).copy(bookmarked = true)
                         savedMangaDao.upsertSavedManga(entity)
+                        coverArtDownloadManager.saveCover(id, entity.originalCoverArtUrl)
                         updateChapterList(id)
                         log("Inserted Saved manga using resource $id and set bookmarked true")
                     }
                 }
     }
 
-    override suspend fun saveManga(id: String): Unit = withContext(dispatchers.io) {
+    override suspend fun saveManga(
+        id: String
+    ): Unit = withContext(dispatchers.io) {
         getMangaResourceById(id)
             .maxBy { it.first.savedAtLocal }
             .let { resource ->
@@ -88,6 +100,7 @@ internal class SavedMangaRepositoryImpl(
                 savedMangaDao.upsertSavedManga(entity)
                 log("Inserted Saved manga using resource $id and set bookmarked true")
                 updateChapterList(id)
+                coverArtDownloadManager.saveCover(id, entity.originalCoverArtUrl)
         }
     }
 

@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import io.silv.manga.local.workers.MangaSyncWorker
+import io.silv.manga.local.workers.TagSyncWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.map
@@ -26,7 +26,7 @@ internal class TagSyncManager(
         workManager.enqueueUniqueWork(
             TagSyncWorkName,
             ExistingWorkPolicy.KEEP,
-            MangaSyncWorker.syncWorkRequest(),
+            TagSyncWorker.syncWorkRequest(),
         )
     }
 }

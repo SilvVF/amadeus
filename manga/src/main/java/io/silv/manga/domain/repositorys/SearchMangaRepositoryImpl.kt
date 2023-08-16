@@ -1,5 +1,6 @@
 package io.silv.manga.domain.repositorys
 
+import android.util.Log
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.Pager
@@ -52,7 +53,7 @@ private class SearchRemoteMediator(
                     includes = listOf("cover_art","author", "artist"),
                     includedTags = query.includedTags.ifEmpty { null },
                     excludedTags = query.excludedTags.ifEmpty { null },
-                    title = query.title.ifEmpty { null },
+                    title = query.title,
                     includedTagsMode = query.includedTagsMode,
                     excludedTagsMode = query.excludedTagsMode,
                     status = query.publicationStatus.map { it.name }.ifEmpty { null },
@@ -93,9 +94,13 @@ internal class SearchMangaRepositoryImpl(
 
     @OptIn(ExperimentalPagingApi::class)
     override fun pager(query: SearchMangaResourceQuery): Pager<Int, SearchMangaResource> {
+        Log.d("SEARCH PAGER", "returning no pager")
        return Pager(
-           config = PagingConfig(pageSize = 60),
-           remoteMediator = SearchRemoteMediator(SearchMangaResourceQuery(), amadeusDatabase, mangaDexApi),
+           config = PagingConfig(
+               pageSize = 60,
+               initialLoadSize = 60 * 2
+           ),
+           remoteMediator = SearchRemoteMediator(query, amadeusDatabase, mangaDexApi),
            pagingSourceFactory = { mangaResourceDao.pagingSource() }
        )
     }

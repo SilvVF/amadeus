@@ -1,7 +1,5 @@
 package io.silv.amadeus.ui.screens.home
 
-import android.graphics.drawable.ColorDrawable
-import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -9,44 +7,23 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
-import androidx.compose.material.icons.outlined.BookmarkAdd
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -64,62 +41,29 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.itemContentType
-import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
-import coil.compose.AsyncImage
-import coil.decode.DecodeResult
-import coil.decode.Decoder
-import coil.imageLoader
-import coil.request.CachePolicy
-import coil.request.ImageRequest
 import io.silv.amadeus.AmadeusScaffold
-import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
-import io.silv.amadeus.ui.composables.BlurImageBackground
-import io.silv.amadeus.ui.composables.MangaGenreTags
-import io.silv.amadeus.ui.composables.MangaListItem
-import io.silv.amadeus.ui.composables.MangaListItemSideTitle
 import io.silv.amadeus.ui.composables.PullRefresh
-import io.silv.amadeus.ui.composables.TranslatedLanguageTags
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.screens.search.SearchItemsPagingList
-import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.launch
-import kotlin.math.ceil
-import kotlin.math.roundToInt
 
 
 class HomeScreen: Screen {
@@ -281,506 +225,14 @@ fun BrowseMangaContent(
     }
 }
 
-
-fun LazyListScope.recentMangaList(
-    manga: LazyPagingItems<SavableManga>,
-    onTagClick: (manga: SavableManga, name: String) -> Unit,
-    onBookmarkClick: (manga: SavableManga) -> Unit,
-    onMangaClick: (manga: SavableManga) -> Unit,
-) {
-    items(
-        count = ceil(manga.itemCount / 2f).roundToInt(),
-        contentType = manga.itemContentType(),
-        key = manga.itemKey()
-    ) {
-        val space = LocalSpacing.current
-        val items = listOfNotNull(manga[it * 2], manga[(it * 2) + 1])
-        Row {
-            for(item in items) {
-                MangaListItem(
-                    manga = item,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(space.large)
-                        .clickable {
-                            onMangaClick(item)
-                        },
-                    onTagClick = { name ->
-                        onTagClick(item, name)
-                    },
-                    onBookmarkClick = {
-                        onBookmarkClick(item)
-                    }
-                )
-            }
-        }
-    }
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-fun LazyListScope.seasonalMangaLists(
-    refreshingSeasonal: Boolean,
-    seasonalMangaState: SeasonalMangaUiState,
-    onBookmarkClick: (manga: SavableManga) -> Unit,
-) {
-    item {
-
-        val space = LocalSpacing.current
-        val navigator = LocalNavigator.current
-        var selectedIndex by rememberSaveable {
-            mutableStateOf(0)
-        }
-
-        Column(Modifier.padding(space.med)) {
-            Text(
-                "seasonal lists",
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(space.xs)
-            )
-            if (refreshingSeasonal) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    repeat(4) {
-                        AnimatedBoxShimmer(
-                            Modifier
-                                .weight(1f)
-                                .height(40.dp))
-                    }
-                }
-                AnimatedBoxShimmer(
-                    Modifier
-                        .height(240.dp)
-                        .fillMaxWidth()
-                )
-            } else {
-                LazyRow {
-                    itemsIndexed(
-                        seasonalMangaState.seasonalLists,
-                        key = { _, list -> list.id }
-                    ) { index, seasonalList ->
-                        FilterChip(
-                            selected = index == selectedIndex,
-                            onClick = { selectedIndex = index },
-                            label = {
-                                Text(
-                                    "${seasonalList.season.name}  ${seasonalList.year.toString().takeLast(2)}",
-                                    fontSize = 12.sp,
-                                    textAlign = TextAlign.Center
-                                )
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(space.xs)
-                        )
-                    }
-                }
-                MangaPager(
-                    mangaList = seasonalMangaState.seasonalLists.getOrNull(selectedIndex)?.mangas ?: emptyList(),
-                    onTagClick = { name , id ->
-                        navigator?.push(
-                            MangaFilterScreen(name, id)
-                        )
-                    },
-                    onMangaClick = {
-                        navigator?.push(
-                            MangaViewScreen(it)
-                        )
-                    },
-                    onBookmarkClick = {
-                        onBookmarkClick(it)
-                    },
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SearchTopAppBar(
-    title: String = "Home",
-    onSearchText: (String) -> Unit,
-    color: Color,
-    showTextField: Boolean,
-    navigationIconLabel: String,
-    navigationIcon: ImageVector,
-    onNavigationIconClicked: () -> Unit,
-    actions: @Composable (RowScope.() -> Unit),
-    scrollBehavior: TopAppBarScrollBehavior,
-    searchText: String,
-    onForceSearch: () -> Unit,
-    onSearchChanged: (active: Boolean) -> Unit,
-) {
-    var alreadyRequestedFocus by rememberSaveable { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
-    val space = LocalSpacing.current
-
-    TopAppBar(
-        title = {
-            if (!showTextField) {
-                Text(title)
-            }
-        },
-        modifier = Modifier.statusBarsPadding(),
-        navigationIcon = {
-            if (showTextField) {
-                IconButton(
-                    onClick = onNavigationIconClicked,
-                ) {
-                    Icon(
-                        imageVector = navigationIcon,
-                        contentDescription = navigationIconLabel
-                    )
-                }
-            }
-        },
-        actions = {
-            AnimatedVisibility(visible = showTextField, enter = fadeIn() + slideInVertically(), exit = fadeOut() + slideOutVertically()) {
-                OutlinedTextField(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(top = space.small, bottom = space.small, start = space.xlarge)
-                        .focusRequester(focusRequester),
-                    value = searchText,
-                    placeholder = { Text("Search Manga...") },
-                    onValueChange = {
-                        onSearchText(it)
-                    },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        cursorColor = LocalContentColor.current,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                    ),
-                    trailingIcon = {
-                        AnimatedVisibility(visible = searchText.isNotBlank(), enter = fadeIn(), exit = fadeOut()) {
-                            IconButton(
-                                onClick = { onSearchText("") }
-                            ) {
-                                Icon(imageVector = Icons.Filled.Clear, contentDescription = null)
-                            }
-                        }
-
-                    },
-                    maxLines = 1,
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
-                    keyboardActions = KeyboardActions(
-                        onSearch = {
-                            onForceSearch()
-                        },
-                    ),
-                )
-                LaunchedEffect(Unit) {
-                    if (!alreadyRequestedFocus) {
-                        focusRequester.requestFocus()
-                        alreadyRequestedFocus = true
-                    }
-                    if (searchText.isNotBlank()) {
-                        onSearchText(searchText)
-                    }
-                }
-            }
-            val icon = when (showTextField) {
-                true -> Icons.Filled.SearchOff
-                false -> Icons.Filled.Search
-            }
-            IconButton(
-                onClick = {
-                    alreadyRequestedFocus = false
-                    onSearchChanged(!showTextField)
-                },
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null
-                )
-            }
-            actions()
-        },
-        colors = topAppBarColors(
-            containerColor = color,
-            scrolledContainerColor = color,
-        ),
-        scrollBehavior = scrollBehavior,
-    )
-}
-
-
 fun shouldShowBottomBar(windowSizeClass: WindowSizeClass?): Boolean {
     return (windowSizeClass?.widthSizeClass ?: return true) == WindowWidthSizeClass.Compact
 }
 
 
-@OptIn(FlowPreview::class)
-@Composable
-fun  ImageCache(
-    list: List<SavableManga>,
-    lazyListState: LazyListState,
-    toDisk: Boolean = false
-) {
-    val imageLoader = LocalContext.current.imageLoader
-    val context = LocalContext.current
-
-    val prevIds = remember {
-        mutableStateListOf<String>()
-    }
-
-    LaunchedEffect(Unit) {
-        snapshotFlow { lazyListState.firstVisibleItemIndex }.debounce(10).collect {
-            val preload = (runCatching { list.subList(it, it + 30) }.getOrNull() ?: emptyList()).filterNot { it.id in prevIds }
-            if (toDisk) {
-                for(manga in preload) {
-                    prevIds.add(manga.id)
-                    val request = ImageRequest.Builder(context)
-                        .data(manga.coverArt)
-                        // Disable reading from/writing to the memory cache.
-                        .memoryCachePolicy(CachePolicy.DISABLED)
-                        // Set a custom `Decoder.Factory` that skips the decoding step.
-                        .decoderFactory { _, _, _ ->
-                            Decoder { DecodeResult(ColorDrawable(Color.Black.toArgb()), false) }
-                        }
-                        .build()
-                    imageLoader.enqueue(request)
-                }
-            } else {
-                for (manga in preload) {
-                    prevIds.add(manga.id)
-                    val request = ImageRequest.Builder(context)
-                        .data(manga.coverArt)
-                        // Optional, but setting a ViewSizeResolver will conserve memory by limiting the size the image should be preloaded into memory at.
-                        .build()
-                    imageLoader.enqueue(request)
-                }
-            }
-        }
-    }
-}
-
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun MangaPager(
-    mangaList: List<SavableManga>,
-    onMangaClick: (manga: SavableManga) -> Unit,
-    onBookmarkClick: (manga: SavableManga) -> Unit,
-    onTagClick: (name: String, id: String) -> Unit,
-) {
-    val space = LocalSpacing.current
-    val context = LocalContext.current
-    val pagerState = rememberPagerState()
-    val scope = rememberCoroutineScope()
-
-    HorizontalPager(
-        pageCount = mangaList.size,
-        state = pagerState,
-        modifier = Modifier
-            .height(240.dp)
-            .fillMaxWidth()
-    ) { page ->
-
-            val manga = mangaList[page]
-
-            BlurImageBackground(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(0.9f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable {
-                        onMangaClick(manga)
-                    },
-                url = manga.coverArt
-            ) {
-
-                val lazyListState = rememberLazyListState()
-
-                LazyColumn(
-                    state = lazyListState
-                ) {
-                    item {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(230.dp)
-                                .padding(space.med),
-                            verticalAlignment = Alignment.Top,
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            CenterBox(Modifier.height(230.dp)) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(context)
-                                        .data(manga.coverArt)
-                                        .crossfade(true)
-                                        .build(),
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Inside,
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.4f)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(space.med))
-                            Column {
-                                Text(
-                                    text = manga.titleEnglish,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    maxLines = 2,
-                                    fontSize = 20.sp,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                TranslatedLanguageTags(
-                                    tags = manga.availableTranslatedLanguages,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                                MangaGenreTags(
-                                    tags = manga.tagToId.keys.toList(),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    onTagClick = { name ->
-                                        manga.tagToId[name]?.let {
-                                            onTagClick(name, it)
-                                        }
-                                    }
-                                )
-                                Row(
-                                    Modifier.weight(1f),
-                                    verticalAlignment = Alignment.Bottom,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    IconButton(onClick = { onBookmarkClick(manga) }) {
-                                        if (manga.bookmarked) Icon(
-                                            imageVector = Icons.Filled.BookmarkRemove,
-                                            contentDescription = null
-                                        )
-                                        else Icon(
-                                            imageVector = Icons.Outlined.BookmarkAdd,
-                                            contentDescription = null
-                                        )
-                                    }
-                                    Row(
-                                        Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.End
-                                    ) {
-                                        Text(
-                                            text = "NO.${page + 1}",
-                                            style = MaterialTheme.typography.labelLarge.copy(
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        )
-                                        IconButton(
-                                            onClick = {
-                                                scope.launch {
-                                                    pagerState.animateScrollToPage(page - 1)
-                                                }
-                                            }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Filled.KeyboardArrowLeft,
-                                                contentDescription = null
-                                            )
-                                        }
-                                        IconButton(
-                                            onClick = {
-                                                scope.launch {
-                                                    pagerState.animateScrollToPage(page + 1)
-                                                }
-                                            }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Filled.KeyboardArrowRight,
-                                                contentDescription = null
-                                            )
-                                        }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 
 
-@Composable
-fun TrendingMangaList(
-    manga: LazyPagingItems<SavableManga>,
-    onBookmarkClick: (manga: SavableManga) -> Unit
-) {
-    val space = LocalSpacing.current
-    val navigator = LocalNavigator.current
-    val context = LocalContext.current
-
-    LaunchedEffect(key1 = manga.loadState) {
-        if(manga.loadState.refresh is LoadState.Error) {
-            Toast.makeText(
-                context,
-                "Error: " + (manga.loadState.refresh as LoadState.Error).error.message,
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-    
-    if(manga.loadState.refresh is LoadState.Loading) {
-        Row {
-            repeat(4) {
-                AnimatedBoxShimmer(
-                    Modifier.size(200.dp)
-                )
-                Spacer(modifier = Modifier.width(space.med))
-            }
-        }
-    } else {
-        LazyRow(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            items(
-                count = manga.itemCount,
-                key = manga.itemKey(),
-                contentType = manga.itemContentType()
-            ) { i ->
-                manga[i]?.let {
-                    MangaListItemSideTitle(
-                        manga = it,
-                        modifier = Modifier.width(200.dp),
-                        onTagClick = { tag ->
-                            it.tagToId[tag]?.let {id ->
-                                navigator?.push(
-                                    MangaFilterScreen(tag, id)
-                                )
-                            }
-                        },
-                        onBookmarkClick = {
-                            onBookmarkClick(it)
-                        },
-                        index = i
-                    )
-                }
-            }
-            item {
-                if(manga.loadState.append is LoadState.Loading) {
-                    CenterBox(Modifier.size(200.dp)) {
-                        CircularProgressIndicator()
-                    }
-                }
-                if (manga.loadState.append is LoadState.Error || manga.loadState.refresh is LoadState.Error) {
-                    CenterBox(Modifier.size(200.dp)) {
-                        Button(onClick = { manga.retry() }) {
-                            Text("Retry loading manga")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 
 

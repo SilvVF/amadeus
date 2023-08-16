@@ -33,7 +33,19 @@ val workerModule = module {
     }
 
     single {
+        CoverArtDownloadManager(get())
+    }
+
+    single {
         TagSyncWorker(androidContext(), get())
+    }
+
+    worker {
+        CoverArtDeletionWorker(androidContext(), get())
+    }
+
+    worker {
+        CoverArtDownloadWorker(androidContext(), get())
     }
 
     worker {

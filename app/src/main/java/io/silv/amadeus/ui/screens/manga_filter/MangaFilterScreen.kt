@@ -53,7 +53,7 @@ import org.koin.core.parameter.parametersOf
 
 class MangaFilterScreen(
     private val tag: String,
-    private val tagId: String
+    private val tagId: String,
 ) : Screen {
 
     override val key: ScreenKey

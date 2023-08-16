@@ -1,6 +1,5 @@
 package io.silv.amadeus.ui.composables
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,8 +12,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BookmarkRemove
-import androidx.compose.material.icons.outlined.BookmarkAdd
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -225,7 +224,6 @@ fun TranslatedLanguageTags(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GenreTagsWithBookmark(
     modifier: Modifier = Modifier,
@@ -236,28 +234,28 @@ fun GenreTagsWithBookmark(
 ) {
     val space = LocalSpacing.current
 
-    Row(modifier) {
-        IconButton(onClick = onBookmarkClick) {
-            if (bookmarked) Icon(
-                imageVector = Icons.Filled.BookmarkRemove,
-                contentDescription = null
-            )
-            else Icon(
-                imageVector = Icons.Outlined.BookmarkAdd,
-                contentDescription = null
-            )
-        }
-        LazyRow(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-            items(
-                items = tags,
-                key = { item -> item }
-            ) {tag ->
-                SuggestionChip(
-                    onClick = { onTagClick(tag) },
-                    label = { Text(tag) },
-                    modifier = Modifier.padding(horizontal = space.small)
+    LazyRow(modifier, verticalAlignment = Alignment.CenterVertically) {
+        item {
+            IconButton(onClick = onBookmarkClick) {
+                if (bookmarked) Icon(
+                    imageVector = Icons.Filled.Favorite,
+                    contentDescription = null
+                )
+                else Icon(
+                    imageVector = Icons.Outlined.FavoriteBorder,
+                    contentDescription = null
                 )
             }
+        }
+        items(
+            items = tags,
+            key = { item -> item }
+        ) {tag ->
+            SuggestionChip(
+                onClick = { onTagClick(tag) },
+                label = { Text(tag) },
+                modifier = Modifier.padding(horizontal = space.small)
+            )
         }
     }
 }

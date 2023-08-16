@@ -17,6 +17,8 @@ data class SavedMangaEntity(
 
     val readingStatus: ReadingStatus,
 
+    val originalCoverArtUrl: String,
+
     override val coverArt: String,
 
     override val description: String,
@@ -66,7 +68,8 @@ data class SavedMangaEntity(
         id = mangaResource.id,
         progressState = ProgressState.NotStarted,
         readingStatus = ReadingStatus.None,
-        coverArt = mangaResource.coverArt,
+        originalCoverArtUrl = mangaResource.coverArt,
+        coverArt = "",
         description = mangaResource.description,
         titleEnglish = mangaResource.titleEnglish,
         alternateTitles = mangaResource.alternateTitles,
@@ -96,9 +99,10 @@ data class SavedMangaEntity(
             id = recent.id,
             progressState = ProgressState.NotStarted,
             readingStatus = ReadingStatus.None,
-            coverArt = recent.coverArt,
+            coverArt = "",
             description = recent.description,
             titleEnglish = recent.titleEnglish,
+            originalCoverArtUrl = recent.coverArt,
             alternateTitles = recent.alternateTitles,
             originalLanguage = recent.originalLanguage,
             availableTranslatedLanguages = recent.availableTranslatedLanguages,

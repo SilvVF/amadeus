@@ -1,10 +1,8 @@
 package io.silv.amadeus.ui.screens.manga_view
 
-import android.util.Log
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
-import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.ktor_response_mapper.message
 import io.silv.ktor_response_mapper.suspendOnFailure
@@ -40,24 +38,15 @@ class MangaViewSM(
 
     init {
         ProtectedResources.ids.add(initialManga.id)
-        coroutineScope.launch {
-            getMangaStatisticsById(initialManga.id)
-                .suspendOnSuccess { Log.d("Stats", this.toString()) }
-                .suspendOnFailure { Log.d("Stats", this.toString()) }
-        }
     }
 
     val statsUiState = flow {
-        emit(StatsUiState(loading = true, error = null, data = MangaStats()))
+        emit(StatsUiState(loading = true))
         getMangaStatisticsById(initialManga.id)
-            .suspendOnFailure {
-                emit(StatsUiState(loading = false, error = message(), data = MangaStats()))
-            }
-            .suspendOnSuccess {
-                emit(StatsUiState(loading = false, error = null, data = data))
-            }
+            .suspendOnFailure { emit(StatsUiState(error = message())) }
+            .suspendOnSuccess { emit(StatsUiState(data = data)) }
     }
-        .stateInUi(StatsUiState(loading = true, null, MangaStats()))
+        .stateInUi(StatsUiState(loading = true))
 
 
     val downloadingOrDeleting = combine(
@@ -78,11 +67,10 @@ class MangaViewSM(
     private val mutableSortedByAsc = MutableStateFlow(false)
     val sortedByAsc = mutableSortedByAsc.asStateFlow()
 
-    val mangaViewStateUiState = combineTuple(
+    val mangaViewStateUiState = combine(
         getCombinedSavableMangaWithChapters(initialManga.id),
         mutableSortedByAsc
-    )
-        .map { (combinedSavableMangaWithChapters, asc) ->
+    ) { combinedSavableMangaWithChapters, asc ->
             combinedSavableMangaWithChapters.savableManga?.let {
                 MangaViewState.Success(
                     loadingArt = false,
@@ -139,9 +127,10 @@ sealed class MangaViewState(
         override val manga: SavableManga,
         val chapters: List<SavableChapter>
     ) : MangaViewState(manga) {
+
         val volumeToChapter: Map<Int, List<SavableChapter>>
-            get() = this.chapters.groupBy { it.volume}
-                .mapValues {(k, v) ->
+            get() = this.chapters.groupBy { it.volume }
+                .mapValues { (k, v) ->
                     v.sortedBy { it.chapter }
                 }
     }
@@ -150,9 +139,9 @@ sealed class MangaViewState(
         get() = this as? Success
 }
 data class StatsUiState(
-    val loading: Boolean,
-    val error: String?,
-    val data: MangaStats
+    val loading: Boolean = false,
+    val error: String? = null,
+    val data: MangaStats = MangaStats()
 )
 
 sealed interface MangaViewEvent {

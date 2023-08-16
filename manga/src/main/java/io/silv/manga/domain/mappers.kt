@@ -304,7 +304,7 @@ object MangaEntityMapper: Mapper<Pair<Manga, SavedMangaEntity?>, SavedMangaEntit
         return SavedMangaEntity(
             id = network.id,
             progressState = saved?.progressState ?: ProgressState.NotStarted,
-            coverArt = coverArtUrl(network),
+            originalCoverArtUrl = coverArtUrl(network),
             description = network.descriptionEnglish,
             titleEnglish = network.titleEnglish,
             alternateTitles = network.alternateTitles,
@@ -326,7 +326,8 @@ object MangaEntityMapper: Mapper<Pair<Manga, SavedMangaEntity?>, SavedMangaEntit
             authors = network.authors,
             artists = network.artists,
             year = network.attributes.year ?: -1,
-            latestUploadedChapter = network.attributes.latestUploadedChapter
+            latestUploadedChapter = network.attributes.latestUploadedChapter,
+            coverArt = saved?.coverArt ?: ""
         )
     }
 }

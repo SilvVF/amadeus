@@ -88,7 +88,10 @@ internal class PopularMangaRepositoryImpl(
 
     @OptIn(ExperimentalPagingApi::class)
     override val pager = Pager(
-        config = PagingConfig(pageSize = 60),
+        config = PagingConfig(
+            pageSize = 60,
+            initialLoadSize = 60
+        ),
         remoteMediator = PopularMangaRemoteMediator(mangaDexApi, amadeusDatabase),
         pagingSourceFactory = {
             popularMangaResourceDao.pagingSource()

@@ -38,6 +38,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.Language
+import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.shared.shadow
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.amadeus.ui.theme.Pastel
@@ -106,6 +107,7 @@ fun MangaListItemSideTitle(
     index: Int,
     manga: SavableManga,
     onTagClick: (tag: String) -> Unit,
+    onMangaImageClick: () -> Unit,
     onBookmarkClick: () -> Unit
 ) {
 
@@ -136,6 +138,7 @@ fun MangaListItemSideTitle(
                         offsetX = space.xs
                     )
                     .padding(space.xs)
+                    .noRippleClickable { onMangaImageClick() }
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)

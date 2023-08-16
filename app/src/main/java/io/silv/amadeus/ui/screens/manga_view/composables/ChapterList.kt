@@ -52,7 +52,6 @@ fun LazyListScope.chapterListItems(
     downloadingIds: List<String>,
     onDownloadClicked: (ids: List<String>) -> Unit,
     onDeleteClicked: (id: String) -> Unit,
-    onOpenWebView: (url: String) -> Unit,
     onReadClicked: (id: String) -> Unit
 ) {
     when (mangaViewState) {
@@ -150,8 +149,8 @@ private fun ChapterInfoHeader(
             val maxToMin = remember(chapters) {
                 val valid = chapters.filter { it.validNumber }
                 Pair(
-                    valid.minBy { it.chapter }.chapter,
-                    valid.maxBy { it.chapter }.chapter
+                    valid.minByOrNull { it.chapter }?.chapter ?: 0,
+                    valid.maxByOrNull { it.chapter }?.chapter ?: 0
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {

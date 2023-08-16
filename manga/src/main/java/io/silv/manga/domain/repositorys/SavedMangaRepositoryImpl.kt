@@ -38,19 +38,6 @@ internal class SavedMangaRepositoryImpl(
     private val TAG = "SavedMangaRepositoryImpl"
     private fun log(msg: String) = Log.d(TAG, msg)
 
-    private val mapper = MangaEntityMapper
-
-    private val syncer = syncerForEntity<SavedMangaEntity, Manga, String>(
-        networkToKey = { manga -> manga.id },
-        mapper = { network, saved -> mapper.map(network to saved) },
-        upsert = {
-            savedMangaDao.upsertSavedManga(it)
-            if (it.coverArt.isBlank()) {
-                coverArtDownloadManager.saveCover(it.id, it.originalCoverArtUrl)
-                updateChapterList(it.id)
-            }
-        }
-    )
 
     override suspend fun bookmarkManga(id: String): Unit = withContext(dispatchers.io) {
             log("bookmarking $id")
@@ -80,28 +67,27 @@ internal class SavedMangaRepositoryImpl(
                 ?: run {
                     getMangaResourceById(id).maxBy { it.first.savedAtLocal }.let { resource ->
                         log("No Saved found using resource $id")
-                        val entity =  SavedMangaEntity(resource.first).copy(bookmarked = true)
-                        savedMangaDao.upsertSavedManga(entity)
-                        coverArtDownloadManager.saveCover(id, entity.originalCoverArtUrl)
-                        updateChapterList(id)
+                        saveManga(id) {
+                            it.copy(bookmarked = true)
+                        }
                         log("Inserted Saved manga using resource $id and set bookmarked true")
                     }
                 }
     }
 
     override suspend fun saveManga(
-        id: String
+        id: String,
+        copy: ((SavedMangaEntity) -> SavedMangaEntity)?
     ): Unit = withContext(dispatchers.io) {
         getMangaResourceById(id)
-            .maxBy { it.first.savedAtLocal }
-            .let { resource ->
-                log("No Saved found using resource $id")
-                val entity =  SavedMangaEntity(resource.first)
+            .maxByOrNull { it.first.savedAtLocal }
+            ?.let { (resource, _) ->
+                val entity = copy?.invoke(SavedMangaEntity(resource)) ?: SavedMangaEntity(resource)
                 savedMangaDao.upsertSavedManga(entity)
-                log("Inserted Saved manga using resource $id and set bookmarked true")
+                log("Inserted Saved manga using resource $id")
                 updateChapterList(id)
                 coverArtDownloadManager.saveCover(id, entity.originalCoverArtUrl)
-        }
+            }
     }
 
 
@@ -120,6 +106,20 @@ internal class SavedMangaRepositoryImpl(
     override fun getSavedManga(id: String): Flow<SavedMangaEntity?> {
         return savedMangaDao.getSavedMangaById(id)
     }
+
+    private val mapper = MangaEntityMapper
+
+    private val syncer = syncerForEntity<SavedMangaEntity, Manga, String>(
+        networkToKey = { manga -> manga.id },
+        mapper = { network, saved -> mapper.map(network to saved) },
+        upsert = {
+            savedMangaDao.upsertSavedManga(it)
+            if (it.coverArt.isBlank()) {
+                coverArtDownloadManager.saveCover(it.id, it.originalCoverArtUrl)
+                updateChapterList(it.id)
+            }
+        }
+    )
 
     override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
         val saved = emptyList<SavedMangaEntity>()

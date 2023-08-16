@@ -19,6 +19,8 @@ import kotlinx.coroutines.withContext
 
 interface ChapterImageRepository {
 
+    suspend fun getChapterImageUrls(chapterId: String, externalUrl: String): Result<List<String>>
+
     suspend fun getChapterImages(id: String): Flow<Resource<Pair<Chapter, List<String>>>>
 }
 
@@ -32,28 +34,18 @@ class ChapterImageRepositoryImpl(
 ): ChapterImageRepository {
 
 
-    private suspend fun getImages(id: String) = suspendRunCatching {
+    private suspend fun getImages(url: String, chapterId: String) = suspendRunCatching {
         withContext(Dispatchers.IO) {
-            val chapter = mangaDexApi.getChapterData(
-                ChapterListRequest(
-                    ids = listOf(id.ifEmpty { error("id was not found") })
-                )
-            )
-                .getOrThrow()
-                .data
-                .first()
-
-            val externalUrl = chapter.attributes.externalUrl?.replace("\\", "") ?: ""
-            Log.d("ChapterImageRepository", "matching externalUrl: $externalUrl")
-            chapter to when {
-                "mangaplus.shueisha" in externalUrl -> mangaPlusHandler.fetchImageUrls(externalUrl)
+            Log.d("ChapterImageRepository", "matching externalUrl: $url")
+            when {
+                "mangaplus.shueisha" in url -> mangaPlusHandler.fetchImageUrls(url)
                     .also { Log.d("IMAGES", "$it") }
-                "azuki.co" in externalUrl -> azukiHandler.fetchImageUrls(externalUrl)
-                "mangahot.jp" in externalUrl -> mangaHotHandler.fetchImageUrls(externalUrl)
-                "bilibilicomics.com" in externalUrl -> biliHandler.fetchImageUrls(externalUrl)
-                "comikey.com" in externalUrl -> comikeyHandler.fetchImageUrls(externalUrl)
-                externalUrl.isBlank() -> {
-                    val response = mangaDexApi.getChapterImages(chapter.id)
+                "azuki.co" in url -> azukiHandler.fetchImageUrls(url)
+                "mangahot.jp" in url -> mangaHotHandler.fetchImageUrls(url)
+                "bilibilicomics.com" in url -> biliHandler.fetchImageUrls(url)
+                "comikey.com" in url -> comikeyHandler.fetchImageUrls(url)
+                url.isBlank() -> {
+                    val response = mangaDexApi.getChapterImages(chapterId)
                         .getOrThrow()
                     response.chapter.data.map {
                         "${response.baseUrl}/data/${response.chapter.hash}/$it"
@@ -64,13 +56,26 @@ class ChapterImageRepositoryImpl(
         }
     }
 
+    override suspend fun getChapterImageUrls(chapterId: String, externalUrl: String): Result<List<String>> {
+        return getImages(externalUrl, chapterId)
+    }
+
 
     override suspend fun getChapterImages(id: String): Flow<Resource<Pair<Chapter,List<String>>>> = flow {
         emit(Resource.Loading)
-        getImages(id)
+        val chapter = mangaDexApi.getChapterData(
+            ChapterListRequest(
+                ids = listOf(id.ifEmpty { error("id was not found") })
+            )
+        )
+            .getOrThrow()
+            .data
+            .first()
+        val externalUrl = chapter.attributes.externalUrl?.replace("\\", "") ?: ""
+        getImages(externalUrl, chapter.id)
             .onSuccess {
                 emit(
-                    Resource.Success(it)
+                    Resource.Success(chapter to it)
                 )
             }
             .onFailure {

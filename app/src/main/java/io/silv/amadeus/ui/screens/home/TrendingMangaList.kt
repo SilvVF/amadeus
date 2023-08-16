@@ -23,6 +23,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItemSideTitle
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
+import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
@@ -70,7 +71,12 @@ fun TrendingMangaList(
                     onBookmarkClick = {
                         onBookmarkClick(it)
                     },
-                    index = i
+                    index = i,
+                    onMangaImageClick = {
+                        navigator?.push(
+                            MangaViewScreen(it)
+                        )
+                    }
                 )
             }
         }

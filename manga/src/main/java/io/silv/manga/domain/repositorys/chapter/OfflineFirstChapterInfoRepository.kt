@@ -3,6 +3,7 @@ package io.silv.manga.domain.repositorys.chapter
 import android.util.Log
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
+import io.silv.ktor_response_mapper.suspendOnFailure
 import io.silv.manga.domain.ChapterToChapterEntityMapper
 import io.silv.manga.domain.coverArtUrl
 import io.silv.manga.domain.minus
@@ -15,16 +16,17 @@ import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.ProgressState
-import io.silv.manga.local.entity.syncerForEntity
 import io.silv.manga.network.mangadex.MangaDexApi
-import io.silv.manga.network.mangadex.models.chapter.Chapter
+import io.silv.manga.network.mangadex.requests.ChapterListRequest
 import io.silv.manga.network.mangadex.requests.CoverArtRequest
 import io.silv.manga.sync.Synchronizer
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.plus
@@ -43,16 +45,6 @@ internal class OfflineFirstChapterInfoRepository(
 ): ChapterEntityRepository {
 
     private val scope = CoroutineScope(dispatchers.io) + CoroutineName("OfflineFirstChapterInfoRepository")
-
-    val syncer = syncerForEntity<ChapterEntity, Chapter, String>(
-        networkToKey = { it.id },
-        mapper = { n, l ->
-            ChapterToChapterEntityMapper.map(n to l)
-        },
-        upsert = {
-            chapterDao.upsertChapter(it)
-        }
-    )
 
     override val loadingVolumeArtIds = MutableStateFlow(emptyList<String>())
 
@@ -80,8 +72,36 @@ internal class OfflineFirstChapterInfoRepository(
         }
     }
 
+    override suspend fun saveChapters(ids: List<String>): Boolean {
+        return suspendRunCatching {
+            withContext(dispatchers.io) {
+                val chapterJobs = ids.map { async { chapterDao.getChapterById(it) } }
+                val response = mangaDexApi.getChapterData(ChapterListRequest(ids = ids))
+                    .suspendOnFailure { Log.d("OfflineFirstChapterInfoRepository", "fetching failed $ids") }
+                    .getOrThrow()
+                val chapters = chapterJobs.mapNotNull { it.await() }
+                response.data.forEach {
+                    chapterDao.upsertChapter(
+                        ChapterToChapterEntityMapper.map(it to chapters.find { c -> c.id == it.id })
+                    )
+                }
+            }
+        }
+            .isSuccess
+    }
+
+    override suspend fun saveChapter(chapterEntity: ChapterEntity) {
+        withContext(dispatchers.io) {
+            chapterDao.upsertChapter(chapterEntity)
+        }
+    }
+
+    override fun getChapterById(id: String): Flow<ChapterEntity?> {
+        return chapterDao.observeChapterById(id).flowOn(dispatchers.io)
+    }
+
     override fun getAllChapters(): Flow<List<ChapterEntity>> {
-        return chapterDao.getChapterEntities()
+        return chapterDao.getChapterEntities().flowOn(dispatchers.io)
     }
 
     private suspend fun shouldUpdate(mangaId: String): Boolean = withContext(dispatchers.io) {

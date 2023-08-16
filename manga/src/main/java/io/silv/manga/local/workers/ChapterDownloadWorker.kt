@@ -1,12 +1,7 @@
 package io.silv.manga.local.workers
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.os.Build
 import android.util.Log
-import androidx.core.net.toUri
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -17,90 +12,21 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.core.AmadeusDispatchers
-import io.silv.ktor_response_mapper.getOrThrow
-import io.silv.ktor_response_mapper.suspendOnFailure
-import io.silv.manga.domain.ChapterToChapterEntityMapper
+import io.silv.manga.domain.repositorys.SavedMangaRepository
+import io.silv.manga.domain.repositorys.chapter.ChapterEntityRepository
+import io.silv.manga.domain.repositorys.chapter.ChapterImageRepository
 import io.silv.manga.domain.suspendRunCatching
-import io.silv.manga.domain.usecase.GetMangaResourcesById
-import io.silv.manga.local.dao.ChapterDao
-import io.silv.manga.local.dao.SavedMangaDao
-import io.silv.manga.local.entity.SavedMangaEntity
-import io.silv.manga.local.workers.handlers.AzukiHandler
-import io.silv.manga.local.workers.handlers.BiliHandler
-import io.silv.manga.local.workers.handlers.ComikeyHandler
-import io.silv.manga.local.workers.handlers.MangaHotHandler
-import io.silv.manga.local.workers.handlers.MangaPlusHandler
-import io.silv.manga.network.mangadex.MangaDexApi
-import io.silv.manga.network.mangadex.requests.ChapterListRequest
+import io.silv.manga.local.entity.ChapterEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import java.io.File
-import java.net.URL
 import java.time.Duration
 
 const val ChapterDownloadWorkerTag = "ChapterDownloadWorker"
-
-internal class ImageDownloader(
-    private val context: Context,
-    private val dispatchers: AmadeusDispatchers
-) {
-    suspend fun writeMangaCoverArt(
-        mangaId: String,
-        url: String,
-    ) = withContext(dispatchers.io) {
-        val image = URL(url)
-        val inputStream = image.openStream().buffered()
-        val bitmap = BitmapFactory.decodeStream(inputStream)
-
-        val ext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) "webp" else "png"
-
-        val fileName = "cover_art-$mangaId.$ext"
-
-        val file = File(context.filesDir, fileName)
-
-        file.outputStream().buffered().use {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, it)
-            } else {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
-            }
-        }
-
-        file.toUri()
-    }
-
-    suspend fun write(
-        mangaId: String,
-        chapterId: String,
-        pageNumber: Int,
-        url: String
-    ): Uri = withContext(dispatchers.io) {
-
-        val image = URL(url)
-        val inputStream = image.openStream().buffered()
-        val bitmap = BitmapFactory.decodeStream(inputStream)
-
-        val ext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) "webp" else "png"
-
-        val fileName = "chapter_images-$mangaId-$chapterId-$pageNumber.$ext"
-
-        val file = File(context.filesDir, fileName)
-
-        file.outputStream().buffered().use {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, it)
-            } else {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
-            }
-        }
-
-        file.toUri()
-    }
-}
 
 class ChapterDownloadWorker(
     appContext: Context,
@@ -110,61 +36,55 @@ class ChapterDownloadWorker(
     private val logTag = ChapterDownloadWorkerTag
 
     private val dispatchers by inject<AmadeusDispatchers>()
-    private val chapterDao by inject<ChapterDao>()
-    private val getMangaResourcesById by inject<GetMangaResourcesById>()
-    private val savedMangaDao by inject<SavedMangaDao>()
-    private val mangaDexApi by inject<MangaDexApi>()
 
-    private val azukiHandler by inject<AzukiHandler>()
-    private val mangaPlusHandler by inject<MangaPlusHandler>()
-    private val mangaHotHandler by inject<MangaHotHandler>()
-    private val comikeyHandler by inject<ComikeyHandler>()
-    private val biliHandler by inject<BiliHandler>()
-    private val coverArtDownloadManager by inject<CoverArtDownloadManager>()
+    private val savedMangaRepository by inject<SavedMangaRepository>()
+    private val chapterRepository by inject<ChapterEntityRepository>()
+    private val chapterImageRepository by inject<ChapterImageRepository>()
 
     private val downloader = ImageDownloader(appContext, dispatchers)
 
-    private suspend fun fetchAndSaveChapters(ids: List<String>) {
-        Log.d(logTag, "fetching $ids")
-        mangaDexApi.getChapterData(
-            ChapterListRequest(
-                ids = ids
-            )
-        )
-            .suspendOnFailure {
-                Log.d(logTag, "fetching failed $ids")
-            }
-            .getOrThrow()
-            .also { list ->
-                Log.d(logTag, "fetching successful saving $ids")
-                list.data.forEach {
-                    chapterDao.upsertChapter(
-                        ChapterToChapterEntityMapper.map(it to null)
-                    )
-                }
-                Log.d(logTag, "saved $ids")
-            }
-    }
-
     private suspend fun saveMangaIfNotSaved(mangaId: String): Boolean = withContext(dispatchers.io){
         // Create saved manga if it is being downloaded from a resource
-        savedMangaDao.getSavedMangaById(mangaId).first() ?: run {
+        savedMangaRepository.getSavedManga(mangaId).firstOrNull() ?: run {
             Log.d(logTag, "Manga was not saved previously saving manga id=$mangaId")
-            val resources = getMangaResourcesById(mangaId)
-            Log.d(logTag, "Manga resources found idToDaoIds=${resources.map { it.first.id to it.second }}")
-            if (resources.isEmpty()) {
-                return@withContext false
-            }
-            val saved =  SavedMangaEntity(
-                mangaResource = resources
-                    .maxBy { it.first.savedAtLocal }
-                    .first
-            )
-            savedMangaDao.upsertSavedManga(saved)
-            coverArtDownloadManager.saveCover(saved.id, saved.originalCoverArtUrl)
-            Log.d(logTag, "saved manga id=$mangaId")
+            savedMangaRepository.saveManga(mangaId)
         }
         true
+    }
+
+    private suspend fun saveImages(
+        imageUrls: List<String>,
+        chapter: ChapterEntity,
+        mangaId: String
+    ): Result {
+        Log.d(logTag, imageUrls.toString())
+        val result = suspendRunCatching {
+            withContext(dispatchers.io) {
+                imageUrls.chunked(4).forEachIndexed { index, urls ->
+                    val uris = urls.mapIndexed { i, url ->
+                        downloader.write(mangaId, chapter.id, (index * 4 + i), url).toString()
+                    }
+                    val prevEntity = chapterRepository.getChapterById(chapter.id).firstOrNull()
+                        ?: return@forEachIndexed
+                    Log.d(
+                        logTag,
+                        "updating chapter images with $uris \nchunk#$index, endPage = ${(index * 4) + uris.size}"
+                    )
+                    chapterRepository.saveChapter(
+                        prevEntity.copy(
+                            chapterImages = prevEntity.chapterImages + uris,
+                            pages = imageUrls.size
+                        )
+                    )
+                }
+            }
+        }
+        downloadingIds.update { it - chapter.id }
+        return if (result.isSuccess) {
+            Result.success()
+        } else  {
+            Result.failure()
+        }
     }
 
     override suspend fun doWork(): Result {
@@ -185,98 +105,49 @@ class ChapterDownloadWorker(
             return Result.failure()
         }
 
-        val savedChapters = chapterDao.getChapterEntities().first()
+        val savedChapters = chapterRepository.getChapters(mangaId).firstOrNull() ?: emptyList()
 
         val unsavedChapterIds = chaptersToGet.filter { cid ->
             cid !in savedChapters.map { it.id }
         }
 
         if (unsavedChapterIds.isNotEmpty()) {
-           fetchAndSaveChapters(unsavedChapterIds)
+           chapterRepository.saveChapters(unsavedChapterIds)
         }
 
         if (!imageUrls.isNullOrEmpty()) {
-            Log.d(logTag, imageUrls.toString())
-            val result = suspendRunCatching {
-                withContext(dispatchers.io) {
-                    val chapter = chapterDao.getChapterById(chaptersToGet.first()) ?: error("No chapter found")
-                    imageUrls.chunked(4).forEachIndexed { index, urls ->
-                        val uris = urls.mapIndexed { i, url ->
-                            downloader.write(mangaId, chapter.id, (index * 4 + i), url).toString()
-                        }
-                        val prevEntity =
-                            chapterDao.getChapterById(chapter.id)?: return@forEachIndexed
-                        Log.d(
-                            logTag,
-                            "updating chapter images with $uris \nchunk#$index, endPage = ${(index * 4) + uris.size}"
-                        )
-                        chapterDao.updateChapter(
-                            prevEntity.copy(
-                                chapterImages = prevEntity.chapterImages + uris,
-                                pages = imageUrls.size
-                            )
-                        )
-                    }
-                }
-            }
-            downloadingIds.update { it.filter { id -> id !in chaptersToGet } }
-            return if (result.isSuccess) {
-                Result.success()
-            } else  {
-                Result.failure()
-            }
+            saveImages(
+                imageUrls,
+                chapterRepository.getChapterById(
+                    chaptersToGet.first()
+                )
+                    .first() ?: error("cant find chapter"),
+                mangaId
+            )
         }
 
         val result = suspendRunCatching {
-            chaptersToGet.mapNotNull { chapterDao.getChapterById(it) }
+            chaptersToGet.mapNotNull { chapterRepository.getChapterById(it).firstOrNull() }
                 .forEach { chapter ->
+
                     val externalUrl = chapter.externalUrl?.replace("\\", "") ?: ""
-                    val chapterImageUrls = when {
-                        "mangaplus.shueisha" in externalUrl -> {
-                            Log.d(logTag, "Trying to get Urls from mangaplus.shueisha")
-                            mangaPlusHandler.fetchImageUrls(externalUrl)
-                        }
-                        "azuki.co" in externalUrl -> {
-                            Log.d(logTag, "Trying to get Urls from azuki.co")
-                            azukiHandler.fetchImageUrls(externalUrl)
-                        }
-                        "mangahot.jp" in externalUrl -> {
-                            Log.d(logTag, "Trying to get Urls from mangahot.jp")
-                            mangaHotHandler.fetchImageUrls(externalUrl)
-                        }
-                        "bilibilicomics.com" in externalUrl -> {
-                            Log.d(logTag, "Trying to get Urls from bilibilicomics.com")
-                            biliHandler.fetchImageUrls(externalUrl)
-                        }
-                        "comikey.com" in externalUrl -> {
-                            Log.d(logTag, "Trying to get Urls from comikey.com")
-                            comikeyHandler.fetchImageUrls(externalUrl)
-                        }
-                        externalUrl.isBlank() -> {
-                            Log.d(logTag, "Trying to get Urls from mangadex api")
-                            val response = mangaDexApi.getChapterImages(chapter.id)
-                                .getOrThrow()
-                            response.chapter.data.map {
-                                "${response.baseUrl}/data/${response.chapter.hash}/$it"
-                            }
-                        }
-                        else -> {
-                            Log.d(logTag, "No handler implemented for given external url $externalUrl")
-                            return@forEach
-                        }
-                    }
+
+                    val chapterImageUrls = chapterImageRepository
+                        .getChapterImageUrls(chapter.id, externalUrl)
+                        .getOrThrow()
+
                     Log.d(logTag, "found urls $chapterImageUrls")
                     chapterImageUrls.chunked(4).forEachIndexed { index, urls ->
                         val uris = urls.mapIndexed { i, url ->
                             downloader.write(mangaId, chapter.id, (index * 4 + i), url).toString()
                         }
                         val prevEntity =
-                            chapterDao.getChapterById(chapter.id) ?: return@forEachIndexed
+                            chapterRepository.getChapterById(chapter.id).firstOrNull() ?: return@forEachIndexed
                         Log.d(
                             logTag,
                             "updating chapter images with $uris \nchunk#$index, endPage = ${(index * 4) + uris.size}"
                         )
-                        chapterDao.updateChapter(
+                        chapterRepository.saveChapter(
                             prevEntity.copy(
                                 chapterImages = prevEntity.chapterImages + uris,
                                 pages = chapterImageUrls.size

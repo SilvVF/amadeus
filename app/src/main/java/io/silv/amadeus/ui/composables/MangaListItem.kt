@@ -73,6 +73,8 @@ fun MangaListItem(
                 model = ImageRequest.Builder(context)
                     .data(manga.coverArt)
                     .placeholder(placeHolderColor)
+                    .error(placeHolderColor)
+                    .fallback(placeHolderColor)
                     .build(),
                 contentDescription = null,
                 modifier = Modifier
@@ -140,10 +142,15 @@ fun MangaListItemSideTitle(
                     .padding(space.xs)
                     .noRippleClickable { onMangaImageClick() }
             ) {
+                val placeHolderColor = remember {
+                    Pastel.getColorLight()
+                }
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(manga.coverArt)
-                        .placeholder(Pastel.getColorLight())
+                        .placeholder(placeHolderColor)
+                        .error(placeHolderColor)
+                        .fallback(placeHolderColor)
                         .build(),
                     contentDescription = null,
                     modifier = Modifier

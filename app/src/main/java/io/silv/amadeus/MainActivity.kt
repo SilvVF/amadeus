@@ -144,6 +144,8 @@ fun AmadeusScaffold(
             contentColor = contentColor,
             contentWindowInsets = contentWindowInsets,
             modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            floatingActionButton = floatingActionButton,
+            floatingActionButtonPosition = floatingActionButtonPosition
         ) {
             content(it)
         }
@@ -160,6 +162,8 @@ fun AmadeusScaffold(
                 contentColor = contentColor,
                 contentWindowInsets = contentWindowInsets,
                 modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+                floatingActionButton = floatingActionButton,
+                floatingActionButtonPosition = floatingActionButtonPosition
             ) {
                 content(it)
             }

@@ -7,6 +7,7 @@ import io.silv.manga.domain.timeNow
 import io.silv.manga.local.entity.ChapterEntity
 import io.silv.manga.local.entity.ProgressState
 import kotlinx.datetime.LocalDateTime
+import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.json.Json
 
@@ -79,14 +80,15 @@ data class SavableChapter(
     val validNumber: Boolean
         get() = this.chapter >= 0
 
-    val daysSinceCreatedString: String
-        get() = daysSinceCreated.run {
+    @IgnoredOnParcel
+    val daysSinceCreatedString: String by lazy {
+        daysSinceCreated.run {
             return@run if (this >= 365) {
                 val yearsAgo = this / 365
                 if (yearsAgo <= 1.0) {
                     "last year"
                 } else {
-                    "${this/365} years ago"
+                    "${this / 365} years ago"
                 }
             } else {
                 if (this <= 0.9) {
@@ -96,6 +98,11 @@ data class SavableChapter(
                 }
             }
         }
+    }
+
+    val read: Boolean = progress == ProgressState.Finished
+
+    val started: Boolean = progress == ProgressState.Reading
 
     companion object : kotlinx.parcelize.Parceler<SavableChapter> {
         override fun SavableChapter.write(parcel: Parcel, flags: Int) {

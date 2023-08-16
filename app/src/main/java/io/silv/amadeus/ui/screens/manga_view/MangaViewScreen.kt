@@ -2,6 +2,9 @@ package io.silv.amadeus.ui.screens.manga_view
 
 import android.os.Parcelable
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,15 +13,18 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +47,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
@@ -54,6 +62,7 @@ import io.silv.amadeus.ui.screens.manga_view.composables.WebViewOverlay
 import io.silv.amadeus.ui.screens.manga_view.composables.chapterListItems
 import io.silv.amadeus.ui.screens.manga_view.composables.volumePosterItems
 import io.silv.amadeus.ui.shared.collectEvents
+import io.silv.amadeus.ui.shared.isScrollingUp
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
 import kotlinx.parcelize.Parcelize
@@ -72,7 +81,6 @@ class MangaViewScreen(
 
         val sm = getScreenModel<MangaViewSM> { parametersOf(manga) }
         val mangaViewState by sm.mangaViewStateUiState.collectAsStateWithLifecycle()
-        val sortedByAsc by sm.sortedByAsc.collectAsStateWithLifecycle()
         val downloading by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.current
         val statsUiState by sm.statsUiState.collectAsStateWithLifecycle()
@@ -131,6 +139,7 @@ class MangaViewScreen(
         }
 
         AmadeusScaffold(
+            showBottomBar = false,
             scrollBehavior = scrollBehavior,
             topBar = {
                 val bg = MaterialTheme.colorScheme.background
@@ -154,7 +163,41 @@ class MangaViewScreen(
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
             contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.systemBars),
             floatingActionButton = {
-
+                AnimatedVisibility(
+                    visible = mangaViewState.chapters.fastAny { !it.read },
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) {
+                    val space = LocalSpacing.current
+                    ExtendedFloatingActionButton(
+                        text = {
+                            val text = remember(mangaViewState.chapters) {
+                                if (mangaViewState.chapters.fastAny { it.started }) {
+                                    "Resume"
+                                } else {
+                                    "Start"
+                                }
+                            }
+                            Text(text = text)
+                        },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        icon = { Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null) },
+                        onClick = {
+                            val lastUnread = mangaViewState.chapters
+                                .sortedBy { it.chapter.takeIf { it >= 0 } ?: Long.MAX_VALUE }
+                                .fastFirstOrNull { !it.read }
+                                ?: mangaViewState.chapters.minByOrNull { it.chapter } ?: return@ExtendedFloatingActionButton
+                            navigator?.push(
+                                MangaReaderScreen(
+                                    mangaId = lastUnread.mangaId,
+                                    chapterId = lastUnread.id
+                                )
+                            )
+                        },
+                        modifier = Modifier.padding(space.large),
+                        expanded = listState.isScrollingUp(),
+                    )
+                }
             }
         ) { paddingValues ->
             LazyColumn(
@@ -191,7 +234,7 @@ class MangaViewScreen(
                         )
                         FilterDropdownMenu(
                             modifier = Modifier.align(Alignment.End),
-                            sortedByAsc = sortedByAsc,
+                            sortedByAsc = mangaViewState.sortedByAscending,
                             changeDirection = { sm.changeDirection() }
                         )
                     }
@@ -202,7 +245,7 @@ class MangaViewScreen(
                     onDownloadClicked = {
                         sm.downloadChapterImages(it)
                     },
-                    asc = sortedByAsc,
+                    asc = mangaViewState.sortedByAscending,
                     onDeleteClicked = {
                         sm.deleteChapterImages(listOf(it))
                     },

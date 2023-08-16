@@ -9,7 +9,10 @@ class CoverArtDownloadManager (
         filename: String
     ) {
         workManager.enqueue(
-            CoverArtDeletionWorker.coverArtDeleteWorkRequest(filename)
+            CoverArtDeletionWorker
+                .coverArtDeleteWorkRequest(
+                    filename
+                )
         )
     }
 
@@ -18,7 +21,10 @@ class CoverArtDownloadManager (
        url: String
    ) {
        workManager.enqueue(
-           CoverArtDownloadWorker.coverArtSaveWorkRequest(mangaId, url)
+           CoverArtDownloadWorker
+               .coverArtSaveWorkRequest(
+                   mangaId, url
+               )
        )
-    }
+   }
 }

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.screens.manga_view.MangaViewState
 import io.silv.amadeus.ui.shared.CenterBox
@@ -61,8 +61,8 @@ fun LazyListScope.chapterListItems(
             }
         }
         is MangaViewState.Success -> {
-            mangaViewState.volumeToChapter.forEach { (volume, chapters) ->
-                stickyHeader {
+            mangaViewState.volumeToChapters.fastForEach { (volume, chapters) ->
+                item {
                     ChapterInfoHeader(
                         chapters = chapters,
                         volume = volume,
@@ -76,7 +76,6 @@ fun LazyListScope.chapterListItems(
                 items(
                     items = chapters,
                     key = { chapter -> chapter.id },
-                    contentType = { SavableChapter },
                 ) { chapter ->
                     val space = LocalSpacing.current
                     ChapterListItem(
@@ -142,9 +141,7 @@ private fun ChapterInfoHeader(
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .systemBarsPadding()
-                .padding(horizontal = space.large)
+            modifier = Modifier.padding(horizontal = space.large)
         ) {
             val maxToMin = remember(chapters) {
                 val valid = chapters.filter { it.validNumber }

@@ -20,7 +20,6 @@ import io.silv.manga.local.workers.ChapterDownloadWorker
 import io.silv.manga.local.workers.ChapterDownloadWorkerTag
 import io.silv.manga.sync.anyRunning
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -65,21 +64,22 @@ class MangaViewSM(
         .stateInUi(emptyList())
 
     private val mutableSortedByAsc = MutableStateFlow(false)
-    val sortedByAsc = mutableSortedByAsc.asStateFlow()
 
     val mangaViewStateUiState = combine(
         getCombinedSavableMangaWithChapters(initialManga.id),
         mutableSortedByAsc
     ) { combinedSavableMangaWithChapters, asc ->
             combinedSavableMangaWithChapters.savableManga?.let {
+                val chapters = combinedSavableMangaWithChapters
+                        .chapters.map { SavableChapter(it) }
                 MangaViewState.Success(
                     loadingArt = false,
                     manga = it,
                     volumeToArt = it.volumeToCoverArtUrl.mapKeys { (k, v)-> k.toIntOrNull() ?: 0  },
-                    chapters = combinedSavableMangaWithChapters.chapters.map { entity ->
-                        SavableChapter(entity)
-                    }
-                        .sortedBy { chapter -> if (asc) chapter.chapter else -chapter.chapter }
+                    volumeToChapters = chapters
+                        .groupByVolumeSorted(asc),
+                    chapters = chapters,
+                    asc = asc
                 )
             } ?: MangaViewState.Loading(initialManga)
     }
@@ -117,27 +117,37 @@ class MangaViewSM(
     }
 }
 
+fun List<SavableChapter>.groupByVolumeSorted(asc: Boolean) =
+    this.groupBy { it.volume }
+        .mapKeys { (k, v) -> if(k == -1) Int.MAX_VALUE else k }
+        .toSortedMap { v1, v2 -> if(asc) v1 - v2 else v2 - v1 }
+        .mapValues { (k, v) ->
+            if (asc) v.sortedBy { it.chapter }
+            else v.sortedByDescending { it.chapter }
+        }
+        .mapKeys { (k, v) -> if(k ==  Int.MAX_VALUE ) -1 else k }
+        .toList()
+
 sealed class MangaViewState(
-    open val manga: SavableManga
+    open val manga: SavableManga,
+    val sortedByAscending: Boolean,
+    open val chapters: List<SavableChapter>,
 ) {
-    data class Loading(override val manga: SavableManga) : MangaViewState(manga)
+    data class Loading(override val manga: SavableManga) : MangaViewState(manga, true, emptyList())
     data class Success(
         val loadingArt: Boolean,
         val volumeToArt: Map<Int, String>,
         override val manga: SavableManga,
-        val chapters: List<SavableChapter>
-    ) : MangaViewState(manga) {
+        val volumeToChapters: List<Pair<Int, List<SavableChapter>>>,
+        val asc: Boolean,
+        override val chapters: List<SavableChapter>,
+    ) : MangaViewState(manga, asc, chapters)
 
-        val volumeToChapter: Map<Int, List<SavableChapter>>
-            get() = this.chapters.groupBy { it.volume }
-                .mapValues { (k, v) ->
-                    v.sortedBy { it.chapter }
-                }
-    }
 
     val success: Success?
         get() = this as? Success
 }
+
 data class StatsUiState(
     val loading: Boolean = false,
     val error: String? = null,

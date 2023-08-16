@@ -11,7 +11,9 @@ import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.core.AmadeusDispatchers
 import io.silv.manga.domain.suspendRunCatching
+import io.silv.manga.local.dao.SavedMangaDao
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -39,6 +41,7 @@ class CoverArtDeletionWorker(
             withContext(Dispatchers.IO) {
                 val file = File(uri.toUri().path ?: error("No path for $uri"))
                 file.delete()
+
             }
         }
 
@@ -78,6 +81,7 @@ class CoverArtDownloadWorker(
 
     private val dispatchers by inject<AmadeusDispatchers>()
     private val imageDownloader = ImageDownloader(appContext, dispatchers)
+    private val savedMangaDao by inject<SavedMangaDao>()
 
     override suspend fun doWork(): Result {
 
@@ -89,8 +93,15 @@ class CoverArtDownloadWorker(
         }
 
         val result = suspendRunCatching {
-            imageDownloader.writeMangaCoverArt(mangaId, url)
+            val uri = imageDownloader.writeMangaCoverArt(mangaId, url)
+                .toString()
+            savedMangaDao.getSavedMangaById(mangaId).firstOrNull()?.let {
+                savedMangaDao.updateSavedManga(it.copy(
+                    coverArt = uri
+                ))
+            }
         }
+
 
         return if (result.isSuccess) {
             Result.success()

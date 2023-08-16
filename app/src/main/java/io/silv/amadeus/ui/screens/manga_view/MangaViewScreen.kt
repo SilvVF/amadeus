@@ -206,9 +206,6 @@ class MangaViewScreen(
                     onDeleteClicked = {
                         sm.deleteChapterImages(listOf(it))
                     },
-                    onOpenWebView = {
-                        webUrl = it
-                    },
                     onReadClicked = {
                         navigator?.push(
                             MangaReaderScreen(manga.id, it)

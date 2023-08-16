@@ -11,7 +11,7 @@ interface SavedMangaRepository: Syncable {
 
     suspend fun bookmarkManga(id: String)
 
-    suspend fun saveManga(id: String)
+    suspend fun saveManga(id: String, copy: ((SavedMangaEntity) -> SavedMangaEntity)? = null)
 
     fun getSavedMangaWithChapters(): Flow<List<SavedMangaWithChapters>>
 

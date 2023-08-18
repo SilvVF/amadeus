@@ -1,104 +1,167 @@
 package io.silv.amadeus.ui.screens.manga_view.composables
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowCircleDown
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkAdd
+import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.AccessTime
-import androidx.compose.material.icons.outlined.Article
-import androidx.compose.material.icons.outlined.Downloading
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DismissDirection.*
+import androidx.compose.material3.DismissState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismiss
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDismissState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastFirstOrNull
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.screens.manga_view.MangaViewState
 import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableChapter
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun Reset(dismissState: DismissState, action: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(key1 = dismissState.dismissDirection) {
+        scope.launch {
+            dismissState.reset()
+            action()
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 fun LazyListScope.chapterListItems(
     mangaViewState: MangaViewState,
-    asc: Boolean,
-    downloadingIds: List<String>,
+    downloadingIds: List<Pair<String, Float>>,
+    onMarkAsRead: (id: String) -> Unit,
+    onBookmark: (id: String) -> Unit,
     onDownloadClicked: (ids: List<String>) -> Unit,
     onDeleteClicked: (id: String) -> Unit,
     onReadClicked: (id: String) -> Unit
 ) {
     when (mangaViewState) {
         is MangaViewState.Loading -> {
-            item {
-                ChapterItemPlaceHolder()
-            }
+            item { ChapterItemPlaceHolder() }
         }
         is MangaViewState.Success -> {
-            mangaViewState.volumeToChapters.fastForEach { (volume, chapters) ->
-                item {
-                    ChapterInfoHeader(
-                        chapters = chapters,
-                        volume = volume,
-                        onDownloadClicked = {
-                            onDownloadClicked(chapters.map { it.id })
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        asc = asc
-                    )
-                }
-                items(
-                    items = chapters,
-                    key = { chapter -> chapter.id },
-                ) { chapter ->
-                    val space = LocalSpacing.current
-                    ChapterListItem(
-                        modifier = Modifier
-                            .animateItemPlacement()
-                            .padding(
-                                vertical = space.med,
-                                horizontal = space.large
-                            )
-                            .fillMaxWidth(),
-                        chapter = chapter,
-                        downloading = chapter.id in downloadingIds,
-                        onDownloadClicked = {
-                            onDownloadClicked(listOf(chapter.id))
-                        },
-                        onDeleteClicked = {
-                            onDeleteClicked(chapter.id)
-                        },
-                        onReadClicked = {
-                            onReadClicked(chapter.id)
+            items(
+                items = mangaViewState.chapters,
+                key = { it.id }
+            ) { chapter ->
+                val space = LocalSpacing.current
+                val dismissState = rememberDismissState()
+                when  {
+                    dismissState.isDismissed(EndToStart) ->
+                        Reset(dismissState = dismissState) {
+                            onMarkAsRead(chapter.id)
                         }
-                    )
+                    dismissState.isDismissed(StartToEnd) ->
+                        Reset(dismissState = dismissState){
+                            onBookmark(chapter.id)
+                        }
                 }
+                SwipeToDismiss(
+                    state = dismissState,
+                    background = {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Box(Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = space.large)
+                            ) {
+                                when (dismissState.dismissDirection) {
+                                    StartToEnd ->  Column(
+                                        verticalArrangement = Arrangement.Center,
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.align(Alignment.CenterStart)
+                                    ) {
+                                        Icon(
+                                            imageVector = if(chapter.bookmarked)
+                                                Icons.Default.BookmarkRemove
+                                            else Icons.Default.BookmarkAdd,
+                                            contentDescription = "bookmark"
+                                        )
+                                        Text(if(chapter.bookmarked) "Remove bookmark" else "Add bookmark")
+                                    }
+                                    EndToStart ->  Column(
+                                        verticalArrangement = Arrangement.Center,
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.align(Alignment.CenterEnd)
+                                    ) {
+                                        Icon(
+                                            imageVector = if(chapter.read)
+                                                Icons.Default.VisibilityOff
+                                            else Icons.Default.Visibility,
+                                            contentDescription = "read"
+                                        )
+                                        Text(if(chapter.read) "Mark unread" else "Mark read")
+                                    }
+                                    else -> Unit
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .animateItemPlacement(),
+                    dismissContent = {
+                        ChapterListItem(
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.background)
+                                .fillMaxWidth()
+                                .padding(
+                                    vertical = space.med,
+                                    horizontal = space.large
+                                ),
+                            chapter = chapter,
+                            downloadProgress = downloadingIds.fastFirstOrNull { it.first == chapter.id }?.second,
+                            onDownloadClicked = {
+                                onDownloadClicked(listOf(chapter.id))
+                            },
+                            onDeleteClicked = {
+                                onDeleteClicked(chapter.id)
+                            },
+                            onReadClicked = {
+                                onReadClicked(chapter.id)
+                            }
+                        )
+                    }
+                )
             }
         }
     }
@@ -112,7 +175,7 @@ private fun ChapterItemPlaceHolder() {
             Modifier
                 .fillMaxWidth()
                 .height(40.dp)
-                .padding(space.med)
+                .padding(horizontal = space.med)
         )
         repeat(4) {
             AnimatedBoxShimmer(
@@ -126,161 +189,87 @@ private fun ChapterItemPlaceHolder() {
 }
 
 @Composable
-private fun ChapterInfoHeader(
-    modifier: Modifier,
-    chapters: List<SavableChapter>,
-    volume: Int,
-    asc: Boolean,
-    onDownloadClicked: () -> Unit,
-) {
-    Surface(
-        modifier,
-        color = MaterialTheme.colorScheme.background
-    ) {
-        val space = LocalSpacing.current
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = space.large)
-        ) {
-            val maxToMin = remember(chapters) {
-                val valid = chapters.filter { it.validNumber }
-                Pair(
-                    valid.minByOrNull { it.chapter }?.chapter ?: 0,
-                    valid.maxByOrNull { it.chapter }?.chapter ?: 0
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Volume ${if (volume <= 0) "no volume" else volume}")
-                IconButton(onClick = onDownloadClicked) {
-                    Icon(
-                        imageVector = Icons.Filled.Download,
-                        contentDescription = null
-                    )
-                }
-            }
-            Text(
-                "Ch. ${if (asc) maxToMin.first else maxToMin.second} -" +
-                    " ${if (asc) maxToMin.second else maxToMin.first}"
-            )
-        }
-    }
-}
-
-@Composable
 private fun ChapterListItem(
     modifier: Modifier = Modifier,
     chapter: SavableChapter,
-    downloading: Boolean,
+    downloadProgress: Float?,
     onDownloadClicked: () -> Unit,
     onDeleteClicked: () -> Unit,
     onReadClicked: () -> Unit,
 ) {
     val space = LocalSpacing.current
-    Card(modifier) {
-        Row(
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        val chapterTitleWithVolText = remember(chapter) {
+            val vol = if (chapter.volume >= 0) { "Vol. ${chapter.volume}"} else ""
+            "$vol Ch. ${if(chapter.validNumber) chapter.chapter else "extra"} - " + chapter.title
+        }
+        val dateWithScanlationText = remember(chapter) {
+            val pageText = if (chapter.lastReadPage > 0 && !chapter.read) { "· Page ${chapter.lastReadPage}" } else { "" }
+            "${chapter.daysSinceCreatedString} $pageText · ${chapter.scanlationGroupToId?.first ?: chapter.uploader}"
+        }
+        Column(
             Modifier
                 .padding(space.med)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween) {
-            Column(Modifier.fillMaxWidth(0.5f)) {
-                Text(
-                    text = "Chapter ${chapter.chapter.takeIf { chapter.validNumber } ?: "extra"}",
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier.padding(vertical = space.xs)
-                )
-                Text(
-                    text = chapter.title.ifBlank { "Ch. ${chapter.chapter}" },
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier.padding(vertical = space.xs)
-                )
-                Row {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Filled.Group,
-                                contentDescription = null,
-                                modifier = Modifier.padding(horizontal = space.xs)
-                            )
-                            Text(chapter.scanlationGroupToId?.first ?: "")
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = Icons.Filled.Person, contentDescription = null)
-                            Text(chapter.userToId?.first ?: "")
-                        }
-                    }
-                }
-            }
-            Column(
-                verticalArrangement = Arrangement.SpaceBetween,
-                horizontalAlignment = Alignment.End,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
-                    Button(
-                        shape = RoundedCornerShape(12.dp),
-                        onClick = { onReadClicked() }
-                    ) {
-                        Icon(imageVector = Icons.Outlined.Article, contentDescription = null)
-                        Text("Read")
-                    }
-                    if (downloading) {
-                        CenterBox {
-                            IconButton(onClick = onDownloadClicked) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Downloading,
-                                    contentDescription = null
-                                )
-                            }
-                            CircularProgressIndicator()
-                        }
-                    } else {
-                        if (chapter.downloaded) {
-                            IconButton(onClick = onDeleteClicked) {
-                                Icon(
-                                    imageVector = Icons.Filled.Delete,
-                                    contentDescription = null
-                                )
-                            }
-                        } else {
-                            IconButton(onClick = onDownloadClicked) {
-                                Icon(
-                                    imageVector = Icons.Filled.ArrowCircleDown,
-                                    contentDescription = null
-                                )
-                            }
-                        }
-                    }
-                }
-                Row(modifier = Modifier.padding(vertical = space.small), verticalAlignment = Alignment.CenterVertically) {
-                    val language = remember(chapter) {
-                        Language.values().find { it.code == chapter.translatedLanguage }
-                    }
-                    Text(text = language?.string ?: chapter.translatedLanguage , modifier = Modifier.padding(horizontal = space.small))
-                    if (language != null) {
-                        Image(
-                            painter = painterResource(id = language.resId),
-                            contentDescription = null,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                .clickable { onReadClicked() }
+                .weight(1f)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (chapter.bookmarked) {
                     Icon(
-                        imageVector = Icons.Outlined.AccessTime,
-                        contentDescription = null
-                        ,modifier = Modifier.padding(horizontal = space.small)
+                        imageVector = Icons.Filled.Bookmark,
+                        contentDescription = "bookmarked",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(end = space.xs)
                     )
-                    Text(
-                        text = chapter.daysSinceCreatedString,
-                        style = MaterialTheme.typography.labelMedium
-                            .copy(fontWeight = FontWeight.SemiBold)
+                }
+                Text(
+                    text = chapterTitleWithVolText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = if(!chapter.read)
+                            MaterialTheme.colorScheme.onBackground
+                        else
+                            Color.DarkGray
+                    )
+                )
+            }
+            Spacer(modifier = Modifier.height(space.small))
+            Text(
+                text = dateWithScanlationText,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    color = if(!chapter.read)
+                        MaterialTheme.colorScheme.onBackground
+                    else
+                        Color.DarkGray
+                )
+            )
+        }
+        if (downloadProgress != null) {
+            CenterBox {
+                Icon(
+                    imageVector = Icons.Default.ArrowDownward,
+                    contentDescription = null
+                )
+                CircularProgressIndicator()
+            }
+        } else {
+            if (chapter.downloaded) {
+                IconButton(onClick = { onDeleteClicked() }) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null
+                    )
+                }
+            } else {
+                IconButton(onClick = { onDownloadClicked() }) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowCircleDown,
+                        contentDescription = null
                     )
                 }
             }

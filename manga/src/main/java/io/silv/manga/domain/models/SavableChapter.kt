@@ -73,8 +73,7 @@ data class SavableChapter(
         userToId = if (entity.user != null && entity.userId != null) { entity.user to entity.userId } else null,
         ableToDownload = entity.externalUrl == null || implementedImageSources.any { it in entity.externalUrl },
     )
-
-    val daysSinceCreated: Long
+    private val daysSinceCreated: Long
         get() = timeNow().minus(this.createdAt).inWholeDays
 
     val validNumber: Boolean

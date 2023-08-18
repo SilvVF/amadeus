@@ -184,7 +184,7 @@ fun MangaReaderContent(
                     }
                 },
                 onNavigationIconClick = {
-                     navigator?.pop()
+                    navigator?.pop()
                 },
                 chapter = state.chapter,
                 chapters = state.chapters,
@@ -201,14 +201,14 @@ fun MangaReaderContent(
                     Orientation.Horizontal -> horizontalReaderState.currentPage
                 },
                 mangaTitle = state.manga.titleEnglish,
-                onPrevClick = { 
+                onPrevClick = {
                     goToPrevChapter(state.chapter)
                     scope.launch {
                         horizontalReaderState.scrollToPage(0)
                         verticalReaderState.scrollToItem(0)
                     }
                 },
-                onNextClick = { 
+                onNextClick = {
                     goToNextChapter(state.chapter)
                     scope.launch {
                         horizontalReaderState.scrollToPage(0)
@@ -326,6 +326,7 @@ fun VerticalReader(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HorizontalReader(
     modifier: Modifier = Modifier,
@@ -345,7 +346,7 @@ fun HorizontalReader(
         reverseLayout = reverseLayout
     ) {
         if (it == 0) {
-            prev?.let { 
+            prev?.let {
                 CenterBox(Modifier.fillMaxSize()) {
                     Text("${it.title}  ch ${it.chapter}")
                 }
@@ -401,7 +402,7 @@ fun AnimatedPageNumber(
             state.animateScrollToPage(it)
         }
     }
-    
+
     var offset by remember {
         mutableStateOf(0.dp)
     }
@@ -439,14 +440,13 @@ fun AnimatedPageNumber(
                 }
         ) {
             if (hasPrev && pageCount == 0) {
-               Text(text = " ")
+                Text(text = " ")
             } else {
                 Text(
                     text = (page + if(!hasPrev) 1 else 0).toString(),
                     textAlign = TextAlign.Center
-                )   
+                )
             }
         }
     }
 }
-

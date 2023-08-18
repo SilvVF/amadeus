@@ -2,43 +2,65 @@ package io.silv.amadeus.ui.screens.manga_view
 
 import android.os.Parcelable
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.with
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.Checkbox
+import androidx.compose.material.CheckboxDefaults
+import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.Tab
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,8 +69,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
+import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
@@ -61,11 +85,13 @@ import io.silv.amadeus.ui.screens.manga_view.composables.MangaContent
 import io.silv.amadeus.ui.screens.manga_view.composables.WebViewOverlay
 import io.silv.amadeus.ui.screens.manga_view.composables.chapterListItems
 import io.silv.amadeus.ui.screens.manga_view.composables.volumePosterItems
+import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.shared.isScrollingUp
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.manga.domain.models.SavableManga
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 import org.koin.core.parameter.parametersOf
 
 
@@ -99,6 +125,30 @@ class MangaViewScreen(
             when (event) {
                 is MangaViewEvent.FailedToLoadChapterList -> showSnackBar(event.message)
                 is MangaViewEvent.FailedToLoadVolumeArt -> showSnackBar(event.message)
+                is MangaViewEvent.BookmarkStatusChanged -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = if (event.bookmarked) "Bookmarked" else "Removed Bookmark",
+                        withDismissAction = true,
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed -> sm.changeChapterBookmarked(event.id)
+                    }
+                }
+                is MangaViewEvent.ReadStatusChanged -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = if (event.read) "Marked as read" else "Marked as unread",
+                        withDismissAction = true,
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed -> sm.changeChapterReadStatus(event.id)
+                    }
+                }
             }
         }
 
@@ -138,6 +188,31 @@ class MangaViewScreen(
             }
         }
 
+        var showSourceTitle by rememberSaveable {
+            mutableStateOf(true)
+        }
+
+        var showFilterBottomSheet by rememberSaveable {
+            mutableStateOf(false)
+        }
+
+        FilterBottomSheet(
+            visible = showFilterBottomSheet,
+            filters = mangaViewState.filters,
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            onDismiss = { showFilterBottomSheet = false },
+            onSetAsDefaultClick = { sm.setFilterAsDefault() },
+            filterDownloaded = { sm.filterDownloaded() },
+            filterUnread = { sm.filterUnread() },
+            filterBookmarked = { sm.filterBookmarked() },
+            filterBySource = { sm.filterBySource() },
+            filterByChapterNumber = { sm.filterByChapterNumber() },
+            filterByUploadDate = { sm.filterByUploadDate() },
+            showingSourceTitle = showSourceTitle,
+            hideSourceTitle = { showSourceTitle = false },
+            showSourceTitle = { showSourceTitle = true }
+        )
+
         AmadeusScaffold(
             showBottomBar = false,
             scrollBehavior = scrollBehavior,
@@ -172,7 +247,7 @@ class MangaViewScreen(
                     ExtendedFloatingActionButton(
                         text = {
                             val text = remember(mangaViewState.chapters) {
-                                if (mangaViewState.chapters.fastAny { it.started }) {
+                                if (mangaViewState.chapters.fastAny { it.started || it.read }) {
                                     "Resume"
                                 } else {
                                     "Start"
@@ -194,7 +269,7 @@ class MangaViewScreen(
                                 )
                             )
                         },
-                        modifier = Modifier.padding(space.large),
+                        modifier = Modifier.padding(vertical = space.large),
                         expanded = listState.isScrollingUp(),
                     )
                 }
@@ -202,7 +277,9 @@ class MangaViewScreen(
         ) { paddingValues ->
             LazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .navigationBarsPadding()
             ) {
                 item {
                     MainPoster(
@@ -232,10 +309,11 @@ class MangaViewScreen(
                                 webUrl = "https://mangadex.org/title/${manga.id}"
                             }
                         )
-                        FilterDropdownMenu(
+                        FilterIcon(
                             modifier = Modifier.align(Alignment.End),
-                            sortedByAsc = mangaViewState.sortedByAscending,
-                            changeDirection = { sm.changeDirection() }
+                            onClick = {
+                                showFilterBottomSheet = !showFilterBottomSheet
+                            }
                         )
                     }
                 }
@@ -245,7 +323,6 @@ class MangaViewScreen(
                     onDownloadClicked = {
                         sm.downloadChapterImages(it)
                     },
-                    asc = mangaViewState.sortedByAscending,
                     onDeleteClicked = {
                         sm.deleteChapterImages(listOf(it))
                     },
@@ -253,22 +330,216 @@ class MangaViewScreen(
                         navigator?.push(
                             MangaReaderScreen(manga.id, it)
                         )
-                    }
+                    },
+                    onBookmark = sm::changeChapterBookmarked,
+                    onMarkAsRead = sm::changeChapterReadStatus
                 )
             }
         }
     }
 }
 
+@Serializable
+@Immutable
+data class Filters(
+    val downloaded: Boolean = false,
+    val unread: Boolean = false,
+    val bookmarked: Boolean = false,
+    val bySourceAsc: Boolean? = null,
+    val byChapterAsc: Boolean? = true,
+    val byUploadDateAsc: Boolean? = null,
+)
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
+    ExperimentalAnimationApi::class
+)
 @Composable
-private fun FilterDropdownMenu(
-    modifier: Modifier = Modifier,
-    sortedByAsc: Boolean,
-    changeDirection: () -> Unit
+fun FilterBottomSheet(
+    visible: Boolean,
+    filters: Filters,
+    sheetState: SheetState,
+    onSetAsDefaultClick: () -> Unit,
+    filterDownloaded: () -> Unit,
+    filterUnread: () -> Unit,
+    filterBookmarked: () -> Unit,
+    filterBySource: () -> Unit,
+    filterByChapterNumber: () -> Unit,
+    filterByUploadDate: () -> Unit,
+    showSourceTitle: () -> Unit,
+    hideSourceTitle: () -> Unit,
+    showingSourceTitle: Boolean,
+    onDismiss: () -> Unit,
 ) {
-    var showingFilter by rememberSaveable {
+    val space = LocalSpacing.current
+    var selectedTabIdx by rememberSaveable {
+        mutableStateOf(0)
+    }
+    var dropdownVisible by rememberSaveable {
         mutableStateOf(false)
     }
+
+    if (visible) {
+        ModalBottomSheet(
+            onDismissRequest = onDismiss,
+            sheetState = sheetState,
+            dragHandle = {}
+        ) {
+            TabRow(
+                selectedTabIndex = selectedTabIdx,
+                modifier = Modifier
+                    .padding(space.small)
+                    .fillMaxWidth(),
+            ) {
+                Tab(
+                    selected = selectedTabIdx == 0,
+                    onClick = { selectedTabIdx = 0 },
+                    text = { Text("Filter") }
+                )
+                Tab(
+                    selected = selectedTabIdx == 1,
+                    onClick = { selectedTabIdx = 1 },
+                    text = {
+                        Text("Sort")
+                    }
+                )
+                Tab(
+                    selected = selectedTabIdx == 2,
+                    onClick = { selectedTabIdx = 2 },
+                    text = {
+                        Text("Display")
+                    }
+                )
+                Box {
+                    IconButton(onClick = { dropdownVisible = !dropdownVisible }) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = null
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = dropdownVisible,
+                        onDismissRequest = { dropdownVisible = false }
+                    ) {
+                        DropdownMenuItem(onClick = onSetAsDefaultClick) {
+                            Text("Set as default")
+                        }
+                    }
+                }
+            }
+            AnimatedContent(
+                targetState = selectedTabIdx,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.25f),
+                transitionSpec = {
+                       if (initialState < targetState) {
+                           slideInHorizontally { it } with slideOutHorizontally { -it }
+                       } else {
+                           slideInHorizontally { -it } with slideOutHorizontally { it }
+                       }
+                },
+                label = "filter"
+            ) { idx ->
+                when (idx) {
+                    0 -> {
+                        val items by remember(filters) {
+                            derivedStateOf {
+                                listOf(
+                                    Triple("Downloaded", filters.downloaded, filterDownloaded),
+                                    Triple( "Unread", filters.unread, filterUnread),
+                                    Triple("Bookmarked", filters.bookmarked, filterBookmarked)
+                                )
+                            }
+                        }
+                        Column(Modifier.fillMaxWidth()) {
+                            items.fastForEach { (text, checked, action) ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth().clickable { action() }
+                                ) {
+                                    Checkbox(
+                                        checked = checked,
+                                        onCheckedChange = { action() },
+                                        enabled = true,
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = MaterialTheme.colorScheme.primary,
+                                            uncheckedColor = MaterialTheme.colorScheme.onBackground
+                                        )
+                                    )
+                                    Text(text)
+                                }
+                            }
+                        }
+                    }
+                    1 -> {
+                        val items by remember(filters) {
+                            derivedStateOf {
+                                listOf(
+                                    Triple("By source", filters.bySourceAsc, filterBySource),
+                                    Triple("By chapter number", filters.byChapterAsc, filterByChapterNumber),
+                                    Triple("By upload date", filters.byUploadDateAsc, filterByUploadDate)
+                                )
+                            }
+                        }
+                        Column(Modifier.fillMaxWidth()) {
+                          items.fastForEach { (text, ascending, action) ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth().clickable { action() }
+                                ) {
+                                    CenterBox(Modifier.size(42.dp)) {
+                                        if (ascending != null) {
+                                            IconButton(onClick = action) {
+                                                Icon(
+                                                    imageVector = if (ascending)
+                                                        Icons.Filled.ArrowUpward
+                                                    else Icons.Filled.ArrowDownward,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Text(text)
+                                }
+                            }
+                        }
+                    }
+                    2 -> {
+                        val items by remember(showingSourceTitle) {
+                            derivedStateOf {
+                                listOf(
+                                    Triple("Source Title", showingSourceTitle, showSourceTitle),
+                                    Triple("Chapter number",!showingSourceTitle, hideSourceTitle)
+                                )
+                            }
+                        }
+                        Column(Modifier.fillMaxWidth()) {
+                           items.fastForEach { (text, selected, action) ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth().clickable { action() }
+                                ) {
+                                    RadioButton(
+                                        selected = selected,
+                                        onClick = action
+                                    )
+                                    Text(text)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilterIcon(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
     val space = LocalSpacing.current
     Box(
         modifier = modifier,
@@ -277,7 +548,7 @@ private fun FilterDropdownMenu(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.small)) {
             Text("filter")
             IconButton(
-                onClick = { showingFilter = !showingFilter },
+                onClick = onClick,
                 Modifier
             ) {
                 Icon(
@@ -285,20 +556,6 @@ private fun FilterDropdownMenu(
                     contentDescription = null
                 )
             }
-        }
-        DropdownMenu(
-            expanded = showingFilter,
-            onDismissRequest = { showingFilter = false },
-
-            ) {
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        text = if (sortedByAsc) "ascending" else "descending"
-                    )
-                },
-                onClick = changeDirection,
-            )
         }
     }
 }

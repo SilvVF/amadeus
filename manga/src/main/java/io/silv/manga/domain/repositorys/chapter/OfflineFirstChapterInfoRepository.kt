@@ -58,14 +58,24 @@ internal class OfflineFirstChapterInfoRepository(
         }
     }
 
+    override suspend fun updateChapter(id: String, copy: (ChapterEntity) -> ChapterEntity) {
+        withContext(dispatchers.io) {
+            chapterDao.getChapterById(id)?.let { prev ->
+                chapterDao.updateChapter(
+                    copy(prev)
+                )
+            }
+        }
+    }
+
     override suspend fun updateLastReadPage(chapterId: String, page: Int, lastPage: Int) {
         withContext(dispatchers.io) {
             chapterDao.getChapterById(chapterId)?.let {
                 chapterDao.updateChapter(
                     it.copy(
-                        lastPageRead = page,
+                        lastPageRead = page.coerceAtMost(lastPage),
                         pages = lastPage,
-                        progressState = if (page == lastPage) ProgressState.Finished else ProgressState.Reading
+                        progressState = if (page >= lastPage) ProgressState.Finished else ProgressState.Reading
                     )
                 )
             }

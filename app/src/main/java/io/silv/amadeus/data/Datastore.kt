@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import io.silv.amadeus.ui.screens.manga_view.Filters
 import io.silv.core.AmadeusDispatchers
 import io.silv.manga.domain.suspendRunCatching
 import kotlinx.coroutines.flow.Flow
@@ -20,7 +21,11 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "us
 
 interface UserSettingsStore {
 
+    suspend fun updateDefaultFilter(filters: Filters): Boolean
+
     suspend fun updateReaderSettings(readerSettings: ReaderSettings): Boolean
+
+    fun observeDefaultFilter(): Flow<Filters>
 
     fun observeReaderSettings(): Flow<ReaderSettings>
 
@@ -36,6 +41,17 @@ class UserSettingsStoreImpl(
     private val dispatchers: AmadeusDispatchers
 ): UserSettingsStore {
 
+    override suspend fun updateDefaultFilter(filters: Filters): Boolean = suspendRunCatching {
+        withContext(dispatchers.io) {
+            dataStore.edit { prefs ->
+                prefs[defaultFiltersKey] = json.encodeToString(
+                    Filters.serializer(),
+                    filters
+                )
+            }
+        }
+    }
+        .isSuccess
 
 
     override suspend fun updateReaderSettings(readerSettings: ReaderSettings) = suspendRunCatching {
@@ -49,6 +65,15 @@ class UserSettingsStoreImpl(
         }
     }
         .isSuccess
+
+    override fun observeDefaultFilter(): Flow<Filters> {
+        return dataStore.data.map { prefs ->
+            json.decodeFromString(
+                prefs[defaultFiltersKey] ?: return@map Filters()
+            )
+        }
+            .flowOn(dispatchers.io)
+    }
 
     override fun observeReaderSettings(): Flow<ReaderSettings> {
         return dataStore.data.map { prefs ->
@@ -77,6 +102,7 @@ class UserSettingsStoreImpl(
 
 
     companion object {
+        private val defaultFiltersKey = stringPreferencesKey("default_filter_key")
         private val languageCodeKey = stringPreferencesKey("language_code_key")
         private val readerSettingsKey = stringPreferencesKey("reader_settings_key")
     }

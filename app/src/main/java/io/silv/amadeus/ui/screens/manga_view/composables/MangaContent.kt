@@ -150,10 +150,19 @@ private fun MangaActions(
                     } else {
                         Icons.Outlined.FavoriteBorder
                     },
-                    contentDescription = null
+                    contentDescription = null,
+                    tint = if(bookmarked) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onBackground
                 )
             }
-            Text(text = "Add to library", style = MaterialTheme.typography.labelMedium)
+            Text(
+                text = if (bookmarked) "Added to library" else "Add to library",
+                style = MaterialTheme.typography.labelMedium
+                    .copy(
+                        color = if(bookmarked) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onBackground
+                    )
+            )
         }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

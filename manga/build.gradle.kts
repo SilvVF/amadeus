@@ -8,12 +8,10 @@ plugins {
 
 android {
     namespace = "io.silv.manga"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         minSdk = 28
-        targetSdk = 33
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -51,11 +49,11 @@ dependencies {
     implementation(libs.flow.combinetuple.kt)
     implementation(libs.tuples.kt)
 
-    implementation("androidx.paging:paging-compose:3.2.0")
+    implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.common)
     // optional - Paging 3 Integration
-    implementation("androidx.room:room-paging:2.5.2")
+    implementation(libs.androidx.room.paging)
 
     //ROOM
     ksp(libs.room.ksp)

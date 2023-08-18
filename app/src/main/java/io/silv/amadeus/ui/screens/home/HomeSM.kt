@@ -1,5 +1,6 @@
 package io.silv.amadeus.ui.screens.home
 
+import androidx.compose.runtime.Stable
 import androidx.paging.cachedIn
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.coroutineScope
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.annotation.concurrent.Immutable
 
 class HomeSM(
     recentMangaRepository: RecentMangaRepository,
@@ -56,6 +58,7 @@ class HomeSM(
         }
             .cachedIn(coroutineScope)
 
+    @Stable
     val searchMangaPagingFlow = combineTuple(
         mangaSearchFlow,
         savedMangaRepository.getSavedMangas(),
@@ -65,6 +68,7 @@ class HomeSM(
         }
     }
 
+    @Stable
     val popularMangaPagingFlow = combineTuple(
         popularMangaRepository.pager.flow.cachedIn(coroutineScope),
         savedMangaRepository.getSavedMangas()
@@ -73,6 +77,7 @@ class HomeSM(
             pagingData.map { SavableManga(it, saved.find { s -> s.id == it.id }) }
         }
 
+    @Stable
     val recentMangaPagingFlow = combineTuple(
         recentMangaRepository.pager.flow.cachedIn(coroutineScope),
         savedMangaRepository.getSavedMangas(),
@@ -82,6 +87,7 @@ class HomeSM(
 
 
 
+    @Stable
     val seasonalMangaUiState = combineTuple(
         seasonalMangaRepository.getSeasonalLists(),
         savedMangaRepository.getSavedMangas()
@@ -118,25 +124,12 @@ class HomeSM(
 }
 
 
+@Stable
+@Immutable
 data class SeasonalMangaUiState(
     val seasonalLists: List<SeasonalList> = emptyList()
 )
 
-sealed class PaginatedListState<out T>() {
-    object Refreshing: PaginatedListState<Nothing>()
-    data class Success<T>(val data: T, val end: Boolean = false, val loading: Boolean = false): PaginatedListState<T>()
-    data class Error<T>(val data: T, val message: String) : PaginatedListState<T>()
-
-    val getData: T?
-        get() = when(this) {
-            is Error -> this.data
-            Refreshing -> null
-            is Success -> this.data
-        }
-
-    val success: Success<out T>?
-        get() = this as? Success<T>
-}
 
 data class SeasonalList(
     val id: String,

@@ -20,13 +20,16 @@ lifecycleRuntimeKtx = "2.6.1"
 material = "1.9.0"
 material3WindowSizeClass = "1.1.1"
 materialIconsExtended = "1.4.3"
+materialVersion = "1.4.0"
 navVersion = "2.6.0"
 okhttp = "4.11.0"
 okhttpDnsoverhttps = "4.11.0"
 okio = "3.5.0"
 orbital = "0.2.4"
 pagingCommon = "3.1.1"
+pagingCompose = "3.2.0"
 pagingRuntime = "3.1.1"
+roomPaging = "2.5.2"
 testJunit = "1.1.5"
 junit= "4.13.2"
 koinVersion="3.4.0"
@@ -45,6 +48,10 @@ workRuntimeKtx = "2.9.0-alpha01"
 workRuntimeKtxVersion = "2.8.1"
 workRxjava2 = "2.9.0-alpha01"
 workTesting = "2.9.0-alpha01"
+agp = "8.1.0"
+uiautomator = "2.2.0"
+benchmark-macro-junit4 = "1.1.1"
+org-jetbrains-kotlin-android = "1.8.20"
 
 [libraries]
 accompanist-webview = { module = "com.google.accompanist:accompanist-webview", version.ref = "accompanistWebview" }
@@ -63,11 +70,14 @@ androidx-compose-ui-test-junit={module="androidx.compose.ui:ui-test-junit4"}
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleRuntimeCompose" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-material = { module = "androidx.compose.material:material", version.ref = "materialVersion" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-material3-window-size = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "material3WindowSizeClass" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navVersion" }
 androidx-paging-common = { module = "androidx.paging:paging-common", version.ref = "pagingCommon" }
+androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "pagingCompose" }
 androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "pagingRuntime" }
+androidx-room-paging = { module = "androidx.room:room-paging", version.ref = "roomPaging" }
 androidx-work-gcm = { module = "androidx.work:work-gcm", version.ref = "workGcm" }
 androidx-work-multiprocess = { module = "androidx.work:work-multiprocess", version.ref = "workMultiprocess" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
@@ -125,5 +135,9 @@ ktor-serialization-json={module="io.ktor:ktor-serialization-kotlinx-json", versi
 kotlin-serialization={module="org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref="kotlinserialization"}
 ktor-logging={module="io.ktor:ktor-client-logging", version.ref="ktor"}
 ktor-contentnegotiation={module="io.ktor:ktor-client-content-negotiation", version.ref="ktor"}
+uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmark-macro-junit4" }
 
 [plugins]
+com-android-test = { id = "com.android.test", version.ref = "agp" }
+org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "org-jetbrains-kotlin-android" }

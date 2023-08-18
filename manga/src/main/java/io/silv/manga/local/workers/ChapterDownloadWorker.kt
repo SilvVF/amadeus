@@ -76,10 +76,20 @@ class ChapterDownloadWorker(
                             pages = imageUrls.size
                         )
                     )
+                    val newProgress = chapter.id to (index * 4 + uris.size) / imageUrls.size.toFloat()
+                    downloadingIdToProgress.update {
+                        it.map { (id, progress) ->
+                            if (id == chapter.id) {
+                                newProgress
+                            } else {
+                                id to progress
+                            }
+                        }
+                    }
                 }
             }
         }
-        downloadingIds.update { it - chapter.id }
+        downloadingIdToProgress.update { it.filter { p -> p.first != chapter.id } }
         return if (result.isSuccess) {
             Result.success()
         } else  {
@@ -98,7 +108,7 @@ class ChapterDownloadWorker(
 
         Log.d(logTag, "starting work with $mangaId manga id $chaptersToGet chapter ids")
 
-        downloadingIds.update { it + chaptersToGet }
+        downloadingIdToProgress.update { it + chaptersToGet.map { c -> c to 0f } }
 
         if(!saveMangaIfNotSaved(mangaId)) {
             Log.d(logTag, "failed to find resource")
@@ -153,8 +163,18 @@ class ChapterDownloadWorker(
                                 pages = chapterImageUrls.size
                             )
                         )
+                        val newProgress = chapter.id to (index * 4 + uris.size) / chapterImageUrls.size.toFloat()
+                        downloadingIdToProgress.update {
+                            it.map { (id, progress) ->
+                                if (id == chapter.id) {
+                                   newProgress
+                                } else {
+                                    id to progress
+                                }
+                            }
+                        }
                     }
-                    downloadingIds.update { it - chapter.id }
+                    downloadingIdToProgress.update { it.filter { p -> p.first != chapter.id } }
                 }
         }
         return if (result.isSuccess)
@@ -168,7 +188,7 @@ class ChapterDownloadWorker(
         const val CHAPTERS_KEY = "CHAPTERS_KEY"
         const val IMAGES_URLS_KEY = "IMAGES_URLS_KEY"
 
-        val downloadingIds = MutableStateFlow<List<String>>(emptyList())
+        val downloadingIdToProgress = MutableStateFlow<List<Pair<String, Float>>>(emptyList())
 
         // All sync work needs an internet connectionS
         private val SyncConstraints

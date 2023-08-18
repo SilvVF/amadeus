@@ -15,6 +15,7 @@
             <option value="$PROJECT_DIR$/app/ktor-response-mapper" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/ktor-response-mapper" />
+            <option value="$PROJECT_DIR$/macrobenchmark" />
             <option value="$PROJECT_DIR$/manga" />
           </set>
         </option>

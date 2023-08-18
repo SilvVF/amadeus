@@ -6,7 +6,6 @@ import io.silv.amadeus.ui.screens.manga_filter.MangaFilterSM
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderSM
 import io.silv.amadeus.ui.screens.manga_view.MangaViewSM
 import io.silv.amadeus.ui.screens.search.SearchSM
-import io.silv.manga.domain.models.SavableManga
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
@@ -14,35 +13,11 @@ val screenModule = module {
 
     factoryOf(::LibrarySM)
 
-    factory {  (mangaId: String, chapterId: String) ->
-        MangaReaderSM(
-            get(),
-            get(),
-            get(),
-            get(),
-            mangaId,
-            chapterId,
-        )
-    }
+    factoryOf(::MangaReaderSM)
 
-    factory { (manga: SavableManga) ->
-        MangaViewSM(
-            get(),
-            get(),
-            get(),
-            get(),
-            manga
-        )
-    }
+    factoryOf(::MangaViewSM)
 
-    factory { (tagId: String) ->
-        MangaFilterSM(
-            get(),
-            get(),
-            get(),
-            tagId
-        )
-    }
+    factoryOf(::MangaFilterSM)
 
     factoryOf(::SearchSM)
 

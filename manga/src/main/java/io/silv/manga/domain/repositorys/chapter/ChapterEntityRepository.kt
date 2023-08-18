@@ -10,6 +10,8 @@ interface ChapterEntityRepository: Syncable {
 
     suspend fun bookmarkChapter(id: String)
 
+    suspend fun updateChapter(id: String, copy: (ChapterEntity) -> ChapterEntity)
+
     suspend fun updateLastReadPage(chapterId: String, page: Int, lastPage: Int)
 
     suspend fun saveChapters(ids: List<String>): Boolean

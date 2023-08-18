@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "io.silv.amadeus"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "io.silv.amadeus"
         minSdk = 28
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -24,13 +24,28 @@ android {
     }
 
     buildTypes {
-        getByName("debug") {
-            isDebuggable = true
-        }
-        getByName("release") {
+        val release = getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            // In real app, this would use its own release keystore
+            signingConfig = signingConfigs.getByName("debug")
+        }
+
+        create("benchmark") {
+            initWith(release)
+            signingConfig = signingConfigs.getByName("debug")
+            // [START_EXCLUDE silent]
+            // Selects release buildType if the benchmark buildType not available in other modules.
+            matchingFallbacks.add("release")
+            // [END_EXCLUDE]
+            proguardFiles("benchmark-rules.pro")
+        }
+        getByName("debug") {
+            isDebuggable = true
         }
     }
     compileOptions {
@@ -73,7 +88,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
-    implementation("androidx.compose.material:material:1.4.0")
+    implementation(libs.androidx.material)
     androidTestImplementation(libs.androidx.compose.ui.test.junit)
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
@@ -84,11 +99,11 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    implementation("androidx.paging:paging-compose:3.2.0")
+    implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.common)
     // optional - Paging 3 Integration
-    implementation("androidx.room:room-paging:2.5.2")
+    implementation(libs.androidx.room.paging)
 
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.animation:animation-graphics")

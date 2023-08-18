@@ -41,7 +41,7 @@ class MangaReaderSM(
     val mangaReaderState = combineTuple(
         chapterId,
         getCombinedSavableMangaWithChapters(mangaId),
-        ChapterDownloadWorker.downloadingIds.asStateFlow()
+        ChapterDownloadWorker.downloadingIdToProgress.asStateFlow()
     ).map { (chapterId, savableWithChapters, downloadingIds) ->
             val (manga, chapters) = savableWithChapters
             if (manga == null) {
@@ -51,7 +51,7 @@ class MangaReaderSM(
             val sortedChapters = chapters
                 .map { SavableChapter(it) }
                 .sortedBy { it.chapter }
-            if (chapter.downloaded || chapter.id in downloadingIds) {
+            if (chapter.downloaded || chapter.id in downloadingIds.map { it.first }) {
                 MangaReaderState.Success(
                     manga = manga,
                     chapter = SavableChapter(chapter),

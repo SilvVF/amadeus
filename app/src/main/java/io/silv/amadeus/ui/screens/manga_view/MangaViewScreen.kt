@@ -265,7 +265,7 @@ class MangaViewScreen(
                             navigator?.push(
                                 MangaReaderScreen(
                                     mangaId = lastUnread.mangaId,
-                                    chapterId = lastUnread.id
+                                    initialChapterId = lastUnread.id
                                 )
                             )
                         },

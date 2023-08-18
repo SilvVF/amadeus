@@ -176,7 +176,7 @@ class LibraryScreen: Screen {
                                     navigator?.push(
                                         MangaReaderScreen(
                                             mangaId = manga.id,
-                                            chapterId = it.id
+                                            initialChapterId = it.id
                                         )
                                     )
                                 }

@@ -62,7 +62,7 @@ import kotlin.math.absoluteValue
 
 class MangaReaderScreen(
     private val mangaId: String,
-    private val chapterId: String,
+    private val initialChapterId: String,
 ): Screen {
 
 
@@ -70,7 +70,7 @@ class MangaReaderScreen(
     override fun Content() {
 
         val sm = getScreenModel<MangaReaderSM>() {
-            parametersOf(mangaId, chapterId)
+            parametersOf(mangaId, initialChapterId)
         }
 
         val state by sm.mangaReaderState.collectAsStateWithLifecycle()

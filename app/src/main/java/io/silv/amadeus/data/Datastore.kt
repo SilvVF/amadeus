@@ -8,7 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import io.silv.amadeus.ui.screens.manga_view.Filters
 import io.silv.core.AmadeusDispatchers
-import io.silv.manga.domain.suspendRunCatching
+import io.silv.manga.repositorys.suspendRunCatching
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map

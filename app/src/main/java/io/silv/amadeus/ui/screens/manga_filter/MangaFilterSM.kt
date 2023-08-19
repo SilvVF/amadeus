@@ -8,13 +8,13 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.coroutineScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
+import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.domain.models.SavableManga
-import io.silv.manga.domain.repositorys.FilteredMangaRepository
-import io.silv.manga.domain.repositorys.FilteredResourceQuery
-import io.silv.manga.domain.repositorys.FilteredYearlyMangaRepository
-import io.silv.manga.domain.repositorys.SavedMangaRepository
-import io.silv.manga.domain.repositorys.base.LoadState
+import io.silv.manga.repositorys.LoadState
+import io.silv.manga.repositorys.manga.FilteredMangaRepository
+import io.silv.manga.repositorys.manga.FilteredResourceQuery
+import io.silv.manga.repositorys.manga.FilteredYearlyMangaRepository
+import io.silv.manga.repositorys.manga.SavedMangaRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -102,10 +102,5 @@ class MangaFilterSM(
 sealed class YearlyFilteredUiState(open val resources: List<SavableManga>) {
     object Loading: YearlyFilteredUiState(emptyList())
     data class Success(override val resources: List<SavableManga>): YearlyFilteredUiState(resources)
-}
-
-sealed class TimeFilteredUiState(open val resources: List<SavableManga>) {
-    object Loading: TimeFilteredUiState(emptyList())
-    data class Success(override val resources: List<SavableManga>): TimeFilteredUiState(resources)
 }
 

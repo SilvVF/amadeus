@@ -7,7 +7,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import io.silv.manga.local.entity.QuickSearchMangaResource
+import io.silv.manga.local.entity.manga_resource.QuickSearchMangaResource
 import kotlinx.coroutines.flow.Flow
 
 @Dao

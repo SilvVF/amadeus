@@ -1,13 +1,8 @@
 package io.silv.amadeus.ui.stateholders
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import io.silv.manga.domain.models.SavableChapter
+import io.silv.amadeus.types.SavableChapter
 
 class SortedChapters(
     private val chapters: List<SavableChapter>,
@@ -52,21 +47,3 @@ class SortedChapters(
     }
 }
 
-@Composable
-fun rememberSortedChapters(
-    chapters: List<SavableChapter>,
-): SortedChapters {
-
-    var sortBy by rememberSaveable {
-        mutableStateOf(SortedChapters.SortBy.Asc)
-    }
-
-    return remember(chapters, sortBy) {
-        SortedChapters(
-            chapters, sortBy,
-            onSortByChange = {
-                sortBy = it
-            }
-        )
-    }
-}

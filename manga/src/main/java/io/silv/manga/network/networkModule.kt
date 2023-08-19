@@ -6,11 +6,11 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
 import io.silv.ktor_response_mapper.client.KSandwichClient
-import io.silv.manga.local.workers.handlers.AzukiHandler
-import io.silv.manga.local.workers.handlers.BiliHandler
-import io.silv.manga.local.workers.handlers.ComikeyHandler
-import io.silv.manga.local.workers.handlers.MangaHotHandler
-import io.silv.manga.local.workers.handlers.MangaPlusHandler
+import io.silv.manga.local.workers.third_party_image_fetchers.AzukiHandler
+import io.silv.manga.local.workers.third_party_image_fetchers.BiliHandler
+import io.silv.manga.local.workers.third_party_image_fetchers.ComikeyHandler
+import io.silv.manga.local.workers.third_party_image_fetchers.MangaHotHandler
+import io.silv.manga.local.workers.third_party_image_fetchers.MangaPlusHandler
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.MangaDexTestApi
 import kotlinx.serialization.json.Json

@@ -50,7 +50,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import io.silv.amadeus.data.ReaderSettings
 import io.silv.amadeus.ui.composables.getSize
-import io.silv.manga.domain.models.SavableChapter
+import io.silv.amadeus.types.SavableChapter
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

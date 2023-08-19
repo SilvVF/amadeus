@@ -1,6 +1,7 @@
 package io.silv.amadeus
 
 import io.silv.amadeus.data.dataModule
+import io.silv.amadeus.manga_usecase.useCaseModule
 import io.silv.amadeus.ui.screens.screenModule
 import io.silv.core.AmadeusDispatchers
 import io.silv.manga.mangaModule
@@ -12,10 +13,10 @@ val appModule = module {
         screenModule,
         mangaModule,
         dataModule,
-        //testModule
+        useCaseModule
     )
 
-    single<AmadeusDispatchers> {
+    single {
         AmadeusDispatchers.default
     }
 }

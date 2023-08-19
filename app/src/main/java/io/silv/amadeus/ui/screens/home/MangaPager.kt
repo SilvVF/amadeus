@@ -43,7 +43,7 @@ import io.silv.amadeus.ui.composables.MangaGenreTags
 import io.silv.amadeus.ui.composables.TranslatedLanguageTags
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.SavableManga
+import io.silv.amadeus.types.SavableManga
 import kotlinx.coroutines.launch
 
 

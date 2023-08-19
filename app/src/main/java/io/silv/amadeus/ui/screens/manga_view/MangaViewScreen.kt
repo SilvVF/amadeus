@@ -89,7 +89,7 @@ import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.shared.isScrollingUp
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.SavableManga
+import io.silv.amadeus.types.SavableManga
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 import org.koin.core.parameter.parametersOf

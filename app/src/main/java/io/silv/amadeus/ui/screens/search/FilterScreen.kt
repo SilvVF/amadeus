@@ -95,9 +95,9 @@ import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.DomainAuthor
-import io.silv.manga.domain.models.DomainTag
-import io.silv.manga.domain.repositorys.people.QueryResult
+import io.silv.amadeus.types.DomainAuthor
+import io.silv.amadeus.types.DomainTag
+import io.silv.manga.repositorys.author.QueryResult
 import io.silv.manga.network.mangadex.models.ContentRating
 import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status

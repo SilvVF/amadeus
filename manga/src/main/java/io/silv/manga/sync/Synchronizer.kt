@@ -1,8 +1,8 @@
 package io.silv.manga.sync
 
-import io.silv.manga.domain.epochSeconds
-import io.silv.manga.domain.suspendRunCatching
 import io.silv.manga.local.entity.AmadeusEntity
+import io.silv.manga.repositorys.epochSeconds
+import io.silv.manga.repositorys.suspendRunCatching
 import java.time.Duration
 
 interface Synchronizer {
@@ -13,7 +13,7 @@ interface Synchronizer {
     suspend fun Syncable.sync() = this@sync.syncWith(this@Synchronizer)
 }
 
-internal suspend fun <Key, Local: AmadeusEntity<Key>, Network> Synchronizer.syncVersions(
+internal suspend fun <Key, Local: AmadeusEntity<Key>, Network> syncVersions(
     getLocalWithVersions: suspend () -> List<Pair<Int, Local>>,
     getNetworkWithVersion: suspend () -> List<Pair<Int, Network>>,
     networkToKey: (Network) -> Key,
@@ -32,7 +32,7 @@ internal suspend fun <Key, Local: AmadeusEntity<Key>, Network> Synchronizer.sync
        val networkWithKey = network.map { it to networkToKey(it.second) }
        local.forEach { (version, entity) ->
            val networkValue = networkWithKey.find { it.second == entity.id }
-           networkValue?.let { (pair, key) ->
+           networkValue?.let { (pair, _) ->
                val (networkVersion, _) = pair
                if (networkVersion > version)  {
                    toUpdate.add(pair.second to entity)

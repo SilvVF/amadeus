@@ -15,15 +15,15 @@ import io.silv.manga.local.dao.SeasonalListDao
 import io.silv.manga.local.dao.SeasonalMangaResourceDao
 import io.silv.manga.local.dao.TagDao
 import io.silv.manga.local.entity.ChapterEntity
-import io.silv.manga.local.entity.FilteredMangaResource
-import io.silv.manga.local.entity.FilteredMangaYearlyResource
-import io.silv.manga.local.entity.PopularMangaResource
-import io.silv.manga.local.entity.QuickSearchMangaResource
-import io.silv.manga.local.entity.RecentMangaResource
+import io.silv.manga.local.entity.manga_resource.FilteredMangaResource
+import io.silv.manga.local.entity.manga_resource.FilteredMangaYearlyResource
+import io.silv.manga.local.entity.manga_resource.PopularMangaResource
+import io.silv.manga.local.entity.manga_resource.QuickSearchMangaResource
+import io.silv.manga.local.entity.manga_resource.RecentMangaResource
 import io.silv.manga.local.entity.SavedMangaEntity
-import io.silv.manga.local.entity.SearchMangaResource
+import io.silv.manga.local.entity.manga_resource.SearchMangaResource
 import io.silv.manga.local.entity.SeasonalListEntity
-import io.silv.manga.local.entity.SeasonalMangaResource
+import io.silv.manga.local.entity.manga_resource.SeasonalMangaResource
 import io.silv.manga.local.entity.TagEntity
 import io.silv.manga.local.entity.converters.Converters
 

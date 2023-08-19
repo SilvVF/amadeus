@@ -48,7 +48,7 @@ import io.silv.amadeus.ui.screens.home.MangaPager
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.repositorys.FilteredMangaRepository
+import io.silv.manga.repositorys.manga.FilteredMangaRepository
 import org.koin.core.parameter.parametersOf
 
 class MangaFilterScreen(

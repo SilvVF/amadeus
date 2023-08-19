@@ -7,22 +7,21 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.coroutineScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
+import io.silv.amadeus.types.DomainAuthor
+import io.silv.amadeus.types.DomainTag
+import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.amadeus.ui.shared.Language
-import io.silv.manga.domain.models.DomainAuthor
-import io.silv.manga.domain.models.DomainTag
-import io.silv.manga.domain.models.SavableManga
-import io.silv.manga.domain.repositorys.SavedMangaRepository
-import io.silv.manga.domain.repositorys.SearchMangaRepository
-import io.silv.manga.domain.repositorys.SearchMangaResourceQuery
-import io.silv.manga.domain.repositorys.people.ArtistListRepository
-import io.silv.manga.domain.repositorys.people.AuthorListRepository
-import io.silv.manga.domain.repositorys.people.QueryResult
-import io.silv.manga.domain.repositorys.tags.TagRepository
 import io.silv.manga.network.mangadex.models.ContentRating
 import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status
 import io.silv.manga.network.mangadex.requests.MangaRequest
+import io.silv.manga.repositorys.author.AuthorListRepository
+import io.silv.manga.repositorys.author.QueryResult
+import io.silv.manga.repositorys.manga.SavedMangaRepository
+import io.silv.manga.repositorys.manga.SearchMangaRepository
+import io.silv.manga.repositorys.manga.SearchMangaResourceQuery
+import io.silv.manga.repositorys.tags.TagRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,7 +38,6 @@ class SearchSM(
     tagRepository: TagRepository,
     private val savedMangaRepository: SavedMangaRepository,
     private val authorListRepository: AuthorListRepository,
-    private val artistListRepository: ArtistListRepository
 ): AmadeusScreenModel<SearchEvent>() {
 
     val status = Status.values().toList()
@@ -102,7 +100,19 @@ class SearchSM(
             if (it.isNotBlank()) 800L else 0L
         }
         .flatMapLatest { query ->
-            authorListRepository.getAuthorList(query)
+            authorListRepository.getAuthorList(query).map { response ->
+                when (response) {
+                    is QueryResult.Done -> QueryResult.Done(
+                        response.result.map { author ->
+                            DomainAuthor(
+                                name = author.attributes.name,
+                                id = author.id
+                            )
+                        }
+                    )
+                    QueryResult.Loading -> QueryResult.Loading
+                }
+            }
         }
         .stateInUi(QueryResult.Done(emptyList()))
 
@@ -112,7 +122,19 @@ class SearchSM(
             if (it.isNotBlank()) 800L else 0L
         }
         .flatMapLatest { query ->
-            artistListRepository.getArtistList(query)
+            authorListRepository.getAuthorList(query).map { response ->
+                when (response) {
+                    is QueryResult.Done -> QueryResult.Done(
+                        response.result.map { author ->
+                            DomainAuthor(
+                                name = author.attributes.name,
+                                id = author.id
+                            )
+                        }
+                    )
+                    QueryResult.Loading -> QueryResult.Loading
+                }
+            }
         }
         .stateInUi(QueryResult.Done(emptyList()))
 

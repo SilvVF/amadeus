@@ -10,15 +10,15 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.core.pmap
-import io.silv.manga.domain.repositorys.chapter.ChapterEntityRepository
-import io.silv.manga.domain.repositorys.SavedMangaRepository
+import io.silv.manga.repositorys.chapter.ChapterEntityRepository
+import io.silv.manga.repositorys.manga.SavedMangaRepository
 import io.silv.manga.sync.Synchronizer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Duration
 
 internal class MangaSyncWorker(
-    private val appContext: Context,
+    appContext: Context,
     workerParams: WorkerParameters,
 ): CoroutineWorker(appContext, workerParams), Synchronizer, KoinComponent {
 

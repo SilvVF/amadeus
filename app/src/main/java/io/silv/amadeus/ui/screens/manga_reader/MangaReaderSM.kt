@@ -5,15 +5,14 @@ import cafe.adriel.voyager.core.model.coroutineScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.amadeus.data.ReaderSettings
 import io.silv.amadeus.data.UserSettingsStore
+import io.silv.amadeus.manga_usecase.GetCombinedSavableMangaWithChapters
+import io.silv.amadeus.types.SavableChapter
+import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.domain.models.SavableChapter
-import io.silv.manga.domain.models.SavableManga
-import io.silv.manga.domain.repositorys.base.Resource
-import io.silv.manga.domain.repositorys.chapter.ChapterEntityRepository
-import io.silv.manga.domain.repositorys.chapter.ChapterImageRepository
-import io.silv.manga.domain.usecase.GetCombinedSavableMangaWithChapters
 import io.silv.manga.local.workers.ChapterDownloadWorker
 import io.silv.manga.network.mangadex.models.chapter.Chapter
+import io.silv.manga.repositorys.chapter.ChapterEntityRepository
+import io.silv.manga.repositorys.chapter.ChapterImageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.conflate
@@ -60,11 +59,11 @@ class MangaReaderSM(
                 )
             } else {
                 chapterImageRepository.getChapterImages(chapterId)
-                    .fold<Resource<Pair<Chapter, List<String>>>, MangaReaderState>(MangaReaderState.Loading) { _, resource ->
+                    .fold<io.silv.manga.repositorys.Resource<Pair<Chapter, List<String>>>, MangaReaderState>(MangaReaderState.Loading) { _, resource ->
                     when (resource) {
-                        is Resource.Failure -> MangaReaderState.Failure(resource.message)
-                        Resource.Loading -> MangaReaderState.Loading
-                        is Resource.Success -> MangaReaderState.Success(
+                        is io.silv.manga.repositorys.Resource.Failure -> MangaReaderState.Failure(resource.message)
+                        io.silv.manga.repositorys.Resource.Loading -> MangaReaderState.Loading
+                        is io.silv.manga.repositorys.Resource.Success -> MangaReaderState.Success(
                             manga = manga,
                             chapter = SavableChapter(chapter),
                             chapters = sortedChapters,

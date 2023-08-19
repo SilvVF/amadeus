@@ -27,7 +27,7 @@ import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.SavableManga
+import io.silv.amadeus.types.SavableManga
 
 @OptIn(ExperimentalMaterial3Api::class)
 fun LazyListScope.seasonalMangaLists(

@@ -6,13 +6,12 @@ import androidx.paging.map
 import cafe.adriel.voyager.core.model.coroutineScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.domain.models.SavableManga
-import io.silv.manga.domain.repositorys.PopularMangaRepository
-import io.silv.manga.domain.repositorys.QuickSearchMangaRepository
-import io.silv.manga.domain.repositorys.RecentMangaRepository
-import io.silv.manga.domain.repositorys.SavedMangaRepository
-import io.silv.manga.domain.repositorys.SeasonalMangaRepository
-import io.silv.manga.domain.repositorys.base.LoadState
+import io.silv.amadeus.types.SavableManga
+import io.silv.manga.repositorys.manga.PopularMangaRepository
+import io.silv.manga.repositorys.manga.QuickSearchMangaRepository
+import io.silv.manga.repositorys.manga.RecentMangaRepository
+import io.silv.manga.repositorys.manga.SavedMangaRepository
+import io.silv.manga.repositorys.manga.SeasonalMangaRepository
 import io.silv.manga.local.entity.Season
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -38,7 +37,7 @@ class HomeSM(
     val searchQuery = mutableSearchQuery.asStateFlow()
 
     val refreshingSeasonal = seasonalMangaRepository.loadState
-        .map { it is LoadState.Refreshing }
+        .map { it is io.silv.manga.repositorys.LoadState.Refreshing }
         .stateInUi(false)
 
     private val forceSearchFlow = MutableStateFlow(false)

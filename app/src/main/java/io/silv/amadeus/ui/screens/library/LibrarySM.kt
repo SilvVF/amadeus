@@ -1,9 +1,9 @@
 package io.silv.amadeus.ui.screens.library
 
+import io.silv.amadeus.manga_usecase.GetSavedMangaWithChaptersList
+import io.silv.amadeus.types.SavableChapter
+import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.domain.models.SavableChapter
-import io.silv.manga.domain.models.SavableManga
-import io.silv.manga.domain.usecase.GetSavedMangaWithChaptersList
 import io.silv.manga.local.entity.ProgressState
 import kotlinx.coroutines.flow.map
 

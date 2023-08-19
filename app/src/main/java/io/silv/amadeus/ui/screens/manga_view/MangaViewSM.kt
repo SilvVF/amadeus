@@ -5,19 +5,14 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.data.UserSettingsStore
+import io.silv.amadeus.manga_usecase.GetCombinedSavableMangaWithChapters
+import io.silv.amadeus.types.SavableChapter
+import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.core.filterUnique
 import io.silv.ktor_response_mapper.message
 import io.silv.ktor_response_mapper.suspendOnFailure
 import io.silv.ktor_response_mapper.suspendOnSuccess
-import io.silv.manga.domain.models.SavableChapter
-import io.silv.manga.domain.models.SavableManga
-import io.silv.manga.domain.repositorys.SavedMangaRepository
-import io.silv.manga.domain.repositorys.base.ProtectedResources
-import io.silv.manga.domain.repositorys.chapter.ChapterEntityRepository
-import io.silv.manga.domain.usecase.GetCombinedSavableMangaWithChapters
-import io.silv.manga.domain.usecase.GetMangaStatisticsById
-import io.silv.manga.domain.usecase.MangaStats
 import io.silv.manga.local.entity.ProgressState.Finished
 import io.silv.manga.local.entity.ProgressState.NotStarted
 import io.silv.manga.local.entity.ProgressState.Reading
@@ -25,6 +20,9 @@ import io.silv.manga.local.workers.ChapterDeletionWorker
 import io.silv.manga.local.workers.ChapterDeletionWorkerTag
 import io.silv.manga.local.workers.ChapterDownloadWorker
 import io.silv.manga.local.workers.ChapterDownloadWorkerTag
+import io.silv.manga.repository_usecases.GetMangaStatisticsById
+import io.silv.manga.repository_usecases.MangaStats
+import io.silv.manga.repositorys.manga.SavedMangaRepository
 import io.silv.manga.sync.anyRunning
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -43,13 +41,12 @@ class MangaViewSM(
     getMangaStatisticsById: GetMangaStatisticsById,
     private val userSettingsStore: UserSettingsStore,
     private val savedMangaRepository: SavedMangaRepository,
-    private val chapterEntityRepository: ChapterEntityRepository,
+    private val chapterEntityRepository: io.silv.manga.repositorys.chapter.ChapterEntityRepository,
     private val workManager: WorkManager,
     private val initialManga: SavableManga,
 ): AmadeusScreenModel<MangaViewEvent>() {
 
     init {
-        ProtectedResources.ids.add(initialManga.id)
         coroutineScope.launch {
             userSettingsStore.observeDefaultFilter().collect {
                 mutableFilters.update { it }
@@ -266,13 +263,7 @@ class MangaViewSM(
                 }
             }
 
-    private fun LocalDateTime.epochSeconds() =
-        this.toInstant(TimeZone.currentSystemDefault()).epochSeconds
-
-    override fun onDispose() {
-        super.onDispose()
-        ProtectedResources.ids.remove(initialManga.id)
-    }
+    private fun LocalDateTime.epochSeconds() = toInstant(TimeZone.currentSystemDefault()).epochSeconds
 }
 
 

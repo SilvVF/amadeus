@@ -10,7 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.core.AmadeusDispatchers
-import io.silv.manga.domain.suspendRunCatching
+import io.silv.manga.repositorys.suspendRunCatching
 import io.silv.manga.local.dao.SavedMangaDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull

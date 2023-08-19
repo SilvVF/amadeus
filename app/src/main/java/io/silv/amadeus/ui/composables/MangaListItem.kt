@@ -42,7 +42,7 @@ import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.shared.shadow
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.amadeus.ui.theme.Pastel
-import io.silv.manga.domain.models.SavableManga
+import io.silv.amadeus.types.SavableManga
 
 @Composable
 fun MangaListItem(

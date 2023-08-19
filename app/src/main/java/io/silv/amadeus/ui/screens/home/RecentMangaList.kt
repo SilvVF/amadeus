@@ -19,7 +19,7 @@ import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.domain.models.SavableManga
+import io.silv.amadeus.types.SavableManga
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 

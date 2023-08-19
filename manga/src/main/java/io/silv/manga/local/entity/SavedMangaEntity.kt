@@ -2,7 +2,7 @@ package io.silv.manga.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import io.silv.manga.domain.timeNow
+import io.silv.manga.repositorys.timeNow
 import io.silv.manga.network.mangadex.models.ContentRating
 import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status

@@ -191,7 +191,7 @@ private fun ChapterItemPlaceHolder() {
 }
 
 @Composable
-private fun ChapterListItem(
+fun ChapterListItem(
     modifier: Modifier = Modifier,
     showFullTitle: Boolean,
     chapter: SavableChapter,

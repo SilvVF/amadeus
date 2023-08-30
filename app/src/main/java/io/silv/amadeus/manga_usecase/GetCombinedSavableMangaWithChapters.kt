@@ -3,11 +3,9 @@ package io.silv.amadeus.manga_usecase
 import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.types.SavableMangaWithChapters
 import io.silv.amadeus.types.toSavable
-import io.silv.ktor_response_mapper.getOrNull
-import io.silv.manga.local.entity.MangaResource
 import io.silv.manga.repositorys.chapter.ChapterEntityRepository
 import io.silv.manga.repositorys.manga.SavedMangaRepository
-import io.silv.manga.repositorys.toPopularMangaResource
+import io.silv.manga.repositorys.manga.TempMangaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
@@ -20,25 +18,20 @@ class GetCombinedSavableMangaWithChapters(
     private val getCombinedMangaResources: GetCombinedMangaResources,
     private val savedMangaRepository: SavedMangaRepository,
     private val chapterInfoRepository: ChapterEntityRepository,
-    private val getMangaById: GetMangaById,
+    private val tempMangaRepository: TempMangaRepository
 ) {
-    private val tempMangas = mutableMapOf<String, MangaResource>()
 
     operator fun invoke(id: String): Flow<SavableMangaWithChapters> {
         return combine(
             getCombinedMangaResources(id),
             savedMangaRepository.getSavedManga(id),
             chapterInfoRepository.getChapters(id),
-        ) { resourceList, saved, chapterInfo ->
+        ) { resources, saved, chapterInfo ->
 
-            if (resourceList.isEmpty() && saved == null && tempMangas[id] == null) {
-                val response = getMangaById(id).getOrNull()
-                response?.data?.firstOrNull()?.let { manga ->
-                    tempMangas[id] = manga.toPopularMangaResource()
-                }
+            if (resources.isEmpty() && saved == null) {
+               tempMangaRepository.createTempResource(id)
             }
 
-            val resources = (resourceList + tempMangas[id]).filterNotNull()
 
             return@combine saved?.let { savedManga ->
                 SavableMangaWithChapters(

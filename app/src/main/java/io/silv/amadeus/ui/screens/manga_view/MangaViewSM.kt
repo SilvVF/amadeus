@@ -6,6 +6,8 @@ import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
 import io.silv.amadeus.data.UserSettingsStore
 import io.silv.amadeus.manga_usecase.GetCombinedSavableMangaWithChapters
+import io.silv.amadeus.manga_usecase.GetMangaStatisticsById
+import io.silv.amadeus.manga_usecase.MangaStats
 import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
@@ -20,8 +22,7 @@ import io.silv.manga.local.workers.ChapterDeletionWorker
 import io.silv.manga.local.workers.ChapterDeletionWorkerTag
 import io.silv.manga.local.workers.ChapterDownloadWorker
 import io.silv.manga.local.workers.ChapterDownloadWorkerTag
-import io.silv.amadeus.manga_usecase.GetMangaStatisticsById
-import io.silv.amadeus.manga_usecase.MangaStats
+import io.silv.manga.repositorys.chapter.ChapterEntityRepository
 import io.silv.manga.repositorys.manga.SavedMangaRepository
 import io.silv.manga.sync.anyRunning
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,7 +42,7 @@ class MangaViewSM(
     getMangaStatisticsById: GetMangaStatisticsById,
     private val userSettingsStore: UserSettingsStore,
     private val savedMangaRepository: SavedMangaRepository,
-    private val chapterEntityRepository: io.silv.manga.repositorys.chapter.ChapterEntityRepository,
+    private val chapterEntityRepository: ChapterEntityRepository,
     private val workManager: WorkManager,
     private val initialManga: SavableManga,
 ): AmadeusScreenModel<MangaViewEvent>() {

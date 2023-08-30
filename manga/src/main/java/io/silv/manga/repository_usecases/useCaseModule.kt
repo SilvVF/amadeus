@@ -10,6 +10,5 @@ val repositoryUseCaseModule = module {
     factoryOf(::UpdateMangaResourceWithArt)
 
     factoryOf(::GetMangaResourcesById)
-
 }
 

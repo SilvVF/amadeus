@@ -11,6 +11,7 @@ import io.silv.manga.local.entity.manga_resource.QuickSearchMangaResource
 import io.silv.manga.local.entity.manga_resource.RecentMangaResource
 import io.silv.manga.local.entity.manga_resource.SearchMangaResource
 import io.silv.manga.local.entity.manga_resource.SeasonalMangaResource
+import io.silv.manga.local.entity.manga_resource.TempMangaResource
 import io.silv.manga.network.mangadex.models.chapter.Chapter
 import io.silv.manga.network.mangadex.models.manga.Manga
 
@@ -69,6 +70,32 @@ fun Manga.toSeasonalMangaResource(): SeasonalMangaResource {
     )
 }
 
+
+fun Manga.toTempMangaResource(): TempMangaResource {
+    return TempMangaResource(
+        id = id,
+        description = descriptionEnglish,
+        coverArt = coverArtUrl(this ),
+        titleEnglish = titleEnglish,
+        alternateTitles = alternateTitles,
+        originalLanguage = attributes.originalLanguage,
+        availableTranslatedLanguages = attributes.availableTranslatedLanguages
+            .filterNotNull(),
+        status = attributes.status,
+        contentRating = attributes.contentRating,
+        lastVolume = attributes.lastVolume?.toIntOrNull() ?: -1,
+        lastChapter = attributes.lastChapter?.toLongOrNull() ?: -1L,
+        version = attributes.version,
+        createdAt = attributes.createdAt.parseMangaDexTimeToDateTime(),
+        updatedAt = attributes.updatedAt.parseMangaDexTimeToDateTime(),
+        tagToId = tagToId,
+        publicationDemographic = attributes.publicationDemographic,
+        latestUploadedChapter = attributes.latestUploadedChapter,
+        year = attributes.year ?: -1,
+        authors = authors,
+        artists = artists
+    )
+}
 
 fun Manga.toPopularMangaResource(): PopularMangaResource {
     return  PopularMangaResource(

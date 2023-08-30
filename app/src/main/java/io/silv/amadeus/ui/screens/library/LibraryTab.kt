@@ -1,19 +1,26 @@
 package io.silv.amadeus.ui.screens.library
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.with
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,6 +31,8 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -40,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
@@ -56,6 +66,7 @@ import io.silv.amadeus.R
 import io.silv.amadeus.ui.screens.home.SearchTopAppBar
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
+import io.silv.amadeus.ui.screens.manga_view.composables.ChapterListItem
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
@@ -86,7 +97,7 @@ object LibraryTab: Tab {
 
 class LibraryScreen: Screen {
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
     @Composable
     override fun Content() {
 
@@ -94,6 +105,9 @@ class LibraryScreen: Screen {
         val mangasToChapters by sm.mangaWithDownloadedChapters.collectAsStateWithLifecycle()
         val space = LocalSpacing.current
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState())
+        val bookmarkedChapters by sm.bookmarkedChapters.collectAsStateWithLifecycle()
+        val downloadingOrDeletingIds by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
+        val navigator = LocalNavigator.current
 
         var searching by rememberSaveable {
             mutableStateOf(false)
@@ -101,6 +115,10 @@ class LibraryScreen: Screen {
 
         var searchText by rememberSaveable {
             mutableStateOf("")
+        }
+
+        var selectedTab by rememberSaveable {
+            mutableStateOf(0)
         }
 
         AmadeusScaffold(
@@ -126,6 +144,7 @@ class LibraryScreen: Screen {
 
             val filteredItems by remember(searchText, mangasToChapters) {
                 derivedStateOf {
+                    if (searchText.isBlank()) { return@derivedStateOf mangasToChapters }
                     mangasToChapters.filter {
                         listOf(
                             it.savableManga.titleEnglish,
@@ -137,22 +156,87 @@ class LibraryScreen: Screen {
                     }
                 }
             }
-
-            LazyVerticalGrid(
-                modifier = Modifier
+            Column(
+                Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(space.large),
-                columns = GridCells.Fixed(2),
             ) {
-                items(
-                    items = filteredItems,
-                    key = { item -> item.savableManga.id }
-                ) {item ->
-                    val (manga, chapters) = item
-                    val ctx = LocalContext.current
-
-
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = Color.Transparent
+                ) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 }
+                    ) {
+                        Text(text = "Manga", modifier = Modifier.padding(space.large))
+                    }
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 }
+                    ) {
+                        Text(text = "Chapters", modifier = Modifier.padding(space.large))
+                    }
+                }
+                AnimatedContent(
+                    targetState = selectedTab,
+                    label = "library-content",
+                    modifier = Modifier.padding(space.large),
+                    transitionSpec = {
+                        if (initialState < targetState) {
+                            slideInHorizontally { it } with slideOutHorizontally { -it }
+                        } else {
+                            slideInHorizontally { -it } with slideOutHorizontally { it }
+                        }
+                    }
+                ) {
+                    if (it == 0) {
+                        LazyVerticalGrid(
+                            modifier = Modifier.weight(1f),
+                            columns = GridCells.Fixed(2),
+                        ) {
+                            items(
+                                items = filteredItems,
+                                key = { item -> item.savableManga.id }
+                            ) {item ->
+                                LibraryMangaPoster(libraryManga = item)
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            Modifier.weight(1f)
+                        ) {
+                            items(bookmarkedChapters) {chapter ->
+                                ChapterListItem(
+                                    modifier = Modifier
+                                        .background(MaterialTheme.colorScheme.background)
+                                        .fillMaxWidth()
+                                        .padding(
+                                            vertical = space.med,
+                                            horizontal = space.large
+                                        ),
+                                    chapter = chapter,
+                                    downloadProgress = downloadingOrDeletingIds.fastFirstOrNull { it.first == chapter.id }?.second,
+                                    showFullTitle = true,
+                                    onDownloadClicked = {
+                                        sm.downloadChapterImages(listOf(chapter.id), chapter.mangaId)
+                                    },
+                                    onDeleteClicked = {
+                                        sm.deleteChapterImages(listOf(chapter.id))
+                                    },
+                                    onReadClicked = {
+                                        navigator?.push(
+                                            MangaReaderScreen(
+                                                chapter.mangaId,
+                                                chapter.id
+                                            )
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

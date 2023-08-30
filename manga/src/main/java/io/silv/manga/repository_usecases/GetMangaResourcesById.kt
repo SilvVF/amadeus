@@ -8,6 +8,7 @@ import io.silv.manga.local.dao.RecentMangaResourceDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.dao.SearchMangaResourceDao
 import io.silv.manga.local.dao.SeasonalMangaResourceDao
+import io.silv.manga.local.dao.TempMangaResourceDao
 import io.silv.manga.local.entity.MangaResource
 import kotlinx.coroutines.flow.firstOrNull
 
@@ -24,6 +25,7 @@ internal class GetMangaResourcesById(
     private val popularMangaResourceDao: PopularMangaResourceDao,
     private val recentMangaResourceDao: RecentMangaResourceDao,
     private val quickSearchMangaResourceDao: QuickSearchMangaResourceDao,
+    private val tempMangaResourceDao: TempMangaResourceDao,
 ) {
 
     suspend operator fun invoke(id: String): List<Pair<MangaResource, Int>> {
@@ -35,7 +37,8 @@ internal class GetMangaResourcesById(
             savedMangaResourceDao.observeSearchMangaResourceById(id).firstOrNull() to SavedMangaDao.id,
             popularMangaResourceDao.observePopularMangaResourceById(id).firstOrNull() to PopularMangaResourceDao.id,
             recentMangaResourceDao.observeRecentMangaResourceById(id).firstOrNull() to RecentMangaResourceDao.id,
-            quickSearchMangaResourceDao.observeQuickSearchMangaResourceById(id).firstOrNull() to QuickSearchMangaResourceDao.id
+            quickSearchMangaResourceDao.observeQuickSearchMangaResourceById(id).firstOrNull() to QuickSearchMangaResourceDao.id,
+            tempMangaResourceDao.observeTempMangaResourceById(id).firstOrNull() to TempMangaResourceDao.id
         )
             .mapNotNull {
                 (it.first ?: return@mapNotNull null) to it.second

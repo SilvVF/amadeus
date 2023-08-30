@@ -11,7 +11,5 @@ val useCaseModule = module {
 
     factoryOf(::GetCombinedMangaResources)
 
-    factoryOf(::GetMangaById)
-
     factoryOf(::GetMangaStatisticsById)
 }

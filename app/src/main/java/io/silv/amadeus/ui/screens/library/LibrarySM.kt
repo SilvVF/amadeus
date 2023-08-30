@@ -5,12 +5,19 @@ import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.local.entity.ProgressState
+import io.silv.manga.repositorys.chapter.ChapterEntityRepository
 import kotlinx.coroutines.flow.map
 
 class LibrarySM(
+    chapterEntityRepository: ChapterEntityRepository,
     getSavedMangaWithChaptersList: GetSavedMangaWithChaptersList
 ): AmadeusScreenModel<LibraryEvent>() {
 
+    val bookmarkedChapters = chapterEntityRepository.getAllChapters()
+        .map { entities ->
+            entities.filter { chapter -> chapter.bookmarked }
+        }
+        .stateInUi(emptyList())
 
     val mangaWithDownloadedChapters = getSavedMangaWithChaptersList()
         .map { list ->

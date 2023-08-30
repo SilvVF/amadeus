@@ -3,6 +3,8 @@ package io.silv.manga.local.workers
 import androidx.work.WorkManager
 import io.silv.manga.sync.MangaSyncWorkName
 import io.silv.manga.sync.SavedMangaSyncManager
+import io.silv.manga.sync.SeasonalMangaSyncManager
+import io.silv.manga.sync.SeasonalMangaSyncWorkName
 import io.silv.manga.sync.SyncManager
 import io.silv.manga.sync.TagSyncManager
 import io.silv.manga.sync.TagSyncWorkName
@@ -22,6 +24,14 @@ val workerModule = module {
     }
 
     single {
+        SeasonalMangaSyncManager(androidContext())
+    } withOptions {
+        bind<SyncManager>()
+        named(SeasonalMangaSyncWorkName)
+    }
+
+
+    single {
         TagSyncManager(androidContext())
     } withOptions {
         bind<SyncManager>()
@@ -29,11 +39,15 @@ val workerModule = module {
     }
 
     single {
+        CoverArtDownloadManager(get())
+    }
+
+    single {
         WorkManager.getInstance(androidContext())
     }
 
     single {
-        CoverArtDownloadManager(get())
+        SeasonalMangaSyncWorker(androidContext(), get())
     }
 
     single {
@@ -58,9 +72,5 @@ val workerModule = module {
 
     worker {
         MangaSyncWorker(androidContext(), get())
-    }
-
-    worker {
-        ChapterDownloadWorker(androidContext(), get())
     }
 }

@@ -11,6 +11,10 @@ import io.silv.manga.local.dao.SeasonalMangaResourceDao
 import io.silv.manga.local.entity.MangaResource
 import kotlinx.coroutines.flow.firstOrNull
 
+/**
+ * Gets manga resources by given id and returns a list of the resource as well as the DAO id that it
+ * came from.
+ */
 internal class GetMangaResourcesById(
     private val filteredMangaYearlyResourceDao: FilteredMangaYearlyResourceDao,
     private val filteredMangaResourceDao: FilteredMangaResourceDao,

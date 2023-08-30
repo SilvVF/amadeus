@@ -1,11 +1,10 @@
 package io.silv.manga.repositorys.tags
 
 import io.silv.ktor_response_mapper.getOrThrow
-import io.silv.manga.repositorys.epochSeconds
 import io.silv.manga.local.dao.TagDao
 import io.silv.manga.local.entity.TagEntity
 import io.silv.manga.network.mangadex.MangaDexApi
-import io.silv.manga.sync.Synchronizer
+import io.silv.manga.repositorys.epochSeconds
 import io.silv.manga.sync.syncVersions
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -21,7 +20,7 @@ internal class TagRepositoryImpl(
         return tagDao.getAllTags()
     }
 
-    override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
+    override suspend fun sync(): Boolean {
         val tags = tagDao.getAllTags().first()
         return syncVersions(
             getLocalWithVersions =  { tags.map { it.version to it } },

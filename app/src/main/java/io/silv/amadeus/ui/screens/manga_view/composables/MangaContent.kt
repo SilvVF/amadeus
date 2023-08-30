@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -104,6 +105,7 @@ fun MangaContent(
     bookmarked: Boolean,
     onBookmarkClicked: (String) -> Unit,
     onTagSelected: (tag: String) -> Unit,
+    showChapterArt: () -> Unit,
     viewOnWebClicked: () -> Unit,
 ) {
     val space = LocalSpacing.current
@@ -112,7 +114,8 @@ fun MangaContent(
             manga = manga,
             bookmarked = bookmarked,
             onBookmarkClicked = onBookmarkClicked,
-            viewOnWebClicked = viewOnWebClicked
+            viewOnWebClicked = viewOnWebClicked,
+            showChapterArt = showChapterArt
         )
         MangaInfo(
             manga = manga,
@@ -125,6 +128,7 @@ fun MangaContent(
 private fun MangaActions(
     manga: SavableManga,
     bookmarked: Boolean,
+    showChapterArt: () -> Unit,
     onBookmarkClicked: (String) -> Unit,
     viewOnWebClicked: () -> Unit,
 ) {
@@ -178,6 +182,21 @@ private fun MangaActions(
                 )
             }
             Text(text = "View on web", style = MaterialTheme.typography.labelMedium)
+        }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            IconButton(
+                onClick = showChapterArt,
+                modifier = Modifier.padding(horizontal = space.large)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Image,
+                    contentDescription = null
+                )
+            }
+            Text(text = "Cover art", style = MaterialTheme.typography.labelMedium)
         }
     }
 }

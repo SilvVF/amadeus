@@ -4,7 +4,6 @@ import android.util.Log
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.ktor_response_mapper.suspendOnFailure
-import io.silv.manga.domain.usecase.UpdateChapterList
 import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.ChapterEntity
@@ -13,13 +12,13 @@ import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.requests.ChapterListRequest
 import io.silv.manga.network.mangadex.requests.CoverArtRequest
 import io.silv.manga.repository_usecases.GetMangaResourcesById
+import io.silv.manga.repository_usecases.UpdateChapterList
 import io.silv.manga.repository_usecases.UpdateMangaResourceWithArt
 import io.silv.manga.repositorys.coverArtUrl
 import io.silv.manga.repositorys.minus
 import io.silv.manga.repositorys.suspendRunCatching
 import io.silv.manga.repositorys.timeNow
 import io.silv.manga.repositorys.toChapterEntity
-import io.silv.manga.sync.Synchronizer
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -185,7 +184,7 @@ internal class OfflineFirstChapterInfoRepository(
             }
     }
 
-    override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
+    override suspend fun sync(): Boolean {
 
 //        val savedManga = savedMangaDao.getSavedManga().first()
 //        val savedChapters = chapterDao.getChapterEntities().first()

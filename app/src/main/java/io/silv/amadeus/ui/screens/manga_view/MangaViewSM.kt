@@ -20,8 +20,8 @@ import io.silv.manga.local.workers.ChapterDeletionWorker
 import io.silv.manga.local.workers.ChapterDeletionWorkerTag
 import io.silv.manga.local.workers.ChapterDownloadWorker
 import io.silv.manga.local.workers.ChapterDownloadWorkerTag
-import io.silv.manga.repository_usecases.GetMangaStatisticsById
-import io.silv.manga.repository_usecases.MangaStats
+import io.silv.amadeus.manga_usecase.GetMangaStatisticsById
+import io.silv.amadeus.manga_usecase.MangaStats
 import io.silv.manga.repositorys.manga.SavedMangaRepository
 import io.silv.manga.sync.anyRunning
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -39,7 +39,7 @@ fun String.parseMangaDexTimeToDateTime(): LocalDateTime {
     return LocalDateTime.parse(text)
 }
 
-infix fun LocalDateTime.minus(localDateTime: LocalDateTime): kotlin.time.Duration {
+operator fun LocalDateTime.minus(localDateTime: LocalDateTime): kotlin.time.Duration {
     return this.toInstant(timeZone())
         .minus(
             localDateTime.toInstant(timeZone())

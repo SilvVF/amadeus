@@ -3,11 +3,6 @@ package io.silv.manga.repositorys.manga
 import android.util.Log
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
-import io.silv.manga.repositorys.minus
-import io.silv.manga.repositorys.timeNow
-import io.silv.manga.repositorys.toSavedMangaEntity
-import io.silv.manga.repository_usecases.GetMangaResourcesById
-import io.silv.manga.domain.usecase.UpdateChapterList
 import io.silv.manga.local.dao.SavedMangaDao
 import io.silv.manga.local.entity.ProgressState
 import io.silv.manga.local.entity.SavedMangaEntity
@@ -18,7 +13,11 @@ import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.models.Status
 import io.silv.manga.network.mangadex.models.manga.Manga
 import io.silv.manga.network.mangadex.requests.MangaRequest
-import io.silv.manga.sync.Synchronizer
+import io.silv.manga.repository_usecases.GetMangaResourcesById
+import io.silv.manga.repository_usecases.UpdateChapterList
+import io.silv.manga.repositorys.minus
+import io.silv.manga.repositorys.timeNow
+import io.silv.manga.repositorys.toSavedMangaEntity
 import io.silv.manga.sync.syncWithSyncer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -120,9 +119,9 @@ internal class SavedMangaRepositoryImpl(
         }
     )
 
-    override suspend fun syncWith(synchronizer: Synchronizer): Boolean {
+    override suspend fun sync(): Boolean {
         val saved = emptyList<SavedMangaEntity>()
-        return synchronizer.syncWithSyncer(
+        return syncWithSyncer(
             syncer = syncer,
             getCurrent = { emptyList() },
             getNetwork = {

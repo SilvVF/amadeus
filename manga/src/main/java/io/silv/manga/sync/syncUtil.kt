@@ -5,13 +5,6 @@ import io.silv.manga.repositorys.epochSeconds
 import io.silv.manga.repositorys.suspendRunCatching
 import java.time.Duration
 
-interface Synchronizer {
-
-    /**
-     * Syntactic sugar to call [Syncable.syncWith] while omitting the synchronizer argument
-     */
-    suspend fun Syncable.sync() = this@sync.syncWith(this@Synchronizer)
-}
 
 internal suspend fun <Key, Local: AmadeusEntity<Key>, Network> syncVersions(
     getLocalWithVersions: suspend () -> List<Pair<Int, Local>>,
@@ -55,7 +48,7 @@ internal suspend fun <Key, Local: AmadeusEntity<Key>, Network> syncVersions(
  * Tries to sync the network and local using the provided [Syncer] and returns true if no
  * exceptions where thrown in the process.
  */
-internal suspend fun <Type : AmadeusEntity<Any?>, NetworkType, Key> Synchronizer.syncWithSyncer(
+internal suspend fun <Type : AmadeusEntity<Any?>, NetworkType, Key> syncWithSyncer(
     syncer: Syncer<Type, NetworkType, Key>,
     getCurrent: suspend () -> List<Type>,
     getNetwork: suspend () -> List<NetworkType>,

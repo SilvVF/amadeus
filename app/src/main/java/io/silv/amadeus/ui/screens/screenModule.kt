@@ -6,7 +6,9 @@ import io.silv.amadeus.ui.screens.manga_filter.MangaFilterSM
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderSM
 import io.silv.amadeus.ui.screens.manga_view.MangaViewSM
 import io.silv.amadeus.ui.screens.search.SearchSM
+import io.silv.manga.sync.SeasonalMangaSyncWorkName
 import org.koin.core.module.dsl.factoryOf
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val screenModule = module {
@@ -23,5 +25,14 @@ val screenModule = module {
 
     factoryOf(::SearchSM)
 
-    factoryOf(::HomeSM)
+    factory {
+        HomeSM(
+            recentMangaRepository = get(),
+            popularMangaRepository = get(),
+            seasonalMangaRepository = get(),
+            savedMangaRepository = get(),
+            searchMangaRepository = get(),
+            seasonalMangaSyncManager = get(qualifier = named(SeasonalMangaSyncWorkName))
+        )
+    }
 }

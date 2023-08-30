@@ -5,14 +5,15 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.coroutineScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
-import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.amadeus.types.SavableManga
+import io.silv.amadeus.ui.shared.AmadeusScreenModel
+import io.silv.manga.local.entity.Season
 import io.silv.manga.repositorys.manga.PopularMangaRepository
 import io.silv.manga.repositorys.manga.QuickSearchMangaRepository
 import io.silv.manga.repositorys.manga.RecentMangaRepository
 import io.silv.manga.repositorys.manga.SavedMangaRepository
 import io.silv.manga.repositorys.manga.SeasonalMangaRepository
-import io.silv.manga.local.entity.Season
+import io.silv.manga.sync.SyncManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,14 +32,13 @@ class HomeSM(
     seasonalMangaRepository: SeasonalMangaRepository,
     private val savedMangaRepository: SavedMangaRepository,
     searchMangaRepository: QuickSearchMangaRepository,
+    private val seasonalMangaSyncManager: SyncManager,
 ): AmadeusScreenModel<HomeEvent>() {
 
     private val mutableSearchQuery = MutableStateFlow("")
     val searchQuery = mutableSearchQuery.asStateFlow()
 
-    val refreshingSeasonal = seasonalMangaRepository.loadState
-        .map { it is io.silv.manga.repositorys.LoadState.Refreshing }
-        .stateInUi(false)
+    val refreshingSeasonal = seasonalMangaSyncManager.isSyncing.stateInUi(false)
 
     private val forceSearchFlow = MutableStateFlow(false)
     private var startFlag = false
@@ -119,6 +119,10 @@ class HomeSM(
 
     fun bookmarkManga(mangaId: String) = coroutineScope.launch {
         savedMangaRepository.bookmarkManga(mangaId)
+    }
+
+    fun refreshSeasonalManga() = coroutineScope.launch {
+        seasonalMangaSyncManager.requestSync()
     }
 }
 

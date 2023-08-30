@@ -11,6 +11,7 @@ import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.local.workers.ChapterDownloadWorker
 import io.silv.manga.network.mangadex.models.chapter.Chapter
+import io.silv.manga.repositorys.Resource
 import io.silv.manga.repositorys.chapter.ChapterEntityRepository
 import io.silv.manga.repositorys.chapter.ChapterImageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,31 +44,44 @@ class MangaReaderSM(
         ChapterDownloadWorker.downloadingIdToProgress.asStateFlow()
     ).map { (chapterId, savableWithChapters, downloadingIds) ->
             val (manga, chapters) = savableWithChapters
-            if (manga == null) {
-                return@map MangaReaderState.Failure("manga not found")
-            }
-            val chapter = chapters.find { c -> c.id == chapterId } ?: return@map MangaReaderState.Failure("chapter not found")
+
+            if (manga == null) { return@map MangaReaderState.Failure("manga not found") }
+
+            val chapter = chapters
+                .find { c -> c.id == chapterId }
+                ?.let { SavableChapter(it) }
+                ?: return@map MangaReaderState.Failure("chapter not found")
+
             val sortedChapters = chapters
                 .map { SavableChapter(it) }
                 .sortedBy { it.chapter }
+
             if (chapter.downloaded || chapter.id in downloadingIds.map { it.first }) {
                 MangaReaderState.Success(
                     manga = manga,
-                    chapter = SavableChapter(chapter),
+                    readerChapters = ReaderChapters(
+                        prev = sortedChapters.getOrNull(sortedChapters.indexOf(chapter) - 1),
+                        next = sortedChapters.getOrNull(sortedChapters.indexOf(chapter) + 1),
+                        current = chapter,
+                        chapterImages = chapter.imageUris
+                    ),
                     chapters = sortedChapters,
-                    pages = chapter.chapterImages
                 )
             } else {
                 chapterImageRepository.getChapterImages(chapterId)
-                    .fold<io.silv.manga.repositorys.Resource<Pair<Chapter, List<String>>>, MangaReaderState>(MangaReaderState.Loading) { _, resource ->
+                    .fold<Resource<Pair<Chapter, List<String>>>, MangaReaderState>(MangaReaderState.Loading) { _, resource ->
                     when (resource) {
-                        is io.silv.manga.repositorys.Resource.Failure -> MangaReaderState.Failure(resource.message)
-                        io.silv.manga.repositorys.Resource.Loading -> MangaReaderState.Loading
-                        is io.silv.manga.repositorys.Resource.Success -> MangaReaderState.Success(
+                        is Resource.Failure -> MangaReaderState.Failure(resource.message)
+                        Resource.Loading -> MangaReaderState.Loading
+                        is Resource.Success -> MangaReaderState.Success(
                             manga = manga,
-                            chapter = SavableChapter(chapter),
+                            readerChapters = ReaderChapters(
+                                prev = sortedChapters.getOrNull(sortedChapters.indexOf(chapter) - 1),
+                                next = sortedChapters.getOrNull(sortedChapters.indexOf(chapter) + 1),
+                                current = chapter,
+                                chapterImages = resource.result.second
+                            ),
                             chapters = sortedChapters,
-                            pages = resource.result.second
                         )
                     }
                 }
@@ -111,6 +125,18 @@ class MangaReaderSM(
     }
 }
 
+data class ReaderChapters(
+    val prev: SavableChapter?,
+    val next: SavableChapter?,
+    val current: SavableChapter,
+    val chapterImages: List<String>,
+) {
+
+    val hasPrev = prev != null
+
+    val hasNext = next != null
+}
+
 sealed interface MangaReaderEvent
 
 sealed class MangaReaderState {
@@ -119,9 +145,8 @@ sealed class MangaReaderState {
 
     data class Success(
         val manga: SavableManga,
-        val chapter: SavableChapter,
         val chapters: List<SavableChapter>,
-        val pages: List<String> = emptyList()
+        val readerChapters: ReaderChapters
     ): MangaReaderState()
 
     data class Failure(val message: String? = null): MangaReaderState()

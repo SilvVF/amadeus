@@ -31,6 +31,9 @@ internal interface SeasonalMangaResourceDao {
     @Delete
     suspend fun deleteSeasonalMangaResource(mangaResource: SeasonalMangaResource)
 
+    @Query("DELETE FROM SeasonalMangaResource")
+    suspend fun clear()
+
     companion object {
         const val id: Int = 10
     }

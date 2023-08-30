@@ -12,7 +12,6 @@ import androidx.work.WorkerParameters
 import io.silv.core.pmap
 import io.silv.manga.repositorys.chapter.ChapterEntityRepository
 import io.silv.manga.repositorys.manga.SavedMangaRepository
-import io.silv.manga.sync.Synchronizer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Duration
@@ -20,7 +19,7 @@ import java.time.Duration
 internal class MangaSyncWorker(
     appContext: Context,
     workerParams: WorkerParameters,
-): CoroutineWorker(appContext, workerParams), Synchronizer, KoinComponent {
+): CoroutineWorker(appContext, workerParams), KoinComponent {
 
     private val savedMangaRepository by inject<SavedMangaRepository>()
     private val chapterInfoRepository by inject<ChapterEntityRepository>()

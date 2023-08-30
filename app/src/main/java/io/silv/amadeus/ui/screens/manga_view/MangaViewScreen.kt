@@ -78,6 +78,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.amadeus.AmadeusScaffold
+import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.composables.MainPoster
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
@@ -89,7 +90,6 @@ import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.shared.isScrollingUp
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.amadeus.types.SavableManga
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 import org.koin.core.parameter.parametersOf
@@ -165,6 +165,7 @@ class MangaViewScreen(
         ) {
             webUrl = null
         }
+
         if (webUrl != null) {
             webUrl?.let {
                 WebViewOverlay(
@@ -179,9 +180,8 @@ class MangaViewScreen(
                 onDismissRequest = { showArtBottomSheet = false },
                 sheetState = rememberModalBottomSheetState(
                     skipPartiallyExpanded = true,
-                ),
-
-                ) {
+                )
+            ) {
                 LazyColumn {
                     volumePosterItems(mangaViewState)
                 }
@@ -307,6 +307,9 @@ class MangaViewScreen(
                             },
                             viewOnWebClicked = {
                                 webUrl = "https://mangadex.org/title/${manga.id}"
+                            },
+                            showChapterArt = {
+                                showArtBottomSheet = !showArtBottomSheet
                             }
                         )
                         FilterIcon(
@@ -332,7 +335,8 @@ class MangaViewScreen(
                         )
                     },
                     onBookmark = sm::changeChapterBookmarked,
-                    onMarkAsRead = sm::changeChapterReadStatus
+                    onMarkAsRead = sm::changeChapterReadStatus,
+                    showFullTitle = showSourceTitle,
                 )
             }
         }

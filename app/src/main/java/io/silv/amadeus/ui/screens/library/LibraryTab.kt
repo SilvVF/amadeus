@@ -28,8 +28,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -89,11 +91,8 @@ class LibraryScreen: Screen {
     override fun Content() {
 
         val sm = getScreenModel<LibrarySM>()
-        val navigator = LocalNavigator.current
         val mangasToChapters by sm.mangaWithDownloadedChapters.collectAsStateWithLifecycle()
         val space = LocalSpacing.current
-
-
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState())
 
         var searching by rememberSaveable {
@@ -123,79 +122,106 @@ class LibraryScreen: Screen {
                     onForceSearch = {}
                 )
             }
-        ) {
+        ) { paddingValues ->
+
+            val filteredItems by remember(searchText, mangasToChapters) {
+                derivedStateOf {
+                    mangasToChapters.filter {
+                        listOf(
+                            it.savableManga.titleEnglish,
+                            it.savableManga.artists.joinToString(),
+                            it.savableManga.authors.joinToString()
+                        ).any { string ->
+                            searchText.lowercase() in string.lowercase()
+                        }
+                    }
+                }
+            }
+
             LazyVerticalGrid(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(it)
+                    .padding(paddingValues)
                     .padding(space.large),
                 columns = GridCells.Fixed(2),
             ) {
                 items(
-                    items = mangasToChapters,
+                    items = filteredItems,
                     key = { item -> item.savableManga.id }
                 ) {item ->
                     val (manga, chapters) = item
                     val ctx = LocalContext.current
 
-                    CenterBox(
-                        Modifier.padding(space.large)
-                    ) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(ctx)
-                                .data(manga.coverArt)
-                                .build(),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .noRippleClickable {
-                                    navigator?.push(
-                                        MangaViewScreen(manga)
-                                    )
-                                }
-                        )
-                        FilterChip(
-                            onClick = {},
-                            selected = true,
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .offset(
-                                    x = -(space.large),
-                                    y = -(space.large)
-                                ),
-                            label = {
-                                Text(
-                                    text = item.unread.toString()
-                                )
-                            }
-                        )
-                        IconButton(
-                            onClick = {
-                                item.lastReadChapter?.let {
-                                    navigator?.push(
-                                        MangaReaderScreen(
-                                            mangaId = manga.id,
-                                            initialChapterId = it.id
-                                        )
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .size(18.dp)
-                                .align(Alignment.BottomEnd)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.secondaryContainer)
 
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.MenuBook,
-                                contentDescription = null
-                            )
-                        }
-                    }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LibraryMangaPoster(
+    libraryManga: LibraryManga
+) {
+    val (manga, chapters) = libraryManga
+    val ctx = LocalContext.current
+    val space = LocalSpacing.current
+    val navigator = LocalNavigator.current
+    CenterBox(
+        Modifier.padding(space.large)
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(ctx)
+                .data(manga.coverArt)
+                .build(),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .noRippleClickable {
+                    navigator?.push(
+                        MangaViewScreen(manga)
+                    )
+                }
+        )
+        FilterChip(
+            onClick = {},
+            selected = true,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .offset(
+                    x = -(space.large),
+                    y = -(space.large)
+                ),
+            label = {
+                Text(
+                    text = libraryManga.unread.toString()
+                )
+            }
+        )
+        IconButton(
+            onClick = {
+                libraryManga.lastReadChapter?.let {
+                    navigator?.push(
+                        MangaReaderScreen(
+                            mangaId = manga.id,
+                            initialChapterId = it.id
+                        )
+                    )
+                }
+            },
+            modifier = Modifier
+                .size(18.dp)
+                .align(Alignment.BottomEnd)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.MenuBook,
+                contentDescription = null
+            )
         }
     }
 }

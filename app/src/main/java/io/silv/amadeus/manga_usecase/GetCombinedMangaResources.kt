@@ -1,4 +1,4 @@
-package io.silv.manga.repository_usecases
+package io.silv.amadeus.manga_usecase
 
 import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.manga.local.entity.MangaResource
@@ -12,6 +12,10 @@ import io.silv.manga.repositorys.manga.SeasonalMangaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+/**
+ * @property invoke Returns a Flow containing list of all the manga resources that have this id.
+ * This is used for convenience to not have to do this in every flow that needs any resource.
+ */
 class GetCombinedMangaResources(
     private val popularMangaRepository: PopularMangaRepository,
     private val recentMangaRepository: RecentMangaRepository,

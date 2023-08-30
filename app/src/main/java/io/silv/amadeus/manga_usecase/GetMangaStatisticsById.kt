@@ -1,4 +1,4 @@
-package io.silv.manga.repository_usecases
+package io.silv.amadeus.manga_usecase
 
 import io.silv.ktor_response_mapper.mapSuccess
 import io.silv.manga.network.mangadex.MangaDexApi
@@ -11,6 +11,10 @@ data class MangaStats(
     val comments: Int = 0
 )
 
+/**
+ * Fetches the [MangaStats] for the given manga id from the Manga Dex api.
+ * This always fetches from the network.
+ */
 class GetMangaStatisticsById (
     private val mangaDexApi: MangaDexApi
 ) {

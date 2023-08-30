@@ -66,6 +66,7 @@ private fun Reset(dismissState: DismissState, action: () -> Unit) {
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 fun LazyListScope.chapterListItems(
     mangaViewState: MangaViewState,
+    showFullTitle: Boolean,
     downloadingIds: List<Pair<String, Float>>,
     onMarkAsRead: (id: String) -> Unit,
     onBookmark: (id: String) -> Unit,
@@ -150,6 +151,7 @@ fun LazyListScope.chapterListItems(
                                 ),
                             chapter = chapter,
                             downloadProgress = downloadingIds.fastFirstOrNull { it.first == chapter.id }?.second,
+                            showFullTitle = showFullTitle,
                             onDownloadClicked = {
                                 onDownloadClicked(listOf(chapter.id))
                             },
@@ -191,6 +193,7 @@ private fun ChapterItemPlaceHolder() {
 @Composable
 private fun ChapterListItem(
     modifier: Modifier = Modifier,
+    showFullTitle: Boolean,
     chapter: SavableChapter,
     downloadProgress: Float?,
     onDownloadClicked: () -> Unit,
@@ -203,7 +206,8 @@ private fun ChapterListItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        val chapterTitleWithVolText = remember(chapter) {
+        val chapterTitleWithVolText = remember(chapter, showFullTitle) {
+            if (showFullTitle) { "Chapter ${chapter.chapter.coerceAtLeast(0)}" }
             val vol = if (chapter.volume >= 0) { "Vol. ${chapter.volume}"} else ""
             "$vol Ch. ${if(chapter.validNumber) chapter.chapter else "extra"} - " + chapter.title
         }

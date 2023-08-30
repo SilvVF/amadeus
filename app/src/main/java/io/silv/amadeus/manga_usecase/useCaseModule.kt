@@ -8,4 +8,10 @@ val useCaseModule = module {
     factoryOf(::GetCombinedSavableMangaWithChapters)
 
     factoryOf(::GetSavedMangaWithChaptersList)
+
+    factoryOf(::GetCombinedMangaResources)
+
+    factoryOf(::GetMangaById)
+
+    factoryOf(::GetMangaStatisticsById)
 }

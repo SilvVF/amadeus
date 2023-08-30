@@ -20,7 +20,14 @@ interface SeasonalListDao {
 
     @Transaction
     @Query("SELECT * FROM SeasonalListEntity")
-    fun getSeasonListsWithManga(): Flow<List<SeasonListWithManga>>
+    fun observeSeasonListWithManga(): Flow<List<SeasonListWithManga>>
+
+    @Transaction
+    @Query("SELECT * FROM SeasonalListEntity")
+    fun getSeasonListWithManga(): List<SeasonListWithManga>
+
+    @Query("DELETE FROM SeasonalListEntity")
+    suspend fun clear()
 
     companion object {
         const val id: Int = 9

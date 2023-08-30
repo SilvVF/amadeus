@@ -49,8 +49,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import io.silv.amadeus.data.ReaderSettings
-import io.silv.amadeus.ui.composables.getSize
 import io.silv.amadeus.types.SavableChapter
+import io.silv.amadeus.ui.composables.getSize
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,6 +71,7 @@ fun ReaderMenuOverlay(
     onPrevClick: () -> Unit,
     onNextClick: () -> Unit,
     onChapterBookmarked: (id: String) -> Unit,
+    goToChapter: (id: String) -> Unit,
     content: @Composable () -> Unit
 ) {
     var visible by rememberSaveable {
@@ -138,7 +139,8 @@ fun ReaderMenuOverlay(
                 onPrevClick = onPrevClick,
                 onNextClick = onNextClick,
                 onPageChange = onPageChange,
-                onChapterBookmarked = onChapterBookmarked
+                onChapterBookmarked = onChapterBookmarked,
+                goToChapter = goToChapter
             )
         }
     }
@@ -153,8 +155,8 @@ fun MangaChapterInfoTopBar(
 ) {
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.DarkGray.copy(alpha = 0.7f),
-            scrolledContainerColor = Color.DarkGray.copy(alpha = 0.7f),
+            containerColor = Color.DarkGray.copy(alpha = 0.5f),
+            scrolledContainerColor = Color.DarkGray.copy(alpha = 0.5f),
         ),
         title = {
             Column(
@@ -169,7 +171,7 @@ fun MangaChapterInfoTopBar(
                 )
                 Text(chapterTitle, 
                     color = Color.LightGray,
-                    maxLines = 2, 
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
@@ -232,7 +234,8 @@ fun ScaffoldOverlay(
     onPrevClick: () -> Unit,
     onNextClick: () -> Unit,
     onPageChange: (page: Int) -> Unit,
-    onChapterBookmarked: (id: String) -> Unit
+    onChapterBookmarked: (id: String) -> Unit,
+    goToChapter: (id: String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val backgroundColor by animateColorAsState(
@@ -309,7 +312,8 @@ fun ScaffoldOverlay(
                                 modifier = Modifier.fillMaxSize(),
                                 chapters = chapterList,
                                 selected = viewing,
-                                onBookmarkClick = onChapterBookmarked
+                                onBookmarkClick = onChapterBookmarked,
+                                onChapterClicked = goToChapter
                             )
                         } else { 
                             ReaderSettingsMenu(

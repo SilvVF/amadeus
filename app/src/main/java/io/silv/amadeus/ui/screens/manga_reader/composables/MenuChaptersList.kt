@@ -1,5 +1,6 @@
 package io.silv.amadeus.ui.screens.manga_reader.composables
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,11 +14,13 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.ui.theme.LocalSpacing
 
@@ -26,6 +29,7 @@ fun ChaptersList(
     modifier: Modifier = Modifier,
     selected: SavableChapter,
     chapters: List<SavableChapter>,
+    onChapterClicked: (id: String) -> Unit,
     onBookmarkClick: (chapterId: String) -> Unit
 ) {
     val space = LocalSpacing.current
@@ -45,13 +49,15 @@ fun ChaptersList(
                 Row(
                     Modifier
                         .fillMaxWidth()
+                        .clickable { onChapterClicked(chapter.id) }
                         .padding(space.med),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    val textColor = if (chapter.id == selected.id) MaterialTheme.colorScheme.primary else Color.Unspecified
                     Column {
-                        Text(text = volumeAndChapter)
-                        Text(text = chapterInfoText)
+                        Text(text = volumeAndChapter, color = textColor)
+                        Text(text = chapterInfoText, color = textColor)
                     }
                     IconButton(onClick = {
                         onBookmarkClick(chapter.id)

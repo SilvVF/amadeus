@@ -1,15 +1,16 @@
 package io.silv.manga.repositorys.manga
 
-import io.silv.manga.local.entity.Season
 import io.silv.manga.local.entity.manga_resource.SeasonalMangaResource
 import io.silv.manga.local.entity.relations.SeasonListWithManga
-import io.silv.manga.repositorys.MangaResourceRepository
+import io.silv.manga.sync.Syncable
 import kotlinx.coroutines.flow.Flow
 
 
-interface SeasonalMangaRepository: MangaResourceRepository<SeasonalMangaResource> {
+interface SeasonalMangaRepository: Syncable {
 
-    suspend fun updateSeasonList(season: Season, year: Int)
+    fun observeMangaResourceById(id: String): Flow<SeasonalMangaResource?>
+
+    fun observeAllMangaResources(): Flow<List<SeasonalMangaResource>>
 
     fun getSeasonalLists(): Flow<List<SeasonListWithManga>>
 }

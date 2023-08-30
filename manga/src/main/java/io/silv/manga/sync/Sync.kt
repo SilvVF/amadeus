@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import io.silv.manga.local.workers.MangaSyncWorker
+import io.silv.manga.local.workers.SeasonalMangaSyncWorker
 import io.silv.manga.local.workers.TagSyncWorker
 
 object Sync {
@@ -17,8 +18,13 @@ object Sync {
                 MangaSyncWorker.syncWorkRequest(),
             )
             enqueueUniqueWork(
+                SeasonalMangaSyncWorkName,
+                ExistingWorkPolicy.REPLACE,
+                SeasonalMangaSyncWorker.syncWorkRequest(),
+            )
+            enqueueUniqueWork(
                 TagSyncWorkName,
-                ExistingWorkPolicy.KEEP,
+                ExistingWorkPolicy.REPLACE,
                 TagSyncWorker.syncWorkRequest(),
             )
         }

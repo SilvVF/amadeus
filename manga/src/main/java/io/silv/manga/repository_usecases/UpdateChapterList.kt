@@ -1,4 +1,4 @@
-package io.silv.manga.domain.usecase
+package io.silv.manga.repository_usecases
 
 import ChapterListResponse
 import android.util.Log

@@ -9,7 +9,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 
-class AzukiHandler(
+internal class AzukiHandler(
     private val client: OkHttpClient
 ): ThirdPartyImageSource {
 

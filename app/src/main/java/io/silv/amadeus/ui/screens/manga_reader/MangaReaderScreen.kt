@@ -2,9 +2,9 @@
 
 package io.silv.amadeus.ui.screens.manga_reader
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -19,18 +19,20 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -52,6 +54,7 @@ import io.silv.amadeus.data.ReaderSettings
 import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.screens.manga_reader.composables.ReaderMenuOverlay
+import io.silv.amadeus.ui.screens.manga_reader.composables.rememberGestureHandler
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.core.lerp
@@ -64,7 +67,6 @@ class MangaReaderScreen(
     private val mangaId: String,
     private val initialChapterId: String,
 ): Screen {
-
 
     @Composable
     override fun Content() {
@@ -102,10 +104,41 @@ class MangaReaderScreen(
             },
             updatePage = { page, last ->
                 sm.updateChapterPage(page, last)
+            },
+            goToChapter = { id ->
+                sm.goToChapter(id)
             }
         )
     }
 }
+
+@Composable
+fun UpdateReaderState(
+    readerChapters: ReaderChapters,
+    horizontalReaderState: PagerState,
+    verticalReaderState: LazyListState,
+    updatePage: (page: Int, last: Int) -> Unit,
+) {
+
+    val update by rememberUpdatedState(updatePage)
+
+    LaunchedEffect(horizontalReaderState) {
+        snapshotFlow { horizontalReaderState.currentPage }
+            .collect { update(it + 1, readerChapters.chapterImages.size) }
+    }
+
+    LaunchedEffect(verticalReaderState) {
+        snapshotFlow { verticalReaderState.firstVisibleItemIndex }
+            .collect { update(it + 1, readerChapters.chapterImages.size) }
+    }
+
+    LaunchedEffect(readerChapters.current.id) {
+        launch { verticalReaderState.scrollToItem(0) }
+        launch { horizontalReaderState.scrollToPage(0) }
+    }
+}
+
+
 
 @Composable
 fun MangaReaderContent(
@@ -115,13 +148,12 @@ fun MangaReaderContent(
     onChapterBookmarked: (id: String) -> Unit,
     goToNextChapter: (from: SavableChapter) -> Unit,
     goToPrevChapter: (from: SavableChapter) -> Unit,
-    updatePage: (page: Int, last: Int) -> Unit
+    updatePage: (page: Int, last: Int) -> Unit,
+    goToChapter: (id: String) -> Unit,
 ) {
     val navigator = LocalNavigator.current
 
     val scope = rememberCoroutineScope()
-    val horizontalReaderState = rememberPagerState()
-    val verticalReaderState = rememberLazyListState()
 
     when (state) {
         is MangaReaderState.Failure -> {
@@ -135,58 +167,34 @@ fun MangaReaderContent(
             }
         }
         is MangaReaderState.Success -> {
-            val firstVisibleInVertical by remember {
-                derivedStateOf { verticalReaderState.firstVisibleItemIndex }
-            }
+            val horizontalReaderState = rememberPagerState(
+                initialPage = state.readerChapters.current.lastReadPage
+            )
+            val verticalReaderState = rememberLazyListState(
+                initialFirstVisibleItemIndex = state.readerChapters.current.lastReadPage
+            )
+            val gestureHandler = rememberGestureHandler(
+                imageListSize = state.readerChapters.chapterImages.size,
+                verticalReaderState = verticalReaderState,
+                horizontalReaderState = horizontalReaderState
+            )
 
-            LaunchedEffect(horizontalReaderState) {
-                snapshotFlow { horizontalReaderState.currentPage }
-                    .collect { updatePage(it + 1, state.pages.size) }
-            }
-
-            LaunchedEffect(verticalReaderState) {
-                snapshotFlow { verticalReaderState.firstVisibleItemIndex }
-                    .collect { updatePage(it + 1, state.pages.size) }
-            }
+            UpdateReaderState(
+                readerChapters = state.readerChapters,
+                horizontalReaderState = horizontalReaderState,
+                verticalReaderState = verticalReaderState,
+                updatePage = updatePage
+            )
 
             ReaderMenuOverlay(
                 modifier = Modifier.fillMaxSize(),
-                handleBackGesture = {
-                    scope.launch {
-                        when (it){
-                            Orientation.Vertical -> {
-                                (firstVisibleInVertical - 1)
-                                    .takeIf { it >= 0 }
-                                    ?.let { verticalReaderState.animateScrollToItem(it) }
-                            }
-                            Orientation.Horizontal -> {
-                                horizontalReaderState.animateScrollToPage(
-                                    horizontalReaderState.currentPage - 1
-                                )
-                            }
-                        }
-                    }
-                },
-                handleForwardGesture = {
-                    scope.launch {
-                        when (it){
-                            Orientation.Vertical -> {
-                                (firstVisibleInVertical + verticalReaderState.layoutInfo.visibleItemsInfo.size)
-                                    .takeIf { it >= 0 && it <= state.pages.lastIndex}
-                                    ?.let { verticalReaderState.animateScrollToItem(it) }
-                            }
-                            Orientation.Horizontal -> {
-                                horizontalReaderState.animateScrollToPage(
-                                    horizontalReaderState.currentPage + 1
-                                )
-                            }
-                        }
-                    }
-                },
+                handleBackGesture = { gestureHandler.handleBackGesture(it) },
+                handleForwardGesture = { gestureHandler.handleForwardGesture(it) },
+                goToChapter = goToChapter,
                 onNavigationIconClick = {
                     navigator?.pop()
                 },
-                chapter = state.chapter,
+                chapter = state.readerChapters.current,
                 chapters = state.chapters,
                 onPageChange = {
                     scope.launch {
@@ -197,19 +205,19 @@ fun MangaReaderContent(
                     }
                 },
                 currentPage = when(readerSettings.orientation) {
-                    Orientation.Vertical -> firstVisibleInVertical
+                    Orientation.Vertical -> gestureHandler.firstVisibleInVertical
                     Orientation.Horizontal -> horizontalReaderState.currentPage
                 },
                 mangaTitle = state.manga.titleEnglish,
                 onPrevClick = {
-                    goToPrevChapter(state.chapter)
+                    goToPrevChapter(state.readerChapters.current)
                     scope.launch {
                         horizontalReaderState.scrollToPage(0)
                         verticalReaderState.scrollToItem(0)
                     }
                 },
                 onNextClick = {
-                    goToNextChapter(state.chapter)
+                    goToNextChapter(state.readerChapters.current)
                     scope.launch {
                         horizontalReaderState.scrollToPage(0)
                         verticalReaderState.scrollToItem(0)
@@ -218,22 +226,14 @@ fun MangaReaderContent(
                 readerSettings = readerSettings,
                 onSettingsChanged = onReaderSettingsChange,
                 onChapterBookmarked = onChapterBookmarked,
-                lastPage = state.pages.size,
+                lastPage = state.readerChapters.chapterImages.size,
             ) {
                 MangaReader(
-                    viewing = state.chapter,
-                    images = state.pages,
-                    prev = remember(state.chapters, state.chapter) {
-                        val idx = state.chapters.map { it.id }.also { Log.d("CHAPTERS", it.toString()) }.indexOf(state.chapter.id)
-                        state.chapters.getOrNull(idx - 1)
-                    },
-                    next = remember(state.chapters, state.chapter) {
-                        val idx = state.chapters.map { it.id }.indexOf(state.chapter.id)
-                        state.chapters.getOrNull(idx + 1)
-                    },
+                    readerChapters = state.readerChapters,
                     settings = readerSettings,
                     verticalReaderState = verticalReaderState,
-                    horizontalReaderState = horizontalReaderState
+                    horizontalReaderState = horizontalReaderState,
+                    readChapter = { id -> goToChapter(id) }
                 )
             }
         }
@@ -246,11 +246,9 @@ fun MangaReaderContent(
 fun MangaReader(
     verticalReaderState: LazyListState,
     horizontalReaderState: PagerState,
-    viewing: SavableChapter,
-    images: List<String>,
-    prev: SavableChapter?,
-    next: SavableChapter?,
-    settings: ReaderSettings
+    readerChapters: ReaderChapters,
+    settings: ReaderSettings,
+    readChapter: (id: String) -> Unit,
 ) {
     val space = LocalSpacing.current
     when (settings.orientation) {
@@ -258,25 +256,21 @@ fun MangaReader(
             VerticalReader(
                 modifier = Modifier.fillMaxSize(),
                 state = verticalReaderState,
-                viewing = viewing,
-                images = images,
-                prev = prev,
-                next = next,
+                readerChapters = readerChapters,
+                readChapter = readChapter
             )
         }
         Orientation.Horizontal -> {
             Column(Modifier.fillMaxSize()) {
                 HorizontalReader(
                     modifier = Modifier.weight(1f),
-                    viewing = viewing,
-                    images = images,
-                    prev = prev,
-                    next = next,
+                    readerChapters = readerChapters,
                     pagerState = horizontalReaderState,
                     reverseLayout = when(settings.direction) {
                         LayoutDirection.Ltr -> false
                         LayoutDirection.Rtl -> true
-                    }
+                    },
+                    readChapter = readChapter
                 )
                 Spacer(modifier = Modifier.height(space.med))
                 AnimatedPageNumber(
@@ -284,8 +278,8 @@ fun MangaReader(
                         .fillMaxWidth()
                         .height(50.dp),
                     mangaPagerState = horizontalReaderState,
-                    pageCount = images.size,
-                    hasPrev = prev != null
+                    pageCount = readerChapters.chapterImages.size,
+                    hasPrev = readerChapters.hasPrev,
                 )
                 Spacer(modifier = Modifier.height(space.med))
             }
@@ -297,29 +291,35 @@ fun MangaReader(
 fun VerticalReader(
     modifier: Modifier = Modifier,
     state: LazyListState,
-    viewing: SavableChapter,
-    images: List<String>,
-    prev: SavableChapter?,
-    next: SavableChapter?,
+    readerChapters: ReaderChapters,
+    readChapter: (id: String) -> Unit
 ) {
     LazyColumn(modifier, state = state) {
-        prev?.let {
+        if (readerChapters.prev != null) {
             item {
-                CenterBox(Modifier.fillMaxSize()) {
-                    Text("${it.title}  ch ${it.chapter}")
+                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Previous chapter")
+                    Text("${readerChapters.prev.title}  ch ${readerChapters.prev.chapter}")
+                    Button(onClick = { readChapter(readerChapters.prev.id)  }) {
+                        Text("Go to previous")
+                    }
                 }
             }
         }
-        items(images, key = { it }) {url ->
+        items(readerChapters.chapterImages, key = { it }) {url ->
             MangaImage(
                 modifier = Modifier.fillMaxSize(),
                 url = url
             )
         }
-        next?.let {
+        if(readerChapters.next != null) {
             item {
-                CenterBox(Modifier.fillMaxSize()) {
-                    Text("${it.title}  ch ${it.chapter}")
+                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Next chapter")
+                    Text("${readerChapters.next.title}  ch ${readerChapters.next.chapter}")
+                    Button(onClick = { readChapter(readerChapters.next.id)  }) {
+                        Text("Go to next")
+                    }
                 }
             }
         }
@@ -330,40 +330,42 @@ fun VerticalReader(
 @Composable
 fun HorizontalReader(
     modifier: Modifier = Modifier,
-    viewing: SavableChapter,
     pagerState: PagerState,
-    images: List<String>,
-    prev: SavableChapter?,
-    next: SavableChapter?,
+    readerChapters: ReaderChapters,
     reverseLayout: Boolean,
+    readChapter: (id: String) -> Unit
 ) {
-    val pageCount =  images.size + if (prev != null) 1 else 0 + if (next != null) 1 else 0
+    val pageCount = readerChapters.chapterImages.size + listOf(readerChapters.hasPrev, readerChapters.hasNext).count { it }
+
     HorizontalPager(
         modifier = modifier,
         pageCount = pageCount,
         state = pagerState,
         pageSize = PageSize.Fill,
         reverseLayout = reverseLayout
-    ) {
-        if (it == 0) {
-            prev?.let {
-                CenterBox(Modifier.fillMaxSize()) {
-                    Text("${it.title}  ch ${it.chapter}")
+    ) { page ->
+        if (page == 0 && readerChapters.hasPrev && readerChapters.prev != null) {
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Previous chapter")
+                Text("${readerChapters.prev.title}  ch ${readerChapters.prev.chapter}")
+                Button(onClick = { readChapter(readerChapters.prev.id)  }) {
+                    Text("Go to prev")
                 }
-                return@HorizontalPager
             }
-        } else if (it >= images.size) {
-            next?.let {
-                CenterBox(Modifier.fillMaxSize()) {
-                    Text("${it.title}  ch ${it.chapter}")
+        } else if (page > readerChapters.chapterImages.lastIndex && readerChapters.next != null) {
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Next chapter")
+                Text("${readerChapters.next.title}  ch ${readerChapters.next.chapter}")
+                Button(onClick = { readChapter(readerChapters.next.id)  }) {
+                    Text("Go to next")
                 }
-                return@HorizontalPager
             }
+        } else {
+            MangaImage(
+                modifier = Modifier.fillMaxSize(),
+                url = readerChapters.chapterImages[page - if (readerChapters.hasPrev) 1 else 0]
+            )
         }
-        MangaImage(
-            modifier = Modifier.fillMaxSize(),
-            url = images.getOrElse(it - if (prev != null) 1 else 0) { "" }
-        )
     }
 }
 
@@ -439,11 +441,11 @@ fun AnimatedPageNumber(
                     alpha = interpolation
                 }
         ) {
-            if (hasPrev && pageCount == 0) {
+            if (hasPrev && page == 0) {
                 Text(text = " ")
             } else {
                 Text(
-                    text = (page + if(!hasPrev) 1 else 0).toString(),
+                    text = (page + if (!hasPrev) 1 else 0).toString(),
                     textAlign = TextAlign.Center
                 )
             }

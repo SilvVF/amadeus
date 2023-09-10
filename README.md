@@ -1,6 +1,8 @@
 # amadeus
 Amadeus is a Manga dex manga reader that supports offline reading and browsing of manga.
 
+[Google Play](https://play.google.com/store/apps/details?id=io.silv.amadeus)
+
 ## Tech Stack
 - [Koin](https://insert-koin.io/)
 - [Ktor Client](https://ktor.io/)

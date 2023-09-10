@@ -21,8 +21,9 @@ import io.silv.manga.repositorys.toSavedMangaEntity
 import io.silv.manga.sync.syncWithSyncer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
-import java.time.Duration
+import java.time.Duration.ofHours
 import kotlin.time.toKotlinDuration
 
 internal class SavedMangaRepositoryImpl(
@@ -31,12 +32,13 @@ internal class SavedMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,
     private val dispatchers: AmadeusDispatchers,
     private val updateChapterList: UpdateChapterList,
-    private val coverArtDownloadManager: CoverArtDownloadManager
+    private val coverArtDownloadManager: CoverArtDownloadManager,
+    private val mangaUpdateRepository: MangaUpdateRepository
 ): SavedMangaRepository {
 
     private val TAG = "SavedMangaRepositoryImpl"
-    private fun log(msg: String) = Log.d(TAG, msg)
 
+    private fun log(msg: String) = Log.d(TAG, msg)
 
     override suspend fun bookmarkManga(id: String): Unit = withContext(dispatchers.io) {
             log("bookmarking $id")
@@ -109,7 +111,10 @@ internal class SavedMangaRepositoryImpl(
 
     private val syncer = syncerForEntity<SavedMangaEntity, Manga, String>(
         networkToKey = { manga -> manga.id },
-        mapper = { network, saved -> network.toSavedMangaEntity(saved) },
+        mapper = { network, saved ->
+            saved?.let { mangaUpdateRepository.createUpdate(saved, network) }
+            network.toSavedMangaEntity(saved)
+        },
         upsert = {
             savedMangaDao.upsertSavedManga(it)
             if (it.coverArt.isBlank()) {
@@ -120,16 +125,17 @@ internal class SavedMangaRepositoryImpl(
     )
 
     override suspend fun sync(): Boolean {
-        val saved = emptyList<SavedMangaEntity>()
+        val saved = savedMangaDao.getSavedManga().firstOrNull() ?: emptyList<SavedMangaEntity>()
+            .filter {
+                timeNow() - it.savedAtLocal >= ofHours(1).toKotlinDuration()
+            }
         return syncWithSyncer(
             syncer = syncer,
-            getCurrent = { emptyList() },
+            getCurrent = { saved },
             getNetwork = {
                 saved.mapNotNull { saved ->
                     saved.takeIf {
-                        timeNow().minus(saved.savedAtLocal) > Duration.ofDays(4).toKotlinDuration()
-                                && saved.status != Status.cancelled
-                                && saved.status != Status.completed
+                        saved.status != Status.cancelled && saved.status != Status.completed
                     }
                 }
                     .chunked(100)

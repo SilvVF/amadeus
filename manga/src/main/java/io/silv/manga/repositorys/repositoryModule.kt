@@ -11,6 +11,8 @@ import io.silv.manga.repositorys.manga.FilteredMangaRepository
 import io.silv.manga.repositorys.manga.FilteredMangaRepositoryImpl
 import io.silv.manga.repositorys.manga.FilteredYearlyMangaRepository
 import io.silv.manga.repositorys.manga.FilteredYearlyMangaRepositoryImpl
+import io.silv.manga.repositorys.manga.MangaUpdateRepository
+import io.silv.manga.repositorys.manga.MangaUpdateRepositoryImpl
 import io.silv.manga.repositorys.manga.PopularMangaRepository
 import io.silv.manga.repositorys.manga.PopularMangaRepositoryImpl
 import io.silv.manga.repositorys.manga.QuickSearchMangaRepository
@@ -87,5 +89,9 @@ val repositoryModule = module {
 
     singleOf(::TempMangaRepositoryImpl) withOptions {
         bind<TempMangaRepository>()
+    }
+
+    singleOf(::MangaUpdateRepositoryImpl) withOptions {
+        bind<MangaUpdateRepository>()
     }
 }

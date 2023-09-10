@@ -9,8 +9,13 @@ import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.with
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -24,17 +29,29 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BookmarkAdd
+import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material3.DismissDirection
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismiss
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDismissState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -47,6 +64,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
@@ -63,13 +81,17 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.AmadeusScaffold
 import io.silv.amadeus.R
+import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.ui.screens.home.SearchTopAppBar
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.screens.manga_view.composables.ChapterListItem
+import io.silv.amadeus.ui.screens.manga_view.composables.Reset
 import io.silv.amadeus.ui.shared.CenterBox
+import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.amadeus.ui.theme.Pastel
 
 object LibraryTab: Tab {
 
@@ -97,7 +119,9 @@ object LibraryTab: Tab {
 
 class LibraryScreen: Screen {
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class,
+        ExperimentalFoundationApi::class
+    )
     @Composable
     override fun Content() {
 
@@ -107,7 +131,38 @@ class LibraryScreen: Screen {
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState())
         val bookmarkedChapters by sm.bookmarkedChapters.collectAsStateWithLifecycle()
         val downloadingOrDeletingIds by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
+        val updatedManga by sm.updates.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.current
+        val snackbarHostState = remember { SnackbarHostState() }
+
+        sm.collectEvents { event ->
+            when (event) {
+                is LibraryEvent.BookmarkStatusChanged -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = if (event.bookmarked) "Bookmarked" else "Removed Bookmark",
+                        withDismissAction = true,
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed -> sm.changeChapterBookmarked(event.id)
+                    }
+                }
+                is LibraryEvent.ReadStatusChanged -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = if (event.read) "Marked as read" else "Marked as unread",
+                        withDismissAction = true,
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed -> sm.changeChapterReadStatus(event.id)
+                    }
+                }
+            }
+        }
 
         var searching by rememberSaveable {
             mutableStateOf(false)
@@ -178,6 +233,12 @@ class LibraryScreen: Screen {
                     ) {
                         Text(text = "Chapters", modifier = Modifier.padding(space.large))
                     }
+                    Tab(
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 }
+                    ) {
+                        Text(text = "Updates", modifier = Modifier.padding(space.large))
+                    }
                 }
                 AnimatedContent(
                     targetState = selectedTab,
@@ -190,9 +251,9 @@ class LibraryScreen: Screen {
                             slideInHorizontally { -it } with slideOutHorizontally { it }
                         }
                     }
-                ) {
-                    if (it == 0) {
-                        LazyVerticalGrid(
+                ) { selectedTab ->
+                    when (selectedTab) {
+                        0 -> LazyVerticalGrid(
                             modifier = Modifier.weight(1f),
                             columns = GridCells.Fixed(2),
                         ) {
@@ -203,42 +264,222 @@ class LibraryScreen: Screen {
                                 LibraryMangaPoster(libraryManga = item)
                             }
                         }
-                    } else {
-                        LazyColumn(
-                            Modifier.weight(1f)
+                        1 -> BookmarkedChapterList(
+                            bookmarkedChapters = bookmarkedChapters,
+                            modifier = Modifier.weight(1f),
+                            changeChapterRead = sm::changeChapterReadStatus,
+                            changeChapterBookmarked = sm::changeChapterBookmarked,
+                            downloadingOrDeletingIds = downloadingOrDeletingIds,
+                            downloadImages = sm::downloadChapterImages,
+                            deleteImages = sm::deleteChapterImages
+                        )
+                        else -> UpdatesList(updates = updatedManga, modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun UpdatesList(
+    updates: List<Update>,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val space = LocalSpacing.current
+    val navigator = LocalNavigator.current
+    if (updates.isEmpty()) {
+        CenterBox(modifier = Modifier.fillMaxSize()) {
+            Text(text = "No updates for manga.")
+        }
+    } else {
+        LazyColumn(
+            modifier = modifier
+        ) {
+            items(updates) {
+                when (it) {
+                    is Update.Chapter -> {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(space.large)
+                                .clickable {
+                                    navigator?.push(
+                                        MangaReaderScreen(it.manga.id, it.chapterId)
+                                    )
+                                },
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            items(bookmarkedChapters) {chapter ->
-                                ChapterListItem(
-                                    modifier = Modifier
-                                        .background(MaterialTheme.colorScheme.background)
-                                        .fillMaxWidth()
-                                        .padding(
-                                            vertical = space.med,
-                                            horizontal = space.large
-                                        ),
-                                    chapter = chapter,
-                                    downloadProgress = downloadingOrDeletingIds.fastFirstOrNull { it.first == chapter.id }?.second,
-                                    showFullTitle = true,
-                                    onDownloadClicked = {
-                                        sm.downloadChapterImages(listOf(chapter.id), chapter.mangaId)
-                                    },
-                                    onDeleteClicked = {
-                                        sm.deleteChapterImages(listOf(chapter.id))
-                                    },
-                                    onReadClicked = {
+                            AsyncImage(
+                                model = ImageRequest.Builder(context),
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.size(140.dp)
+                                    .clickable {
                                         navigator?.push(
-                                            MangaReaderScreen(
-                                                chapter.mangaId,
-                                                chapter.id
-                                            )
+                                            MangaViewScreen(it.manga)
                                         )
                                     }
-                                )
+                            )
+                            Column {
+                                Text(text = it.manga.titleEnglish)
+                                Text(text = "new chapter available")
+                            }
+                        }
+                    }
+
+                    is Update.Volume -> {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(space.large)
+                                .clickable {
+                                    navigator?.push(
+                                        MangaReaderScreen(it.manga.id, it.chapterId)
+                                    )
+                                },
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(context),
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.size(140.dp)
+                                    .clickable {
+                                        navigator?.push(
+                                            MangaViewScreen(it.manga)
+                                        )
+                                    }
+                            )
+                            Column {
+                                Text(text = it.manga.titleEnglish)
+                                Text(text = "new volume available")
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun BookmarkedChapterList(
+    bookmarkedChapters: List<SavableChapter>,
+    modifier: Modifier,
+    changeChapterRead: (id: String) -> Unit,
+    changeChapterBookmarked: (id: String) -> Unit,
+    downloadingOrDeletingIds: List<Pair<String, Float>>,
+    downloadImages: (List<String>, String) -> Unit,
+    deleteImages: (List<String>) -> Unit
+) {
+    val chaptersByManga by remember {
+        derivedStateOf {
+            bookmarkedChapters.groupBy { chapter -> chapter.mangaId }
+                .mapKeys { (k, chapter) -> chapter.sortedBy { it.chapter } }
+                .map { (k, v) -> v.toList() }
+        }
+    }
+    val space = LocalSpacing.current
+    val navigator = LocalNavigator.current
+    LazyColumn(modifier) {
+        for (chapters in chaptersByManga) {
+            items(chapters) { chapter ->
+                val dismissState = rememberDismissState()
+                when {
+                    dismissState.isDismissed(DismissDirection.EndToStart) ->
+                        Reset(dismissState = dismissState) {
+                            changeChapterRead(chapter.id)
+                        }
+
+                    dismissState.isDismissed(DismissDirection.StartToEnd) ->
+                        Reset(dismissState = dismissState) {
+                            changeChapterBookmarked(chapter.id)
+                        }
+                }
+                SwipeToDismiss(
+                    state = dismissState,
+                    background = {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = space.large)
+                            ) {
+                                when (dismissState.dismissDirection) {
+                                    DismissDirection.StartToEnd -> Column(
+                                        verticalArrangement = Arrangement.Center,
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.align(Alignment.CenterStart)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (chapter.bookmarked)
+                                                Icons.Default.BookmarkRemove
+                                            else Icons.Default.BookmarkAdd,
+                                            contentDescription = "bookmark"
+                                        )
+                                        Text(if (chapter.bookmarked) "Remove bookmark" else "Add bookmark")
+                                    }
+
+                                    DismissDirection.EndToStart -> Column(
+                                        verticalArrangement = Arrangement.Center,
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.align(Alignment.CenterEnd)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (chapter.read)
+                                                Icons.Default.VisibilityOff
+                                            else Icons.Default.Visibility,
+                                            contentDescription = "read"
+                                        )
+                                        Text(if (chapter.read) "Mark unread" else "Mark read")
+                                    }
+
+                                    else -> Unit
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .animateItemPlacement(),
+                    dismissContent = {
+                        ChapterListItem(
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.background)
+                                .fillMaxWidth()
+                                .padding(
+                                    vertical = space.med,
+                                    horizontal = space.large
+                                ),
+                            chapter = chapter,
+                            downloadProgress = downloadingOrDeletingIds.fastFirstOrNull { it.first == chapter.id }?.second,
+                            showFullTitle = true,
+                            onDownloadClicked = {
+                                downloadImages(listOf(chapter.id), chapter.mangaId)
+                            },
+                            onDeleteClicked = {
+                                deleteImages(listOf(chapter.id))
+                            },
+                            onReadClicked = {
+                                navigator?.push(
+                                    MangaReaderScreen(
+                                        chapter.mangaId,
+                                        chapter.id
+                                    )
+                                )
+                            }
+                        )
+                    }
+                )
+            }
+            item { Divider() }
         }
     }
 }
@@ -255,9 +496,16 @@ fun LibraryMangaPoster(
     CenterBox(
         Modifier.padding(space.large)
     ) {
+        val colorPlaceholder = remember {
+            Pastel.getColorLight()
+        }
+
         AsyncImage(
             model = ImageRequest.Builder(ctx)
                 .data(manga.coverArt)
+                .placeholder(colorPlaceholder)
+                .fallback(colorPlaceholder)
+                .error(colorPlaceholder)
                 .build(),
             contentDescription = null,
             modifier = Modifier

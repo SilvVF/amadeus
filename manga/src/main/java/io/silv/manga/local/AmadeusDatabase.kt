@@ -6,6 +6,7 @@ import androidx.room.TypeConverters
 import io.silv.manga.local.dao.ChapterDao
 import io.silv.manga.local.dao.FilteredMangaResourceDao
 import io.silv.manga.local.dao.FilteredMangaYearlyResourceDao
+import io.silv.manga.local.dao.MangaUpdateDao
 import io.silv.manga.local.dao.PopularMangaResourceDao
 import io.silv.manga.local.dao.QuickSearchMangaResourceDao
 import io.silv.manga.local.dao.RecentMangaResourceDao
@@ -16,6 +17,7 @@ import io.silv.manga.local.dao.SeasonalMangaResourceDao
 import io.silv.manga.local.dao.TagDao
 import io.silv.manga.local.dao.TempMangaResourceDao
 import io.silv.manga.local.entity.ChapterEntity
+import io.silv.manga.local.entity.MangaUpdateEntity
 import io.silv.manga.local.entity.SavedMangaEntity
 import io.silv.manga.local.entity.SeasonalListEntity
 import io.silv.manga.local.entity.TagEntity
@@ -42,7 +44,8 @@ import io.silv.manga.local.entity.manga_resource.TempMangaResource
         SeasonalListEntity::class,
         TagEntity::class,
         QuickSearchMangaResource::class,
-        TempMangaResource::class
+        TempMangaResource::class,
+        MangaUpdateEntity::class
     ],
     version = 1,
 )
@@ -72,4 +75,6 @@ internal abstract class AmadeusDatabase: RoomDatabase() {
     abstract fun quickSearchResourceDao(): QuickSearchMangaResourceDao
 
     abstract fun tempMangaResourceDao(): TempMangaResourceDao
+
+    abstract fun mangaUpdateDao(): MangaUpdateDao
 }

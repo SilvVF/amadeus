@@ -8,19 +8,22 @@ import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.manga.local.entity.ProgressState
+import io.silv.manga.local.entity.UpdateType
 import io.silv.manga.local.workers.ChapterDeletionWorker
 import io.silv.manga.local.workers.ChapterDeletionWorkerTag
 import io.silv.manga.local.workers.ChapterDownloadWorker
 import io.silv.manga.local.workers.ChapterDownloadWorkerTag
 import io.silv.manga.repositorys.chapter.ChapterEntityRepository
+import io.silv.manga.repositorys.manga.MangaUpdateRepository
 import io.silv.manga.sync.anyRunning
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class LibrarySM(
-    chapterEntityRepository: ChapterEntityRepository,
+    private val chapterEntityRepository: ChapterEntityRepository,
     getSavedMangaWithChaptersList: GetSavedMangaWithChaptersList,
+    private val mangaUpdateRepository: MangaUpdateRepository,
     private val workManager: WorkManager,
 ): AmadeusScreenModel<LibraryEvent>() {
 
@@ -61,6 +64,20 @@ class LibrarySM(
         }
         .stateInUi(emptyList())
 
+    val updates = mangaUpdateRepository.observeAllUpdates().map { updates ->
+        updates.mapNotNull { updateWithManga ->
+           val (update, manga) = updateWithManga
+            when (update.updateType) {
+                UpdateType.Volume, UpdateType.Chapter -> Update.Chapter(
+                    chapterId = manga.latestUploadedChapter ?: return@mapNotNull null,
+                    SavableManga(manga)
+                )
+                UpdateType.Other -> null
+            }
+        }
+    }
+        .stateInUi(emptyList())
+
     fun deleteChapterImages(chapterIds: List<String>) = coroutineScope.launch {
         workManager.enqueue(
             ChapterDeletionWorker.deletionWorkRequest(chapterIds)
@@ -77,6 +94,38 @@ class LibrarySM(
             )
         )
     }
+
+    fun changeChapterBookmarked(id: String) = coroutineScope.launch {
+        var new = false
+        chapterEntityRepository.updateChapter(id) { entity ->
+            entity.copy(
+                bookmarked = !entity.bookmarked.also { new = it }
+            )
+        }
+        mutableEvents.send(
+            LibraryEvent.BookmarkStatusChanged(id, new)
+        )
+    }
+
+    fun changeChapterReadStatus(id: String) = coroutineScope.launch {
+        var new = false
+        chapterEntityRepository.updateChapter(id) { entity ->
+            entity.copy(
+                progressState = when(entity.progressState) {
+                    ProgressState.Finished -> ProgressState.NotStarted.also { new = false }
+                    ProgressState.NotStarted, ProgressState.Reading -> ProgressState.Finished.also { new = true }
+                }
+            )
+        }
+        mutableEvents.send(
+            LibraryEvent.ReadStatusChanged(id, new)
+        )
+    }
+}
+
+sealed interface Update {
+    data class Chapter(val chapterId: String, val manga: SavableManga): Update
+    data class Volume(val chapterId: String, val manga: SavableManga): Update
 }
 
 data class LibraryManga(
@@ -94,4 +143,7 @@ data class LibraryManga(
             ?: chapters.firstOrNull()
 }
 
-sealed interface LibraryEvent
+sealed interface LibraryEvent {
+    data class BookmarkStatusChanged(val id: String, val bookmarked: Boolean): LibraryEvent
+    data class ReadStatusChanged(val id: String, val read: Boolean): LibraryEvent
+}

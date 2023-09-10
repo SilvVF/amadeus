@@ -53,7 +53,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Reset(dismissState: DismissState, action: () -> Unit) {
+fun Reset(dismissState: DismissState, action: () -> Unit) {
     val scope = rememberCoroutineScope()
     LaunchedEffect(key1 = dismissState.dismissDirection) {
         scope.launch {

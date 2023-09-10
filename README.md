@@ -13,7 +13,7 @@ Amadeus is a Manga dex manga reader that supports offline reading and browsing o
 - [voyager](https://voyager.adriel.cafe/)
 - [Paging3](https://developer.android.com/topic/libraries/architecture/paging/v3-overview)
 
-The app also uses a modified version of [Sandwhich](https://github.com/skydoves/sandwich) which is changed to support using ktor client instead of retrofit.
+The app also uses a modified version of [Sandwich](https://github.com/skydoves/sandwich) which is changed to support using ktor client instead of retrofit.
 This can be found in the [ktor-response-mapper](https://github.com/SilvVF/amadeus/tree/master/ktor-response-mapper) module.
 
 ## Modules
@@ -21,7 +21,7 @@ The app is split into four modules.
 - The app modules relies on all of the modules and contains the Ui specific jetpack compose code.
 - The manga module manages all the data related to repsonses from the manga dex api and saving this data.
 - The core module contains any Util funcitons that can be used througout the app that are not android specific.
-- The ktor-response-mapper module transforms ktor responses based on [Sandwhich](https://github.com/skydoves/sandwich)
+- The ktor-response-mapper module transforms ktor responses based on [Sandwich](https://github.com/skydoves/sandwich)
 
 ## Data Flow
 The app follows Unidirectional Data Flow Pattern (UDF) and uses best practices recommended by Android docs.

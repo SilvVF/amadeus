@@ -35,7 +35,7 @@ tags for manga dex filters are also update here.
 ## Saving images
 When saving images if the manga is from a thirdparty uploader on mangadex it is not gaurenteed that the images will show correctly. All images that come from the mangadex api are 
 supported.
-
+<img src="https://github.com/SilvVF/amadeus/assets/98186105/f45a0efd-58de-4ed3-b482-3353201afb4b" width=300>
 <img src="https://github.com/SilvVF/amadeus/assets/98186105/cb687834-a69f-42fe-a1df-6921c0d2767e" width=300>
 <img src="https://github.com/SilvVF/amadeus/assets/98186105/3adffca4-fe15-4e7a-bfb3-a46c5ffb35fc" width=300>
 <img src="https://github.com/SilvVF/amadeus/assets/98186105/a859ad00-e6c8-4ef6-8128-447dc6abb242" width=300>

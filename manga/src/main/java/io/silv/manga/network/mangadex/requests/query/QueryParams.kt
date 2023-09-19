@@ -5,4 +5,6 @@ package io.silv.manga.network.mangadex.requests.query
  * This gives the class access to [createQueryParams] which uses the member names
  * and values to provide a list of [QueryParam].
  */
-interface QueryParams
+interface QueryParams {
+    fun createQueryParams(): List<QueryParam>
+}

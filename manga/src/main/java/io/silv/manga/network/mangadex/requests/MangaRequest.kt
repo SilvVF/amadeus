@@ -2,6 +2,7 @@
 
 package io.silv.manga.network.mangadex.requests
 
+import io.silv.manga.network.mangadex.requests.query.QueryParam
 import io.silv.manga.network.mangadex.requests.query.QueryParams
 
 
@@ -23,7 +24,7 @@ data class MangaRequest(
     val availableTranslatedLanguage: List<String>? = null,
     val publicationDemographic: List<String>? = null,
     val ids: List<String>?  = null,
-    val contentRating: List<String>?  = null,
+    val contentRating: List<String>?  = listOf("safe"),
     var createdAtSince: String? = null,
     val updatedAtSince: String?  = null,
     val order: Map<String, String>? = null,
@@ -32,6 +33,38 @@ data class MangaRequest(
     val group: String? = null
 ): QueryParams {
 
+    override fun createQueryParams(): List<QueryParam> {
+        return listOf(
+            Pair("limit", limit),
+            Pair("offset", offset),
+            Pair("title", title),
+            Pair("authorOrArtist", authorOrArtist),
+            Pair("authors", authors),
+            Pair("artists", artists),
+            Pair("year", year),
+            Pair("includedTags", includedTags),
+            Pair("includedTagsMode", includedTagsMode),
+            Pair("excludedTags", excludedTags),
+            Pair("excludedTagsMode", excludedTagsMode),
+            Pair("status", status),
+            Pair("originalLanguage", originalLanguage),
+            Pair("excludedOriginalLanguage", excludedOriginalLanguage),
+            Pair("availableTranslatedLanguage", availableTranslatedLanguage),
+            Pair("publicationDemographic", publicationDemographic),
+            Pair("ids", ids),
+            Pair("contentRating", contentRating),
+            Pair("createdAtSince", createdAtSince),
+            Pair("updatedAtSince", updatedAtSince),
+            Pair("order", order),
+            Pair("includes", includes),
+            Pair("hasAvailableChapters", hasAvailableChapters),
+            Pair("group", group),
+        )
+            .filter { it.second != null }
+            .map {
+                QueryParam(it.first, it.second.toString())
+            }
+    }
 
     enum class TagsMode(
         val string: String

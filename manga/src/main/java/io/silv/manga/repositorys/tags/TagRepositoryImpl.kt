@@ -27,9 +27,16 @@ internal class TagRepositoryImpl(
             getNetworkWithVersion = {
                 mangaDexApi.getTagList()
                     .getOrThrow()
-                    .data.map {
+                    .data
+                    .filter {
+                        it.attributes.name.any { (_, name) ->
+                            name !in listOf("Sexual Violence", "Loli", "Harem",  "Reverse Harem")
+                        }
+                    }
+                    .map {
                         it.attributes.version to it
                     }
+
             },
             networkToKey = { tagData -> tagData.id },
             lastUpdatedEpochSeconds = { tags.minByOrNull { it.lastUpdatedEpochSeconds }?.lastUpdatedEpochSeconds ?: 0L },

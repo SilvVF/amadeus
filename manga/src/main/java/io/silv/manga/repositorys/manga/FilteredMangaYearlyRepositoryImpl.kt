@@ -88,7 +88,7 @@ internal class FilteredYearlyMangaRepositoryImpl(
                         order = mapOf("followedCount" to "desc"),
                         includedTags = listOf(tagId),
                         includedTagsMode = MangaRequest.TagsMode.AND,
-                        createdAtSince = timeStringMinus(Duration.ofDays(365))
+                        createdAtSince = timeStringMinus(Duration.ofDays(365)),
                     )
                 )
                     .getOrThrow()

@@ -2,24 +2,27 @@ package io.silv.amadeus.ui.screens.home
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
+import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.composables.MangaListItem
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.amadeus.types.SavableManga
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -63,17 +66,28 @@ fun LazyListScope.recentMangaList(
                 AnimatedBoxShimmer(Modifier.size(200.dp))
             }
         }
-    }
-    if (manga.loadState.append is LoadState.Error || manga.loadState.refresh is LoadState.Error) {
+    } else if (manga.itemCount <= 0 && manga.loadState.refresh != LoadState.Loading) {
+        item {
+            val space = LocalSpacing.current
+            CenterBox(Modifier.fillMaxWidth().padding(space.med)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "unable to load, make sure to check your network connection.")
+                    Button(onClick = { manga.retry() }) {
+                        Text("Retry loading manga")
+                    }
+                }
+            }
+        }
+    } else if (manga.loadState.append is LoadState.Error || manga.loadState.refresh is LoadState.Error) {
         item {
             val space = LocalSpacing.current
             CenterBox(
                 Modifier
                     .fillMaxSize()
                     .padding(space.large)) {
-                Button(onClick = { manga.retry() }) {
-                    Text("Retry loading manga.")
-                }
+                    Button(onClick = { manga.retry() }) {
+                        Text("Retry loading manga.")
+                    }
             }
         }
     }

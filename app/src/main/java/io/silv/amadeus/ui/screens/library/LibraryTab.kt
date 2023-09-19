@@ -82,6 +82,7 @@ import coil.request.ImageRequest
 import io.silv.amadeus.AmadeusScaffold
 import io.silv.amadeus.R
 import io.silv.amadeus.types.SavableChapter
+import io.silv.amadeus.ui.composables.header
 import io.silv.amadeus.ui.screens.home.SearchTopAppBar
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
@@ -257,11 +258,27 @@ class LibraryScreen: Screen {
                             modifier = Modifier.weight(1f),
                             columns = GridCells.Fixed(2),
                         ) {
-                            items(
-                                items = filteredItems,
-                                key = { item -> item.savableManga.id }
-                            ) {item ->
-                                LibraryMangaPoster(libraryManga = item)
+                            if (filteredItems.isEmpty()) {
+                                header {
+                                    CenterBox(
+                                        Modifier
+                                            .fillMaxSize()
+                                            .padding(space.med)
+                                    ) {
+                                        if(searchText.isBlank()) {
+                                            Text(text = "no manga in your library\nmanga marked as favorite will appear here")
+                                        } else {
+                                            Text(text = "no manga matching given search")
+                                        }
+                                    }
+                                }
+                            } else {
+                                items(
+                                    items = filteredItems,
+                                    key = { item -> item.savableManga.id }
+                                ) {item ->
+                                    LibraryMangaPoster(libraryManga = item)
+                                }
                             }
                         }
                         1 -> BookmarkedChapterList(
@@ -316,7 +333,8 @@ fun UpdatesList(
                                 model = ImageRequest.Builder(context),
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,
-                                modifier = Modifier.size(140.dp)
+                                modifier = Modifier
+                                    .size(140.dp)
                                     .clickable {
                                         navigator?.push(
                                             MangaViewScreen(it.manga)
@@ -347,7 +365,8 @@ fun UpdatesList(
                                 model = ImageRequest.Builder(context),
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,
-                                modifier = Modifier.size(140.dp)
+                                modifier = Modifier
+                                    .size(140.dp)
                                     .clickable {
                                         navigator?.push(
                                             MangaViewScreen(it.manga)
@@ -387,6 +406,17 @@ fun BookmarkedChapterList(
     val space = LocalSpacing.current
     val navigator = LocalNavigator.current
     LazyColumn(modifier) {
+        if (chaptersByManga.isEmpty()) {
+            item {
+                CenterBox(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(space.med)) {
+
+                    Text(text = "no chapters have been bookmarked yet")
+                }
+            }
+        }
         for (chapters in chaptersByManga) {
             items(chapters) { chapter ->
                 val dismissState = rememberDismissState()

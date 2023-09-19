@@ -23,7 +23,7 @@ data class SearchMangaResourceQuery(
     val excludedTags: List<String> = emptyList(),
     val includedTagsMode: MangaRequest.TagsMode = MangaRequest.TagsMode.AND,
     val excludedTagsMode: MangaRequest.TagsMode = MangaRequest.TagsMode.OR,
-    val contentRating: List<ContentRating> = emptyList(),
+    val contentRating: List<ContentRating> = listOf(ContentRating.safe),
     val publicationStatus: List<Status> = emptyList(),
     val authorIds: List<String> = emptyList(),
     val artistIds: List<String> = emptyList(),

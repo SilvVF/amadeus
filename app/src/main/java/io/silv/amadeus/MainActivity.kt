@@ -90,7 +90,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             Scaffold(
                                 bottomBar = {
-                                    if (showBar) {
+                                    if (shouldShowBottomBar(windowSizeClass) && showBar) {
                                         AmadeusBottomBar()
                                     }
                                 }

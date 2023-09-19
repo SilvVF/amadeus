@@ -12,7 +12,6 @@ import io.silv.manga.local.workers.third_party_image_fetchers.ComikeyHandler
 import io.silv.manga.local.workers.third_party_image_fetchers.MangaHotHandler
 import io.silv.manga.local.workers.third_party_image_fetchers.MangaPlusHandler
 import io.silv.manga.network.mangadex.MangaDexApi
-import io.silv.manga.network.mangadex.MangaDexTestApi
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import org.koin.core.module.dsl.factoryOf
@@ -64,10 +63,6 @@ val networkModule = module {
 
     single {
         KSandwichClient.create(get())
-    }
-
-    single {
-        MangaDexTestApi(get(), get())
     }
 
     single {

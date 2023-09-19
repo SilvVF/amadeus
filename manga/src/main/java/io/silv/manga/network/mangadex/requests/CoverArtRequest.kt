@@ -1,6 +1,7 @@
 package io.silv.manga.network.mangadex.requests
 
 import io.silv.manga.network.mangadex.models.CoverIncludesFilter
+import io.silv.manga.network.mangadex.requests.query.QueryParam
 import io.silv.manga.network.mangadex.requests.query.QueryParams
 
 /**
@@ -19,4 +20,20 @@ data class CoverArtRequest(
     val uploaders: List<String>? = null,
     val locales: List<String>? = null,
     val order: Map<Order, OrderBy>? = null,
-): QueryParams
+): QueryParams {
+    override fun createQueryParams(): List<QueryParam> {
+        return listOf(
+            Pair("limit", limit),
+            Pair("offset", offset),
+            Pair("manga", manga),
+            Pair("ids", ids),
+            Pair("uploaders", includes),
+            Pair("locales", uploaders),
+            Pair("order", order),
+        )
+            .filter { it.second != null }
+            .map {
+                QueryParam(it.first, it.second.toString())
+            }
+    }
+}

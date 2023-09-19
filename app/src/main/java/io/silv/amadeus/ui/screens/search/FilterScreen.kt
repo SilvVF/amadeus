@@ -91,17 +91,17 @@ import androidx.compose.ui.window.PopupProperties
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
+import io.silv.amadeus.types.DomainAuthor
+import io.silv.amadeus.types.DomainTag
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.amadeus.types.DomainAuthor
-import io.silv.amadeus.types.DomainTag
-import io.silv.manga.repositorys.author.QueryResult
 import io.silv.manga.network.mangadex.models.ContentRating
 import io.silv.manga.network.mangadex.models.PublicationDemographic
 import io.silv.manga.network.mangadex.models.Status
 import io.silv.manga.network.mangadex.requests.MangaRequest
+import io.silv.manga.repositorys.author.QueryResult
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -195,26 +195,6 @@ fun FilterScreen(
                     )
                 }
                 Spacer(Modifier.height(space.med))
-            }
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = space.med)
-            ) {
-                Text("Content Rating")
-                FlowRow {
-                    contentRatings.forEach { rating ->
-                        FilterChip(
-                            selected = remember(contentRatings, selectedContentRatings) {
-                                selectedContentRatings.contains(rating)
-                            },
-                            onClick = { onContentRatingSelected(rating) },
-                            label = { Text(rating.name) },
-                            modifier = Modifier.padding(horizontal = space.xs)
-                        )
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
             }
             Column(
                 Modifier

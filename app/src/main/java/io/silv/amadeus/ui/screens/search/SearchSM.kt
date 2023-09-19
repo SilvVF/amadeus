@@ -167,7 +167,6 @@ class SearchSM(
                 excludedTagsMode = excludedTagsMode,
                 authorIds = authors.map { it.id },
                 artistIds = artists.map { it.id },
-                contentRating = rating,
                 publicationStatus = status,
                 originalLanguages = originalLangs.map { it.code },
                 translatedLanguages = transLangs.map { it.code },

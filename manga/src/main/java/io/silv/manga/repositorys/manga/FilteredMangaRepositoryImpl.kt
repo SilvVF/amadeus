@@ -9,14 +9,14 @@ import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
 import io.silv.core.AmadeusDispatchers
 import io.silv.ktor_response_mapper.getOrThrow
-import io.silv.manga.repositorys.suspendRunCatching
-import io.silv.manga.repositorys.timeString
-import io.silv.manga.repositorys.toFilteredMangaResource
 import io.silv.manga.local.AmadeusDatabase
 import io.silv.manga.local.dao.FilteredMangaResourceDao
 import io.silv.manga.local.entity.manga_resource.FilteredMangaResource
 import io.silv.manga.network.mangadex.MangaDexApi
 import io.silv.manga.network.mangadex.requests.MangaRequest
+import io.silv.manga.repositorys.suspendRunCatching
+import io.silv.manga.repositorys.timeString
+import io.silv.manga.repositorys.toFilteredMangaResource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 
@@ -56,7 +56,8 @@ private class FilteredMangaRemoteMediator(
                     order = mapOf("followedCount" to "desc"),
                     includedTags = listOf(query.tagId),
                     includedTagsMode = MangaRequest.TagsMode.AND,
-                    createdAtSince = query.timePeriod.timeString()
+                    createdAtSince = query.timePeriod.timeString(),
+                    contentRating = listOf("safe")
                 )
             )
                 .getOrThrow()

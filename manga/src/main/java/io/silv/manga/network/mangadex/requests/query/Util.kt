@@ -4,38 +4,6 @@ import android.util.Log
 import kotlin.reflect.full.memberProperties
 
 /**
- * Finds the member value based on the fieldName.
- * @return member value or null if cast failed / not found
- */
-@Throws(IllegalAccessException::class, ClassCastException::class)
-private inline fun <reified T> Any.getField(fieldName: String): T? {
-    this::class.memberProperties.forEach { kCallable ->
-        if (fieldName == kCallable.name) {
-            return kCallable.getter.call(this) as T?
-        }
-    }
-    return null
-}
-
-/**
- * Creates the query parameters from class member using reflection
- */
-fun QueryParams.createQueryParams(): List<QueryParam> {
-    val instance = this
-    return buildList {
-        instance::class.members.forEach {  member ->
-            val fieldValue = instance.getField<Any?>(member.name) ?: return@forEach
-            add(
-                QueryParam(
-                    member.name,
-                    fieldValue.toString()
-                )
-            )
-        }
-    }
-}
-
-/**
  * appends each part of the list to the [StringBuilder] as name[]=value.
  * each value past the first in the list is added on as &name[]=value.
  * the & is appended after only if it is not the last element.

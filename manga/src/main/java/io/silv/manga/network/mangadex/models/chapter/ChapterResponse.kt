@@ -5,12 +5,12 @@ import io.silv.manga.network.mangadex.models.Result
 import kotlinx.serialization.Serializable
 
 
-@Serializable
-data class ChapterResponse(
-    val result: Result,
-    val response: String,
-    val data: Chapter
-)
+//@Serializable
+//data class ChapterResponse(
+//    val result: Result,
+//    val response: String,
+//    val data: Chapter
+//)
 
 
 

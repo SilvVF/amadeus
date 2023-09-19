@@ -1,6 +1,7 @@
 package io.silv.manga.network.mangadex.requests
 
 import io.silv.manga.network.mangadex.models.ContentRating
+import io.silv.manga.network.mangadex.requests.query.QueryParam
 import io.silv.manga.network.mangadex.requests.query.QueryParams
 
 /**
@@ -28,4 +29,30 @@ data class MangaFeedRequest(
     val includeEmptyPages: Int? = null,
     val includeFuturePublishAt: Int? = null,
     val includeExternalUrl: Int? = null
-): QueryParams
+): QueryParams {
+    override fun createQueryParams(): List<QueryParam> {
+        return listOf(
+            Pair("limit", limit),
+            Pair("offset", offset),
+            Pair("translatedLanguage", translatedLanguage),
+            Pair("originalLanguage", originalLanguage),
+            Pair("excludedOriginalLanguage", excludedOriginalLanguage),
+            Pair("contentRating", contentRating),
+            Pair("excludedGroups", excludedGroups),
+            Pair("excludedUploaders", excludedUploaders),
+            Pair("includeFutureUpdates", includeFutureUpdates),
+            Pair("createdAtSince", createdAtSince),
+            Pair("updatedAtSince", updatedAtSince),
+            Pair("publishAtSince", publishAtSince),
+            Pair("order", order),
+            Pair("includes", includes),
+            Pair("includeEmptyPages", includeEmptyPages),
+            Pair("includeFuturePublishAt", includeFuturePublishAt),
+            Pair("includeExternalUrl", includeExternalUrl),
+        )
+            .filter { it.second != null }
+            .map {
+                QueryParam(it.first, it.second.toString())
+            }
+    }
+}

@@ -9,11 +9,8 @@ import io.silv.ktor_response_mapper.client.get
 import io.silv.ktor_response_mapper.suspendOnSuccess
 import io.silv.manga.network.mangadex.models.author.AuthorListResponse
 import io.silv.manga.network.mangadex.models.chapter.ChapterImageResponse
-import io.silv.manga.network.mangadex.models.cover.Cover
 import io.silv.manga.network.mangadex.models.cover.CoverArtListResponse
-import io.silv.manga.network.mangadex.models.list.ListByIdResponse
 import io.silv.manga.network.mangadex.models.list.UserIdListResponse
-import io.silv.manga.network.mangadex.models.manga.MangaAggregateResponse
 import io.silv.manga.network.mangadex.models.manga.MangaByIdResponse
 import io.silv.manga.network.mangadex.models.manga.MangaListResponse
 import io.silv.manga.network.mangadex.models.statistics.StatisticsByMangaIdResponse
@@ -21,12 +18,10 @@ import io.silv.manga.network.mangadex.models.tags.TagResponse
 import io.silv.manga.network.mangadex.requests.AuthorListRequest
 import io.silv.manga.network.mangadex.requests.ChapterListRequest
 import io.silv.manga.network.mangadex.requests.CoverArtRequest
-import io.silv.manga.network.mangadex.requests.MangaAggregateRequest
 import io.silv.manga.network.mangadex.requests.MangaByIdRequest
 import io.silv.manga.network.mangadex.requests.MangaFeedRequest
 import io.silv.manga.network.mangadex.requests.MangaRequest
 import io.silv.manga.network.mangadex.requests.query.createQuery
-import io.silv.manga.network.mangadex.requests.query.createQueryParams
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 
@@ -65,11 +60,11 @@ class MangaDexApi(
         )
     }
 
-    suspend fun getListById(
-        id: String
-    ) = withContext(dispatchers.io) {
-        client.get<ListByIdResponse>("$mangaDexUrl/list/$id")
-    }
+//    suspend fun getListById(
+//        id: String
+//    ) = withContext(dispatchers.io) {
+//        client.get<ListByIdResponse>("$mangaDexUrl/list/$id")
+//    }
 
     suspend fun getUserLists(
         id: String
@@ -112,21 +107,21 @@ class MangaDexApi(
         client.getWithCache<ChapterListResponse>(request)
     }
 
-    suspend fun getCoverArtById(
-        mangaOrCoverId: String,
-    ) = withContext(dispatchers.io) {
-        client.getWithCache<Cover>("$mangaDexUrl/cover/$mangaOrCoverId")
-    }
+//    suspend fun getCoverArtById(
+//        mangaOrCoverId: String,
+//    ) = withContext(dispatchers.io) {
+//        client.getWithCache<Cover>("$mangaDexUrl/cover/$mangaOrCoverId")
+//    }
 
-    suspend fun getMangaAggregate(
-        mangaId: String,
-        mangaAggregateRequest: MangaAggregateRequest = MangaAggregateRequest()
-    ) = withContext(dispatchers.io) {
-        val request = mangaAggregateRequest
-            .createQueryParams()
-            .createQuery("$mangaDexUrl/manga/$mangaId/aggregate")
-        client.getWithCache<MangaAggregateResponse>(request)
-    }
+//    suspend fun getMangaAggregate(
+//        mangaId: String,
+//        mangaAggregateRequest: MangaAggregateRequest = MangaAggregateRequest()
+//    ) = withContext(dispatchers.io) {
+//        val request = mangaAggregateRequest
+//            .createQueryParams()
+//            .createQuery("$mangaDexUrl/manga/$mangaId/aggregate")
+//        client.getWithCache<MangaAggregateResponse>(request)
+//    }
 
     suspend fun getTagList() = withContext(dispatchers.io) {
         client.get<TagResponse>("$mangaDexUrl/manga/tag")

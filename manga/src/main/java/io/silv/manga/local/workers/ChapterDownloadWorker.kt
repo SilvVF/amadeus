@@ -1,11 +1,13 @@
 package io.silv.manga.local.workers
 
+import android.app.Notification
 import android.content.Context
 import android.util.Log
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.Data
+import androidx.work.ForegroundInfo
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
@@ -182,6 +184,11 @@ class ChapterDownloadWorker(
         else
             Result.failure().also {   Log.d(logTag, "Failure ${result.exceptionOrNull()?.message}") }
     }
+
+    override suspend fun getForegroundInfo(): ForegroundInfo {
+        return ForegroundInfo(1, Notification())
+    }
+
 
     companion object {
         const val MANGA_ID = "MANGA_ID"

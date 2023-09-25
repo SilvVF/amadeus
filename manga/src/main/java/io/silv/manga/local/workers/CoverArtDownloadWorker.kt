@@ -1,17 +1,19 @@
 package io.silv.manga.local.workers
 
+import android.app.Notification
 import android.content.Context
 import androidx.core.net.toUri
 import androidx.work.BackoffPolicy
 import androidx.work.CoroutineWorker
 import androidx.work.Data
+import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.core.AmadeusDispatchers
-import io.silv.manga.repositorys.suspendRunCatching
 import io.silv.manga.local.dao.SavedMangaDao
+import io.silv.manga.repositorys.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
@@ -50,6 +52,10 @@ class CoverArtDeletionWorker(
         } else {
             Result.retry()
         }
+    }
+
+    override suspend fun getForegroundInfo(): ForegroundInfo {
+        return ForegroundInfo(2, Notification())
     }
 
 

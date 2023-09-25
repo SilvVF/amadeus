@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -20,6 +21,7 @@ import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -48,6 +50,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import io.silv.amadeus.LocalBottomBarVisibility
 import io.silv.amadeus.data.ReaderSettings
@@ -372,14 +375,36 @@ fun HorizontalReader(
 @Composable
 fun MangaImage(
     modifier: Modifier,
-    url: String
+    url: String,
 ) {
+
     val context = LocalContext.current
+
+    var imageState by remember {
+        mutableStateOf<AsyncImagePainter.State>(AsyncImagePainter.State.Empty)
+    }
+
+    if (imageState is AsyncImagePainter.State.Error) {
+        CenterBox(modifier.padding(32.dp)) {
+            Text(
+                text = "error loading the image,\n" +
+                        "format provided by the source may not be supported",
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center
+                ),
+            )
+        }
+    }
+
     AsyncImage(
         model = ImageRequest.Builder(context)
             .data(url)
             .crossfade(true)
             .build(),
+        onState = {
+            imageState = it
+        },
         modifier= modifier,
         contentScale = ContentScale.Fit,
         contentDescription = null

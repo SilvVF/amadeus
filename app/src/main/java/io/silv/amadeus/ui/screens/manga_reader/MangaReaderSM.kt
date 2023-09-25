@@ -57,32 +57,40 @@ class MangaReaderSM(
                 .sortedBy { it.chapter }
 
             if (chapter.downloaded || chapter.id in downloadingIds.map { it.first }) {
-                MangaReaderState.Success(
-                    manga = manga,
-                    readerChapters = ReaderChapters(
-                        prev = sortedChapters.getOrNull(sortedChapters.indexOf(chapter) - 1),
-                        next = sortedChapters.getOrNull(sortedChapters.indexOf(chapter) + 1),
-                        current = chapter,
-                        chapterImages = chapter.imageUris
-                    ),
-                    chapters = sortedChapters,
-                )
+                if (chapter.downloaded && chapter.id !in downloadingIds.map { it.first } && chapter.imageUris.isEmpty()) {
+                    MangaReaderState.Failure("Unable to download images from this source.")
+                } else {
+                    MangaReaderState.Success(
+                        manga = manga,
+                        readerChapters = ReaderChapters(
+                            prev = sortedChapters.getOrNull(sortedChapters.indexOf(chapter) - 1),
+                            next = sortedChapters.getOrNull(sortedChapters.indexOf(chapter) + 1),
+                            current = chapter,
+                            chapterImages = chapter.imageUris
+                        ),
+                        chapters = sortedChapters,
+                    )
+                }
             } else {
                 chapterImageRepository.getChapterImages(chapterId)
                     .fold<Resource<Pair<Chapter, List<String>>>, MangaReaderState>(MangaReaderState.Loading) { _, resource ->
                     when (resource) {
                         is Resource.Failure -> MangaReaderState.Failure(resource.message)
                         Resource.Loading -> MangaReaderState.Loading
-                        is Resource.Success -> MangaReaderState.Success(
-                            manga = manga,
-                            readerChapters = ReaderChapters(
-                                prev = sortedChapters.getOrNull(sortedChapters.indexOf(chapter) - 1),
-                                next = sortedChapters.getOrNull(sortedChapters.indexOf(chapter) + 1),
-                                current = chapter,
-                                chapterImages = resource.result.second
-                            ),
-                            chapters = sortedChapters,
-                        )
+                        is Resource.Success -> if (resource.result.second.isEmpty()) {
+                            MangaReaderState.Failure("Unable to download images from this source.")
+                        }else {
+                            MangaReaderState.Success(
+                                manga = manga,
+                                readerChapters = ReaderChapters(
+                                    prev = sortedChapters.getOrNull(sortedChapters.indexOf(chapter) - 1),
+                                    next = sortedChapters.getOrNull(sortedChapters.indexOf(chapter) + 1),
+                                    current = chapter,
+                                    chapterImages = resource.result.second
+                                ),
+                                chapters = sortedChapters,
+                            )
+                        }
                     }
                 }
             }

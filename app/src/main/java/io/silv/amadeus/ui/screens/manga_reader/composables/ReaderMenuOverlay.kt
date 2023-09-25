@@ -27,6 +27,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -240,7 +241,7 @@ fun ScaffoldOverlay(
     val scope = rememberCoroutineScope()
     val backgroundColor by animateColorAsState(
         targetValue = if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
-            Color.Black.copy(alpha = 0.9f)
+            MaterialTheme.colorScheme.background.copy(alpha = 0.9f)
         } else {
             Color.DarkGray.copy(alpha = 0.9f)
         },

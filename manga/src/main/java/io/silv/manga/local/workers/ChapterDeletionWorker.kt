@@ -1,10 +1,12 @@
 package io.silv.manga.local.workers
 
+import android.app.Notification
 import android.content.Context
 import androidx.core.net.toUri
 import androidx.work.BackoffPolicy
 import androidx.work.CoroutineWorker
 import androidx.work.Data
+import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
@@ -60,6 +62,10 @@ class ChapterDeletionWorker(
             Result.success()
         else
             Result.failure()
+    }
+
+    override suspend fun getForegroundInfo(): ForegroundInfo {
+        return ForegroundInfo(0, Notification())
     }
 
     companion object {

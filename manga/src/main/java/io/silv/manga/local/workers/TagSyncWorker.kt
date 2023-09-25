@@ -1,9 +1,11 @@
 package io.silv.manga.local.workers
 
+import android.app.Notification
 import android.content.Context
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
@@ -29,6 +31,9 @@ internal class TagSyncWorker(
         }
     }
 
+    override suspend fun getForegroundInfo(): ForegroundInfo {
+        return ForegroundInfo(5, Notification())
+    }
 
     companion object {
         // All sync work needs an internet connectionS

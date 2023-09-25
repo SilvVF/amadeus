@@ -38,12 +38,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.composables.BlurImageBackground
 import io.silv.amadeus.ui.composables.MangaGenreTags
 import io.silv.amadeus.ui.composables.TranslatedLanguageTags
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.amadeus.types.SavableManga
+import io.silv.amadeus.ui.theme.md_theme_dark_onBackground
 import kotlinx.coroutines.launch
 
 
@@ -114,7 +115,9 @@ fun MangaPager(
                             horizontalAlignment = Alignment.Start) {
                             Text(
                                 text = manga.titleEnglish,
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    color = md_theme_dark_onBackground
+                                ),
                                 maxLines = 2,
                                 fontSize = 20.sp,
                                 overflow = TextOverflow.Ellipsis
@@ -148,14 +151,16 @@ fun MangaPager(
                                                 Icons.Filled.Favorite
                                             else
                                                 Icons.Outlined.FavoriteBorder,
-                                            contentDescription = null
+                                            contentDescription = null,
+                                            tint = md_theme_dark_onBackground
                                         )
                                     }
                                     Text(
-                                        if (manga.bookmarked)
+                                        text = if (manga.bookmarked)
                                             "In library"
                                         else
-                                            "Add to library"
+                                            "Add to library",
+                                        color = md_theme_dark_onBackground
                                     )
                                 }
                                 Row(
@@ -166,7 +171,8 @@ fun MangaPager(
                                     Text(
                                         text = "NO.${page + 1}",
                                         style = MaterialTheme.typography.labelLarge.copy(
-                                            fontWeight = FontWeight.Bold
+                                            fontWeight = FontWeight.Bold,
+                                            color = md_theme_dark_onBackground
                                         )
                                     )
                                     IconButton(
@@ -174,11 +180,12 @@ fun MangaPager(
                                             scope.launch {
                                                 pagerState.animateScrollToPage(page - 1)
                                             }
-                                        }
+                                        },
                                     ) {
                                         Icon(
                                             imageVector = Icons.Filled.KeyboardArrowLeft,
-                                            contentDescription = null
+                                            contentDescription = null,
+                                            tint =  md_theme_dark_onBackground
                                         )
                                     }
                                     IconButton(
@@ -190,7 +197,8 @@ fun MangaPager(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Filled.KeyboardArrowRight,
-                                            contentDescription = null
+                                            contentDescription = null,
+                                            tint =  md_theme_dark_onBackground
                                         )
                                     }
                                 }

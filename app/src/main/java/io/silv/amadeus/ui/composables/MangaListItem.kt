@@ -18,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,13 +37,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.shared.shadow
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.amadeus.ui.theme.Pastel
-import io.silv.amadeus.types.SavableManga
+import io.silv.amadeus.ui.theme.md_theme_dark_onBackground
 
 @Composable
 fun MangaListItem(
@@ -190,7 +192,11 @@ fun MangaGenreTags(
             SuggestionChip(
                 onClick = { onTagClick(language) },
                 label = { Text(language) },
-                modifier = Modifier.padding(horizontal = space.small)
+                modifier = Modifier.padding(horizontal = space.small),
+                colors = SuggestionChipDefaults.suggestionChipColors(
+                    labelColor = md_theme_dark_onBackground,
+                    disabledLabelColor = md_theme_dark_onBackground
+                )
             )
         }
     }
@@ -227,6 +233,10 @@ fun TranslatedLanguageTags(
                     showLang = !showLang
                     onLanguageClick(language)
                 },
+                colors = SuggestionChipDefaults.suggestionChipColors(
+                    labelColor = md_theme_dark_onBackground,
+                    disabledLabelColor = md_theme_dark_onBackground
+                ),
                 label = { Text(text) },
                 modifier = Modifier.padding(horizontal = space.small)
             )
@@ -264,6 +274,10 @@ fun GenreTagsWithBookmark(
             SuggestionChip(
                 onClick = { onTagClick(tag) },
                 label = { Text(tag) },
+                colors = SuggestionChipDefaults.suggestionChipColors(
+                    labelColor = md_theme_dark_onBackground,
+                    disabledLabelColor = md_theme_dark_onBackground
+                ),
                 modifier = Modifier.padding(horizontal = space.small)
             )
         }

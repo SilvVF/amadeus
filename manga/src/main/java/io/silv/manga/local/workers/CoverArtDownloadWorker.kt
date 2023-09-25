@@ -1,6 +1,5 @@
 package io.silv.manga.local.workers
 
-import android.app.Notification
 import android.content.Context
 import androidx.core.net.toUri
 import androidx.work.BackoffPolicy
@@ -55,7 +54,7 @@ class CoverArtDeletionWorker(
     }
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
-        return ForegroundInfo(2, Notification())
+        return applicationContext.createForegroundInfo(2, CoverArtDeletionWorkerTag)
     }
 
 

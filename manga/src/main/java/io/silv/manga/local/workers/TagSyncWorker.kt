@@ -1,6 +1,5 @@
 package io.silv.manga.local.workers
 
-import android.app.Notification
 import android.content.Context
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
@@ -12,6 +11,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.manga.repositorys.tags.TagRepository
+import io.silv.manga.sync.TagSyncWorkName
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Duration
@@ -32,7 +32,7 @@ internal class TagSyncWorker(
     }
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
-        return ForegroundInfo(5, Notification())
+        return applicationContext.createForegroundInfo(5, TagSyncWorkName)
     }
 
     companion object {

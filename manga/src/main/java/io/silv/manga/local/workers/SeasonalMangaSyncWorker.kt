@@ -1,6 +1,5 @@
 package io.silv.manga.local.workers
 
-import android.app.Notification
 import android.content.Context
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
@@ -54,7 +53,7 @@ internal class SeasonalMangaSyncWorker(
     }
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
-        return ForegroundInfo(4, Notification())
+        return applicationContext.createForegroundInfo(4, SeasonalMangaSyncWorkName)
     }
 
 

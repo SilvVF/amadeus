@@ -26,23 +26,23 @@ suspend inline fun <T, R> Iterable<T>.pmap(
     }
         .awaitAll()
 }
-@OptIn(ExperimentalContracts::class)
-suspend inline fun <T, R> Array<T>.pmapIndexed(
-    crossinline transform: suspend (Int, T) -> R
-): List<R> {
-    contract { callsInPlace(transform) }
-    val list = this
-    return buildList {
-        coroutineScope {
-            for ((i, item) in list.withIndex()) {
-                add(
-                    async { transform(i, item) }
-                )
-            }
-        }
-    }
-        .awaitAll()
-}
+//@OptIn(ExperimentalContracts::class)
+//suspend inline fun <T, R> Array<T>.pmapIndexed(
+//    crossinline transform: suspend (Int, T) -> R
+//): List<R> {
+//    contract { callsInPlace(transform) }
+//    val list = this
+//    return buildList {
+//        coroutineScope {
+//            for ((i, item) in list.withIndex()) {
+//                add(
+//                    async { transform(i, item) }
+//                )
+//            }
+//        }
+//    }
+//        .awaitAll()
+//}
 
 fun <T, R> Iterable<T>.filterUnique(item: (T) -> R): List<T> {
     val seen = mutableSetOf<R>()
@@ -68,19 +68,19 @@ fun <T> Iterable<T>.pForEach(
     }
 }
 
-@OptIn(ExperimentalContracts::class)
-suspend fun <T> Iterable<T>.pForEach(
-    action: suspend (T) -> Unit
-) {
-    contract { callsInPlace(action) }
-    coroutineScope {
-        for (item in this@pForEach) {
-            launch {
-                action(item)
-            }
-        }
-    }
-}
+//@OptIn(ExperimentalContracts::class)
+//suspend fun <T> Iterable<T>.pForEach(
+//    action: suspend (T) -> Unit
+//) {
+//    contract { callsInPlace(action) }
+//    coroutineScope {
+//        for (item in this@pForEach) {
+//            launch {
+//                action(item)
+//            }
+//        }
+//    }
+//}
 
 fun lerp(start: Float, stop: Float, fraction: Float): Float {
     return (start * (1f - fraction)) + (stop * fraction)

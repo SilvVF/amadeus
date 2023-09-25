@@ -1,5 +1,6 @@
 package io.silv.amadeus.ui.screens.manga_view
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
@@ -34,7 +35,6 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
-import javax.annotation.concurrent.Immutable
 
 
 class MangaViewSM(

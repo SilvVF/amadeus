@@ -14,8 +14,8 @@ android {
         applicationId = "io.silv.amadeus"
         minSdk = 28
         targetSdk = 34
-        versionCode = 3
-        versionName = "3"
+        versionCode = 4
+        versionName = "4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -138,11 +138,8 @@ dependencies {
     // COIL
     implementation(libs.coil.compose)
     implementation(libs.coil)
-    implementation(libs.coil.svg)
 
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
-    implementation(kotlin("reflect"))
-    implementation(libs.kotlinx.coroutines.guava)
 }

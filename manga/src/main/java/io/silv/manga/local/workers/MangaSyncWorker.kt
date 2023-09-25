@@ -1,6 +1,5 @@
 package io.silv.manga.local.workers
 
-import android.app.Notification
 import android.content.Context
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
@@ -14,6 +13,7 @@ import androidx.work.WorkerParameters
 import io.silv.core.pmap
 import io.silv.manga.repositorys.chapter.ChapterEntityRepository
 import io.silv.manga.repositorys.manga.SavedMangaRepository
+import io.silv.manga.sync.MangaSyncWorkName
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Duration
@@ -45,7 +45,7 @@ internal class MangaSyncWorker(
     }
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
-        return ForegroundInfo(3, Notification())
+        return applicationContext.createForegroundInfo(3, MangaSyncWorkName)
     }
 
 

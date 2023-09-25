@@ -70,9 +70,9 @@ dependencies {
 
     implementation(libs.okhttp.dnsoverhttps)
     implementation(libs.okio)
-    implementation(libs.jsoup)
     implementation(libs.kotlinx.serialization.json.okio)
 
+    implementation(libs.jsoup)
     //KTOR
     implementation(libs.ktor.core)
     implementation(libs.ktor.client.okhttp)
@@ -83,11 +83,6 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
 
     implementation(libs.token.bucket)
-    // optional - RxJava2 support
-    implementation(libs.androidx.work.rxjava2)
-
-    // optional - GCMNetworkManager support
-    implementation(libs.androidx.work.gcm)
 
     // optional - Test helpers
     androidTestImplementation(libs.androidx.work.testing)
@@ -100,10 +95,8 @@ dependencies {
     // alternatively - without Android dependencies for tests
     testImplementation(libs.androidx.paging.common)
 
+    implementation(libs.kotlinx.coroutines.guava)
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
-    implementation(libs.kotlinx.coroutines.android)
-    implementation(kotlin("reflect"))
-    implementation(libs.kotlinx.coroutines.guava)
 }

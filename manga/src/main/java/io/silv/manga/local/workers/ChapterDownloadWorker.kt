@@ -1,6 +1,5 @@
 package io.silv.manga.local.workers
 
-import android.app.Notification
 import android.content.Context
 import android.util.Log
 import androidx.work.BackoffPolicy
@@ -186,7 +185,7 @@ class ChapterDownloadWorker(
     }
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
-        return ForegroundInfo(1, Notification())
+        return applicationContext.createForegroundInfo(1, ChapterDownloadWorkerTag)
     }
 
 

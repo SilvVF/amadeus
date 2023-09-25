@@ -1,7 +1,6 @@
 package io.silv.manga.network.mangadex.requests.query
 
 import android.util.Log
-import kotlin.reflect.full.memberProperties
 
 /**
  * appends each part of the list to the [StringBuilder] as name[]=value.

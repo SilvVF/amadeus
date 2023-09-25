@@ -1,5 +1,6 @@
 package io.silv.amadeus.ui.screens.home
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.paging.cachedIn
 import androidx.paging.map
@@ -24,7 +25,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.annotation.concurrent.Immutable
 
 class HomeSM(
     recentMangaRepository: RecentMangaRepository,

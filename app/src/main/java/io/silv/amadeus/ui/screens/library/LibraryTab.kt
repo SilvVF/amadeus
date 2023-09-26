@@ -330,7 +330,9 @@ fun UpdatesList(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             AsyncImage(
-                                model = ImageRequest.Builder(context),
+                                model = ImageRequest.Builder(context)
+                                    .data(it.manga.coverArt)
+                                    .build(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,
                                 modifier = Modifier
@@ -362,7 +364,9 @@ fun UpdatesList(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             AsyncImage(
-                                model = ImageRequest.Builder(context),
+                                model = ImageRequest.Builder(context)
+                                    .data(it.manga.coverArt)
+                                    .build(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,
                                 modifier = Modifier

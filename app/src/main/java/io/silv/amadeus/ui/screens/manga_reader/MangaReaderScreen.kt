@@ -51,11 +51,12 @@ import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import io.silv.amadeus.LocalBottomBarVisibility
-import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
+import io.silv.ui.AnimatedBoxShimmer
 import io.silv.amadeus.ui.screens.manga_reader.composables.ReaderMenuOverlay
 import io.silv.amadeus.ui.screens.manga_reader.composables.rememberGestureHandler
-import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.CenterBox
+import io.silv.ui.theme.LocalSpacing
+import io.silv.common.lerp
 import io.silv.common.model.ReaderDirection
 import io.silv.common.model.ReaderOrientation
 import io.silv.datastore.model.ReaderSettings
@@ -161,13 +162,13 @@ fun MangaReaderContent(
 
     when (state) {
         is MangaReaderState.Failure -> {
-            CenterBox(Modifier.fillMaxSize()) {
+            io.silv.ui.CenterBox(Modifier.fillMaxSize()) {
                 Text(state.message ?: "failed to load")
             }
         }
         MangaReaderState.Loading -> {
-            CenterBox(Modifier.fillMaxSize()) {
-                AnimatedBoxShimmer(Modifier.fillMaxSize(0.8f))
+            io.silv.ui.CenterBox(Modifier.fillMaxSize()) {
+                io.silv.ui.AnimatedBoxShimmer(Modifier.fillMaxSize(0.8f))
             }
         }
         is MangaReaderState.Success -> {
@@ -259,7 +260,7 @@ fun MangaReader(
     settings: io.silv.datastore.model.ReaderSettings,
     readChapter: (id: String) -> Unit,
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     when (settings.orientation) {
         ReaderOrientation.Vertical -> {
             VerticalReader(
@@ -388,7 +389,7 @@ fun MangaImage(
     }
 
     if (imageState is AsyncImagePainter.State.Error) {
-        CenterBox(modifier.padding(32.dp)) {
+        io.silv.ui.CenterBox(modifier.padding(32.dp)) {
             Text(
                 text = "error loading the image,\n" +
                         "format provided by the source may not be supported",
@@ -451,7 +452,7 @@ fun AnimatedPageNumber(
             horizontal = (screenWidth / 2f) - offset
         )
     ) { page ->
-        CenterBox(
+        io.silv.ui.CenterBox(
             Modifier
                 .fillMaxSize()
                 .onGloballyPositioned {
@@ -461,7 +462,7 @@ fun AnimatedPageNumber(
                     val pageOffset = ((mangaPagerState.currentPage - page) + mangaPagerState
                         .currentPageOffsetFraction
                             ).absoluteValue
-                    val interpolation = io.silv.common.lerp(
+                    val interpolation = lerp(
                         start = 0.5f,
                         stop = 1f,
                         fraction = 1f - pageOffset.coerceIn(0f, 1f)

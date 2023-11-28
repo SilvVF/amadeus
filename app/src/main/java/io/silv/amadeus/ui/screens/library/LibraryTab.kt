@@ -81,18 +81,15 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.AmadeusScaffold
 import io.silv.amadeus.R
-import io.silv.amadeus.ui.composables.header
-import io.silv.amadeus.ui.screens.home.SearchTopAppBar
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.screens.manga_view.composables.ChapterListItem
 import io.silv.amadeus.ui.screens.manga_view.composables.Reset
-import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.shared.collectEvents
-import io.silv.amadeus.ui.shared.noRippleClickable
-import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.amadeus.ui.theme.Pastel
 import io.silv.model.SavableChapter
+import io.silv.ui.collectEvents
+import io.silv.ui.header
+import io.silv.ui.noRippleClickable
+import io.silv.ui.theme.Pastel
 
 object LibraryTab: Tab {
 
@@ -128,7 +125,7 @@ class LibraryScreen: Screen {
 
         val sm = getScreenModel<LibrarySM>()
         val mangasToChapters by sm.mangaWithDownloadedChapters.collectAsStateWithLifecycle()
-        val space = LocalSpacing.current
+        val space = io.silv.ui.theme.LocalSpacing.current
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState())
         val bookmarkedChapters by sm.bookmarkedChapters.collectAsStateWithLifecycle()
         val downloadingOrDeletingIds by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
@@ -181,7 +178,7 @@ class LibraryScreen: Screen {
             modifier = Modifier.fillMaxSize(),
             scrollBehavior = scrollBehavior,
             topBar = {
-                SearchTopAppBar(
+                io.silv.explore.composables.SearchTopAppBar(
                     title = "Library",
                     scrollBehavior = scrollBehavior,
                     onSearchText = { searchText = it },
@@ -191,7 +188,7 @@ class LibraryScreen: Screen {
                     onNavigationIconClicked = { searching = false },
                     actions = {},
                     searchText = searchText,
-                    showTextField = searching ,
+                    showTextField = searching,
                     onSearchChanged = { searching = it },
                     onForceSearch = {}
                 )
@@ -260,12 +257,12 @@ class LibraryScreen: Screen {
                         ) {
                             if (filteredItems.isEmpty()) {
                                 header {
-                                    CenterBox(
+                                    io.silv.ui.CenterBox(
                                         Modifier
                                             .fillMaxSize()
                                             .padding(space.med)
                                     ) {
-                                        if(searchText.isBlank()) {
+                                        if (searchText.isBlank()) {
                                             Text(text = "no manga in your library\nmanga marked as favorite will appear here")
                                         } else {
                                             Text(text = "no manga matching given search")
@@ -304,10 +301,10 @@ fun UpdatesList(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     val navigator = LocalNavigator.current
     if (updates.isEmpty()) {
-        CenterBox(modifier = Modifier.fillMaxSize()) {
+        io.silv.ui.CenterBox(modifier = Modifier.fillMaxSize()) {
             Text(text = "No updates for manga.")
         }
     } else {
@@ -407,15 +404,16 @@ fun BookmarkedChapterList(
                 .map { (k, v) -> v.toList() }
         }
     }
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     val navigator = LocalNavigator.current
     LazyColumn(modifier) {
         if (chaptersByManga.isEmpty()) {
             item {
-                CenterBox(
+                io.silv.ui.CenterBox(
                     Modifier
                         .fillMaxSize()
-                        .padding(space.med)) {
+                        .padding(space.med)
+                ) {
 
                     Text(text = "no chapters have been bookmarked yet")
                 }
@@ -525,9 +523,9 @@ fun LibraryMangaPoster(
 ) {
     val (manga, chapters) = libraryManga
     val ctx = LocalContext.current
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     val navigator = LocalNavigator.current
-    CenterBox(
+    io.silv.ui.CenterBox(
         Modifier.padding(space.large)
     ) {
         val colorPlaceholder = remember {

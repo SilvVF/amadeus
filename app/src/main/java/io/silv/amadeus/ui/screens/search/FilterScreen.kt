@@ -91,10 +91,10 @@ import androidx.compose.ui.window.PopupProperties
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
-import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.shared.Language
-import io.silv.amadeus.ui.shared.noRippleClickable
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.CenterBox
+import io.silv.ui.Language
+import io.silv.ui.noRippleClickable
+import io.silv.ui.theme.LocalSpacing
 import io.silv.common.model.ContentRating
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.QueryResult
@@ -132,10 +132,10 @@ fun FilterScreen(
     excludedIds: List<String>,
     includedSelected: (String) -> Unit,
     excludedSelected: (String) -> Unit,
-    selectedOriginalLanguages: List<Language>,
-    onOriginalLanguageSelected: (Language) -> Unit,
-    selectedTranslatedLanguages: List<Language>,
-    onTranslatedLanguageSelected: (Language) -> Unit,
+    selectedOriginalLanguages: List<io.silv.ui.Language>,
+    onOriginalLanguageSelected: (io.silv.ui.Language) -> Unit,
+    selectedTranslatedLanguages: List<io.silv.ui.Language>,
+    onTranslatedLanguageSelected: (io.silv.ui.Language) -> Unit,
     selectedDemographics: List<PublicationDemographic>,
     onDemographicSelected: (PublicationDemographic) -> Unit
 ) {
@@ -143,7 +143,7 @@ fun FilterScreen(
         hide()
     }
 
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     val groupedTags = remember(tagsUiState) {
         tagsUiState.groupBy { it.group }
     }
@@ -284,15 +284,15 @@ private fun LanguageSelection(
     modifier: Modifier = Modifier,
     label: (@Composable () -> Unit)? = null,
     placeholder: String,
-    selected: List<Language>,
-    onLanguageSelected: (Language) -> Unit,
+    selected: List<io.silv.ui.Language>,
+    onLanguageSelected: (io.silv.ui.Language) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
     val maxHeight = remember(screenHeightDp) {
         screenHeightDp / 3f
     }
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
 
     Box(
         modifier = modifier
@@ -344,7 +344,7 @@ private fun LanguageSelection(
             modifier = Modifier.heightIn(0.dp, maxHeight),
             onDismissRequest = { expanded = false },
         ) {
-            Language.values().forEach { language ->
+            io.silv.ui.Language.values().forEach { language ->
                 DropdownMenuItem(
                     onClick = { onLanguageSelected(language) },
                     text = { Text(language.string) },
@@ -376,7 +376,7 @@ private fun LanguageSelection(
 private fun FilterTopBar(
     onCloseIconClick: () -> Unit
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     Row(
         Modifier
             .fillMaxWidth()
@@ -405,7 +405,7 @@ private fun TagsList(
     excludedIds: List<String>,
     excludedSelected: (String) -> Unit
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     Column(Modifier.padding(horizontal = space.med)) {
         AnimatedVisibility(
             visible = tagsVisible
@@ -462,7 +462,7 @@ private fun TagsFilterHeader(
     includedChange: (Boolean) -> Unit,
     included: Boolean,
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     Surface {
         Column {
             Row(
@@ -568,7 +568,7 @@ private fun AuthorSearchBar(
     val focusRequester = remember { FocusRequester() }
     var focused by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     val focusManager = LocalFocusManager.current
     var currentCoordinates: IntOffset by remember { mutableStateOf(IntOffset(0, 0)) }
     var sizeOffset: IntSize by remember { mutableStateOf(IntSize(0, 0)) }
@@ -670,10 +670,11 @@ private fun AuthorSearchBar(
                         }
                         QueryResult.Loading ->  {
                             item {
-                                CenterBox(
+                                io.silv.ui.CenterBox(
                                     Modifier
                                         .fillMaxWidth()
-                                        .padding(space.med)) {
+                                        .padding(space.med)
+                                ) {
                                     CircularProgressIndicator()
                                 }
                             }
@@ -693,15 +694,20 @@ private fun TagModeSwitch(
     icon: (@Composable () -> Unit)? = null,
     onModeChange: (MangaRequest.TagsMode) -> Unit,
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     val transformationSpec = SpringSpec<IntOffset>(
         dampingRatio = Spring.DampingRatioLowBouncy,
         stiffness = 4000f
     )
     val transformed = remember(mode) { mode == MangaRequest.TagsMode.OR }
     val switch = rememberContentWithOrbitalScope {
-        CenterBox(Modifier.animateMovement(this@rememberContentWithOrbitalScope, transformationSpec)) {
-            CenterBox(
+        io.silv.ui.CenterBox(
+            Modifier.animateMovement(
+                this@rememberContentWithOrbitalScope,
+                transformationSpec
+            )
+        ) {
+            io.silv.ui.CenterBox(
                 modifier = Modifier
                     .clip(CircleShape)
                     .size(22.dp)

@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.ui.screens.manga_view.StatsUiState
-import io.silv.amadeus.ui.shared.fillMaxAfterMesaure
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.fillMaxAfterMesaure
+import io.silv.ui.theme.LocalSpacing
 import io.silv.common.filterUnique
 import io.silv.common.model.Status
 import io.silv.model.SavableManga
@@ -48,7 +48,7 @@ fun MainPoster(
     statsState: StatsUiState,
 ) {
     val ctx = LocalContext.current
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
 
     Box(modifier = modifier) {
         BackgroundImageDarkened(
@@ -89,7 +89,7 @@ fun MangaInfo(
     modifier: Modifier = Modifier,
     manga: SavableManga,
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.Top,
@@ -113,7 +113,7 @@ fun PublicationStatusIndicator(
     status: Status,
     year: Int?
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -154,7 +154,7 @@ fun MangaTitle(
     altTitle: String,
     authors: String
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     Column(modifier) {
         Text(
             text = title,

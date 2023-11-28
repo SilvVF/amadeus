@@ -6,14 +6,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.paging.cachedIn
 import androidx.paging.map
-import cafe.adriel.voyager.core.model.coroutineScope
+import cafe.adriel.voyager.core.model.screenModelScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
-import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.common.model.LoadState
 import io.silv.common.model.TimePeriod
 import io.silv.data.manga.FilteredYearlyMangaRepository
 import io.silv.data.manga.SavedMangaRepository
 import io.silv.model.SavableManga
+import io.silv.ui.EventScreenModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,9 +29,9 @@ class MangaFilterSM(
     filteredYearlyMangaRepository: FilteredYearlyMangaRepository,
     private val savedMangaRepository: SavedMangaRepository,
     tagId: String
-): AmadeusScreenModel<MangaFilterEvent>() {
+): EventScreenModel<MangaFilterEvent>() {
 
-    private val yearlyLoadState = filteredYearlyMangaRepository.loadState.stateInUi(io.silv.common.model.LoadState.None)
+    private val yearlyLoadState = filteredYearlyMangaRepository.loadState.stateInUi(LoadState.None)
 
     private val currentTagId = MutableStateFlow(tagId)
     var currentTag by mutableStateOf("")
@@ -75,9 +75,9 @@ class MangaFilterSM(
             filteredMangaRepository
                 .pager(io.silv.data.manga.FilteredResourceQuery(tag, time))
                 .flow
-                .cachedIn(coroutineScope)
+                .cachedIn(screenModelScope)
     }
-            .cachedIn(coroutineScope)
+            .cachedIn(screenModelScope)
 
     val timePeriodFilteredPagingFlow = combineTuple(
         timePeriodFilteredResources,
@@ -88,12 +88,16 @@ class MangaFilterSM(
         }
     }
 
-    fun changeTimePeriod(timePeriod: TimePeriod) = coroutineScope.launch {
-        mutableTimePeriod.emit(timePeriod)
+    fun changeTimePeriod(timePeriod: TimePeriod) {
+        screenModelScope.launch {
+            mutableTimePeriod.emit(timePeriod)
+        }
     }
 
-    fun bookmarkManga(id: String) = coroutineScope.launch {
-        savedMangaRepository.bookmarkManga(id)
+    fun bookmarkManga(id: String) {
+        screenModelScope.launch {
+            savedMangaRepository.bookmarkManga(id)
+        }
     }
 }
 

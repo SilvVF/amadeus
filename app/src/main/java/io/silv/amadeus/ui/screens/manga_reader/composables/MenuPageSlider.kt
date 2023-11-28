@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.theme.LocalSpacing
 import kotlin.math.roundToInt
 
 
@@ -34,7 +34,7 @@ fun MenuPageSlider(
     onNextClick: () -> Unit,
     onPageChange: (page: Int) -> Unit
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     AnimatedVisibility(visible = visible) {
         Row(modifier = Modifier
             .fillMaxWidth()

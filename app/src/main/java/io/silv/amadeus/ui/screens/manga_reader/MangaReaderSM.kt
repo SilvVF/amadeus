@@ -2,8 +2,8 @@ package io.silv.amadeus.ui.screens.manga_reader
 
 import android.util.Log
 import cafe.adriel.voyager.core.model.coroutineScope
+import cafe.adriel.voyager.core.model.screenModelScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
-import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.data.chapter.ChapterEntityRepository
 import io.silv.data.chapter.ChapterImageRepository
 import io.silv.data.workers.chapters.ChapterDownloadWorker
@@ -11,6 +11,7 @@ import io.silv.datastore.UserSettingsStore
 import io.silv.datastore.model.ReaderSettings
 import io.silv.model.SavableChapter
 import io.silv.model.SavableManga
+import io.silv.ui.EventScreenModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.conflate
@@ -27,7 +28,7 @@ class MangaReaderSM(
     private val userSettingsStore: UserSettingsStore,
     mangaId: String,
     initialChapterId: String,
-): AmadeusScreenModel<MangaReaderEvent>() {
+): EventScreenModel<MangaReaderEvent>() {
 
     private val chapterId = MutableStateFlow(initialChapterId)
 
@@ -95,24 +96,30 @@ class MangaReaderSM(
         .stateInUi(MangaReaderState.Loading)
 
 
-    fun goToNextChapter(chapter: SavableChapter) = coroutineScope.launch {
-        mangaReaderState.value.success?.let {
-            val idx = it.chapters.indexOf(chapter)
-            it.chapters.getOrNull(idx + 1)?.let { next ->
-                chapterId.update { next.id }
+    fun goToNextChapter(chapter: SavableChapter) {
+        screenModelScope.launch {
+            mangaReaderState.value.success?.let {
+                val idx = it.chapters.indexOf(chapter)
+                it.chapters.getOrNull(idx + 1)?.let { next ->
+                    chapterId.update { next.id }
+                }
             }
         }
     }
 
-    fun updateReaderSettings(readerSettings: ReaderSettings) = coroutineScope.launch {
-        userSettingsStore.updateReaderSettings(readerSettings)
+    fun updateReaderSettings(readerSettings: ReaderSettings) {
+        screenModelScope.launch {
+            userSettingsStore.updateReaderSettings(readerSettings)
+        }
     }
 
-    fun goToPrevChapter(chapter: SavableChapter) = coroutineScope.launch {
-        mangaReaderState.value.success?.let {
-            val idx = it.chapters.indexOf(chapter)
-            it.chapters.getOrNull(idx - 1)?.let { prev ->
-                chapterId.update { prev.id }
+    fun goToPrevChapter(chapter: SavableChapter) {
+        screenModelScope.launch {
+            mangaReaderState.value.success?.let {
+                val idx = it.chapters.indexOf(chapter)
+                it.chapters.getOrNull(idx - 1)?.let { prev ->
+                    chapterId.update { prev.id }
+                }
             }
         }
     }
@@ -121,12 +128,16 @@ class MangaReaderSM(
         chapterId.update { id }
     }
 
-    fun updateChapterPage(page: Int, lastPage: Int) = coroutineScope.launch {
-        chapterRepository.updateLastReadPage(chapterId.value, page, lastPage)
+    fun updateChapterPage(page: Int, lastPage: Int) {
+        screenModelScope.launch {
+            chapterRepository.updateLastReadPage(chapterId.value, page, lastPage)
+        }
     }
 
-    fun bookmarkChapter(id: String) = coroutineScope.launch {
-        chapterRepository.bookmarkChapter(id)
+    fun bookmarkChapter(id: String) {
+        screenModelScope.launch {
+            chapterRepository.bookmarkChapter(id)
+        }
     }
 }
 

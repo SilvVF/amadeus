@@ -41,13 +41,13 @@ import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.amadeus.AmadeusScaffold
-import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
-import io.silv.amadeus.ui.composables.MangaListItem
-import io.silv.amadeus.ui.composables.header
-import io.silv.amadeus.ui.screens.home.MangaPager
+import io.silv.ui.AnimatedBoxShimmer
+import io.silv.ui.MangaListItem
+import io.silv.ui.header
+import io.silv.explore.composables.MangaPager
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
-import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.CenterBox
+import io.silv.ui.theme.LocalSpacing
 import io.silv.common.model.TimePeriod
 import org.koin.core.parameter.parametersOf
 
@@ -65,7 +65,7 @@ class MangaFilterScreen(
 
         val sm = getScreenModel<MangaFilterSM> { parametersOf(tagId) }
         val navigator = LocalNavigator.current
-        val space = LocalSpacing.current
+        val space = io.silv.ui.theme.LocalSpacing.current
         val timePeriod by sm.timePeriod.collectAsStateWithLifecycle()
         val yearlyItemsState by sm.yearlyFilteredUiState.collectAsStateWithLifecycle()
         val timePeriodItems = sm.timePeriodFilteredPagingFlow.collectAsLazyPagingItems()
@@ -120,12 +120,12 @@ class MangaFilterScreen(
                             modifier = Modifier.padding(space.large)
                         )
                         when (yearlyItemsState) {
-                            YearlyFilteredUiState.Loading -> AnimatedBoxShimmer(
+                            YearlyFilteredUiState.Loading -> io.silv.ui.AnimatedBoxShimmer(
                                 Modifier
                                     .height(240.dp)
                                     .fillMaxWidth()
                             )
-                            is YearlyFilteredUiState.Success -> MangaPager(
+                            is YearlyFilteredUiState.Success -> io.silv.explore.composables.MangaPager(
                                 mangaList = yearlyItemsState.resources,
                                 onMangaClick = {
                                     navigator?.push(
@@ -167,7 +167,7 @@ class MangaFilterScreen(
                 }
                 if(timePeriodItems.loadState.refresh is LoadState.Loading) {
                     items(4) {
-                        AnimatedBoxShimmer(Modifier.size(200.dp))
+                        io.silv.ui.AnimatedBoxShimmer(Modifier.size(200.dp))
                     }
                 } else {
                     items(
@@ -176,7 +176,7 @@ class MangaFilterScreen(
                         contentType = timePeriodItems.itemContentType()
                     ) { i ->
                         timePeriodItems[i]?.let { manga ->
-                            MangaListItem(
+                            io.silv.ui.MangaListItem(
                                 manga = manga,
                                 modifier = Modifier
                                     .padding(space.large)
@@ -198,14 +198,14 @@ class MangaFilterScreen(
                     }
                     if (timePeriodItems.loadState.append == LoadState.Loading) {
                         header {
-                            CenterBox(Modifier.fillMaxWidth().padding(space.med)) {
+                            io.silv.ui.CenterBox(Modifier.fillMaxWidth().padding(space.med)) {
                                 CircularProgressIndicator()
                             }
                         }
                     }
                     if (timePeriodItems.loadState.append is LoadState.Error || timePeriodItems.loadState.refresh is LoadState.Error) {
                         header {
-                            CenterBox(Modifier.fillMaxWidth().padding(space.med)) {
+                            io.silv.ui.CenterBox(Modifier.fillMaxWidth().padding(space.med)) {
                                 Button(
                                     onClick = { timePeriodItems.retry() }
                                 ) {

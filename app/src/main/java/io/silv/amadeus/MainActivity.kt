@@ -33,6 +33,7 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -51,11 +52,10 @@ import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
-import io.silv.amadeus.ui.screens.home.HomeTab
-import io.silv.amadeus.ui.screens.home.shouldShowBottomBar
 import io.silv.amadeus.ui.screens.library.LibraryTab
 import io.silv.amadeus.ui.screens.search.SearchTab
-import io.silv.amadeus.ui.theme.AmadeusTheme
+import io.silv.explore.ExploreTab
+import io.silv.ui.theme.AmadeusTheme
 
 
 
@@ -84,10 +84,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         val showBar by LocalBottomBarVisibility.current
 
-                        TabNavigator(
-                            tab = HomeTab,
-                            disposeNestedNavigators = false,
-                        ) {
+                        TabNavigator(tab = ExploreTab) {
                             Scaffold(
                                 bottomBar = {
                                     if (shouldShowBottomBar(windowSizeClass) && showBar) {
@@ -98,7 +95,9 @@ class MainActivity : ComponentActivity() {
                                 Box(
                                     Modifier
                                         .padding(
-                                            bottom = (incoming.calculateBottomPadding() - 16.dp).coerceAtLeast(0.dp)
+                                            bottom = (incoming.calculateBottomPadding() - 16.dp).coerceAtLeast(
+                                                0.dp
+                                            )
                                         )
                                         .fillMaxSize()
                                 ) {
@@ -171,6 +170,10 @@ fun AmadeusScaffold(
     }
 }
 
+fun shouldShowBottomBar(windowSizeClass: WindowSizeClass?): Boolean {
+    return (windowSizeClass?.widthSizeClass ?: return true) == WindowWidthSizeClass.Compact
+}
+
 val LocalWindowSizeClass = compositionLocalOf<WindowSizeClass?> { null }
 val LocalBottomBarVisibility = compositionLocalOf {
     mutableStateOf(true)
@@ -182,7 +185,7 @@ fun AmadeusBottomBar(
 ) {
     AnimatedVisibility(visible = visible) {
         NavigationBar(modifier) {
-            TabNavigationItem(HomeTab)
+            TabNavigationItem(ExploreTab)
             TabNavigationItem(SearchTab)
             TabNavigationItem(LibraryTab)
         }
@@ -196,7 +199,7 @@ fun AmadeusNavRail(
 ) {
     AnimatedVisibility(visible = visible) {
         NavigationRail(modifier) {
-            TabNavigationItem(HomeTab)
+            TabNavigationItem(ExploreTab)
             TabNavigationItem(SearchTab)
             TabNavigationItem(LibraryTab)
         }

@@ -3,7 +3,6 @@ package io.silv.amadeus.ui.screens.library
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
-import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.common.model.ProgressState
 import io.silv.common.model.UpdateType
 import io.silv.data.chapter.ChapterEntityRepository
@@ -12,6 +11,7 @@ import io.silv.domain.GetSavedMangaWithChaptersList
 import io.silv.model.SavableChapter
 import io.silv.model.SavableManga
 import io.silv.sync.anyRunning
+import io.silv.ui.EventScreenModel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -21,7 +21,7 @@ class LibrarySM(
     getSavedMangaWithChaptersList: GetSavedMangaWithChaptersList,
     private val mangaUpdateRepository: MangaUpdateRepository,
     private val workManager: WorkManager,
-): AmadeusScreenModel<LibraryEvent>() {
+): EventScreenModel<LibraryEvent>() {
 
     val downloadingOrDeleting = combine(
         workManager.getWorkInfosByTagFlow(io.silv.data.workers.chapters.ChapterDownloadWorkerTag)

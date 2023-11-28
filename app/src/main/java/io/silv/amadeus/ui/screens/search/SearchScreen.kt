@@ -35,8 +35,8 @@ import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import io.silv.amadeus.AmadeusScaffold
-import io.silv.amadeus.ui.screens.home.HomeTab
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
+import io.silv.explore.ExploreTab
 
 class SearchScreen: Screen {
 
@@ -104,7 +104,7 @@ class SearchScreen: Screen {
                                     sm.searchTextChanged(it)
                                 },
                                 onBackArrowClicked = {
-                                    tabNavigator.current = HomeTab
+                                    tabNavigator.current = ExploreTab
                                 },
                                 onFilterIconClick = {
                                     sm.isFiltering(true)

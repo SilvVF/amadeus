@@ -1,11 +1,11 @@
 package io.silv.amadeus.ui.screens
 
-import io.silv.amadeus.ui.screens.home.HomeSM
 import io.silv.amadeus.ui.screens.library.LibrarySM
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterSM
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderSM
 import io.silv.amadeus.ui.screens.manga_view.MangaViewSM
 import io.silv.amadeus.ui.screens.search.SearchSM
+import io.silv.explore.ExploreScreenModel
 import io.silv.sync.SeasonalMangaSyncWorkName
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.qualifier.named
@@ -26,7 +26,7 @@ val screenModule = module {
     factoryOf(::SearchSM)
 
     factory {
-        HomeSM(
+        ExploreScreenModel(
             recentMangaRepository = get(),
             popularMangaRepository = get(),
             seasonalMangaRepository = get(),

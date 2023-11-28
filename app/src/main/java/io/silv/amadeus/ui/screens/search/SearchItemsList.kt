@@ -19,13 +19,13 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.navigator.LocalNavigator
-import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
-import io.silv.amadeus.ui.composables.MangaListItem
-import io.silv.amadeus.ui.composables.PullRefresh
-import io.silv.amadeus.ui.composables.header
+import io.silv.ui.AnimatedBoxShimmer
+import io.silv.ui.MangaListItem
+import io.silv.ui.PullRefresh
+import io.silv.ui.header
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
-import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.CenterBox
+import io.silv.ui.theme.LocalSpacing
 import io.silv.model.SavableManga
 
 @Composable
@@ -49,7 +49,7 @@ fun SearchItemsPagingList(
         }
     }
 
-    PullRefresh(
+    io.silv.ui.PullRefresh(
         refreshing = items.loadState.refresh is LoadState.Loading,
         onRefresh = { items.refresh() }
     ) {
@@ -92,12 +92,12 @@ fun SearchItemsPagingList(
                 key = "loading-indicator"
             ) {
                 if (items.loadState.append is LoadState.Loading) {
-                    CenterBox(Modifier.size(200.dp)) {
+                    io.silv.ui.CenterBox(Modifier.size(200.dp)) {
                         CircularProgressIndicator()
                     }
                 }
                 if (items.loadState.append is LoadState.Error || items.loadState.refresh is LoadState.Error) {
-                    CenterBox(Modifier.size(200.dp)) {
+                    io.silv.ui.CenterBox(Modifier.size(200.dp)) {
                         Button(onClick = { items.retry() }) {
                             Text("Retry loading manga")
                         }

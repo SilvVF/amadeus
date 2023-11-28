@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.theme.LocalSpacing
 import io.silv.common.model.ReaderDirection
 import io.silv.common.model.ReaderOrientation
 import io.silv.datastore.model.ReaderSettings
@@ -15,7 +15,7 @@ fun ReaderSettingsMenu(
     settings: ReaderSettings,
     onSettingsChanged: (ReaderSettings) -> Unit
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     Column {
         OrbitalSwitch(
             title = "reader direction",

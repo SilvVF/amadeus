@@ -83,10 +83,10 @@ import io.silv.amadeus.ui.screens.manga_view.composables.MangaContent
 import io.silv.amadeus.ui.screens.manga_view.composables.WebViewOverlay
 import io.silv.amadeus.ui.screens.manga_view.composables.chapterListItems
 import io.silv.amadeus.ui.screens.manga_view.composables.volumePosterItems
-import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.shared.collectEvents
-import io.silv.amadeus.ui.shared.isScrollingUp
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.CenterBox
+import io.silv.ui.collectEvents
+import io.silv.ui.isScrollingUp
+import io.silv.ui.theme.LocalSpacing
 import io.silv.datastore.model.Filters
 import io.silv.model.SavableManga
 import kotlinx.parcelize.Parcelize
@@ -241,7 +241,7 @@ class MangaViewScreen(
                     enter = fadeIn(),
                     exit = fadeOut(),
                 ) {
-                    val space = LocalSpacing.current
+                    val space = io.silv.ui.theme.LocalSpacing.current
                     ExtendedFloatingActionButton(
                         text = {
                             val text = remember(mangaViewState.chapters) {
@@ -361,7 +361,7 @@ fun FilterBottomSheet(
     showingSourceTitle: Boolean,
     onDismiss: () -> Unit,
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     var selectedTabIdx by rememberSaveable {
         mutableStateOf(0)
     }
@@ -478,7 +478,7 @@ fun FilterBottomSheet(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.fillMaxWidth().clickable { action() }
                                 ) {
-                                    CenterBox(Modifier.size(42.dp)) {
+                                    io.silv.ui.CenterBox(Modifier.size(42.dp)) {
                                         if (ascending != null) {
                                             IconButton(onClick = action) {
                                                 Icon(
@@ -531,7 +531,7 @@ private fun FilterIcon(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     Box(
         modifier = modifier,
         contentAlignment = Alignment.CenterEnd

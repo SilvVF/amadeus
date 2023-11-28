@@ -42,9 +42,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.silv.amadeus.ui.composables.TranslatedLanguageTags
-import io.silv.amadeus.ui.shared.noRippleClickable
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.TranslatedLanguageTags
+import io.silv.ui.noRippleClickable
+import io.silv.ui.theme.LocalSpacing
 import io.silv.model.SavableManga
 import kotlin.math.roundToInt
 
@@ -54,7 +54,7 @@ fun TagsAndLanguages(
     manga: SavableManga,
     navigate: (name: String) -> Unit,
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     val list = remember(manga) {
         manga.tagToId.keys.toList()
     }
@@ -95,7 +95,7 @@ fun TagsAndLanguages(
             }
         }
         Text("Translated Languages", style = MaterialTheme.typography.labelSmall)
-        TranslatedLanguageTags(tags = manga.availableTranslatedLanguages)
+        io.silv.ui.TranslatedLanguageTags(tags = manga.availableTranslatedLanguages)
     }
 }
 
@@ -108,7 +108,7 @@ fun MangaContent(
     showChapterArt: () -> Unit,
     viewOnWebClicked: () -> Unit,
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     Column(Modifier.padding(horizontal = space.med)) {
         MangaActions(
             manga = manga,
@@ -132,7 +132,7 @@ private fun MangaActions(
     onBookmarkClicked: (String) -> Unit,
     viewOnWebClicked: () -> Unit,
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     Row(
         Modifier
             .padding(vertical = space.med)

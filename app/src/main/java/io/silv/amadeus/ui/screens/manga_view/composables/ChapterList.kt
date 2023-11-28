@@ -44,10 +44,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
-import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
+import io.silv.ui.AnimatedBoxShimmer
 import io.silv.amadeus.ui.screens.manga_view.MangaViewState
-import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.CenterBox
+import io.silv.ui.theme.LocalSpacing
 import io.silv.model.SavableChapter
 import kotlinx.coroutines.launch
 
@@ -83,7 +83,7 @@ fun LazyListScope.chapterListItems(
                 items = mangaViewState.chapters,
                 key = { it.id }
             ) { chapter ->
-                val space = LocalSpacing.current
+                val space = io.silv.ui.theme.LocalSpacing.current
                 val dismissState = rememberDismissState()
                 when  {
                     dismissState.isDismissed(EndToStart) ->
@@ -171,16 +171,16 @@ fun LazyListScope.chapterListItems(
 
 @Composable
 private fun ChapterItemPlaceHolder() {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     Column {
-        AnimatedBoxShimmer(
+        io.silv.ui.AnimatedBoxShimmer(
             Modifier
                 .fillMaxWidth()
                 .height(40.dp)
                 .padding(horizontal = space.med)
         )
         repeat(4) {
-            AnimatedBoxShimmer(
+            io.silv.ui.AnimatedBoxShimmer(
                 Modifier
                     .fillMaxWidth()
                     .height(80.dp)
@@ -200,7 +200,7 @@ fun ChapterListItem(
     onDeleteClicked: () -> Unit,
     onReadClicked: () -> Unit,
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
@@ -254,7 +254,7 @@ fun ChapterListItem(
             )
         }
         if (downloadProgress != null) {
-            CenterBox {
+            io.silv.ui.CenterBox {
                 Icon(
                     imageVector = Icons.Default.ArrowDownward,
                     contentDescription = null

@@ -21,13 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
-import io.silv.amadeus.ui.shared.noRippleClickable
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.noRippleClickable
+import io.silv.ui.theme.LocalSpacing
 
 @Composable
 fun ConfirmCloseAppPopup() {
 
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
 
     var closeAppPopupVisible by remember { mutableStateOf(false) }
 

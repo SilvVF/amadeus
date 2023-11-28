@@ -4,8 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
-import cafe.adriel.voyager.core.model.coroutineScope
-import io.silv.amadeus.ui.shared.AmadeusScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.filterUnique
 import io.silv.common.model.ProgressState
 import io.silv.data.chapter.ChapterEntityRepository
@@ -20,6 +19,7 @@ import io.silv.ktor_response_mapper.suspendOnSuccess
 import io.silv.model.SavableChapter
 import io.silv.model.SavableManga
 import io.silv.sync.anyRunning
+import io.silv.ui.EventScreenModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
@@ -39,10 +39,10 @@ class MangaViewSM(
     private val chapterEntityRepository: ChapterEntityRepository,
     private val workManager: WorkManager,
     private val initialManga: SavableManga,
-): AmadeusScreenModel<MangaViewEvent>() {
+): EventScreenModel<MangaViewEvent>() {
 
     init {
-        coroutineScope.launch {
+        screenModelScope.launch {
             userSettingsStore.observeDefaultFilter().collect {
                 mutableFilters.update { it }
             }
@@ -93,35 +93,43 @@ class MangaViewSM(
     }
         .stateInUi(MangaViewState.Loading(initialManga))
 
-    fun bookmarkManga(id: String) = coroutineScope.launch {
-        savedMangaRepository.bookmarkManga(id)
+    fun bookmarkManga(id: String) {
+        screenModelScope.launch {
+            savedMangaRepository.bookmarkManga(id)
+        }
     }
 
-    fun changeChapterBookmarked(id: String) = coroutineScope.launch {
-        var new = false
-        chapterEntityRepository.updateChapter(id) { entity ->
-            entity.copy(
-                bookmarked = !entity.bookmarked.also { new = it }
+    fun changeChapterBookmarked(id: String) {
+        screenModelScope.launch {
+            var new = false
+            chapterEntityRepository.updateChapter(id) { entity ->
+                entity.copy(
+                    bookmarked = !entity.bookmarked.also { new = it }
+                )
+            }
+            mutableEvents.send(
+                MangaViewEvent.BookmarkStatusChanged(id, new)
             )
         }
-        mutableEvents.send(
-            MangaViewEvent.BookmarkStatusChanged(id, new)
-        )
     }
 
-    fun changeChapterReadStatus(id: String) = coroutineScope.launch {
-        var new = false
-        chapterEntityRepository.updateChapter(id) { entity ->
-            entity.copy(
-                progressState = when(entity.progressState) {
-                    ProgressState.Finished -> ProgressState.NotStarted.also { new = false }
-                    ProgressState.NotStarted, ProgressState.Reading -> ProgressState.Finished.also { new = true }
-                }
+    fun changeChapterReadStatus(id: String) {
+        screenModelScope.launch {
+            var new = false
+            chapterEntityRepository.updateChapter(id) { entity ->
+                entity.copy(
+                    progressState = when (entity.progressState) {
+                        ProgressState.Finished -> ProgressState.NotStarted.also { new = false }
+                        ProgressState.NotStarted, ProgressState.Reading -> ProgressState.Finished.also {
+                            new = true
+                        }
+                    }
+                )
+            }
+            mutableEvents.send(
+                MangaViewEvent.ReadStatusChanged(id, new)
             )
         }
-        mutableEvents.send(
-            MangaViewEvent.ReadStatusChanged(id, new)
-        )
     }
 
 
@@ -197,25 +205,31 @@ class MangaViewSM(
         }
     }
 
-    fun deleteChapterImages(chapterIds: List<String>) = coroutineScope.launch {
-        workManager.enqueue(
-            io.silv.data.workers.chapters.ChapterDeletionWorker.deletionWorkRequest(chapterIds)
-        )
-    }
-
-    fun setFilterAsDefault() = coroutineScope.launch {
-        userSettingsStore.updateDefaultFilter(mutableFilters.value)
-    }
-
-    fun downloadChapterImages(chapterIds: List<String>) = coroutineScope.launch {
-        workManager.enqueueUniqueWork(
-            chapterIds.toString(),
-            ExistingWorkPolicy.KEEP,
-            io.silv.data.workers.chapters.ChapterDownloadWorker.downloadWorkRequest(
-                chapterIds,
-                initialManga.id
+    fun deleteChapterImages(chapterIds: List<String>) {
+        screenModelScope.launch {
+            workManager.enqueue(
+                io.silv.data.workers.chapters.ChapterDeletionWorker.deletionWorkRequest(chapterIds)
             )
-        )
+        }
+    }
+
+    fun setFilterAsDefault() {
+        screenModelScope.launch {
+            userSettingsStore.updateDefaultFilter(mutableFilters.value)
+        }
+    }
+
+    fun downloadChapterImages(chapterIds: List<String>) {
+        screenModelScope.launch {
+            workManager.enqueueUniqueWork(
+                chapterIds.toString(),
+                ExistingWorkPolicy.KEEP,
+                io.silv.data.workers.chapters.ChapterDownloadWorker.downloadWorkRequest(
+                    chapterIds,
+                    initialManga.id
+                )
+            )
+        }
     }
 
     private fun List<SavableChapter>.applyFilters(filters: Filters) =

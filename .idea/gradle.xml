@@ -19,7 +19,11 @@
             <option value="$PROJECT_DIR$/core/database" />
             <option value="$PROJECT_DIR$/core/datastore" />
             <option value="$PROJECT_DIR$/core/domain" />
+            <option value="$PROJECT_DIR$/core/navigation" />
             <option value="$PROJECT_DIR$/core/network" />
+            <option value="$PROJECT_DIR$/core/ui" />
+            <option value="$PROJECT_DIR$/feature" />
+            <option value="$PROJECT_DIR$/feature/explore" />
             <option value="$PROJECT_DIR$/ktor-response-mapper" />
             <option value="$PROJECT_DIR$/macrobenchmark" />
             <option value="$PROJECT_DIR$/sync" />

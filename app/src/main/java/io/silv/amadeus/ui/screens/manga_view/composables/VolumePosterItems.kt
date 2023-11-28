@@ -16,9 +16,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
+import io.silv.ui.AnimatedBoxShimmer
 import io.silv.amadeus.ui.screens.manga_view.MangaViewState
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.theme.LocalSpacing
 
 fun LazyListScope.volumePosterItems(
     mangaState: MangaViewState
@@ -30,7 +30,7 @@ fun LazyListScope.volumePosterItems(
         is MangaViewState.Success -> {
             items(mangaState.volumeToArt.toList().chunked(2)) {
                 val context = LocalContext.current
-                val space = LocalSpacing.current
+                val space = io.silv.ui.theme.LocalSpacing.current
                 Row(horizontalArrangement = Arrangement.Center) {
                     it.forEach { (_, url) ->
                         AsyncImage(
@@ -54,9 +54,10 @@ fun LazyListScope.volumePosterItems(
 private fun VolumePostersPlaceHolder() {
     FlowRow {
         repeat(4) {
-            AnimatedBoxShimmer(modifier = Modifier
-                .fillMaxWidth(0.4f)
-                .height(200.dp)
+            io.silv.ui.AnimatedBoxShimmer(
+                modifier = Modifier
+                    .fillMaxWidth(0.4f)
+                    .height(200.dp)
             )
         }
     }

@@ -5,10 +5,8 @@ package io.silv.amadeus.ui.screens.search
 import android.util.Log
 import androidx.paging.cachedIn
 import androidx.paging.map
-import cafe.adriel.voyager.core.model.coroutineScope
+import cafe.adriel.voyager.core.model.screenModelScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
-import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.amadeus.ui.shared.Language
 import io.silv.common.model.ContentRating
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.QueryResult
@@ -22,6 +20,7 @@ import io.silv.model.DomainAuthor
 import io.silv.model.DomainTag
 import io.silv.model.SavableManga
 import io.silv.network.requests.MangaRequest
+import io.silv.ui.EventScreenModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +37,7 @@ class SearchSM(
     tagRepository: TagRepository,
     private val savedMangaRepository: SavedMangaRepository,
     private val authorListRepository: AuthorListRepository,
-): AmadeusScreenModel<SearchEvent>() {
+): EventScreenModel<SearchEvent>() {
 
     val status = Status.values().toList()
 
@@ -50,10 +49,10 @@ class SearchSM(
 
     val contentRatings = ContentRating.values().toList()
 
-    private val mutableSelectedOrigLangs = MutableStateFlow(emptyList<Language>())
+    private val mutableSelectedOrigLangs = MutableStateFlow(emptyList<io.silv.ui.Language>())
     val selectedOrigLangs = mutableSelectedOrigLangs.asStateFlow()
 
-    private val mutableSelectedTransLangs = MutableStateFlow(emptyList<Language>())
+    private val mutableSelectedTransLangs = MutableStateFlow(emptyList<io.silv.ui.Language>())
     val selectedTransLang = mutableSelectedTransLangs.asStateFlow()
 
     private val mutableSelectedContentRatings = MutableStateFlow(emptyList<ContentRating>())
@@ -188,7 +187,7 @@ class SearchSM(
         Log.d("SEARCH PAGER", "flatmapLatest")
         searchMangaRepository.pager(it).flow
     }
-        .cachedIn(coroutineScope)
+        .cachedIn(screenModelScope)
 
     val searchMangaPagingFlow = combineTuple(
         searchManga,
@@ -198,28 +197,34 @@ class SearchSM(
             SavableManga(it, saved.find { s -> s.id == it.id })
         }
     }
-        .cachedIn(coroutineScope)
+        .cachedIn(screenModelScope)
 
 
 
-    fun selectDemographic(demographic: PublicationDemographic) = coroutineScope.launch {
-        mutableSelectedDemographics.update {
-            if (demographic in it) { it - demographic }
-            else it + demographic
+    fun selectDemographic(demographic: PublicationDemographic) {
+        screenModelScope.launch {
+            mutableSelectedDemographics.update {
+                if (demographic in it) { it - demographic }
+                else it + demographic
+            }
         }
     }
 
-    fun selectTranslatedLanguage(language: Language) = coroutineScope.launch {
-        mutableSelectedTransLangs.update {
-            if (language in it) { it - language }
-            else it + language
+    fun selectTranslatedLanguage(language: io.silv.ui.Language) {
+        screenModelScope.launch {
+            mutableSelectedTransLangs.update {
+                if (language in it) { it - language }
+                else it + language
+            }
         }
     }
 
-    fun selectOriginalLanguage(language: Language) = coroutineScope.launch {
-        mutableSelectedOrigLangs.update {
-            if (language in it) { it - language }
-            else it + language
+    fun selectOriginalLanguage(language: io.silv.ui.Language) {
+        screenModelScope.launch {
+            mutableSelectedOrigLangs.update {
+                if (language in it) { it - language }
+                else it + language
+            }
         }
     }
 
@@ -227,33 +232,41 @@ class SearchSM(
         mutableFiltering.update { bool }
     }
 
-    fun statusSelected(status: Status) = coroutineScope.launch {
-        mutableSelectedStatus.update {
-            if (status in it) { it - status }
-            else it + status
+    fun statusSelected(status: Status) {
+        screenModelScope.launch {
+            mutableSelectedStatus.update {
+                if (status in it) { it - status }
+                else it + status
+            }
         }
     }
 
-    fun contentRatingSelected(rating: ContentRating) = coroutineScope.launch {
-        mutableSelectedContentRatings.update {
-            if (rating in it) { it - rating }
-            else it + rating
+    fun contentRatingSelected(rating: ContentRating) {
+        screenModelScope.launch {
+            mutableSelectedContentRatings.update {
+                if (rating in it) { it - rating }
+                else it + rating
+            }
         }
     }
 
-    fun startSearch() = coroutineScope.launch {
-        start = true
-        startFlow.emit(true)
+    fun startSearch() {
+        screenModelScope.launch {
+            start = true
+            startFlow.emit(true)
+        }
     }
 
     fun authorQueryChange(query: String) {
         mutableAuthorQuery.update { query }
     }
 
-    fun authorSelected(author: DomainAuthor) = coroutineScope.launch {
-        mutableSelectedAuthors.update {
-            if (author in it) it - author
-            else it + author
+    fun authorSelected(author: DomainAuthor) {
+        screenModelScope.launch {
+            mutableSelectedAuthors.update {
+                if (author in it) it - author
+                else it + author
+            }
         }
     }
 
@@ -261,39 +274,53 @@ class SearchSM(
         mutableArtistQuery.update { query }
     }
 
-    fun artistSelected(artist: DomainAuthor) = coroutineScope.launch {
-        mutableSelectedArtists.update {
-            if (artist in it) it - artist
-            else it + artist
+    fun artistSelected(artist: DomainAuthor) {
+        screenModelScope.launch {
+            mutableSelectedArtists.update {
+                if (artist in it) it - artist
+                else it + artist
+            }
         }
     }
 
-    fun includedTagModeChange(mode: MangaRequest.TagsMode) = coroutineScope.launch {
-        mutableIncludedTagMode.update { mode }
+    fun includedTagModeChange(mode: MangaRequest.TagsMode) {
+        screenModelScope.launch {
+            mutableIncludedTagMode.update { mode }
+        }
     }
 
-    fun excludedTagModeChange(mode: MangaRequest.TagsMode) = coroutineScope.launch {
-        mutableExcludedTagMode.update { mode }
+    fun excludedTagModeChange(mode: MangaRequest.TagsMode) {
+        screenModelScope.launch {
+            mutableExcludedTagMode.update { mode }
+        }
     }
 
-    fun bookmarkManga(id: String) = coroutineScope.launch {
-        savedMangaRepository.bookmarkManga(id)
+    fun bookmarkManga(id: String) {
+        screenModelScope.launch {
+            savedMangaRepository.bookmarkManga(id)
+        }
     }
 
     fun searchTextChanged(query: String)  {
         mutableSearchText.update { query }
     }
 
-    fun includeTagSelected(id: String) = coroutineScope.launch {
-        mutableIncludedIds.update { ids ->
-            if (id in ids) ids - id
-            else { ids + id }
+    fun includeTagSelected(id: String) {
+        screenModelScope.launch {
+            mutableIncludedIds.update { ids ->
+                if (id in ids) ids - id
+                else {
+                    ids + id
+                }
+            }
         }
     }
-    fun excludeTagSelected(id: String) = coroutineScope.launch {
-        mutableExcludedIds.update { ids ->
-            if (id in ids) ids - id
-            else { ids + id}
+    fun excludeTagSelected(id: String) {
+        screenModelScope.launch {
+            mutableExcludedIds.update { ids ->
+                if (id in ids) ids - id
+                else { ids + id}
+            }
         }
     }
 }

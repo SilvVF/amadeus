@@ -29,8 +29,8 @@ import androidx.compose.ui.unit.dp
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
-import io.silv.amadeus.ui.shared.CenterBox
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.CenterBox
+import io.silv.ui.theme.LocalSpacing
 
 @Composable
 fun <T> OrbitalSwitch(
@@ -44,7 +44,7 @@ fun <T> OrbitalSwitch(
     icon: (@Composable () -> Unit)? = null,
     onModeChange: (T) -> Unit,
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     val transformationSpec = SpringSpec<IntOffset>(
         dampingRatio = Spring.DampingRatioLowBouncy,
         stiffness = 4000f
@@ -52,8 +52,13 @@ fun <T> OrbitalSwitch(
     val transformed = remember(mode) { mode != itemLeft}
 
     val switch = rememberContentWithOrbitalScope {
-        CenterBox(Modifier.animateMovement(this@rememberContentWithOrbitalScope, transformationSpec)) {
-            CenterBox(
+        io.silv.ui.CenterBox(
+            Modifier.animateMovement(
+                this@rememberContentWithOrbitalScope,
+                transformationSpec
+            )
+        ) {
+            io.silv.ui.CenterBox(
                 modifier = Modifier
                     .clip(CircleShape)
                     .size(22.dp)

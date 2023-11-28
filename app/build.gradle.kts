@@ -1,3 +1,4 @@
+@Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -70,21 +71,27 @@ android {
 dependencies {
 
     implementation(project(":ktor-response-mapper"))
+
     implementation(project(":core:common"))
+    implementation(project(":core:navigation"))
     implementation(project(":core:data"))
     implementation(project(":core:datastore"))
-    implementation(project(":sync"))
     implementation(project(":core:domain"))
+    implementation(project(":core:ui"))
+
+    implementation(project(":sync"))
+
+    implementation(project(":feature:explore"))
 
     implementation("com.google.accompanist:accompanist-webview:0.30.1")
 
     implementation(libs.flow.combinetuple.kt)
     implementation(libs.tuples.kt)
 
-    implementation(libs.androidx.material3.window.size)
 
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
+    implementation(libs.androidx.material3.window.size)
     implementation("androidx.compose.ui:ui-util")
     implementation(composeBom)
     implementation(libs.androidx.compose.ui)
@@ -145,4 +152,5 @@ dependencies {
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
+
 }

@@ -21,7 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.ui.theme.LocalSpacing
 import io.silv.model.SavableChapter
 
 @Composable
@@ -32,7 +32,7 @@ fun ChaptersList(
     onChapterClicked: (id: String) -> Unit,
     onBookmarkClick: (chapterId: String) -> Unit
 ) {
-    val space = LocalSpacing.current
+    val space = io.silv.ui.theme.LocalSpacing.current
     LazyColumn(modifier = modifier) {
         items(
             items = chapters,

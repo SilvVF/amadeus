@@ -2,10 +2,10 @@ package io.silv.amadeus.types
 
 import android.os.Parcel
 import android.os.Parcelable
-import io.silv.manga.local.entity.ChapterEntity
-import io.silv.manga.local.entity.ProgressState
-import io.silv.manga.repositorys.minus
-import io.silv.manga.repositorys.timeNow
+import io.silv.common.model.ProgressState
+import io.silv.common.time.localDateTimeNow
+import io.silv.common.time.minus
+import io.silv.database.entity.chapter.ChapterEntity
 import kotlinx.datetime.LocalDateTime
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
@@ -82,7 +82,7 @@ data class SavableChapter(
         ableToDownload = entity.externalUrl == null || implementedImageSources.any { it in (entity.externalUrl ?: "") },
     )
     private val daysSinceCreated: Long
-        get() = timeNow().minus(this.createdAt).inWholeDays
+        get() = (localDateTimeNow() - this.createdAt).inWholeDays
 
     val validNumber: Boolean
         get() = this.chapter >= 0

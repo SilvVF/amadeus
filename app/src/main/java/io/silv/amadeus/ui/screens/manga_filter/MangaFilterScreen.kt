@@ -48,7 +48,7 @@ import io.silv.amadeus.ui.screens.home.MangaPager
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.repositorys.manga.FilteredMangaRepository
+import io.silv.common.model.TimePeriod
 import org.koin.core.parameter.parametersOf
 
 class MangaFilterScreen(
@@ -147,11 +147,11 @@ class MangaFilterScreen(
                         )
                         FlowRow {
                             listOf(
-                                "all time" to FilteredMangaRepository.TimePeriod.AllTime,
-                                "last 6 months" to FilteredMangaRepository.TimePeriod.SixMonths,
-                                "last 3 months" to FilteredMangaRepository.TimePeriod.ThreeMonths,
-                                "last month" to FilteredMangaRepository.TimePeriod.LastMonth,
-                                "last week" to FilteredMangaRepository.TimePeriod.OneWeek
+                                "all time" to TimePeriod.AllTime,
+                                "last 6 months" to TimePeriod.SixMonths,
+                                "last 3 months" to TimePeriod.ThreeMonths,
+                                "last month" to TimePeriod.LastMonth,
+                                "last week" to TimePeriod.OneWeek
                             ).forEach { (text, time) ->
                                 FilterChip(
                                     selected = time == timePeriod,

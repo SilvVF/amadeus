@@ -12,20 +12,14 @@ import io.silv.amadeus.manga_usecase.MangaStats
 import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.core.filterUnique
+import io.silv.common.filterUnique
+import io.silv.common.model.ProgressState
+import io.silv.data.chapter.ChapterEntityRepository
+import io.silv.data.manga.SavedMangaRepository
 import io.silv.ktor_response_mapper.message
 import io.silv.ktor_response_mapper.suspendOnFailure
 import io.silv.ktor_response_mapper.suspendOnSuccess
-import io.silv.manga.local.entity.ProgressState.Finished
-import io.silv.manga.local.entity.ProgressState.NotStarted
-import io.silv.manga.local.entity.ProgressState.Reading
-import io.silv.manga.local.workers.ChapterDeletionWorker
-import io.silv.manga.local.workers.ChapterDeletionWorkerTag
-import io.silv.manga.local.workers.ChapterDownloadWorker
-import io.silv.manga.local.workers.ChapterDownloadWorkerTag
-import io.silv.manga.repositorys.chapter.ChapterEntityRepository
-import io.silv.manga.repositorys.manga.SavedMangaRepository
-import io.silv.manga.sync.anyRunning
+import io.silv.sync.anyRunning
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
@@ -65,11 +59,11 @@ class MangaViewSM(
 
 
     val downloadingOrDeleting = combine(
-        workManager.getWorkInfosByTagFlow(ChapterDownloadWorkerTag)
+        workManager.getWorkInfosByTagFlow(io.silv.data.workers.chapters.ChapterDownloadWorkerTag)
             .map { it.anyRunning() },
-        workManager.getWorkInfosByTagFlow(ChapterDeletionWorkerTag)
+        workManager.getWorkInfosByTagFlow(io.silv.data.workers.chapters.ChapterDeletionWorkerTag)
             .map { it.anyRunning() },
-        ChapterDownloadWorker.downloadingIdToProgress
+        io.silv.data.workers.chapters.ChapterDownloadWorker.downloadingIdToProgress
     ) { downloading, deleting, idsToProgress ->
         if (downloading || deleting) {
             idsToProgress
@@ -120,8 +114,8 @@ class MangaViewSM(
         chapterEntityRepository.updateChapter(id) { entity ->
             entity.copy(
                 progressState = when(entity.progressState) {
-                    Finished -> NotStarted.also { new = false }
-                    NotStarted, Reading -> Finished.also { new = true }
+                    ProgressState.Finished -> ProgressState.NotStarted.also { new = false }
+                    ProgressState.NotStarted, ProgressState.Reading -> ProgressState.Finished.also { new = true }
                 }
             )
         }
@@ -205,7 +199,7 @@ class MangaViewSM(
 
     fun deleteChapterImages(chapterIds: List<String>) = coroutineScope.launch {
         workManager.enqueue(
-            ChapterDeletionWorker.deletionWorkRequest(chapterIds)
+            io.silv.data.workers.chapters.ChapterDeletionWorker.deletionWorkRequest(chapterIds)
         )
     }
 
@@ -217,7 +211,7 @@ class MangaViewSM(
         workManager.enqueueUniqueWork(
             chapterIds.toString(),
             ExistingWorkPolicy.KEEP,
-            ChapterDownloadWorker.downloadWorkRequest(
+            io.silv.data.workers.chapters.ChapterDownloadWorker.downloadWorkRequest(
                 chapterIds,
                 initialManga.id
             )

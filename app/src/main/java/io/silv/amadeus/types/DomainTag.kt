@@ -1,6 +1,7 @@
 package io.silv.amadeus.types
 
-import io.silv.manga.local.entity.TagEntity
+import io.silv.database.entity.list.TagEntity
+
 
 data class DomainTag(
     val group: String,

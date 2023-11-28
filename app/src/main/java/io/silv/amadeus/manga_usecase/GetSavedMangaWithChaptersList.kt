@@ -2,8 +2,8 @@ package io.silv.amadeus.manga_usecase
 
 import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.types.SavableMangaWithChapters
-import io.silv.manga.repositorys.chapter.ChapterEntityRepository
-import io.silv.manga.repositorys.manga.SavedMangaRepository
+import io.silv.data.chapter.ChapterEntityRepository
+import io.silv.data.manga.SavedMangaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 

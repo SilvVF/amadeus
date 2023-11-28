@@ -7,15 +7,11 @@ import io.silv.amadeus.manga_usecase.GetSavedMangaWithChaptersList
 import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.local.entity.ProgressState
-import io.silv.manga.local.entity.UpdateType
-import io.silv.manga.local.workers.ChapterDeletionWorker
-import io.silv.manga.local.workers.ChapterDeletionWorkerTag
-import io.silv.manga.local.workers.ChapterDownloadWorker
-import io.silv.manga.local.workers.ChapterDownloadWorkerTag
-import io.silv.manga.repositorys.chapter.ChapterEntityRepository
-import io.silv.manga.repositorys.manga.MangaUpdateRepository
-import io.silv.manga.sync.anyRunning
+import io.silv.common.model.ProgressState
+import io.silv.common.model.UpdateType
+import io.silv.data.chapter.ChapterEntityRepository
+import io.silv.data.manga.MangaUpdateRepository
+import io.silv.sync.anyRunning
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -28,11 +24,11 @@ class LibrarySM(
 ): AmadeusScreenModel<LibraryEvent>() {
 
     val downloadingOrDeleting = combine(
-        workManager.getWorkInfosByTagFlow(ChapterDownloadWorkerTag)
+        workManager.getWorkInfosByTagFlow(io.silv.data.workers.chapters.ChapterDownloadWorkerTag)
             .map { it.anyRunning() },
-        workManager.getWorkInfosByTagFlow(ChapterDeletionWorkerTag)
+        workManager.getWorkInfosByTagFlow(io.silv.data.workers.chapters.ChapterDeletionWorkerTag)
             .map { it.anyRunning() },
-        ChapterDownloadWorker.downloadingIdToProgress
+        io.silv.data.workers.chapters.ChapterDownloadWorker.downloadingIdToProgress
     ) { downloading, deleting, idsToProgress ->
         if (downloading || deleting) {
             idsToProgress
@@ -80,7 +76,7 @@ class LibrarySM(
 
     fun deleteChapterImages(chapterIds: List<String>) = coroutineScope.launch {
         workManager.enqueue(
-            ChapterDeletionWorker.deletionWorkRequest(chapterIds)
+            io.silv.data.workers.chapters.ChapterDeletionWorker.deletionWorkRequest(chapterIds)
         )
     }
 
@@ -88,7 +84,7 @@ class LibrarySM(
         workManager.enqueueUniqueWork(
             chapterIds.toString(),
             ExistingWorkPolicy.KEEP,
-            ChapterDownloadWorker.downloadWorkRequest(
+            io.silv.data.workers.chapters.ChapterDownloadWorker.downloadWorkRequest(
                 chapterIds,
                 mangaId
             )

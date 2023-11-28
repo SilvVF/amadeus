@@ -6,7 +6,7 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 
-val dataModule = module {
+val dataStoreModule = module {
 
     singleOf(::UserSettingsStoreImpl) withOptions {
         bind<UserSettingsStore>()

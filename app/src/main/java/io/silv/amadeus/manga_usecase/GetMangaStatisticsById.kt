@@ -1,7 +1,7 @@
 package io.silv.amadeus.manga_usecase
 
 import io.silv.ktor_response_mapper.mapSuccess
-import io.silv.manga.network.mangadex.MangaDexApi
+import io.silv.network.MangaDexApi
 import kotlin.math.roundToInt
 
 
@@ -16,7 +16,7 @@ data class MangaStats(
  * This always fetches from the network.
  */
 class GetMangaStatisticsById (
-    private val mangaDexApi: MangaDexApi
+    private val mangaDexApi: io.silv.network.MangaDexApi
 ) {
     suspend operator fun invoke(id: String) = mangaDexApi.getMangaStatistics(id)
         .mapSuccess {

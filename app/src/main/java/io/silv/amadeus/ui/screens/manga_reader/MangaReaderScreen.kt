@@ -60,7 +60,7 @@ import io.silv.amadeus.ui.screens.manga_reader.composables.ReaderMenuOverlay
 import io.silv.amadeus.ui.screens.manga_reader.composables.rememberGestureHandler
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.core.lerp
+import io.silv.common.lerp
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 import kotlin.math.absoluteValue
@@ -456,7 +456,7 @@ fun AnimatedPageNumber(
                     val pageOffset = ((mangaPagerState.currentPage - page) + mangaPagerState
                         .currentPageOffsetFraction
                             ).absoluteValue
-                    val interpolation = lerp(
+                    val interpolation = io.silv.common.lerp(
                         start = 0.5f,
                         stop = 1f,
                         fraction = 1f - pageOffset.coerceIn(0f, 1f)

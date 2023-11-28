@@ -1,7 +1,7 @@
 package io.silv.amadeus.types
 
-import io.silv.manga.local.entity.MangaResource
-import io.silv.manga.local.entity.SavedMangaEntity
+import io.silv.database.entity.manga.MangaResource
+import io.silv.database.entity.manga.SavedMangaEntity
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone

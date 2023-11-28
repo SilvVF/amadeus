@@ -97,11 +97,11 @@ import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.manga.network.mangadex.models.ContentRating
-import io.silv.manga.network.mangadex.models.PublicationDemographic
-import io.silv.manga.network.mangadex.models.Status
-import io.silv.manga.network.mangadex.requests.MangaRequest
-import io.silv.manga.repositorys.author.QueryResult
+import io.silv.common.model.ContentRating
+import io.silv.common.model.PublicationDemographic
+import io.silv.common.model.QueryResult
+import io.silv.common.model.Status
+import io.silv.network.requests.MangaRequest
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable

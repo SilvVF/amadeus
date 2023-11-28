@@ -14,9 +14,13 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/app/ktor-response-mapper" />
             <option value="$PROJECT_DIR$/core" />
+            <option value="$PROJECT_DIR$/core/common" />
+            <option value="$PROJECT_DIR$/core/data" />
+            <option value="$PROJECT_DIR$/core/database" />
+            <option value="$PROJECT_DIR$/core/network" />
             <option value="$PROJECT_DIR$/ktor-response-mapper" />
             <option value="$PROJECT_DIR$/macrobenchmark" />
-            <option value="$PROJECT_DIR$/manga" />
+            <option value="$PROJECT_DIR$/sync" />
           </set>
         </option>
       </GradleProjectSettings>

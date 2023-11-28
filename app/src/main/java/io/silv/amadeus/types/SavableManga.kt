@@ -2,13 +2,13 @@ package io.silv.amadeus.types
 
 import android.os.Parcel
 import android.os.Parcelable
-import io.silv.manga.local.entity.MangaResource
-import io.silv.manga.local.entity.ProgressState
-import io.silv.manga.local.entity.ReadingStatus
-import io.silv.manga.local.entity.SavedMangaEntity
-import io.silv.manga.network.mangadex.models.ContentRating
-import io.silv.manga.network.mangadex.models.PublicationDemographic
-import io.silv.manga.network.mangadex.models.Status
+import io.silv.common.model.ContentRating
+import io.silv.common.model.ProgressState
+import io.silv.common.model.PublicationDemographic
+import io.silv.common.model.ReadingStatus
+import io.silv.common.model.Status
+import io.silv.database.entity.manga.MangaResource
+import io.silv.database.entity.manga.SavedMangaEntity
 import kotlinx.datetime.LocalDateTime
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable

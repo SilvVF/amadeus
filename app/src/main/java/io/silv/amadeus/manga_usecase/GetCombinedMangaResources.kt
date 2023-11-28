@@ -1,14 +1,14 @@
 package io.silv.amadeus.manga_usecase
 
 import com.zhuinden.flowcombinetuplekt.combineTuple
-import io.silv.manga.local.entity.MangaResource
-import io.silv.manga.repositorys.manga.FilteredMangaRepository
-import io.silv.manga.repositorys.manga.FilteredYearlyMangaRepository
-import io.silv.manga.repositorys.manga.PopularMangaRepository
-import io.silv.manga.repositorys.manga.QuickSearchMangaRepository
-import io.silv.manga.repositorys.manga.RecentMangaRepository
-import io.silv.manga.repositorys.manga.SearchMangaRepository
-import io.silv.manga.repositorys.manga.SeasonalMangaRepository
+import io.silv.data.manga.FilteredMangaRepository
+import io.silv.data.manga.FilteredYearlyMangaRepository
+import io.silv.data.manga.PopularMangaRepository
+import io.silv.data.manga.QuickSearchMangaRepository
+import io.silv.data.manga.RecentMangaRepository
+import io.silv.data.manga.SearchMangaRepository
+import io.silv.data.manga.SeasonalMangaRepository
+import io.silv.database.entity.manga.MangaResource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

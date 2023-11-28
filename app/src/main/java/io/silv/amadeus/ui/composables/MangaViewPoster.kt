@@ -36,8 +36,8 @@ import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.screens.manga_view.StatsUiState
 import io.silv.amadeus.ui.shared.fillMaxAfterMesaure
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.core.filterUnique
-import io.silv.manga.network.mangadex.models.Status
+import io.silv.common.filterUnique
+import io.silv.common.model.Status
 
 @Composable
 fun MainPoster(

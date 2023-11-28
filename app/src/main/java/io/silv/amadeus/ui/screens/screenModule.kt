@@ -6,7 +6,7 @@ import io.silv.amadeus.ui.screens.manga_filter.MangaFilterSM
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderSM
 import io.silv.amadeus.ui.screens.manga_view.MangaViewSM
 import io.silv.amadeus.ui.screens.search.SearchSM
-import io.silv.manga.sync.SeasonalMangaSyncWorkName
+import io.silv.sync.SeasonalMangaSyncWorkName
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module

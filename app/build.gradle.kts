@@ -70,8 +70,9 @@ android {
 dependencies {
 
     implementation(project(":ktor-response-mapper"))
-    implementation(project(":manga"))
-    implementation(project(":core"))
+    implementation(project(":core:common"))
+    implementation(project(":core:data"))
+    implementation(project(":sync"))
 
     implementation("com.google.accompanist:accompanist-webview:0.30.1")
 

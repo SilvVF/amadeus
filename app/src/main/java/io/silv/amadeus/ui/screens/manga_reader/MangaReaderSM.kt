@@ -9,11 +9,8 @@ import io.silv.amadeus.manga_usecase.GetCombinedSavableMangaWithChapters
 import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
-import io.silv.manga.local.workers.ChapterDownloadWorker
-import io.silv.manga.network.mangadex.models.chapter.Chapter
-import io.silv.manga.repositorys.Resource
-import io.silv.manga.repositorys.chapter.ChapterEntityRepository
-import io.silv.manga.repositorys.chapter.ChapterImageRepository
+import io.silv.data.chapter.ChapterEntityRepository
+import io.silv.data.chapter.ChapterImageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.conflate
@@ -41,7 +38,7 @@ class MangaReaderSM(
     val mangaReaderState = combineTuple(
         chapterId,
         getCombinedSavableMangaWithChapters(mangaId),
-        ChapterDownloadWorker.downloadingIdToProgress.asStateFlow()
+        io.silv.data.workers.chapters.ChapterDownloadWorker.downloadingIdToProgress.asStateFlow()
     ).map { (chapterId, savableWithChapters, downloadingIds) ->
             val (manga, chapters) = savableWithChapters
 
@@ -73,11 +70,11 @@ class MangaReaderSM(
                 }
             } else {
                 chapterImageRepository.getChapterImages(chapterId)
-                    .fold<Resource<Pair<Chapter, List<String>>>, MangaReaderState>(MangaReaderState.Loading) { _, resource ->
+                    .fold<io.silv.common.model.Resource<Pair<io.silv.network.model.chapter.Chapter, List<String>>>, MangaReaderState>(MangaReaderState.Loading) { _, resource ->
                     when (resource) {
-                        is Resource.Failure -> MangaReaderState.Failure(resource.message)
-                        Resource.Loading -> MangaReaderState.Loading
-                        is Resource.Success -> if (resource.result.second.isEmpty()) {
+                        is io.silv.common.model.Resource.Failure -> MangaReaderState.Failure(resource.message)
+                        io.silv.common.model.Resource.Loading -> MangaReaderState.Loading
+                        is io.silv.common.model.Resource.Success -> if (resource.result.second.isEmpty()) {
                             MangaReaderState.Failure("Unable to download images from this source.")
                         }else {
                             MangaReaderState.Success(

@@ -14,9 +14,10 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 
 @Parcelize
-@kotlinx.serialization.Serializable
+@Serializable
 data class SavableManga(
     val id: String,
     val bookmarked: Boolean = false,
@@ -35,9 +36,9 @@ data class SavableManga(
     val lastVolume: Int,
     val lastChapter: Long,
     val version: Int,
-    @kotlinx.serialization.Serializable(with= DateTimeAsLongSerializer::class)
+    @Serializable(with= DateTimeAsLongSerializer::class)
     val createdAt: LocalDateTime,
-    @kotlinx.serialization.Serializable(with= DateTimeAsLongSerializer::class)
+    @Serializable(with= DateTimeAsLongSerializer::class)
     val updatedAt: LocalDateTime,
     @Serializable(with= DateTimeAsLongSerializer::class)
     val savedLocalAtEpochSeconds: LocalDateTime,

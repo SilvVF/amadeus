@@ -37,7 +37,9 @@ fun LazyListScope.seasonalMangaLists(
     seasonalMangaState: SeasonalMangaUiState,
     onBookmarkClick: (manga: SavableManga) -> Unit,
 ) {
-    item {
+    item(
+        key = "seasonal-manga-list"
+    ) {
 
         val space = LocalSpacing.current
         val navigator = LocalNavigator.current

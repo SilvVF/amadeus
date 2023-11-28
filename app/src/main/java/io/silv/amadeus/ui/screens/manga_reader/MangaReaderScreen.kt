@@ -142,6 +142,7 @@ fun UpdateReaderState(
 
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MangaReaderContent(
     state: MangaReaderState,
@@ -170,7 +171,12 @@ fun MangaReaderContent(
         }
         is MangaReaderState.Success -> {
             val horizontalReaderState = rememberPagerState(
-                initialPage = state.readerChapters.current.lastReadPage
+                initialPage = state.readerChapters.current.lastReadPage,
+                pageCount = {
+                    state.readerChapters.chapterImages.size +
+                            listOf(state.readerChapters.hasPrev, state.readerChapters.hasNext)
+                                .count { it }
+                }
             )
             val verticalReaderState = rememberLazyListState(
                 initialFirstVisibleItemIndex = state.readerChapters.current.lastReadPage
@@ -337,11 +343,8 @@ fun HorizontalReader(
     reverseLayout: Boolean,
     readChapter: (id: String) -> Unit
 ) {
-    val pageCount = readerChapters.chapterImages.size + listOf(readerChapters.hasPrev, readerChapters.hasNext).count { it }
-
     HorizontalPager(
         modifier = modifier,
-        pageCount = pageCount,
         state = pagerState,
         pageSize = PageSize.Fill,
         reverseLayout = reverseLayout
@@ -416,11 +419,15 @@ fun MangaImage(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AnimatedPageNumber(
+    pageCount: Int,
     modifier: Modifier = Modifier,
-    state: PagerState = rememberPagerState(),
+    state: PagerState = rememberPagerState(
+        initialPage = 0,
+        initialPageOffsetFraction = 0f,
+        pageCount = { pageCount }
+    ),
     mangaPagerState: PagerState,
     hasPrev: Boolean,
-    pageCount: Int,
 ) {
 
     LaunchedEffect(Unit) {
@@ -434,9 +441,7 @@ fun AnimatedPageNumber(
     }
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val density = LocalDensity.current
-
     HorizontalPager(
-        pageCount = pageCount,
         state = state,
         userScrollEnabled = false,
         pageSize = PageSize.Fixed(50.dp),

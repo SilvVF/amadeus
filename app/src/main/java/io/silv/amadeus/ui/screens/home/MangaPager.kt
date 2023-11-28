@@ -58,11 +58,16 @@ fun MangaPager(
 ) {
     val space = LocalSpacing.current
     val context = LocalContext.current
-    val pagerState = rememberPagerState()
+    val pagerState = rememberPagerState(
+        initialPage = 0,
+        initialPageOffsetFraction = 0f,
+        pageCount = {
+            mangaList.size
+        }
+    )
     val scope = rememberCoroutineScope()
 
     HorizontalPager(
-        pageCount = mangaList.size,
         state = pagerState,
         modifier = Modifier
             .height(240.dp)

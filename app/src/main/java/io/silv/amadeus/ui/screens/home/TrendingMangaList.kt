@@ -1,9 +1,7 @@
 package io.silv.amadeus.ui.screens.home
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -48,72 +46,62 @@ fun TrendingMangaList(
             ).show()
         }
     }
-    if (manga.itemCount <= 0 && manga.loadState.refresh != LoadState.Loading) {
-        CenterBox(Modifier.fillMaxWidth().padding(space.med)) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = "unable to load, make sure to check your network connection.")
-                Button(onClick = { manga.retry() }) {
-                    Text("Retry loading manga")
-                }
-            }
-        }
-    } else {
-        LazyRow(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            items(
-                count = manga.itemCount,
-                key = manga.itemKey(),
-                contentType = manga.itemContentType()
-            ) { i ->
-                manga[i]?.let {
-                    MangaListItemSideTitle(
-                        manga = it,
-                        modifier = Modifier
-                            .padding(space.med)
-                            .width(200.dp),
-                        onTagClick = { tag ->
-                            it.tagToId[tag]?.let { id ->
-                                navigator?.push(
-                                    MangaFilterScreen(tag, id)
-                                )
-                            }
-                        },
-                        onBookmarkClick = {
-                            onBookmarkClick(it)
-                        },
-                        index = i,
-                        onMangaImageClick = {
+
+    LazyRow(
+        modifier = Modifier.fillMaxSize(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        items(
+            count = manga.itemCount,
+            key = manga.itemKey(),
+            contentType = manga.itemContentType()
+        ) { i ->
+            manga[i]?.let {
+                MangaListItemSideTitle(
+                    manga = it,
+                    modifier = Modifier
+                        .padding(space.med)
+                        .width(200.dp),
+                    onTagClick = { tag ->
+                        it.tagToId[tag]?.let { id ->
                             navigator?.push(
-                                MangaViewScreen(it)
+                                MangaFilterScreen(tag, id)
                             )
                         }
+                    },
+                    onBookmarkClick = {
+                        onBookmarkClick(it)
+                    },
+                    index = i,
+                    onMangaImageClick = {
+                        navigator?.push(
+                            MangaViewScreen(it)
+                        )
+                    }
+                )
+            }
+        }
+        if (manga.loadState.refresh is LoadState.Loading) {
+            items(4) {
+                CenterBox(Modifier.size(200.dp)) {
+                    AnimatedBoxShimmer(
+                        Modifier
+                            .size(200.dp)
+                            .padding(space.med)
                     )
                 }
             }
-            if (manga.loadState.refresh is LoadState.Loading) {
-                items(4) {
-                    CenterBox(Modifier.size(200.dp)) {
-                        AnimatedBoxShimmer(
-                            Modifier
-                                .size(200.dp)
-                                .padding(space.med)
-                        )
-                    }
+        }
+        item {
+            if (manga.loadState.append is LoadState.Loading) {
+                CenterBox(Modifier.size(200.dp)) {
+                    CircularProgressIndicator()
                 }
             }
-            item {
-                if (manga.loadState.append is LoadState.Loading) {
-                    CenterBox(Modifier.size(200.dp)) {
-                        CircularProgressIndicator()
-                    }
-                }
-                if (manga.loadState.append is LoadState.Error || manga.loadState.refresh is LoadState.Error) {
-                    CenterBox(Modifier.size(200.dp)) {
-                        Button(onClick = { manga.retry() }) {
-                            Text("Retry loading manga")
-                        }
+            if (manga.loadState.append is LoadState.Error || manga.loadState.refresh is LoadState.Error) {
+                CenterBox(Modifier.size(200.dp)) {
+                    Button(onClick = { manga.retry() }) {
+                        Text("Retry loading manga")
                     }
                 }
             }

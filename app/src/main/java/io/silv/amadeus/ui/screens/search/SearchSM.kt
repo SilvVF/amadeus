@@ -198,6 +198,7 @@ class SearchSM(
             SavableManga(it, saved.find { s -> s.id == it.id })
         }
     }
+        .cachedIn(coroutineScope)
 
 
 

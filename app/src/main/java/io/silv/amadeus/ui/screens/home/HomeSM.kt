@@ -75,6 +75,7 @@ class HomeSM(
         .map { (pagingData, saved) ->
             pagingData.map { SavableManga(it, saved.find { s -> s.id == it.id }) }
         }
+        .cachedIn(coroutineScope)
 
     @Stable
     val recentMangaPagingFlow = combineTuple(
@@ -83,6 +84,7 @@ class HomeSM(
     ).map { (pagingData, saved) ->
         pagingData.map { SavableManga(it, saved.find { s -> s.id == it.id }) }
     }
+        .cachedIn(coroutineScope)
 
 
 

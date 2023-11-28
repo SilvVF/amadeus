@@ -84,11 +84,13 @@ fun SearchItemsPagingList(
                 }
             }
             if (items.loadState.refresh is LoadState.Loading) {
-                items(8) {
+                items(8, key = { it }) {
                     AnimatedBoxShimmer(Modifier.size(200.dp))
                 }
             }
-            header {
+            header(
+                key = "loading-indicator"
+            ) {
                 if (items.loadState.append is LoadState.Loading) {
                     CenterBox(Modifier.size(200.dp)) {
                         CircularProgressIndicator()

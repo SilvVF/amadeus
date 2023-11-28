@@ -24,7 +24,7 @@ data class MangaRequest(
     val availableTranslatedLanguage: List<String>? = null,
     val publicationDemographic: List<String>? = null,
     val ids: List<String>?  = null,
-    val contentRating: List<String>?  = listOf("safe"),
+    val contentRating: List<String>? = null,
     var createdAtSince: String? = null,
     val updatedAtSince: String?  = null,
     val order: Map<String, String>? = null,

@@ -12,10 +12,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
 
 fun LazyGridScope.header(
+    key: Any? = null,
     content: @Composable LazyGridItemScope.() -> Unit
 ) {
     item(
-        span = { GridItemSpan(this.maxLineSpan) }, content = content)
+        key = key,
+        span = { GridItemSpan(this.maxLineSpan) },
+        content = content
+    )
 }
 
 fun Modifier.vertical() =

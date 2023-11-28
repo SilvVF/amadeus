@@ -158,14 +158,18 @@ fun BrowseMangaContent(
                 onBookmarkClick(it.id)
             }
         )
-        item {
+        item(
+            key = "trending-tag"
+        ) {
             Text(
                 text = "Trending",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(space.med)
             )
         }
-        item {
+        item(
+            key = "trending-manga-list"
+        ) {
             TrendingMangaList(
                 manga = popularMangaList,
                 onBookmarkClick = {
@@ -173,7 +177,9 @@ fun BrowseMangaContent(
                 }
             )
         }
-        item {
+        item(
+            key = "recently-update-tag"
+        ) {
             Text(
                 text = "Recently Updated",
                 style = MaterialTheme.typography.headlineMedium,

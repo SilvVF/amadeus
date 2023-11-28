@@ -37,7 +37,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.noRippleClickable
@@ -45,6 +44,7 @@ import io.silv.amadeus.ui.shared.shadow
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.amadeus.ui.theme.Pastel
 import io.silv.amadeus.ui.theme.md_theme_dark_onBackground
+import io.silv.model.SavableManga
 
 @Composable
 fun MangaListItem(

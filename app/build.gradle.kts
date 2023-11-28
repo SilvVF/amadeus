@@ -74,6 +74,7 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:datastore"))
     implementation(project(":sync"))
+    implementation(project(":core:domain"))
 
     implementation("com.google.accompanist:accompanist-webview:0.30.1")
 

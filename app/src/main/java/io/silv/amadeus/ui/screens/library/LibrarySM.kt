@@ -3,14 +3,14 @@ package io.silv.amadeus.ui.screens.library
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
-import io.silv.amadeus.manga_usecase.GetSavedMangaWithChaptersList
-import io.silv.amadeus.types.SavableChapter
-import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.common.model.ProgressState
 import io.silv.common.model.UpdateType
 import io.silv.data.chapter.ChapterEntityRepository
 import io.silv.data.manga.MangaUpdateRepository
+import io.silv.domain.GetSavedMangaWithChaptersList
+import io.silv.model.SavableChapter
+import io.silv.model.SavableManga
 import io.silv.sync.anyRunning
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map

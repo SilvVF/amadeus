@@ -1,4 +1,4 @@
-package io.silv.amadeus.types
+package io.silv.model
 
 data class DomainAuthor(
     val name: String,

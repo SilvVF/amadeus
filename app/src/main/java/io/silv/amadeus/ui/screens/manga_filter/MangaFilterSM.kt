@@ -8,11 +8,12 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.coroutineScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
-import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
+import io.silv.common.model.LoadState
 import io.silv.common.model.TimePeriod
 import io.silv.data.manga.FilteredYearlyMangaRepository
 import io.silv.data.manga.SavedMangaRepository
+import io.silv.model.SavableManga
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -52,7 +53,7 @@ class MangaFilterSM(
         savedMangaRepository.getSavedMangas()
     ) { loadState, resources, saved ->
         when (loadState) {
-            io.silv.common.model.LoadState.Loading, io.silv.common.model.LoadState.Refreshing -> YearlyFilteredUiState.Loading
+            LoadState.Loading, LoadState.Refreshing -> YearlyFilteredUiState.Loading
             else -> {
                 YearlyFilteredUiState.Success(
                     resources.map { r ->
@@ -83,7 +84,7 @@ class MangaFilterSM(
         savedMangaRepository.getSavedMangas()
     ).map { (pagingData, saved) ->
         pagingData.map {
-            SavableManga(it, saved.find { s -> s.id == it.id })
+           SavableManga(it, saved.find { s -> s.id == it.id })
         }
     }
 

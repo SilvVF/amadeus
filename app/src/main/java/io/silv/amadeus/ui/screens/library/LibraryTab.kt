@@ -81,7 +81,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.amadeus.AmadeusScaffold
 import io.silv.amadeus.R
-import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.ui.composables.header
 import io.silv.amadeus.ui.screens.home.SearchTopAppBar
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
@@ -93,6 +92,7 @@ import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.amadeus.ui.theme.Pastel
+import io.silv.model.SavableChapter
 
 object LibraryTab: Tab {
 

@@ -5,11 +5,6 @@ import androidx.compose.runtime.Stable
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
-import io.silv.amadeus.manga_usecase.GetCombinedSavableMangaWithChapters
-import io.silv.amadeus.manga_usecase.GetMangaStatisticsById
-import io.silv.amadeus.manga_usecase.MangaStats
-import io.silv.amadeus.types.SavableChapter
-import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.common.filterUnique
 import io.silv.common.model.ProgressState
@@ -17,9 +12,13 @@ import io.silv.data.chapter.ChapterEntityRepository
 import io.silv.data.manga.SavedMangaRepository
 import io.silv.datastore.UserSettingsStore
 import io.silv.datastore.model.Filters
+import io.silv.domain.GetCombinedSavableMangaWithChapters
+import io.silv.domain.GetMangaStatisticsById
 import io.silv.ktor_response_mapper.message
 import io.silv.ktor_response_mapper.suspendOnFailure
 import io.silv.ktor_response_mapper.suspendOnSuccess
+import io.silv.model.SavableChapter
+import io.silv.model.SavableManga
 import io.silv.sync.anyRunning
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -290,7 +289,7 @@ sealed class MangaViewState(
 data class StatsUiState(
     val loading: Boolean = false,
     val error: String? = null,
-    val data: MangaStats = MangaStats()
+    val data: io.silv.domain.MangaStats = io.silv.domain.MangaStats()
 )
 
 sealed interface MangaViewEvent {

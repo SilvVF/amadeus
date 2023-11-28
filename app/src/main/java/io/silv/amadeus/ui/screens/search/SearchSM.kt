@@ -7,9 +7,6 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.coroutineScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
-import io.silv.amadeus.types.DomainAuthor
-import io.silv.amadeus.types.DomainTag
-import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.amadeus.ui.shared.Language
 import io.silv.common.model.ContentRating
@@ -21,6 +18,9 @@ import io.silv.data.manga.SavedMangaRepository
 import io.silv.data.manga.SearchMangaRepository
 import io.silv.data.manga.SearchMangaResourceQuery
 import io.silv.data.tags.TagRepository
+import io.silv.model.DomainAuthor
+import io.silv.model.DomainTag
+import io.silv.model.SavableManga
 import io.silv.network.requests.MangaRequest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -141,7 +141,7 @@ class SearchSM(
     private var start: Boolean = false
     private val startFlow = MutableStateFlow(false)
 
-    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    @OptIn(FlowPreview::class)
     private val searchResourceQuery = combineTuple(
         mutableFiltering,
         mutableIncludedIds,

@@ -1,4 +1,4 @@
-package io.silv.amadeus.manga_usecase
+package io.silv.domain
 
 import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.data.manga.FilteredMangaRepository

@@ -1,7 +1,8 @@
-package io.silv.amadeus.types
+package io.silv.model
 
 import android.os.Parcel
 import android.os.Parcelable
+import io.silv.DateTimeAsLongSerializer
 import io.silv.common.model.ProgressState
 import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.minus
@@ -9,7 +10,10 @@ import io.silv.database.entity.chapter.ChapterEntity
 import kotlinx.datetime.LocalDateTime
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
+
 
 private val implementedImageSources = listOf(
     "mangaplus.shueisha",
@@ -20,7 +24,6 @@ private val implementedImageSources = listOf(
 )
 
 @Parcelize
-@kotlinx.serialization.Serializable
 data class SavableChapter(
     val id: String,
     val bookmarked: Boolean,
@@ -39,11 +42,11 @@ data class SavableChapter(
     val scanlationGroupToId: Pair<String, String>? = null,
     val userToId: Pair<String,String>? = null,
     val version: Int,
-    @kotlinx.serialization.Serializable(with = DateTimeAsLongSerializer::class)
+    @Serializable(with = DateTimeAsLongSerializer::class)
     val createdAt: LocalDateTime,
-    @kotlinx.serialization.Serializable(with = DateTimeAsLongSerializer::class)
+    @Serializable(with = DateTimeAsLongSerializer::class)
     val updatedAt: LocalDateTime,
-    @kotlinx.serialization.Serializable(with = DateTimeAsLongSerializer::class)
+    @Serializable(with = DateTimeAsLongSerializer::class)
     val readableAt: LocalDateTime,
     val ableToDownload: Boolean,
 ): Parcelable {
@@ -78,7 +81,7 @@ data class SavableChapter(
                 entity.userId?.let {id ->
                     user to id
                 }
-        },
+            },
         ableToDownload = entity.externalUrl == null || implementedImageSources.any { it in (entity.externalUrl ?: "") },
     )
     private val daysSinceCreated: Long

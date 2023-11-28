@@ -42,10 +42,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.composables.TranslatedLanguageTags
 import io.silv.amadeus.ui.shared.noRippleClickable
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.model.SavableManga
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)

@@ -32,12 +32,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.screens.manga_view.StatsUiState
 import io.silv.amadeus.ui.shared.fillMaxAfterMesaure
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.common.filterUnique
 import io.silv.common.model.Status
+import io.silv.model.SavableManga
 
 @Composable
 fun MainPoster(

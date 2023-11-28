@@ -1,7 +1,6 @@
-package io.silv.amadeus.manga_usecase
+package io.silv.domain
 
 import io.silv.ktor_response_mapper.mapSuccess
-import io.silv.network.MangaDexApi
 import kotlin.math.roundToInt
 
 

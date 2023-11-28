@@ -38,13 +38,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.composables.BlurImageBackground
 import io.silv.amadeus.ui.composables.MangaGenreTags
 import io.silv.amadeus.ui.composables.TranslatedLanguageTags
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.amadeus.ui.theme.md_theme_dark_onBackground
+import io.silv.model.SavableManga
 import kotlinx.coroutines.launch
 
 

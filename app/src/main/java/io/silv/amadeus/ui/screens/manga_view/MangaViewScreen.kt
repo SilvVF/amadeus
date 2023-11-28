@@ -29,7 +29,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Tab
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -59,7 +58,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -78,7 +76,6 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.amadeus.AmadeusScaffold
-import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.composables.MainPoster
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_reader.MangaReaderScreen
@@ -91,8 +88,8 @@ import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.shared.isScrollingUp
 import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.datastore.model.Filters
+import io.silv.model.SavableManga
 import kotlinx.parcelize.Parcelize
-import kotlinx.serialization.Serializable
 import org.koin.core.parameter.parametersOf
 
 

@@ -3,14 +3,14 @@ package io.silv.amadeus.ui.screens.manga_reader
 import android.util.Log
 import cafe.adriel.voyager.core.model.coroutineScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
-import io.silv.amadeus.manga_usecase.GetCombinedSavableMangaWithChapters
-import io.silv.amadeus.types.SavableChapter
-import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.data.chapter.ChapterEntityRepository
 import io.silv.data.chapter.ChapterImageRepository
+import io.silv.data.workers.chapters.ChapterDownloadWorker
 import io.silv.datastore.UserSettingsStore
 import io.silv.datastore.model.ReaderSettings
+import io.silv.model.SavableChapter
+import io.silv.model.SavableManga
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.conflate
@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MangaReaderSM(
-    getCombinedSavableMangaWithChapters: GetCombinedSavableMangaWithChapters,
+    getCombinedSavableMangaWithChapters: io.silv.domain.GetCombinedSavableMangaWithChapters,
     private val chapterImageRepository: ChapterImageRepository,
     private val chapterRepository: ChapterEntityRepository,
     private val userSettingsStore: UserSettingsStore,
@@ -38,7 +38,7 @@ class MangaReaderSM(
     val mangaReaderState = combineTuple(
         chapterId,
         getCombinedSavableMangaWithChapters(mangaId),
-        io.silv.data.workers.chapters.ChapterDownloadWorker.downloadingIdToProgress.asStateFlow()
+        ChapterDownloadWorker.downloadingIdToProgress.asStateFlow()
     ).map { (chapterId, savableWithChapters, downloadingIds) ->
             val (manga, chapters) = savableWithChapters
 

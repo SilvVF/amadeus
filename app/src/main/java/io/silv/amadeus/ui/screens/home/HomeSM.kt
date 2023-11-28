@@ -6,7 +6,6 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.coroutineScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
-import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.common.model.Season
 import io.silv.data.manga.PopularMangaRepository
@@ -14,6 +13,7 @@ import io.silv.data.manga.QuickSearchMangaRepository
 import io.silv.data.manga.RecentMangaRepository
 import io.silv.data.manga.SavedMangaRepository
 import io.silv.data.manga.SeasonalMangaRepository
+import io.silv.model.SavableManga
 import io.silv.sync.SyncManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -63,7 +63,7 @@ class HomeSM(
         savedMangaRepository.getSavedMangas(),
     ).map { (pagingData, saved) ->
         pagingData.map {
-            SavableManga(it, saved.find { s -> s.id == it.id })
+           SavableManga(it, saved.find { s -> s.id == it.id })
         }
     }
 
@@ -96,7 +96,11 @@ class HomeSM(
                 id = it.list.id,
                 year = it.list.year,
                 season = it.list.season,
-                mangas = it.manga.map { m -> SavableManga(m, saved.find { s -> s.id == m.id }) }
+                mangas = it.manga.map { m ->
+                   SavableManga(
+                        m,
+                        saved.find { s -> s.id == m.id })
+                }
             )
         }
             .sortedByDescending { it.year * 10000 + it.season.ordinal }

@@ -47,11 +47,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.ui.composables.getSize
 import io.silv.common.model.ReaderDirection
 import io.silv.common.model.ReaderOrientation
 import io.silv.datastore.model.ReaderSettings
+import io.silv.model.SavableChapter
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

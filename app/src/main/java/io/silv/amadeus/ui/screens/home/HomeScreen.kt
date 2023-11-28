@@ -33,12 +33,12 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.amadeus.AmadeusScaffold
-import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.composables.PullRefresh
 import io.silv.amadeus.ui.screens.manga_filter.MangaFilterScreen
 import io.silv.amadeus.ui.screens.manga_view.MangaViewScreen
 import io.silv.amadeus.ui.screens.search.SearchItemsPagingList
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.model.SavableManga
 
 
 class HomeScreen: Screen {

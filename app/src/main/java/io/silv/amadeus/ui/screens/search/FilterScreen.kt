@@ -91,8 +91,6 @@ import androidx.compose.ui.window.PopupProperties
 import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateMovement
 import com.skydoves.orbital.rememberContentWithOrbitalScope
-import io.silv.amadeus.types.DomainAuthor
-import io.silv.amadeus.types.DomainTag
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.Language
 import io.silv.amadeus.ui.shared.noRippleClickable
@@ -101,6 +99,8 @@ import io.silv.common.model.ContentRating
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.QueryResult
 import io.silv.common.model.Status
+import io.silv.model.DomainAuthor
+import io.silv.model.DomainTag
 import io.silv.network.requests.MangaRequest
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)

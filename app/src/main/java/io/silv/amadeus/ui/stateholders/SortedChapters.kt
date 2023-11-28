@@ -2,7 +2,7 @@ package io.silv.amadeus.ui.stateholders
 
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import io.silv.amadeus.types.SavableChapter
+import io.silv.model.SavableChapter
 
 class SortedChapters(
     private val chapters: List<SavableChapter>,

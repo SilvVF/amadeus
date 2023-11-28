@@ -51,7 +51,6 @@ import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import io.silv.amadeus.LocalBottomBarVisibility
-import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.screens.manga_reader.composables.ReaderMenuOverlay
 import io.silv.amadeus.ui.screens.manga_reader.composables.rememberGestureHandler
@@ -60,6 +59,7 @@ import io.silv.amadeus.ui.theme.LocalSpacing
 import io.silv.common.model.ReaderDirection
 import io.silv.common.model.ReaderOrientation
 import io.silv.datastore.model.ReaderSettings
+import io.silv.model.SavableChapter
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 import kotlin.math.absoluteValue

@@ -21,8 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.model.SavableChapter
 
 @Composable
 fun ChaptersList(

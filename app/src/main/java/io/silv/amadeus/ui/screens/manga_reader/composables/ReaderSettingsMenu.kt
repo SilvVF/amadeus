@@ -1,14 +1,14 @@
 package io.silv.amadeus.ui.screens.manga_reader.composables
 
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.LayoutDirection
-import io.silv.amadeus.data.ReaderSettings
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.common.model.ReaderDirection
+import io.silv.common.model.ReaderOrientation
+import io.silv.datastore.model.ReaderSettings
 
 @Composable
 fun ReaderSettingsMenu(
@@ -22,33 +22,34 @@ fun ReaderSettingsMenu(
             mode = settings.direction,
             labelLeft = "Ltr",
             labelRight = "Rtl",
-            itemLeft = LayoutDirection.Ltr,
-            itemRight = LayoutDirection.Rtl
+            itemLeft = ReaderDirection.Ltr,
+            itemRight = ReaderDirection.Rtl
         ) {
             onSettingsChanged(
                 settings.copy(
-                    direction =if (it == LayoutDirection.Ltr)
-                        LayoutDirection.Rtl
+                    direction = if (it == ReaderDirection.Ltr)
+                        ReaderDirection.Rtl
                     else
-                        LayoutDirection.Ltr
+                        ReaderDirection.Ltr
                 )
             )
         }
         Spacer(modifier = Modifier.height(space.large))
-        OrbitalSwitch(
+        OrbitalSwitch<ReaderOrientation>(
             title = "reader orientation",
             mode = settings.orientation,
             labelLeft = "vertical",
             labelRight = "horizontal",
-            itemLeft = Orientation.Vertical,
-            itemRight = Orientation.Horizontal
-        ) {
+            itemLeft = ReaderOrientation.Vertical,
+            itemRight = ReaderOrientation.Horizontal
+        ) { enum ->
             onSettingsChanged(
                 settings.copy(
-                    orientation = if (it == Orientation.Vertical)
-                        Orientation.Horizontal
-                    else
-                        Orientation.Vertical
+                    orientation = if (enum == ReaderOrientation.Vertical) {
+                        ReaderOrientation.Horizontal
+                    } else {
+                        ReaderOrientation.Vertical
+                    }
                 )
             )
         }

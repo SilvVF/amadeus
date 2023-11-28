@@ -72,6 +72,7 @@ dependencies {
     implementation(project(":ktor-response-mapper"))
     implementation(project(":core:common"))
     implementation(project(":core:data"))
+    implementation(project(":core:datastore"))
     implementation(project(":sync"))
 
     implementation("com.google.accompanist:accompanist-webview:0.30.1")

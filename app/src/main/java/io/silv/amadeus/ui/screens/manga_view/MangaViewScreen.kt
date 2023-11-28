@@ -90,6 +90,7 @@ import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.shared.collectEvents
 import io.silv.amadeus.ui.shared.isScrollingUp
 import io.silv.amadeus.ui.theme.LocalSpacing
+import io.silv.datastore.model.Filters
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 import org.koin.core.parameter.parametersOf
@@ -343,18 +344,7 @@ class MangaViewScreen(
     }
 }
 
-@Serializable
-@Immutable
-data class Filters(
-    val downloaded: Boolean = false,
-    val unread: Boolean = false,
-    val bookmarked: Boolean = false,
-    val bySourceAsc: Boolean? = null,
-    val byChapterAsc: Boolean? = true,
-    val byUploadDateAsc: Boolean? = null,
-)
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
+@OptIn(ExperimentalMaterial3Api::class,
     ExperimentalAnimationApi::class
 )
 @Composable

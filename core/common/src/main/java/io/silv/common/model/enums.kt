@@ -46,3 +46,11 @@ enum class Season{
 enum class TimePeriod {
     SixMonths, ThreeMonths, LastMonth, OneWeek, AllTime
 }
+
+enum class ReaderOrientation {
+    Vertical, Horizontal
+}
+
+enum class ReaderDirection {
+    Ltr, Rtl
+}

@@ -5,7 +5,6 @@ import androidx.compose.runtime.Stable
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.coroutineScope
-import io.silv.amadeus.data.UserSettingsStore
 import io.silv.amadeus.manga_usecase.GetCombinedSavableMangaWithChapters
 import io.silv.amadeus.manga_usecase.GetMangaStatisticsById
 import io.silv.amadeus.manga_usecase.MangaStats
@@ -16,6 +15,8 @@ import io.silv.common.filterUnique
 import io.silv.common.model.ProgressState
 import io.silv.data.chapter.ChapterEntityRepository
 import io.silv.data.manga.SavedMangaRepository
+import io.silv.datastore.UserSettingsStore
+import io.silv.datastore.model.Filters
 import io.silv.ktor_response_mapper.message
 import io.silv.ktor_response_mapper.suspendOnFailure
 import io.silv.ktor_response_mapper.suspendOnSuccess
@@ -137,7 +138,7 @@ class MangaViewSM(
         mutableFilters.update {
             if (it.byUploadDateAsc != null) {
                 it.copy(
-                    byUploadDateAsc = !it.byUploadDateAsc
+                    byUploadDateAsc = !it.byUploadDateAsc!!
                 )
             } else {
                 it.copy(
@@ -153,7 +154,7 @@ class MangaViewSM(
         mutableFilters.update {
             if (it.byChapterAsc != null) {
                 it.copy(
-                    byChapterAsc = !it.byChapterAsc
+                    byChapterAsc = !it.byChapterAsc!!
                 )
             } else {
                 it.copy(
@@ -169,7 +170,7 @@ class MangaViewSM(
         mutableFilters.update {
             if (it.bySourceAsc != null) {
                 it.copy(
-                    bySourceAsc = !it.bySourceAsc
+                    bySourceAsc = !it.bySourceAsc!!
                 )
             } else {
                 it.copy(

@@ -3,7 +3,6 @@
 package io.silv.amadeus.ui.screens.manga_reader
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -43,7 +42,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
@@ -53,14 +51,15 @@ import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import io.silv.amadeus.LocalBottomBarVisibility
-import io.silv.amadeus.data.ReaderSettings
 import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.ui.composables.AnimatedBoxShimmer
 import io.silv.amadeus.ui.screens.manga_reader.composables.ReaderMenuOverlay
 import io.silv.amadeus.ui.screens.manga_reader.composables.rememberGestureHandler
 import io.silv.amadeus.ui.shared.CenterBox
 import io.silv.amadeus.ui.theme.LocalSpacing
-import io.silv.common.lerp
+import io.silv.common.model.ReaderDirection
+import io.silv.common.model.ReaderOrientation
+import io.silv.datastore.model.ReaderSettings
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 import kotlin.math.absoluteValue
@@ -202,14 +201,14 @@ fun MangaReaderContent(
                 onPageChange = {
                     scope.launch {
                         when (readerSettings.orientation){
-                            Orientation.Vertical -> verticalReaderState.animateScrollToItem(it)
-                            Orientation.Horizontal -> horizontalReaderState.animateScrollToPage(it)
+                            ReaderOrientation.Vertical -> verticalReaderState.animateScrollToItem(it)
+                            ReaderOrientation.Horizontal -> horizontalReaderState.animateScrollToPage(it)
                         }
                     }
                 },
                 currentPage = when(readerSettings.orientation) {
-                    Orientation.Vertical -> gestureHandler.firstVisibleInVertical
-                    Orientation.Horizontal -> horizontalReaderState.currentPage
+                    ReaderOrientation.Vertical-> gestureHandler.firstVisibleInVertical
+                    ReaderOrientation.Horizontal -> horizontalReaderState.currentPage
                 },
                 mangaTitle = state.manga.titleEnglish,
                 onPrevClick = {
@@ -250,12 +249,12 @@ fun MangaReader(
     verticalReaderState: LazyListState,
     horizontalReaderState: PagerState,
     readerChapters: ReaderChapters,
-    settings: ReaderSettings,
+    settings: io.silv.datastore.model.ReaderSettings,
     readChapter: (id: String) -> Unit,
 ) {
     val space = LocalSpacing.current
     when (settings.orientation) {
-        Orientation.Vertical -> {
+        ReaderOrientation.Vertical -> {
             VerticalReader(
                 modifier = Modifier.fillMaxSize(),
                 state = verticalReaderState,
@@ -263,15 +262,15 @@ fun MangaReader(
                 readChapter = readChapter
             )
         }
-        Orientation.Horizontal -> {
+        ReaderOrientation.Horizontal -> {
             Column(Modifier.fillMaxSize()) {
                 HorizontalReader(
                     modifier = Modifier.weight(1f),
                     readerChapters = readerChapters,
                     pagerState = horizontalReaderState,
                     reverseLayout = when(settings.direction) {
-                        LayoutDirection.Ltr -> false
-                        LayoutDirection.Rtl -> true
+                        ReaderDirection.Ltr -> false
+                        ReaderDirection.Rtl -> true
                     },
                     readChapter = readChapter
                 )

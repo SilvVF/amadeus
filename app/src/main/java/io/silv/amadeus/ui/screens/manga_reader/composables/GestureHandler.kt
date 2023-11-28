@@ -1,7 +1,6 @@
 package io.silv.amadeus.ui.screens.manga_reader.composables
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
@@ -9,6 +8,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import io.silv.common.model.ReaderOrientation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -38,15 +38,15 @@ class GestureHandler @OptIn(ExperimentalFoundationApi::class) constructor(
 
 
     @OptIn(ExperimentalFoundationApi::class)
-    fun handleBackGesture(orientation: Orientation) {
+    fun handleBackGesture(orientation: ReaderOrientation) {
         scope.launch {
             when (orientation){
-                Orientation.Vertical -> {
+                ReaderOrientation.Vertical -> {
                     (firstVisibleInVertical - 1)
                         .takeIf { it >= 0 }
                         ?.let { verticalReaderState.animateScrollToItem(it) }
                 }
-                Orientation.Horizontal -> {
+                ReaderOrientation.Horizontal -> {
                     horizontalReaderState.animateScrollToPage(
                         horizontalReaderState.currentPage - 1
                     )
@@ -56,15 +56,15 @@ class GestureHandler @OptIn(ExperimentalFoundationApi::class) constructor(
     }
 
     @OptIn(ExperimentalFoundationApi::class)
-    fun handleForwardGesture(orientation: Orientation) {
+    fun handleForwardGesture(orientation: ReaderOrientation) {
         scope.launch {
             when (orientation){
-                Orientation.Vertical -> {
+                ReaderOrientation.Vertical -> {
                     (firstVisibleInVertical + verticalReaderState.layoutInfo.visibleItemsInfo.size)
                         .takeIf { it in 0 until imageListSize }
                         ?.let { verticalReaderState.animateScrollToItem(it) }
                 }
-                Orientation.Horizontal -> {
+                ReaderOrientation.Horizontal -> {
                     horizontalReaderState.animateScrollToPage(
                         horizontalReaderState.currentPage + 1
                     )

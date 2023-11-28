@@ -1,4 +1,4 @@
-package io.silv.amadeus.data
+package io.silv.datastore
 
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.bind
@@ -8,11 +8,9 @@ import org.koin.dsl.module
 
 val dataStoreModule = module {
 
+    single { androidContext().dataStore }
+
     singleOf(::UserSettingsStoreImpl) withOptions {
         bind<UserSettingsStore>()
-    }
-
-    single {
-        androidContext().dataStore
     }
 }

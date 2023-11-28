@@ -3,14 +3,14 @@ package io.silv.amadeus.ui.screens.manga_reader
 import android.util.Log
 import cafe.adriel.voyager.core.model.coroutineScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
-import io.silv.amadeus.data.ReaderSettings
-import io.silv.amadeus.data.UserSettingsStore
 import io.silv.amadeus.manga_usecase.GetCombinedSavableMangaWithChapters
 import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.types.SavableManga
 import io.silv.amadeus.ui.shared.AmadeusScreenModel
 import io.silv.data.chapter.ChapterEntityRepository
 import io.silv.data.chapter.ChapterImageRepository
+import io.silv.datastore.UserSettingsStore
+import io.silv.datastore.model.ReaderSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.conflate

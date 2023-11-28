@@ -5,7 +5,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,11 +46,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import io.silv.amadeus.data.ReaderSettings
 import io.silv.amadeus.types.SavableChapter
 import io.silv.amadeus.ui.composables.getSize
+import io.silv.common.model.ReaderDirection
+import io.silv.common.model.ReaderOrientation
+import io.silv.datastore.model.ReaderSettings
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,8 +66,8 @@ fun ReaderMenuOverlay(
     lastPage: Int,
     currentPage: Int,
     onPageChange: (page: Int) -> Unit,
-    handleBackGesture: (orientation: Orientation) -> Unit,
-    handleForwardGesture: (orientation: Orientation) -> Unit,
+    handleBackGesture: (orientation: ReaderOrientation) -> Unit,
+    handleForwardGesture: (orientation: ReaderOrientation) -> Unit,
     onNavigationIconClick: () -> Unit,
     onPrevClick: () -> Unit,
     onNextClick: () -> Unit,
@@ -96,20 +96,20 @@ fun ReaderMenuOverlay(
                         in 0.dp..third ->  {
                             Log.d("Reader", "Back gesture $readerSettings")
                             when (readerSettings.orientation) {
-                                Orientation.Vertical -> handleBackGesture(readerSettings.orientation)
-                                Orientation.Horizontal ->  when(readerSettings.direction) {
-                                    LayoutDirection.Ltr -> handleBackGesture(readerSettings.orientation)
-                                    LayoutDirection.Rtl -> handleForwardGesture(readerSettings.orientation)
+                                ReaderOrientation.Vertical -> handleBackGesture(readerSettings.orientation)
+                                ReaderOrientation.Horizontal ->  when(readerSettings.direction) {
+                                    ReaderDirection.Ltr -> handleBackGesture(readerSettings.orientation)
+                                    ReaderDirection.Rtl -> handleForwardGesture(readerSettings.orientation)
                                 }
                             }
                         }
                         in (third * 2)..maxX -> {
                             Log.d("Reader", "Forward gesture $readerSettings")
                             when (readerSettings.orientation) {
-                                Orientation.Vertical -> handleForwardGesture(readerSettings.orientation)
-                                Orientation.Horizontal ->  when(readerSettings.direction) {
-                                    LayoutDirection.Ltr -> handleForwardGesture(readerSettings.orientation)
-                                    LayoutDirection.Rtl -> handleBackGesture(readerSettings.orientation)
+                                ReaderOrientation.Vertical -> handleForwardGesture(readerSettings.orientation)
+                                ReaderOrientation.Horizontal ->  when(readerSettings.direction) {
+                                    ReaderDirection.Ltr -> handleForwardGesture(readerSettings.orientation)
+                                    ReaderDirection.Rtl -> handleBackGesture(readerSettings.orientation)
                                 }
                             }
                         }

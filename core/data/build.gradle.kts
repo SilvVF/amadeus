@@ -9,7 +9,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -39,7 +39,6 @@ dependencies {
     api(project(":core:database"))
     api(project(":core:common"))
 
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -47,6 +46,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.coroutines.guava)
 
     //KOIN
     implementation(libs.koin.android)
@@ -68,5 +68,4 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     androidTestImplementation(libs.androidx.work.testing)
     implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.kotlinx.coroutines.guava)
 }

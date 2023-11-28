@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    kotlin("plugin.serialization") version "1.9.20"
+    kotlin("plugin.serialization").version(libs.versions.org.jetbrains.kotlin.android)
     id("com.google.devtools.ksp")
     id("kotlin-parcelize")
 }
@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "io.silv.amadeus"
-        minSdk = 28
+        minSdk = 24
         targetSdk = 34
         versionCode = 5
         versionName = "5"

@@ -114,6 +114,7 @@ class MangaReaderScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UpdateReaderState(
     readerChapters: ReaderChapters,

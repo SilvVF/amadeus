@@ -82,6 +82,9 @@ dependencies {
     implementation(project(":sync"))
 
     implementation(project(":feature:explore"))
+    implementation(project(":feature:library"))
+    implementation(project(":feature:reader"))
+    implementation(project(":feature:manga"))
 
     implementation("com.google.accompanist:accompanist-webview:0.30.1")
 

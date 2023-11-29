@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.explore.SeasonalMangaUiState
 import io.silv.model.SavableManga
+import io.silv.navigation.SharedScreen
+import io.silv.navigation.push
+import io.silv.ui.MangaPager
 
 @OptIn(ExperimentalMaterial3Api::class)
 fun LazyListScope.seasonalMangaLists(
@@ -102,14 +105,14 @@ fun LazyListScope.seasonalMangaLists(
                     MangaPager(
                         mangaList = seasonalMangaState.seasonalLists.getOrNull(selectedIndex)?.mangas ?: emptyList(),
                         onTagClick = { name , id ->
-//                            navigator?.push(
-//                                MangaFilterScreen(name, id)
-//                            )
+                            navigator?.push(
+                                SharedScreen.MangaFilter(name, id)
+                            )
                         },
                         onMangaClick = {
-//                            navigator?.push(
-//                                MangaViewScreen(it)
-//                            )
+                            navigator?.push(
+                                SharedScreen.MangaView(it)
+                            )
                         },
                         onBookmarkClick = {
                             onBookmarkClick(it)

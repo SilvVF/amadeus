@@ -18,8 +18,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
-import java.time.Duration
-import kotlin.time.toKotlinDuration
+import kotlin.time.Duration.Companion.days
 
 internal class FilteredYearlyMangaRepositoryImpl(
     private val yearlyResourceDao: io.silv.database.dao.FilteredMangaYearlyResourceDao,
@@ -61,9 +60,9 @@ internal class FilteredYearlyMangaRepositoryImpl(
 
         val yearly = yearlyResourceDao.getFilteredMangaYearlyResources().first()
         val now = localDateTimeNow()
-        val lastUpdate = yearly.maxBy { it.updatedAt.date.toEpochDays() }.updatedAt
+        val lastUpdate = yearly.maxByOrNull { it.updatedAt.date.toEpochDays() }?.updatedAt
 
-        if (now - lastUpdate < Duration.ofDays(1).toKotlinDuration()) {
+        if (lastUpdate != null && now - lastUpdate < 1.days) {
             return
         }
 
@@ -81,7 +80,7 @@ internal class FilteredYearlyMangaRepositoryImpl(
                     order = mapOf("followedCount" to "desc"),
                     includedTags = listOf(tagId),
                     includedTagsMode = MangaRequest.TagsMode.AND,
-                    createdAtSince = timeStringMinus(Duration.ofDays(365))
+                    createdAtSince = timeStringMinus(365.days)
                 )
             )
                 .getOrThrow()

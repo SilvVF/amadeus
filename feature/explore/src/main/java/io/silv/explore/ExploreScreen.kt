@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -32,12 +33,14 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.explore.composables.SearchItemsPagingList
-import io.silv.explore.composables.SearchTopAppBar
 import io.silv.explore.composables.TrendingMangaList
 import io.silv.explore.composables.recentMangaList
 import io.silv.explore.composables.seasonalMangaLists
 import io.silv.model.SavableManga
+import io.silv.navigation.SharedScreen
+import io.silv.navigation.push
 import io.silv.ui.PullRefresh
+import io.silv.ui.SearchTopAppBar
 import io.silv.ui.theme.LocalSpacing
 
 
@@ -84,7 +87,8 @@ class ExploreScreen: Screen {
                         sm.startSearching()
                     }
                 )
-            }
+            },
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
         ) { paddingValues ->
             Column(Modifier.padding(paddingValues)) {
                 AnimatedContent(
@@ -96,9 +100,9 @@ class ExploreScreen: Screen {
                             modifier = Modifier.fillMaxSize(),
                             items = searchMangaState,
                             onMangaClick = { manga ->
-//                                navigator?.push(
-//                                    MangaViewScreen(manga)
-//                                )
+                                navigator?.push(
+                                    SharedScreen.MangaView(manga)
+                                )
                             },
                             onBookmarkClick = { manga ->
                                 sm.bookmarkManga(manga.id)
@@ -192,15 +196,15 @@ fun BrowseMangaContent(
             },
             onTagClick = { manga, name ->
                 manga.tagToId[name]?.let { id ->
-//                    navigator?.push(
-//                        MangaFilterScreen(name, id)
-//                    )
+                    navigator?.push(
+                        SharedScreen.MangaFilter(name, id)
+                    )
                 }
             },
             onMangaClick = { manga ->
-//                navigator?.push(
-//                    MangaViewScreen(manga)
-//                )
+                navigator?.push(
+                    SharedScreen.MangaView(manga)
+                )
             },
         )
     }

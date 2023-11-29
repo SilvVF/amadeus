@@ -22,8 +22,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
-import java.time.Duration
-import kotlin.time.toKotlinDuration
+import kotlin.time.Duration.Companion.hours
 
 
 internal class OfflineFirstChapterInfoRepository(
@@ -77,11 +76,15 @@ internal class OfflineFirstChapterInfoRepository(
     override suspend fun saveChapters(ids: List<String>): Boolean {
         return suspendRunCatching {
             withContext(dispatchers.io) {
+
                 val chapterJobs = ids.map { async { chapterDao.getChapterById(it) } }
+
                 val response = mangaDexApi.getChapterData(ChapterListRequest(ids = ids))
                     .suspendOnFailure { Log.d("OfflineFirstChapterInfoRepository", "fetching failed $ids") }
                     .getOrThrow()
+
                 val chapters = chapterJobs.mapNotNull { it.await() }
+
                 response.data.forEach {chapter ->
                     chapterDao.upsertChapter(
                        chapter.toChapterEntity(
@@ -110,9 +113,7 @@ internal class OfflineFirstChapterInfoRepository(
 
     private suspend fun shouldUpdate(mangaId: String): Boolean = withContext(dispatchers.io) {
         val chapters = chapterDao.getChaptersByMangaId(mangaId).ifEmpty { null }
-        chapters == null || chapters.any {
-            localDateTimeNow() - (it.savedLocalAt) > Duration.ofHours(12).toKotlinDuration()
-        }
+        chapters == null || chapters.any { localDateTimeNow() - (it.savedLocalAt) > 12.hours }
     }
 
     override fun getChapters(mangaId: String): Flow<List<ChapterEntity>> {

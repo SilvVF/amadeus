@@ -1,11 +1,12 @@
 package io.silv.data.manga
 
-import androidx.paging.Pager
-import io.silv.database.dao.remotekeys.QuickSearchRemoteKeyWithManga
+import androidx.paging.PagingData
+import io.silv.database.entity.manga.SourceMangaResource
+import kotlinx.coroutines.flow.Flow
 
 interface QuickSearchMangaRepository {
 
-    fun pager(query: String): Pager<Int, QuickSearchRemoteKeyWithManga>
+    fun pagingData(query: String): Flow<PagingData<SourceMangaResource>>
 }
 
 

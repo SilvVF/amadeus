@@ -67,12 +67,7 @@ fun MangaListItem(
                 .padding(space.xs)
         ) {
             AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(manga.coverArt)
-                    .placeholder(placeHolderColor)
-                    .error(placeHolderColor)
-                    .fallback(placeHolderColor)
-                    .build(),
+                model = manga,
                 contentDescription = null,
                 modifier = Modifier
                     .size(180.dp)

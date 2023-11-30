@@ -72,6 +72,9 @@ dependencies {
 
     implementation(project(":ktor-response-mapper"))
 
+    implementation(libs.coil.gif)
+    implementation("com.github.tachiyomiorg:image-decoder:fbd6601290")
+
     implementation(project(":core:common"))
     implementation(project(":core:navigation"))
     implementation(project(":core:data"))
@@ -86,6 +89,7 @@ dependencies {
     implementation(project(":feature:reader"))
     implementation(project(":feature:manga"))
 
+    implementation("com.github.tachiyomiorg:unifile:7c257e1c64")
     implementation("com.google.accompanist:accompanist-webview:0.30.1")
 
     implementation(libs.flow.combinetuple.kt)

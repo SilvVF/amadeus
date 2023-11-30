@@ -1,10 +1,12 @@
 package io.silv.data.manga
 
-import androidx.paging.Pager
-import io.silv.database.dao.remotekeys.RecentRemoteKeyWithSourceManga
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import io.silv.database.entity.manga.SourceMangaResource
+import kotlinx.coroutines.flow.Flow
 
 interface RecentMangaRepository {
 
-    val pager: Pager<Int, RecentRemoteKeyWithSourceManga>
+    fun recentMangaPagingData(config: PagingConfig, ): Flow<PagingData<SourceMangaResource>>
 }
 

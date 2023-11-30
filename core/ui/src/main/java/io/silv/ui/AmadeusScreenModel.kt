@@ -7,13 +7,19 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.ScreenModelStore
 import cafe.adriel.voyager.core.model.screenModelScope
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
 
 abstract class EventScreenModel<EVENT>: ScreenModel {
@@ -29,6 +35,16 @@ abstract class EventScreenModel<EVENT>: ScreenModel {
         SharingStarted.WhileSubscribed(5000),
         initialValue
     )
+
+    val ioCoroutineScope: CoroutineScope
+        get() = ScreenModelStore.getOrPutDependency(
+            this,
+            name = "ScreenModelIoCoroutineScope",
+            factory = { key ->
+                CoroutineScope(Dispatchers.IO + SupervisorJob()) + CoroutineName(key)
+            },
+            onDispose = { scope -> scope.cancel() }
+        )
 }
 
 /**

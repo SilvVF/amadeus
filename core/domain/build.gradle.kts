@@ -48,6 +48,8 @@ dependencies {
 
     implementation(libs.koin.core)
 
+    implementation(libs.androidx.paging.common)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

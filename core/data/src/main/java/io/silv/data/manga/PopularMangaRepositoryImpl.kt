@@ -4,18 +4,23 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
+import androidx.paging.map
 import androidx.room.withTransaction
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.time.timeStringMinus
 import io.silv.data.mappers.toSourceManga
 import io.silv.database.AmadeusDatabase
 import io.silv.database.dao.remotekeys.PopularRemoteKeyWithManga
+import io.silv.database.entity.manga.SourceMangaResource
 import io.silv.database.entity.manga.remotekeys.PopularRemoteKey
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlin.time.Duration.Companion.days
 
 @OptIn(ExperimentalPagingApi::class)
@@ -84,7 +89,7 @@ internal class PopularMangaRepositoryImpl(
 ): PopularMangaRepository {
 
     @OptIn(ExperimentalPagingApi::class)
-    override val pager = Pager(
+    private val pager = Pager(
         config = PagingConfig(
             pageSize = 60,
             initialLoadSize = 60
@@ -94,4 +99,9 @@ internal class PopularMangaRepositoryImpl(
             amadeusDatabase.popularRemoteKeysDao().getPagingSource()
         }
     )
+    override val pagingData: Flow<PagingData<SourceMangaResource>> = pager.flow.map { pagingData ->
+        pagingData.map { (_, manga) ->
+            manga
+        }
+    }
 }

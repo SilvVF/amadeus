@@ -1,16 +1,16 @@
 package io.silv.explore
 
-import androidx.paging.cachedIn
-import androidx.paging.map
+import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
+import io.silv.data.manga.PagedType
 import io.silv.data.manga.PopularMangaRepository
 import io.silv.data.manga.QuickSearchMangaRepository
 import io.silv.data.manga.RecentMangaRepository
 import io.silv.data.manga.SavedMangaRepository
 import io.silv.data.manga.SeasonalMangaRepository
-import io.silv.explore.SeasonalMangaUiState.SeasonalList
-import io.silv.model.SavableManga
+import io.silv.domain.CombineSourceMangaWithSaved
+import io.silv.domain.GetQueryPagingData
 import io.silv.sync.SyncManager
 import io.silv.ui.EventScreenModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,8 +23,10 @@ class ExploreScreenModel(
     recentMangaRepository: RecentMangaRepository,
     popularMangaRepository: PopularMangaRepository,
     seasonalMangaRepository: SeasonalMangaRepository,
-    private val savedMangaRepository: SavedMangaRepository,
+    combineSourceMangaWithSaved: CombineSourceMangaWithSaved,
     searchMangaRepository: QuickSearchMangaRepository,
+    getQueryPagingData: GetQueryPagingData,
+    private val savedMangaRepository: SavedMangaRepository,
     private val seasonalMangaSyncManager: SyncManager,
 ): EventScreenModel<ExploreEvent>() {
 
@@ -41,63 +43,41 @@ class ExploreScreenModel(
         forceSearchFlow.update { !it }
     }
 
-    val searchMangaPagingFlow = combineTuple(
-        searchMangaRepository.pager("").flow.cachedIn(screenModelScope),
-        savedMangaRepository.getSavedMangas()
-    ) .map { (pagingData, saved) ->
-          pagingData.map { (_, manga) ->
-              SavableManga(manga, saved.find { s -> s.id == manga.id })
-          }
-    }
+    private val pagingType = MutableStateFlow(PagedType.Popular)
 
-    val popularMangaPagingFlow = combineTuple(
-        popularMangaRepository.pager.flow.cachedIn(screenModelScope),
-        savedMangaRepository.getSavedMangas()
+    val pagingFlowFlow = getQueryPagingData.invoke(
+        config = PagingConfig(
+            pageSize = 25
+        ),
+        pagingType,
+        ioCoroutineScope
     )
-        .map { (pagingData, saved) ->
-            pagingData.map { (_, manga) ->
-                SavableManga(manga, saved.find { s -> s.id == manga.id })
-            }
-        }
-        .cachedIn(screenModelScope)
 
-    val recentMangaPagingFlow =
-        combineTuple(
-            recentMangaRepository.pager.flow.cachedIn(screenModelScope),
-            savedMangaRepository.getSavedMangas()
-        )
-        .map { (pagingData, saved) ->
-            pagingData.map { (_, manga) ->
-                SavableManga(manga, saved.find { it.id == manga.id })
-            }
-        }
+    val searchMangaPagingFlow = combineSourceMangaWithSaved(
+        pagingData = searchMangaRepository.pagingData(""),
+        scope = screenModelScope
+    )
+
+    val popularMangaPagingFlow = combineSourceMangaWithSaved(
+        pagingData = popularMangaRepository.pagingData,
+        scope = screenModelScope
+    )
+
+    val recentMangaPagingFlow = combineSourceMangaWithSaved(
+        pagingData = recentMangaRepository.recentMangaPagingData(
+            PagingConfig(
+                pageSize = 30,
+                initialLoadSize = 30
+            )
+        ),
+        scope = screenModelScope
+    )
 
     val seasonalMangaUiState = combineTuple(
         seasonalMangaRepository.getSeasonalLists(),
         savedMangaRepository.getSavedMangas()
     ).map { (seasonWithManga, saved)->
-        val yearLists = seasonWithManga.map {(list, mangas) ->
-            SeasonalList(
-                id = list.id,
-                year = list.year,
-                season = list.season,
-                mangas = mangas.map { manga->
-                    SavableManga(
-                        manga,
-                        saved.find { s -> s.id == manga.id }
-                    )
-                }
-            )
-        }
-            .sortedByDescending { it.year * 10000 + it.season.ordinal }
-            .takeIf { it.size >= 4 }
-            ?.take(8)
-            ?: return@map SeasonalMangaUiState(
-                emptyList()
-            )
-        SeasonalMangaUiState(
-            seasonalLists = yearLists
-        )
+        SeasonalMangaUiState(emptyList())
     }
         .stateInUi(SeasonalMangaUiState(emptyList()))
 

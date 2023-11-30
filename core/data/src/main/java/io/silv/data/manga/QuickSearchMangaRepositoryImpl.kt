@@ -1,22 +1,26 @@
 package io.silv.data.manga
 
-import android.util.Log
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
+import androidx.paging.map
 import androidx.room.withTransaction
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.data.mappers.toSourceManga
 import io.silv.database.AmadeusDatabase
 import io.silv.database.dao.remotekeys.QuickSearchRemoteKeyWithManga
 import io.silv.database.dao.remotekeys.QuickSearchRemoteKeysDao
+import io.silv.database.entity.manga.SourceMangaResource
 import io.silv.database.entity.manga.remotekeys.QuickSearchRemoteKey
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalPagingApi::class)
 private class QuickSearchRemoteMediator(
@@ -86,7 +90,7 @@ internal class QuickSearchMangaRepositoryImpl(
 ): QuickSearchMangaRepository {
 
     @OptIn(ExperimentalPagingApi::class)
-    override fun pager(query: String) = Pager(
+    private fun pager(query: String) = Pager(
         config = PagingConfig(
             pageSize = 60,
             initialLoadSize = 60
@@ -96,4 +100,12 @@ internal class QuickSearchMangaRepositoryImpl(
             quickSearchRemoteKeysDao.getPagingSource()
         }
     )
+
+    override fun pagingData(query: String): Flow<PagingData<SourceMangaResource>> {
+        return pager(query).flow.map {pagingData ->
+            pagingData.map {(_, manga) ->
+                manga
+            }
+        }
+    }
 }

@@ -5,10 +5,8 @@ import androidx.paging.LoadType
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
-import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
-import androidx.paging.cachedIn
 import androidx.paging.map
 import androidx.room.withTransaction
 import io.silv.common.coroutine.suspendRunCatching
@@ -20,7 +18,6 @@ import io.silv.database.entity.manga.remotekeys.RecentMangaRemoteKey
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -84,18 +81,23 @@ private class RecentMangaRemoteMediator(
 
 internal class RecentMangaRepositoryImpl(
     private val amadeusDatabase: AmadeusDatabase,
-    mangaDexApi: MangaDexApi,
+    private val mangaDexApi: MangaDexApi,
 ): RecentMangaRepository {
 
     @OptIn(ExperimentalPagingApi::class)
-    override val pager = Pager(
-        config = PagingConfig(
-            pageSize = 60,
-            initialLoadSize = 60
-        ),
+    fun pager(config: PagingConfig) = Pager(
+        config = config,
         remoteMediator = RecentMangaRemoteMediator(amadeusDatabase, mangaDexApi),
         pagingSourceFactory = {
             amadeusDatabase.recentRemoteKeysDao().getPagingSource()
         }
     )
+
+    override fun recentMangaPagingData(
+        config: PagingConfig,
+    ): Flow<PagingData<SourceMangaResource>> = pager(config).flow.map { pagingData ->
+        pagingData.map { (_, manga) ->
+            manga
+        }
+    }
 }

@@ -9,22 +9,25 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
-import io.silv.ui.AnimatedBoxShimmer
-import io.silv.ui.MangaListItem
-import io.silv.ui.CenterBox
-import io.silv.ui.theme.LocalSpacing
 import io.silv.model.SavableManga
+import io.silv.ui.AnimatedBoxShimmer
+import io.silv.ui.CenterBox
+import io.silv.ui.MangaListItem
+import io.silv.ui.theme.LocalSpacing
+import kotlinx.coroutines.flow.StateFlow
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 fun LazyListScope.recentMangaList(
-    manga: LazyPagingItems<SavableManga>,
+    manga: LazyPagingItems<StateFlow<SavableManga>>,
     onTagClick: (manga: SavableManga, name: String) -> Unit,
     onBookmarkClick: (manga: SavableManga) -> Unit,
     onMangaClick: (manga: SavableManga) -> Unit,
@@ -34,23 +37,24 @@ fun LazyListScope.recentMangaList(
         contentType = manga.itemContentType(),
         key = manga.itemKey()
     ) {
-        val space = io.silv.ui.theme.LocalSpacing.current
+        val space = LocalSpacing.current
         val items = listOfNotNull(manga[it * 2], manga[(it * 2) + 1])
         Row {
             for(item in items) {
-                io.silv.ui.MangaListItem(
-                    manga = item,
+                val mangaItem by item.collectAsStateWithLifecycle()
+                MangaListItem(
+                    manga = mangaItem,
                     modifier = Modifier
                         .weight(1f)
                         .padding(space.large)
                         .clickable {
-                            onMangaClick(item)
+                            onMangaClick(mangaItem)
                         },
                     onTagClick = { name ->
-                        onTagClick(item, name)
+                        onTagClick(mangaItem, name)
                     },
                     onBookmarkClick = {
-                        onBookmarkClick(item)
+                        onBookmarkClick(mangaItem)
                     }
                 )
             }
@@ -58,15 +62,15 @@ fun LazyListScope.recentMangaList(
     }
     if (manga.loadState.refresh is LoadState.Loading) {
         items(4 , key = { it } ) {
-            val space = io.silv.ui.theme.LocalSpacing.current
+            val space = LocalSpacing.current
             Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.padding(space.large)) {
-                io.silv.ui.AnimatedBoxShimmer(Modifier.size(200.dp))
+                AnimatedBoxShimmer(Modifier.size(200.dp))
             }
         }
     } else if (manga.loadState.append is LoadState.Error || manga.loadState.refresh is LoadState.Error) {
         item {
-            val space = io.silv.ui.theme.LocalSpacing.current
-            io.silv.ui.CenterBox(
+            val space = LocalSpacing.current
+            CenterBox(
                 Modifier
                     .fillMaxSize()
                     .padding(space.large)

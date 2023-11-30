@@ -42,6 +42,7 @@ import io.silv.navigation.push
 import io.silv.ui.PullRefresh
 import io.silv.ui.SearchTopAppBar
 import io.silv.ui.theme.LocalSpacing
+import kotlinx.coroutines.flow.StateFlow
 
 
 class ExploreScreen: Screen {
@@ -61,11 +62,15 @@ class ExploreScreen: Screen {
         val navigator = LocalNavigator.current
         val recentListState = rememberLazyListState()
 
+        val paging by sm.pagingFlowFlow.collectAsStateWithLifecycle()
+
         var searching by rememberSaveable {
             mutableStateOf(false)
         }
 
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState())
+
+        val pagingData = paging.collectAsLazyPagingItems()
 
         Scaffold(
             topBar = {
@@ -122,7 +127,7 @@ class ExploreScreen: Screen {
                                     .fillMaxWidth()
                                     .weight(1f),
                                 recentMangaLazyListState = recentListState,
-                                recentMangaList = recentMangaItems,
+                                recentMangaList = pagingData,
                                 seasonalMangaList = seasonalMangaState,
                                 seasonalRefreshing = refreshingSeasonal,
                                 onBookmarkClick = sm::bookmarkManga,
@@ -140,7 +145,7 @@ class ExploreScreen: Screen {
 fun BrowseMangaContent(
     modifier: Modifier,
     recentMangaLazyListState: LazyListState,
-    recentMangaList: LazyPagingItems<SavableManga>,
+    recentMangaList: LazyPagingItems<StateFlow<SavableManga>>,
     seasonalMangaList: SeasonalMangaUiState,
     seasonalRefreshing: Boolean,
     popularMangaList: LazyPagingItems<SavableManga>,

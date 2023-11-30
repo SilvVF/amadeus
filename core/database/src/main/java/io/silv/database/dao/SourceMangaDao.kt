@@ -31,7 +31,7 @@ interface SourceMangaDao {
     fun observeByIds(ids: List<String>): Flow<List<SourceMangaResource>>
 
     @Query("SELECT * FROM SourceMangaResource WHERE id = :id LIMIT 1")
-    fun observeById(id: String): Flow<SourceMangaResource>
+    fun observeById(id: String): Flow<SourceMangaResource?>
 
     @Query("SELECT * FROM SourceMangaResource")
     suspend fun selectAll(): List<SourceMangaResource>

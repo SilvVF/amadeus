@@ -3,7 +3,7 @@ package io.silv.domain
 import io.silv.database.dao.SourceMangaDao
 import io.silv.database.entity.manga.SourceMangaResource
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 
 /**
  * @property invoke Returns a Flow containing list of all the manga resources that have this id.
@@ -13,6 +13,6 @@ class GetCombinedMangaResources(
     private val sourceMangaDao: SourceMangaDao
 ) {
     operator fun invoke(id: String): Flow<List<SourceMangaResource>> {
-        return sourceMangaDao.observeById(id).map { listOf(it) }
+        return sourceMangaDao.observeById(id).mapNotNull { listOf(it ?: return@mapNotNull null) }
     }
 }

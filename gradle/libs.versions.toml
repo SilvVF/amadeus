@@ -6,6 +6,7 @@ androidxComposeBom = "2023.10.01"
 androidxCoreKtx = "1.12.0"
 androidxTestEspressoCore = "3.5.1"
 appcompat = "1.6.1"
+coilGif = "2.5.0"
 datastorePreferences = "1.0.0"
 flowCombinetupleKt = "1.2.0"
 jsoup = "1.14.3"
@@ -86,6 +87,7 @@ androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version
 androidx-work-runtime-ktx-2_8_1 = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtxVersion" }
 androidx-work-rxjava2 = { module = "androidx.work:work-rxjava2", version.ref = "workRxjava2" }
 androidx-work-testing = { module = "androidx.work:work-testing", version.ref = "workTesting" }
+coil-gif = { module = "io.coil-kt:coil-gif", version.ref = "coilGif" }
 coil-svg={module="io.coil-kt:coil-svg", version.ref="coil"}
 
 flow-combinetuple-kt = { module = "com.github.Zhuinden:flow-combinetuple-kt", version.ref = "flowCombinetupleKt" }

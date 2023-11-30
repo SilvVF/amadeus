@@ -1,14 +1,10 @@
 package io.silv.data.manga
 
 import io.silv.common.model.LoadState
-import io.silv.database.entity.manga.resource.FilteredMangaYearlyResource
+import io.silv.database.entity.manga.SourceMangaResource
 import kotlinx.coroutines.flow.Flow
 
 interface FilteredYearlyMangaRepository {
-
-    fun observeMangaResourceById(id: String): Flow<FilteredMangaYearlyResource?>
-
-    fun observeAllMangaResources(): Flow<List<FilteredMangaYearlyResource>>
 
     suspend fun refresh()
 
@@ -16,5 +12,5 @@ interface FilteredYearlyMangaRepository {
 
     fun getYearlyTopResources(
         tag: String
-    ): Flow<List<FilteredMangaYearlyResource>>
+    ): Flow<List<SourceMangaResource>>
 }

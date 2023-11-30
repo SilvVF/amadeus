@@ -4,46 +4,46 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import io.silv.database.dao.ChapterDao
-import io.silv.database.dao.FilteredMangaResourceDao
-import io.silv.database.dao.FilteredMangaYearlyResourceDao
 import io.silv.database.dao.MangaUpdateDao
-import io.silv.database.dao.PopularMangaResourceDao
-import io.silv.database.dao.QuickSearchMangaResourceDao
-import io.silv.database.dao.RecentMangaResourceDao
 import io.silv.database.dao.SavedMangaDao
-import io.silv.database.dao.SearchMangaResourceDao
 import io.silv.database.dao.SeasonalListDao
-import io.silv.database.dao.SeasonalMangaResourceDao
+import io.silv.database.dao.SourceMangaDao
 import io.silv.database.dao.TagDao
-import io.silv.database.dao.TempMangaResourceDao
+import io.silv.database.dao.remotekeys.FilteredRemoteKeysDao
+import io.silv.database.dao.remotekeys.FilteredYearlyRemoteKeysDao
+import io.silv.database.dao.remotekeys.PopularRemoteKeysDao
+import io.silv.database.dao.remotekeys.QuickSearchRemoteKeysDao
+import io.silv.database.dao.remotekeys.RecentRemoteKeysDao
+import io.silv.database.dao.remotekeys.SearchRemoteKeysDao
+import io.silv.database.dao.remotekeys.SeasonalRemoteKeysDao
 import io.silv.database.entity.chapter.ChapterEntity
 import io.silv.database.entity.list.SeasonalListEntity
 import io.silv.database.entity.list.TagEntity
 import io.silv.database.entity.manga.MangaUpdateEntity
 import io.silv.database.entity.manga.SavedMangaEntity
-import io.silv.database.entity.manga.resource.FilteredMangaResource
-import io.silv.database.entity.manga.resource.FilteredMangaYearlyResource
-import io.silv.database.entity.manga.resource.PopularMangaResource
-import io.silv.database.entity.manga.resource.QuickSearchMangaResource
-import io.silv.database.entity.manga.resource.RecentMangaResource
-import io.silv.database.entity.manga.resource.SearchMangaResource
-import io.silv.database.entity.manga.resource.SeasonalMangaResource
-import io.silv.database.entity.manga.resource.TempMangaResource
+import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.database.entity.manga.remotekeys.FilteredRemoteKey
+import io.silv.database.entity.manga.remotekeys.FilteredYearlyRemoteKey
+import io.silv.database.entity.manga.remotekeys.PopularRemoteKey
+import io.silv.database.entity.manga.remotekeys.QuickSearchRemoteKey
+import io.silv.database.entity.manga.remotekeys.RecentMangaRemoteKey
+import io.silv.database.entity.manga.remotekeys.SearchRemoteKey
+import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
 
 @Database(
     entities = [
         ChapterEntity::class,
         SavedMangaEntity::class,
-        RecentMangaResource::class,
-        PopularMangaResource::class,
-        SearchMangaResource::class,
-        SeasonalMangaResource::class,
-        FilteredMangaResource::class,
-        FilteredMangaYearlyResource::class,
+        SourceMangaResource::class,
+        RecentMangaRemoteKey::class,
+        PopularRemoteKey::class,
+        SearchRemoteKey::class,
+        SeasonalRemoteKey::class,
+        FilteredRemoteKey::class,
+        FilteredYearlyRemoteKey::class,
         SeasonalListEntity::class,
         TagEntity::class,
-        QuickSearchMangaResource::class,
-        TempMangaResource::class,
+        QuickSearchRemoteKey::class,
         MangaUpdateEntity::class
     ],
     version = 1,
@@ -55,25 +55,25 @@ abstract class AmadeusDatabase: RoomDatabase() {
 
     abstract fun savedMangaDao(): SavedMangaDao
 
-    abstract fun recentMangaResourceDao(): RecentMangaResourceDao
+    abstract fun sourceMangaDao(): SourceMangaDao
 
-    abstract fun popularMangaResourceDao(): PopularMangaResourceDao
+    abstract fun recentRemoteKeysDao(): RecentRemoteKeysDao
 
-    abstract fun searchMangaResourceDao(): SearchMangaResourceDao
+    abstract fun popularRemoteKeysDao(): PopularRemoteKeysDao
 
-    abstract fun seasonalMangaResourceDao(): SeasonalMangaResourceDao
+    abstract fun searchRemoteKeysDao(): SearchRemoteKeysDao
 
-    abstract fun filteredMangaResourceDao(): FilteredMangaResourceDao
+    abstract fun seasonalRemoteKeysDao(): SeasonalRemoteKeysDao
 
-    abstract fun filteredMangaYearlyResourceDao(): FilteredMangaYearlyResourceDao
+    abstract fun filteredRemoteKeysDao(): FilteredRemoteKeysDao
+
+    abstract fun filteredYearlyRemoteKeysDao(): FilteredYearlyRemoteKeysDao
+
+    abstract fun quickSearchRemoteKeysDao(): QuickSearchRemoteKeysDao
 
     abstract fun seasonalListDao(): SeasonalListDao
 
     abstract fun tagDao(): TagDao
-
-    abstract fun quickSearchResourceDao(): QuickSearchMangaResourceDao
-
-    abstract fun tempMangaResourceDao(): TempMangaResourceDao
 
     abstract fun mangaUpdateDao(): MangaUpdateDao
 }

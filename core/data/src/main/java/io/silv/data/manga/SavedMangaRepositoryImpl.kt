@@ -4,7 +4,7 @@ import android.util.Log
 import io.silv.common.model.ProgressState
 import io.silv.common.model.Status
 import io.silv.common.time.localDateTimeNow
-import io.silv.data.mappers.toSavedMangaEntity
+import io.silv.data.mappers.toSavedManga
 import io.silv.data.util.GetMangaResourcesById
 import io.silv.data.util.UpdateChapterList
 import io.silv.data.util.createSyncer
@@ -107,7 +107,7 @@ internal class SavedMangaRepositoryImpl(
             networkToKey = { manga -> manga.id },
             mapper = { network, saved ->
                 saved?.let { mangaUpdateRepository.createUpdate(saved, network) }
-                network.toSavedMangaEntity(saved)
+                network.toSavedManga(saved)
             },
             upsert = {
                 savedMangaDao.upsertSavedManga(it)

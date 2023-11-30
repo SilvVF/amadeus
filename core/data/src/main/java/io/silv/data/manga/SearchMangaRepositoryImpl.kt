@@ -8,30 +8,28 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
-import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
-import io.silv.data.mappers.toSearchMangaResource
+import io.silv.data.mappers.toSourceManga
 import io.silv.database.AmadeusDatabase
-import io.silv.database.dao.SearchMangaResourceDao
-import io.silv.database.entity.manga.resource.SearchMangaResource
+import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.database.entity.manga.remotekeys.SearchRemoteKey
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOn
 
 @OptIn(ExperimentalPagingApi::class)
 private class SearchRemoteMediator(
     private val query: SearchMangaResourceQuery,
     private val db: AmadeusDatabase,
     private val mangaDexApi: MangaDexApi,
-): RemoteMediator<Int, SearchMangaResource>() {
+): RemoteMediator<Int, SourceMangaResource>() {
 
-    private val dao = db.searchMangaResourceDao()
+    private val mangaDao = db.sourceMangaDao()
+    private val remoteKeysDao = db.searchRemoteKeysDao()
 
     override suspend fun load(
         loadType: LoadType,
-        state: PagingState<Int, SearchMangaResource>
+        state: PagingState<Int, SourceMangaResource>
     ): MediatorResult {
         return suspendRunCatching {
             val offset = when(loadType) {
@@ -42,7 +40,7 @@ private class SearchRemoteMediator(
                 LoadType.APPEND -> {
                     val lastItem = state.lastItemOrNull()
                     if(lastItem == null) { 0 } else {
-                        lastItem.offset + state.config.pageSize
+                        remoteKeysDao.getByMangaId(lastItem.id).offset
                     }
                 }
             }
@@ -69,12 +67,16 @@ private class SearchRemoteMediator(
 
             db.withTransaction {
                 if(loadType == LoadType.REFRESH) {
-                    dao.deleteAll()
+                    remoteKeysDao.clear()
                 }
-                val entities = response.data.map { manga ->
-                    manga.toSearchMangaResource().copy(offset = offset)
+                val entities = response.data.mapIndexed { i, manga ->
+                    manga.toSourceManga().also {
+                        remoteKeysDao.insert(
+                            SearchRemoteKey(manga.id, offset + i)
+                        )
+                    }
                 }
-                dao.upsertAll(entities)
+                mangaDao.insertAll(entities)
             }
             MediatorResult.Success(
                 endOfPaginationReached = offset + response.data.size >= response.total
@@ -88,12 +90,10 @@ private class SearchRemoteMediator(
 internal class SearchMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,
     private val amadeusDatabase: AmadeusDatabase,
-    private val mangaResourceDao: SearchMangaResourceDao,
-    private val dispatchers: AmadeusDispatchers,
 ): SearchMangaRepository {
 
     @OptIn(ExperimentalPagingApi::class)
-    override fun pager(query: SearchMangaResourceQuery): Pager<Int, SearchMangaResource> {
+    override fun pager(query: SearchMangaResourceQuery): Pager<Int, SourceMangaResource> {
         Log.d("SEARCH PAGER", "returning no pager")
        return Pager(
            config = PagingConfig(
@@ -101,15 +101,9 @@ internal class SearchMangaRepositoryImpl(
                initialLoadSize = 60 * 2
            ),
            remoteMediator = SearchRemoteMediator(query, amadeusDatabase, mangaDexApi),
-           pagingSourceFactory = { mangaResourceDao.pagingSource() }
+           pagingSourceFactory = {
+               amadeusDatabase.searchRemoteKeysDao().getPagingSource()
+           }
        )
-    }
-
-    override fun observeMangaResourceById(id: String): Flow<SearchMangaResource?> {
-        return mangaResourceDao.observeSearchMangaResourceById(id).flowOn(dispatchers.io)
-    }
-
-    override fun observeAllMangaResources(): Flow<List<SearchMangaResource>> {
-        return mangaResourceDao.observeAllSearchMangaResources().flowOn(dispatchers.io)
     }
 }

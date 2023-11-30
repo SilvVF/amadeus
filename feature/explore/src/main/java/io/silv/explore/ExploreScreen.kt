@@ -55,7 +55,6 @@ class ExploreScreen: Screen {
         val recentMangaItems = sm.recentMangaPagingFlow.collectAsLazyPagingItems()
         val popularMangaItems = sm.popularMangaPagingFlow.collectAsLazyPagingItems()
         val searchMangaState = sm.searchMangaPagingFlow.collectAsLazyPagingItems()
-
         val seasonalMangaState by sm.seasonalMangaUiState.collectAsStateWithLifecycle()
         val refreshingSeasonal by sm.refreshingSeasonal.collectAsStateWithLifecycle()
         val searchQuery by sm.searchQuery.collectAsStateWithLifecycle()

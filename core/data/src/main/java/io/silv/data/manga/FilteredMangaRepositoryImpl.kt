@@ -7,31 +7,31 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
-import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.TimePeriod
 import io.silv.data.mappers.timeString
-import io.silv.data.mappers.toFilteredMangaResource
+import io.silv.data.mappers.toSourceManga
 import io.silv.database.AmadeusDatabase
-import io.silv.database.entity.manga.resource.FilteredMangaResource
+import io.silv.database.dao.remotekeys.FilteredRemoteKeysDao
+import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.database.entity.manga.remotekeys.FilteredRemoteKey
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOn
 
 @OptIn(ExperimentalPagingApi::class)
 private class FilteredMangaRemoteMediator(
     private val query: FilteredResourceQuery,
     private val db: AmadeusDatabase,
     private val mangaDexApi: MangaDexApi,
-): RemoteMediator<Int, FilteredMangaResource>() {
+): RemoteMediator<Int, SourceMangaResource>() {
 
-    private val dao = db.filteredMangaResourceDao()
+    private val remoteKeysDao = db.filteredRemoteKeysDao()
+    private val mangaDao = db.sourceMangaDao()
 
     override suspend fun load(
         loadType: LoadType,
-        state: PagingState<Int, FilteredMangaResource>
+        state: PagingState<Int, SourceMangaResource>
     ): MediatorResult {
         return suspendRunCatching {
             val offset = when(loadType) {
@@ -42,7 +42,7 @@ private class FilteredMangaRemoteMediator(
                 LoadType.APPEND -> {
                     val lastItem = state.lastItemOrNull()
                     if(lastItem == null) { 0 } else {
-                        lastItem.offset + state.config.pageSize
+                        remoteKeysDao.getByMangaId(lastItem.id).offset
                     }
                 }
             }
@@ -64,12 +64,16 @@ private class FilteredMangaRemoteMediator(
 
             db.withTransaction {
                 if(loadType == LoadType.REFRESH) {
-                    dao.deleteAll()
+                    remoteKeysDao.clear()
                 }
-                val entities = response.data.map { manga ->
-                    manga.toFilteredMangaResource().copy(offset = offset)
+                val entities = response.data.mapIndexed { i, manga ->
+                    manga.toSourceManga().also {
+                        remoteKeysDao.insert(
+                            FilteredRemoteKey(manga.id, offset + i)
+                        )
+                    }
                 }
-                dao.upsertAll(entities)
+                mangaDao.insertAll(entities)
             }
             MediatorResult.Success(
                 endOfPaginationReached = offset + response.data.size >= response.total
@@ -87,12 +91,10 @@ data class FilteredResourceQuery(
 )
 
 internal class FilteredMangaRepositoryImpl(
-    private val resourceDao: io.silv.database.dao.FilteredMangaResourceDao,
     private val amadeusDatabase: AmadeusDatabase,
+    private val filteredRemoteKeysDao: FilteredRemoteKeysDao,
     private val mangaDexApi: MangaDexApi,
-    private val dispatchers: AmadeusDispatchers,
 ): FilteredMangaRepository {
-
 
     @OptIn(ExperimentalPagingApi::class)
     override fun pager(query: FilteredResourceQuery)  = Pager(
@@ -103,15 +105,7 @@ internal class FilteredMangaRepositoryImpl(
             mangaDexApi
         ),
         pagingSourceFactory = {
-            resourceDao.pagingSource()
+            filteredRemoteKeysDao.getPagingSource()
         }
     )
-
-    override fun observeMangaResourceById(id: String): Flow<FilteredMangaResource?> {
-        return resourceDao.observeFilteredMangaResourceById(id).flowOn(dispatchers.io)
-    }
-
-    override fun observeAllMangaResources(): Flow<List<FilteredMangaResource>> {
-        return resourceDao.getFilteredMangaResources().flowOn(dispatchers.io)
-    }
 }

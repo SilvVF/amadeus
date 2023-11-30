@@ -14,8 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.Duration
-import kotlin.time.toKotlinDuration
+import kotlin.time.Duration.Companion.hours
 
 class MangaUpdateRepositoryImpl(
     private val dispatchers: AmadeusDispatchers,
@@ -25,7 +24,7 @@ class MangaUpdateRepositoryImpl(
     init {
         CoroutineScope(dispatchers.io).launch {
             for (update in mangaUpdateDao.getAllUpdates()) {
-                if(localDateTimeNow() - update.createdAt >= Duration.ofHours(24).toKotlinDuration()) {
+                if(localDateTimeNow() - update.createdAt >= 24.hours) {
                     mangaUpdateDao.delete(update)
                 }
             }

@@ -24,8 +24,6 @@ import io.silv.data.manga.SearchMangaRepository
 import io.silv.data.manga.SearchMangaRepositoryImpl
 import io.silv.data.manga.SeasonalMangaRepository
 import io.silv.data.manga.SeasonalMangaRepositoryImpl
-import io.silv.data.manga.TempMangaRepository
-import io.silv.data.manga.TempMangaRepositoryImpl
 import io.silv.data.tags.TagRepository
 import io.silv.data.tags.TagRepositoryImpl
 import org.koin.core.module.dsl.bind
@@ -82,10 +80,6 @@ val mangaModule = module {
 
     singleOf(::ChapterImageRepositoryImpl) withOptions {
         bind<ChapterImageRepository>()
-    }
-
-    singleOf(::TempMangaRepositoryImpl) withOptions {
-        bind<TempMangaRepository>()
     }
 
     singleOf(::MangaUpdateRepositoryImpl) withOptions {

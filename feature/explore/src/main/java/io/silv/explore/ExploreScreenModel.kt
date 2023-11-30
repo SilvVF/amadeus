@@ -2,7 +2,6 @@ package io.silv.explore
 
 import androidx.paging.cachedIn
 import androidx.paging.map
-import cafe.adriel.voyager.core.model.coroutineScope
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.data.manga.PopularMangaRepository
@@ -14,13 +13,8 @@ import io.silv.explore.SeasonalMangaUiState.SeasonalList
 import io.silv.model.SavableManga
 import io.silv.sync.SyncManager
 import io.silv.ui.EventScreenModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -47,22 +41,13 @@ class ExploreScreenModel(
         forceSearchFlow.update { !it }
     }
 
-    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-    private val mangaSearchFlow = combineTuple(searchQuery, forceSearchFlow)
-        .debounce { if (startFlag.also { startFlag = false }) {  0L } else 2000L }
-        .distinctUntilChanged()
-        .flatMapLatest { (query, _) ->
-            searchMangaRepository.pager(query).flow.cachedIn(coroutineScope)
-        }
-            .cachedIn(screenModelScope)
-
     val searchMangaPagingFlow = combineTuple(
-        mangaSearchFlow,
-        savedMangaRepository.getSavedMangas(),
-    ).map { (pagingData, saved) ->
-        pagingData.map {
-           SavableManga(it, saved.find { s -> s.id == it.id })
-        }
+        searchMangaRepository.pager("").flow.cachedIn(screenModelScope),
+        savedMangaRepository.getSavedMangas()
+    ) .map { (pagingData, saved) ->
+          pagingData.map { (_, manga) ->
+              SavableManga(manga, saved.find { s -> s.id == manga.id })
+          }
     }
 
     val popularMangaPagingFlow = combineTuple(
@@ -70,31 +55,37 @@ class ExploreScreenModel(
         savedMangaRepository.getSavedMangas()
     )
         .map { (pagingData, saved) ->
-            pagingData.map { SavableManga(it, saved.find { s -> s.id == it.id }) }
+            pagingData.map { (_, manga) ->
+                SavableManga(manga, saved.find { s -> s.id == manga.id })
+            }
         }
         .cachedIn(screenModelScope)
 
-    val recentMangaPagingFlow = combineTuple(
-        recentMangaRepository.pager.flow.cachedIn(screenModelScope),
-        savedMangaRepository.getSavedMangas(),
-    ).map { (pagingData, saved) ->
-        pagingData.map { SavableManga(it, saved.find { s -> s.id == it.id }) }
-    }
-        .cachedIn(screenModelScope)
+    val recentMangaPagingFlow =
+        combineTuple(
+            recentMangaRepository.pager.flow.cachedIn(screenModelScope),
+            savedMangaRepository.getSavedMangas()
+        )
+        .map { (pagingData, saved) ->
+            pagingData.map { (_, manga) ->
+                SavableManga(manga, saved.find { it.id == manga.id })
+            }
+        }
 
     val seasonalMangaUiState = combineTuple(
         seasonalMangaRepository.getSeasonalLists(),
         savedMangaRepository.getSavedMangas()
     ).map { (seasonWithManga, saved)->
-        val yearLists = seasonWithManga.map {
+        val yearLists = seasonWithManga.map {(list, mangas) ->
             SeasonalList(
-                id = it.list.id,
-                year = it.list.year,
-                season = it.list.season,
-                mangas = it.manga.map { m ->
+                id = list.id,
+                year = list.year,
+                season = list.season,
+                mangas = mangas.map { manga->
                     SavableManga(
-                        m,
-                        saved.find { s -> s.id == m.id })
+                        manga,
+                        saved.find { s -> s.id == manga.id }
+                    )
                 }
             )
         }

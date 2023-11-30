@@ -11,7 +11,6 @@ import io.silv.manga.search.SearchScreen
 import io.silv.navigation.SharedScreen
 import io.silv.network.util.MangaDexApiLogger
 import io.silv.reader.MangaReaderScreen
-import io.silv.sync.Sync
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.workmanager.koin.workManagerFactory
@@ -56,6 +55,6 @@ class AmadeusApp: Application() {
             }
         }
 
-        Sync.init(this)
+       // Sync.init(this)
     }
 }

@@ -8,8 +8,8 @@ import io.silv.common.model.ProgressState
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.ReadingStatus
 import io.silv.common.model.Status
-import io.silv.database.entity.manga.MangaResource
 import io.silv.database.entity.manga.SavedMangaEntity
+import io.silv.database.entity.manga.SourceMangaResource
 import kotlinx.datetime.LocalDateTime
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
@@ -89,7 +89,7 @@ data class SavableManga(
         artists = savedManga.artists,
         authors = savedManga.authors
     )
-    constructor(mangaResource: MangaResource, savedManga: SavedMangaEntity?) : this(
+    constructor(mangaResource: SourceMangaResource, savedManga: SavedMangaEntity?) : this(
         id = mangaResource.id,
         bookmarked = savedManga?.bookmarked ?: false,
         description = mangaResource.description,
@@ -114,40 +114,5 @@ data class SavableManga(
         year = mangaResource.year,
         artists = mangaResource.artists,
         authors = mangaResource.authors
-    )
-
-
-    constructor(
-        mangaResources: List<MangaResource>,
-        savedManga: SavedMangaEntity?,
-        newest: MangaResource = mangaResources.maxBy { it.savedAtLocal }
-    ) : this(
-        id = newest.id,
-        bookmarked = savedManga?.bookmarked ?: false,
-        description = newest.description,
-        progressState = savedManga?.progressState ?: ProgressState.NotStarted,
-        coverArt = savedManga?.coverArt?.ifEmpty { null } ?: newest.coverArt,
-        titleEnglish = newest.titleEnglish,
-        alternateTitles = newest.alternateTitles,
-        originalLanguage = newest.originalLanguage,
-        availableTranslatedLanguages = newest.availableTranslatedLanguages,
-        status = newest.status,
-        tagToId = newest.tagToId,
-        contentRating = newest.contentRating,
-        lastVolume = newest.lastVolume,
-        lastChapter = newest.lastChapter,
-        version = newest.version,
-        createdAt = newest.createdAt,
-        updatedAt = newest.updatedAt,
-        savedLocalAtEpochSeconds = newest.savedAtLocal,
-        volumeToCoverArtUrl = buildMap {
-            savedManga?.volumeToCoverArt?.let { putAll(it) }
-            mangaResources.map { it.volumeToCoverArt }.forEach { putAll(it) }
-        },
-        publicationDemographic = newest.publicationDemographic,
-        readingStatus = savedManga?.readingStatus ?: ReadingStatus.None,
-        year = newest.year,
-        authors = newest.authors,
-        artists = newest.artists
     )
 }

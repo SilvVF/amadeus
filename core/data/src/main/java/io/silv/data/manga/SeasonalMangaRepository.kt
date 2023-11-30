@@ -1,16 +1,12 @@
 package io.silv.data.manga
 
 import io.silv.data.util.Syncable
-import io.silv.database.entity.manga.resource.SeasonalMangaResource
-import io.silv.database.entity.relations.SeasonListWithManga
+import io.silv.database.entity.list.SeasonalListEntity
+import io.silv.database.entity.manga.SourceMangaResource
 import kotlinx.coroutines.flow.Flow
 
 
 interface SeasonalMangaRepository: Syncable {
 
-    fun observeMangaResourceById(id: String): Flow<SeasonalMangaResource?>
-
-    fun observeAllMangaResources(): Flow<List<SeasonalMangaResource>>
-
-    fun getSeasonalLists(): Flow<List<SeasonListWithManga>>
+    fun getSeasonalLists(): Flow<List<Pair<SeasonalListEntity, List<SourceMangaResource>>>>
 }

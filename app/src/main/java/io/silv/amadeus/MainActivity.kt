@@ -52,11 +52,12 @@ import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
+import io.silv.amadeus.crash.CrashActivity
+import io.silv.amadeus.crash.GlobalExceptionHandler
 import io.silv.explore.ExploreTab
 import io.silv.library.LibraryTab
 import io.silv.manga.search.SearchTab
 import io.silv.ui.theme.AmadeusTheme
-
 
 
 class MainActivity : ComponentActivity() {
@@ -65,10 +66,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
+
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        setContent {
 
+        setContent {
             val windowSizeClass = calculateWindowSizeClass(this)
 
             AmadeusTheme {

@@ -9,28 +9,27 @@ import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.time.timeStringMinus
-import io.silv.data.mappers.toPopularMangaResource
+import io.silv.data.mappers.toSourceManga
 import io.silv.database.AmadeusDatabase
-import io.silv.database.dao.PopularMangaResourceDao
-import io.silv.database.entity.manga.resource.PopularMangaResource
+import io.silv.database.dao.remotekeys.PopularRemoteKeyWithManga
+import io.silv.database.entity.manga.remotekeys.PopularRemoteKey
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOn
-import java.time.Duration
+import kotlin.time.Duration.Companion.days
 
 @OptIn(ExperimentalPagingApi::class)
 private class PopularMangaRemoteMediator(
     private val mangaDexApi: MangaDexApi,
     private val db: AmadeusDatabase,
-): RemoteMediator<Int, PopularMangaResource>() {
+): RemoteMediator<Int, PopularRemoteKeyWithManga>() {
 
-    private val dao = db.popularMangaResourceDao()
+    private val mangaDao = db.sourceMangaDao()
+    private val remoteKeysDao = db.popularRemoteKeysDao()
 
     override suspend fun load(
         loadType: LoadType,
-        state: PagingState<Int, PopularMangaResource>
+        state: PagingState<Int, PopularRemoteKeyWithManga>
     ): MediatorResult {
         return suspendRunCatching {
             val offset = when(loadType) {
@@ -40,9 +39,7 @@ private class PopularMangaRemoteMediator(
                 )
                 LoadType.APPEND -> {
                     val lastItem = state.lastItemOrNull()
-                    if(lastItem == null) { 0 } else {
-                        lastItem.offset + state.config.pageSize
-                    }
+                    lastItem?.key?.offset ?: 0
                 }
             }
             val response = mangaDexApi.getMangaList(
@@ -53,19 +50,23 @@ private class PopularMangaRemoteMediator(
                     order = mapOf("followedCount" to "desc"),
                     availableTranslatedLanguage = listOf("en"),
                     hasAvailableChapters = true,
-                    createdAtSince = timeStringMinus(Duration.ofDays(30))
+                    createdAtSince = timeStringMinus(30.days)
                 )
             )
                 .getOrThrow()
 
             db.withTransaction {
                 if(loadType == LoadType.REFRESH) {
-                    dao.deleteAll()
+                    remoteKeysDao.clear()
                 }
-                val entities = response.data.map {manga ->
-                    manga.toPopularMangaResource().copy(offset = offset)
+                val entities = response.data.mapIndexed { i, manga ->
+                    manga.toSourceManga().also {
+                        remoteKeysDao.insert(
+                            PopularRemoteKey(it.id, offset + i)
+                        )
+                    }
                 }
-                dao.upsertAll(entities)
+                mangaDao.insertAll(entities)
             }
             MediatorResult.Success(
                 endOfPaginationReached = offset + response.data.size >= response.total
@@ -78,11 +79,8 @@ private class PopularMangaRemoteMediator(
 
 
 internal class PopularMangaRepositoryImpl(
-    private val mangaResourceDao: PopularMangaResourceDao,
-    private val popularMangaResourceDao: PopularMangaResourceDao,
-    private val dispatchers: io.silv.common.AmadeusDispatchers,
     mangaDexApi: MangaDexApi,
-    amadeusDatabase: AmadeusDatabase,
+    private val amadeusDatabase: AmadeusDatabase,
 ): PopularMangaRepository {
 
     @OptIn(ExperimentalPagingApi::class)
@@ -93,15 +91,7 @@ internal class PopularMangaRepositoryImpl(
         ),
         remoteMediator = PopularMangaRemoteMediator(mangaDexApi, amadeusDatabase),
         pagingSourceFactory = {
-            popularMangaResourceDao.pagingSource()
+            amadeusDatabase.popularRemoteKeysDao().getPagingSource()
         }
     )
-
-    override fun observeMangaResourceById(id: String): Flow<PopularMangaResource?> {
-        return mangaResourceDao.observePopularMangaResourceById(id).flowOn(dispatchers.io)
-    }
-
-    override fun observeAllMangaResources(): Flow<List<PopularMangaResource>> {
-        return mangaResourceDao.getPopularMangaResources().flowOn(dispatchers.io)
-    }
 }

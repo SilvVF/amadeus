@@ -4,45 +4,55 @@ import androidx.room.withTransaction
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.Season
 import io.silv.common.pmap
-import io.silv.data.mappers.toSeasonalMangaResource
+import io.silv.data.mappers.toSourceManga
 import io.silv.data.util.createSyncer
+import io.silv.database.AmadeusDatabase
+import io.silv.database.dao.SeasonalListDao
+import io.silv.database.dao.SourceMangaDao
+import io.silv.database.dao.remotekeys.SeasonalRemoteKeysDao
 import io.silv.database.entity.list.SeasonalListEntity
-import io.silv.database.entity.manga.resource.SeasonalMangaResource
-import io.silv.database.entity.relations.SeasonListWithManga
+import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.model.list.Data
 import io.silv.network.model.manga.Manga
 import io.silv.network.requests.MangaRequest
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 
 internal class SeasonalMangaRepositoryImpl(
-    private val mangaResourceDao: io.silv.database.dao.SeasonalMangaResourceDao,
-    private val amadeusDatabase: io.silv.database.AmadeusDatabase,
-    private val seasonalListDao: io.silv.database.dao.SeasonalListDao,
+    private val mangaResourceDao: SourceMangaDao,
+    private val amadeusDatabase: AmadeusDatabase,
+    private val seasonalListDao: SeasonalListDao,
+    private val seasonalRemoteKeysDao: SeasonalRemoteKeysDao,
     private val mangaDexApi: io.silv.network.MangaDexApi,
     private val dispatchers: io.silv.common.AmadeusDispatchers
 ): SeasonalMangaRepository {
 
-    override fun observeMangaResourceById(id: String): Flow<SeasonalMangaResource?> {
-        return mangaResourceDao.observeSeasonalMangaResourceById(id)
+    override fun getSeasonalLists(): Flow<List<Pair<SeasonalListEntity, List<SourceMangaResource>>>> {
+        return seasonalListDao.getSeasonalLists().map { lists ->
+            lists.map { list ->
+                list to seasonalRemoteKeysDao.selectBySeasonId(list.id)
+            }
+        }
     }
 
-    override fun observeAllMangaResources(): Flow<List<SeasonalMangaResource>> {
-        return mangaResourceDao.getSeasonalMangaResources()
-    }
-
-    override fun getSeasonalLists(): Flow<List<SeasonListWithManga>> {
-        return seasonalListDao.observeSeasonListWithManga()
-    }
-
-    private fun syncer(list: Data) = createSyncer<SeasonalMangaResource, Manga, String>(
+    private fun syncer(list: Data) = createSyncer<SourceMangaResource, Manga, String>(
             networkToKey = { it.id },
             mapper = { manga, _ ->
-                manga.toSeasonalMangaResource().copy(seasonId = list.id)
+                manga.toSourceManga()
             },
-            upsert = { mangaResourceDao.upsertSeasonalMangaResource(it) }
+            upsert = {
+                mangaResourceDao.insert(it)
+                seasonalRemoteKeysDao.insert(
+                    SeasonalRemoteKey(
+                        mangaId = it.id,
+                        seasonId = list.id
+                    )
+                )
+            }
         )
 
     private fun String.toSeason() = when {
@@ -53,41 +63,42 @@ internal class SeasonalMangaRepositoryImpl(
         else -> null
     }
 
+    private suspend fun fetchChuncked(seasonalLists: List<Triple<Season, Int, Data>>): List<Manga> {
+       return seasonalLists
+            .map { (_, _, data) ->
+                data.relationships
+                    .filter { it.type == "manga" }
+                    .map { it.id }
+            }
+            .flatten()
+            .chunked(100)
+            .pmap {
+                mangaDexApi.getMangaList(
+                    MangaRequest(
+                        limit = 100,
+                        ids = it,
+                        includes = listOf("cover_art", "author", "artist"),
+                        order = mapOf("followedCount" to "desc"),
+                        hasAvailableChapters = true
+                    )
+                )
+                    .getOrThrow()
+                    .data
+            }
+            .flatten()
+    }
+
     private suspend fun updateSeasonalList(
         seasonalLists: List<Triple<Season, Int, Data>>
     ) {
         withContext(dispatchers.io) {
-            // fetch all manga by id from the lists in chunks of 100 which is max per request
-            val response = seasonalLists
-                .map { (_, _, data) ->
-                    data.relationships
-                        .filter { it.type == "manga" }
-                        .map { it.id }
-                }
-                .flatten()
-                .chunked(100)
-                .pmap {
-                    mangaDexApi.getMangaList(
-                        MangaRequest(
-                            limit = 100,
-                            ids = it,
-                            includes = listOf("cover_art", "author", "artist"),
-                            order = mapOf("followedCount" to "desc"),
-                            hasAvailableChapters = true
-                        )
-                    )
-                        .getOrThrow()
-                        .data
-                }
-                .flatten()
+
+            val response = fetchChuncked(seasonalLists)
+
             amadeusDatabase.withTransaction {
 
-                seasonalListDao.clear()
-                mangaResourceDao.clear()
-
-                val seasonalBeforeUpdate = seasonalListDao.getSeasonListWithManga()
-
                 seasonalLists.forEach { (season, year, list) ->
+
                     seasonalListDao.upsertSeasonalList(
                         SeasonalListEntity(
                             id = list.id,
@@ -95,16 +106,18 @@ internal class SeasonalMangaRepositoryImpl(
                             season = season,
                         )
                     )
-                    syncer(list).sync(
-                        current = seasonalBeforeUpdate
-                            .find { seasonalList -> seasonalList.list.id == list.id }
-                            ?.manga ?: emptyList(),
+                    val result = syncer(list).sync(
+                        current = seasonalRemoteKeysDao.selectBySeasonId(list.id),
                         networkResponse = response.filter { manga ->
                             manga.id in list.relationships
                                 .filter { relationship -> relationship.type == "manga" }
                                 .map { relationship -> relationship.id }
                         },
                     )
+
+                    for (item in result.unhandled) {
+                        seasonalRemoteKeysDao.delete(item.id, list.id)
+                    }
                 }
             }
         }

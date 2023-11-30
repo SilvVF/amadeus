@@ -2,7 +2,6 @@ package io.silv.domain
 
 import io.silv.data.chapter.ChapterEntityRepository
 import io.silv.data.manga.SavedMangaRepository
-import io.silv.data.manga.TempMangaRepository
 import io.silv.model.SavableManga
 import io.silv.model.SavableMangaWithChapters
 import io.silv.toSavable
@@ -18,7 +17,6 @@ class GetCombinedSavableMangaWithChapters(
     private val getCombinedMangaResources: GetCombinedMangaResources,
     private val savedMangaRepository: SavedMangaRepository,
     private val chapterInfoRepository: ChapterEntityRepository,
-    private val tempMangaRepository: TempMangaRepository
 ) {
 
     operator fun invoke(id: String): Flow<SavableMangaWithChapters> {
@@ -28,18 +26,13 @@ class GetCombinedSavableMangaWithChapters(
             chapterInfoRepository.getChapters(id),
         ) { resources, saved, chapterInfo ->
 
-            if (resources.isEmpty() && saved == null) {
-               tempMangaRepository.createTempResource(id)
-            }
-
-
             return@combine saved?.let { savedManga ->
                 SavableMangaWithChapters(
                     savableManga = savedManga.toSavable(resources.ifEmpty { null }, savedManga),
                     chapters = chapterInfo
                 )
             } ?: SavableMangaWithChapters(
-                savableManga = SavableManga(resources, null),
+                savableManga = SavableManga(resources.first(), null),
                 chapters = chapterInfo
             )
         }

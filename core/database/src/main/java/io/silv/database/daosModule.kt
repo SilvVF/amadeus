@@ -15,27 +15,27 @@ val daosModule = module {
     }
 
     single {
-        get<AmadeusDatabase>().popularMangaResourceDao()
+        get<AmadeusDatabase>().popularRemoteKeysDao()
     }
 
     single {
-        get<AmadeusDatabase>().searchMangaResourceDao()
+        get<AmadeusDatabase>().searchRemoteKeysDao()
     }
 
     single {
-        get<AmadeusDatabase>().recentMangaResourceDao()
+        get<AmadeusDatabase>().recentRemoteKeysDao()
     }
 
     single {
-        get<AmadeusDatabase>().seasonalMangaResourceDao()
+        get<AmadeusDatabase>().seasonalRemoteKeysDao()
     }
 
     single {
-        get<AmadeusDatabase>().filteredMangaResourceDao()
+        get<AmadeusDatabase>().filteredRemoteKeysDao()
     }
 
     single {
-        get<AmadeusDatabase>().filteredMangaYearlyResourceDao()
+        get<AmadeusDatabase>().filteredYearlyRemoteKeysDao()
     }
 
     single {
@@ -47,11 +47,11 @@ val daosModule = module {
     }
 
     single {
-        get<AmadeusDatabase>().quickSearchResourceDao()
+        get<AmadeusDatabase>().quickSearchRemoteKeysDao()
     }
 
     single {
-        get<AmadeusDatabase>().tempMangaResourceDao()
+        get<AmadeusDatabase>().sourceMangaDao()
     }
 
     single {

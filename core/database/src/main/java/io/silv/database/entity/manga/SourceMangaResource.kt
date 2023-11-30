@@ -1,6 +1,5 @@
-package io.silv.database.entity.manga.resource
+package io.silv.database.entity.manga
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import io.silv.common.model.ContentRating
@@ -8,16 +7,12 @@ import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.Status
 import io.silv.common.time.localDateTimeNow
 import io.silv.database.entity.AmadeusEntity
-import io.silv.database.entity.manga.MangaResource
 import kotlinx.datetime.LocalDateTime
 
 @Entity
-data class SeasonalMangaResource(
-
-    @ColumnInfo("season_id")
-    val seasonId: String,
-
-    @PrimaryKey override val id: String,
+data class SourceMangaResource(
+    @PrimaryKey
+    override val id: String,
     override val coverArt: String,
     override val description: String,
     override val titleEnglish: String,
@@ -38,5 +33,5 @@ data class SeasonalMangaResource(
     override val year: Int,
     override val latestUploadedChapter: String?,
     override val authors: List<String>,
-    override val artists: List<String>
+    override val artists: List<String>,
 ): MangaResource, AmadeusEntity<String>

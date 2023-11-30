@@ -4,12 +4,12 @@ import androidx.paging.Pager
 import io.silv.common.model.ContentRating
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.Status
-import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.database.dao.remotekeys.SearchRemoteKeyWithManga
 import io.silv.network.requests.MangaRequest
 
 interface SearchMangaRepository {
 
-    fun pager(query: SearchMangaResourceQuery): Pager<Int, SourceMangaResource>
+    fun pager(query: SearchMangaResourceQuery): Pager<Int, SearchRemoteKeyWithManga>
 }
 
 data class SearchMangaResourceQuery(

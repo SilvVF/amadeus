@@ -1,9 +1,9 @@
 package io.silv.data.manga
 
 import androidx.paging.Pager
-import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.database.dao.remotekeys.FilteredRemoteKeyWithManga
 
 interface FilteredMangaRepository {
 
-    fun pager(query: FilteredResourceQuery): Pager<Int, SourceMangaResource>
+    fun pager(query: FilteredResourceQuery): Pager<Int, FilteredRemoteKeyWithManga>
 }

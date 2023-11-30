@@ -47,6 +47,7 @@ data class PopularRemoteKeyWithManga(
 
 interface RemoteKeyWithManga<T> {
 
+
     val key: T
 
     val manga: SourceMangaResource

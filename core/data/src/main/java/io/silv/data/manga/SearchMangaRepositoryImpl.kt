@@ -11,7 +11,7 @@ import androidx.room.withTransaction
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.data.mappers.toSourceManga
 import io.silv.database.AmadeusDatabase
-import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.database.dao.remotekeys.SearchRemoteKeyWithManga
 import io.silv.database.entity.manga.remotekeys.SearchRemoteKey
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
@@ -22,14 +22,14 @@ private class SearchRemoteMediator(
     private val query: SearchMangaResourceQuery,
     private val db: AmadeusDatabase,
     private val mangaDexApi: MangaDexApi,
-): RemoteMediator<Int, SourceMangaResource>() {
+): RemoteMediator<Int, SearchRemoteKeyWithManga>() {
 
     private val mangaDao = db.sourceMangaDao()
     private val remoteKeysDao = db.searchRemoteKeysDao()
 
     override suspend fun load(
         loadType: LoadType,
-        state: PagingState<Int, SourceMangaResource>
+        state: PagingState<Int, SearchRemoteKeyWithManga>
     ): MediatorResult {
         return suspendRunCatching {
             val offset = when(loadType) {
@@ -39,9 +39,7 @@ private class SearchRemoteMediator(
                 )
                 LoadType.APPEND -> {
                     val lastItem = state.lastItemOrNull()
-                    if(lastItem == null) { 0 } else {
-                        remoteKeysDao.getByMangaId(lastItem.id).offset
-                    }
+                    lastItem?.key?.offset ?: 0
                 }
             }
             val response = mangaDexApi.getMangaList(
@@ -93,7 +91,7 @@ internal class SearchMangaRepositoryImpl(
 ): SearchMangaRepository {
 
     @OptIn(ExperimentalPagingApi::class)
-    override fun pager(query: SearchMangaResourceQuery): Pager<Int, SourceMangaResource> {
+    override fun pager(query: SearchMangaResourceQuery): Pager<Int, SearchRemoteKeyWithManga> {
         Log.d("SEARCH PAGER", "returning no pager")
        return Pager(
            config = PagingConfig(

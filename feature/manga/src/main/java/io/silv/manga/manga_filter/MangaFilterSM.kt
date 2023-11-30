@@ -87,8 +87,8 @@ class MangaFilterSM(
         timePeriodFilteredResources,
         savedMangaRepository.getSavedMangas()
     ).map { (pagingData, saved) ->
-        pagingData.map {
-           SavableManga(it, saved.find { s -> s.id == it.id })
+        pagingData.map { (_, manga) ->
+           SavableManga(manga, saved.find { s -> s.id == manga.id })
         }
     }
 

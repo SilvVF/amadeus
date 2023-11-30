@@ -12,8 +12,8 @@ import io.silv.common.model.TimePeriod
 import io.silv.data.mappers.timeString
 import io.silv.data.mappers.toSourceManga
 import io.silv.database.AmadeusDatabase
+import io.silv.database.dao.remotekeys.FilteredRemoteKeyWithManga
 import io.silv.database.dao.remotekeys.FilteredRemoteKeysDao
-import io.silv.database.entity.manga.SourceMangaResource
 import io.silv.database.entity.manga.remotekeys.FilteredRemoteKey
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
@@ -24,14 +24,14 @@ private class FilteredMangaRemoteMediator(
     private val query: FilteredResourceQuery,
     private val db: AmadeusDatabase,
     private val mangaDexApi: MangaDexApi,
-): RemoteMediator<Int, SourceMangaResource>() {
+): RemoteMediator<Int, FilteredRemoteKeyWithManga>() {
 
     private val remoteKeysDao = db.filteredRemoteKeysDao()
     private val mangaDao = db.sourceMangaDao()
 
     override suspend fun load(
         loadType: LoadType,
-        state: PagingState<Int, SourceMangaResource>
+        state: PagingState<Int, FilteredRemoteKeyWithManga>
     ): MediatorResult {
         return suspendRunCatching {
             val offset = when(loadType) {
@@ -41,9 +41,7 @@ private class FilteredMangaRemoteMediator(
                 )
                 LoadType.APPEND -> {
                     val lastItem = state.lastItemOrNull()
-                    if(lastItem == null) { 0 } else {
-                        remoteKeysDao.getByMangaId(lastItem.id).offset
-                    }
+                    lastItem?.key?.offset ?: 0
                 }
             }
             val response = mangaDexApi.getMangaList(

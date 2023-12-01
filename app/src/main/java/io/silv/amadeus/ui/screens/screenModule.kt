@@ -27,14 +27,10 @@ val screenModule = module {
 
     factory {
         ExploreScreenModel(
-            recentMangaRepository = get(),
-            popularMangaRepository = get(),
+            subscribeToPagingData = get(),
             seasonalMangaRepository = get(),
             savedMangaRepository = get(),
-            searchMangaRepository = get(),
             seasonalMangaSyncManager = get(qualifier = named(SeasonalMangaSyncWorkName)),
-            combineSourceMangaWithSaved = get(),
-            getQueryPagingData = get()
         )
     }
 }

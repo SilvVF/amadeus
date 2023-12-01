@@ -4,14 +4,14 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.paging.cachedIn
-import androidx.paging.map
+import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
-import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.common.model.LoadState
+import io.silv.common.model.PagedType
 import io.silv.common.model.TimePeriod
 import io.silv.data.manga.FilteredYearlyMangaRepository
 import io.silv.data.manga.SavedMangaRepository
+import io.silv.domain.SubscribeToPagingData
 import io.silv.model.SavableManga
 import io.silv.ui.EventScreenModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,14 +20,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MangaFilterSM(
-    private val filteredMangaRepository: io.silv.data.manga.FilteredMangaRepository,
     filteredYearlyMangaRepository: FilteredYearlyMangaRepository,
+    private val subscribeToPagingData: SubscribeToPagingData,
     private val savedMangaRepository: SavedMangaRepository,
     tagId: String
 ): EventScreenModel<MangaFilterEvent>() {
@@ -73,24 +72,14 @@ class MangaFilterSM(
     val timePeriod = mutableTimePeriod.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val timePeriodFilteredResources = combineTuple(mutableTimePeriod, currentTagId)
-        .flatMapLatest { (time, tag) ->
-            filteredMangaRepository
-                .pager(io.silv.data.manga.FilteredResourceQuery(tag, time))
-                .flow
-                .cachedIn(screenModelScope)
-    }
-            .catch { it.printStackTrace() }
-            .cachedIn(screenModelScope)
+    val timePeriodFilteredPagingFlow = subscribeToPagingData(
+        config = PagingConfig(30),
+        typeFlow = mutableTimePeriod.combine(currentTagId) { tagId, timePeriod ->
+            PagedType.Period(timePeriod, tagId)
+        },
+        scope = ioCoroutineScope
+    )
 
-    val timePeriodFilteredPagingFlow = combineTuple(
-        timePeriodFilteredResources,
-        savedMangaRepository.getSavedMangas()
-    ).map { (pagingData, saved) ->
-        pagingData.map { (_, manga) ->
-           SavableManga(manga, saved.find { s -> s.id == manga.id })
-        }
-    }
 
     fun changeTimePeriod(timePeriod: TimePeriod) {
         screenModelScope.launch {

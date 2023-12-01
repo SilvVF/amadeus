@@ -14,24 +14,9 @@ val daosModule = module {
         get<AmadeusDatabase>().savedMangaDao()
     }
 
-    single {
-        get<AmadeusDatabase>().popularRemoteKeysDao()
-    }
-
-    single {
-        get<AmadeusDatabase>().searchRemoteKeysDao()
-    }
-
-    single {
-        get<AmadeusDatabase>().recentRemoteKeysDao()
-    }
 
     single {
         get<AmadeusDatabase>().seasonalRemoteKeysDao()
-    }
-
-    single {
-        get<AmadeusDatabase>().filteredRemoteKeysDao()
     }
 
     single {
@@ -44,10 +29,6 @@ val daosModule = module {
 
     single {
         get<AmadeusDatabase>().tagDao()
-    }
-
-    single {
-        get<AmadeusDatabase>().quickSearchRemoteKeysDao()
     }
 
     single {

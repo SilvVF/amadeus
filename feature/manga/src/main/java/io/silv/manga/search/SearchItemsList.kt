@@ -2,6 +2,7 @@ package io.silv.manga.search
 
 import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -12,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
@@ -20,11 +22,12 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.manga.manga_filter.MangaFilterScreen
+import io.silv.model.SavableManga
 import io.silv.ui.AnimatedBoxShimmer
 import io.silv.ui.MangaListItem
+import io.silv.ui.PullRefresh
 import io.silv.ui.header
 import io.silv.ui.theme.LocalSpacing
-import io.silv.model.SavableManga
 
 @Composable
 fun SearchItemsPagingList(
@@ -47,7 +50,7 @@ fun SearchItemsPagingList(
         }
     }
 
-    io.silv.ui.PullRefresh(
+    PullRefresh(
         refreshing = items.loadState.refresh is LoadState.Loading,
         onRefresh = { items.refresh() }
     ) {
@@ -65,6 +68,7 @@ fun SearchItemsPagingList(
                         manga = it,
                         modifier = Modifier
                             .padding(space.large)
+                            .height((LocalConfiguration.current.screenHeightDp / 2.6f).dp)
                             .clickable {
                                 onMangaClick(it)
                             },
@@ -82,8 +86,8 @@ fun SearchItemsPagingList(
                 }
             }
             if (items.loadState.refresh is LoadState.Loading) {
-                items(8, key = { it }) {
-                    AnimatedBoxShimmer(Modifier.size(200.dp))
+                items(4, key = { it }) {
+                    AnimatedBoxShimmer(Modifier.height((LocalConfiguration.current.screenHeightDp / 2.6f).dp))
                 }
             }
             header(

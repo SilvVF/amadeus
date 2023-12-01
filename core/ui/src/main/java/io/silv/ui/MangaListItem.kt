@@ -1,10 +1,13 @@
 package io.silv.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,35 +53,35 @@ fun MangaListItem(
     onBookmarkClick: () -> Unit
 ) {
 
-    val context = LocalContext.current
     val space = LocalSpacing.current
-    val placeHolderColor = remember {
-        Pastel.getColorLight()
-    }
 
-    Column(modifier) {
-        CenterBox(
-            modifier = Modifier
-                .shadow(
-                    color = Color.DarkGray,
-                    blurRadius = 12.dp,
-                    offsetY = space.xs,
-                    offsetX = space.xs
-                )
-                .padding(space.xs)
-        ) {
+    Column(modifier.heightIn(min = 90.dp, max = (LocalConfiguration.current.screenHeightDp / 2).dp)) {
+        Box(Modifier.weight(1f).fillMaxWidth()) {
             AsyncImage(
                 model = manga,
                 contentDescription = null,
                 modifier = Modifier
-                    .size(180.dp)
                     .clip(
-                        RoundedCornerShape(12.dp)
-                    ),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
+            Column(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()) {
+                Spacer(modifier = Modifier.height(space.small))
+                Spacer(modifier = Modifier.height(space.small))
+                Text(
+                    text = manga.titleEnglish,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        color = MaterialTheme.colorScheme.background
+                    )
+                )
+            }
+
         }
-        Spacer(modifier = Modifier.height(space.small))
         GenreTagsWithBookmark(
             tags = manga.tagToId.keys.toList(),
             onBookmarkClick = onBookmarkClick,
@@ -86,11 +90,6 @@ fun MangaListItem(
             onTagClick = {
                 onTagClick(it)
             }
-        )
-        Spacer(modifier = Modifier.height(space.small))
-        Text(
-            text = manga.titleEnglish,
-            style = MaterialTheme.typography.titleMedium
         )
     }
 }

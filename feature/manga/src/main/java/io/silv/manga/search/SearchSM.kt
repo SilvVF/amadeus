@@ -3,22 +3,21 @@
 package io.silv.manga.search
 
 import android.util.Log
-import androidx.paging.cachedIn
-import androidx.paging.map
+import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.common.model.ContentRating
+import io.silv.common.model.PagedType
 import io.silv.common.model.PublicationDemographic
+import io.silv.common.model.QueryFilters
 import io.silv.common.model.QueryResult
 import io.silv.common.model.Status
 import io.silv.data.author.AuthorListRepository
 import io.silv.data.manga.SavedMangaRepository
-import io.silv.data.manga.SearchMangaRepository
-import io.silv.data.manga.SearchMangaResourceQuery
 import io.silv.data.tags.TagRepository
+import io.silv.domain.SubscribeToPagingData
 import io.silv.model.DomainAuthor
 import io.silv.model.DomainTag
-import io.silv.model.SavableManga
 import io.silv.network.requests.MangaRequest
 import io.silv.ui.EventScreenModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,7 +32,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SearchSM(
-    private val searchMangaRepository: SearchMangaRepository,
+    private val subscribeToPagingData: SubscribeToPagingData,
     tagRepository: TagRepository,
     private val savedMangaRepository: SavedMangaRepository,
     private val authorListRepository: AuthorListRepository,
@@ -158,18 +157,10 @@ class SearchSM(
         startFlow,
     ).map { (open, included, excluded, text, includedTagsMode, excludedTagsMode, authors, artists, rating, status, originalLangs, transLangs, demographics, _)  ->
         Pair(
-            SearchMangaResourceQuery(
-                title = text,
-                includedTags = included,
-                excludedTags = excluded,
-                includedTagsMode = includedTagsMode,
-                excludedTagsMode = excludedTagsMode,
-                authorIds = authors.map { it.id },
-                artistIds = artists.map { it.id },
-                publicationStatus = status,
-                originalLanguages = originalLangs.map { it.code },
-                translatedLanguages = transLangs.map { it.code },
-                demographics = demographics
+            PagedType.Query(
+                QueryFilters(
+                    text
+                )
             ),
             open
         )
@@ -182,22 +173,12 @@ class SearchSM(
         .map { it.first }
 
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val searchManga = searchResourceQuery.flatMapLatest {
-        Log.d("SEARCH PAGER", "flatmapLatest")
-        searchMangaRepository.pager(it).flow
-    }
-        .cachedIn(screenModelScope)
 
-    val searchMangaPagingFlow = combineTuple(
-        searchManga,
-        savedMangaRepository.getSavedMangas(),
-    ).map { (pagingData, saved) ->
-        pagingData.map { (_, manga) ->
-            SavableManga(manga, saved.find { s -> s.id == manga.id })
-        }
-    }
-        .cachedIn(screenModelScope)
+    val searchMangaPagingFlow = subscribeToPagingData(
+        config = PagingConfig(30),
+        typeFlow = searchResourceQuery,
+        scope = ioCoroutineScope
+    )
 
 
 

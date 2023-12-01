@@ -47,7 +47,7 @@ class SearchScreen: Screen {
 
         val sm = getScreenModel<SearchSM>()
 
-        val searchMangaPagingItems = sm.searchMangaPagingFlow.collectAsLazyPagingItems()
+        val searchMangaPagingFlow by sm.searchMangaPagingFlow.collectAsStateWithLifecycle()
         val tagsUiState by sm.tagsUiState.collectAsStateWithLifecycle()
         val searchText by sm.searchText.collectAsStateWithLifecycle()
         val includedIds by sm.includedIds.collectAsStateWithLifecycle()
@@ -154,7 +154,7 @@ class SearchScreen: Screen {
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(it),
-                            items = searchMangaPagingItems,
+                            items = searchMangaPagingFlow.collectAsLazyPagingItems(),
                             onMangaClick = {
                                 navigator?.push(SharedScreen.MangaView(it))
                             },

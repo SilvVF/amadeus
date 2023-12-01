@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,14 +37,12 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.explore.composables.SearchItemsPagingList
 import io.silv.explore.composables.TrendingMangaList
 import io.silv.explore.composables.recentMangaList
-import io.silv.explore.composables.seasonalMangaLists
 import io.silv.model.SavableManga
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.PullRefresh
 import io.silv.ui.SearchTopAppBar
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.coroutines.flow.StateFlow
 
 
 class ExploreScreen: Screen {
@@ -53,16 +53,14 @@ class ExploreScreen: Screen {
 
         val sm = getScreenModel<ExploreScreenModel>()
 
-        val recentMangaItems = sm.recentMangaPagingFlow.collectAsLazyPagingItems()
-        val popularMangaItems = sm.popularMangaPagingFlow.collectAsLazyPagingItems()
-        val searchMangaState = sm.searchMangaPagingFlow.collectAsLazyPagingItems()
-        val seasonalMangaState by sm.seasonalMangaUiState.collectAsStateWithLifecycle()
-        val refreshingSeasonal by sm.refreshingSeasonal.collectAsStateWithLifecycle()
+        val recentPagingFlowFlow by sm.recentMangaPagingFlow.collectAsStateWithLifecycle()
+        val popularPagingFlowFlow by sm.popularMangaPagingFlow.collectAsStateWithLifecycle()
+        val searchPagingFlowFlow by sm.searchMangaPagingFlow.collectAsStateWithLifecycle()
+
+//        val seasonalMangaState by sm.seasonalMangaUiState.collectAsStateWithLifecycle()
+//        val refreshingSeasonal by sm.refreshingSeasonal.collectAsStateWithLifecycle()
         val searchQuery by sm.searchQuery.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.current
-        val recentListState = rememberLazyListState()
-
-        val paging by sm.pagingFlowFlow.collectAsStateWithLifecycle()
 
         var searching by rememberSaveable {
             mutableStateOf(false)
@@ -70,7 +68,6 @@ class ExploreScreen: Screen {
 
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState())
 
-        val pagingData = paging.collectAsLazyPagingItems()
 
         Scaffold(
             topBar = {
@@ -102,7 +99,7 @@ class ExploreScreen: Screen {
                     if (it) {
                         SearchItemsPagingList(
                             modifier = Modifier.fillMaxSize(),
-                            items = searchMangaState,
+                            items = searchPagingFlowFlow.collectAsLazyPagingItems(),
                             onMangaClick = { manga ->
                                 navigator?.push(
                                     SharedScreen.MangaView(manga)
@@ -113,6 +110,10 @@ class ExploreScreen: Screen {
                             },
                         )
                     } else {
+
+                        val recentMangaItems = recentPagingFlowFlow.collectAsLazyPagingItems()
+                        val popularMangaItems = popularPagingFlowFlow.collectAsLazyPagingItems()
+
                         PullRefresh(
                             refreshing = recentMangaItems.loadState.refresh is LoadState.Loading
                                     && popularMangaItems.loadState.refresh == LoadState.Loading,
@@ -126,10 +127,7 @@ class ExploreScreen: Screen {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f),
-                                recentMangaLazyListState = recentListState,
-                                recentMangaList = pagingData,
-                                seasonalMangaList = seasonalMangaState,
-                                seasonalRefreshing = refreshingSeasonal,
+                                recentMangaList = recentMangaItems,
                                 onBookmarkClick = sm::bookmarkManga,
                                 popularMangaList = popularMangaItems
                             )
@@ -144,29 +142,22 @@ class ExploreScreen: Screen {
 @Composable
 fun BrowseMangaContent(
     modifier: Modifier,
-    recentMangaLazyListState: LazyListState,
-    recentMangaList: LazyPagingItems<StateFlow<SavableManga>>,
-    seasonalMangaList: SeasonalMangaUiState,
-    seasonalRefreshing: Boolean,
+    gridState: LazyGridState = rememberLazyGridState(),
+    recentMangaList: LazyPagingItems<SavableManga>,
     popularMangaList: LazyPagingItems<SavableManga>,
     onBookmarkClick: (mangaId: String) -> Unit
 ) {
     val space = LocalSpacing.current
     val navigator = LocalNavigator.current
 
-    LazyColumn(
+    LazyVerticalGrid(
         modifier = modifier,
-        state = recentMangaLazyListState,
+        state = gridState,
+        columns = GridCells.Fixed(2)
     ) {
-        seasonalMangaLists(
-            refreshingSeasonal = seasonalRefreshing,
-            seasonalMangaState = seasonalMangaList,
-            onBookmarkClick = {
-                onBookmarkClick(it.id)
-            }
-        )
         item(
-            key = "trending-tag"
+            key = "trending-tag",
+            span = { GridItemSpan(2) }
         ) {
             Text(
                 text = "Trending",
@@ -175,7 +166,8 @@ fun BrowseMangaContent(
             )
         }
         item(
-            key = "trending-manga-list"
+            key = "trending-manga-list",
+            span = { GridItemSpan(2) }
         ) {
             TrendingMangaList(
                 manga = popularMangaList,
@@ -185,7 +177,8 @@ fun BrowseMangaContent(
             )
         }
         item(
-            key = "recently-update-tag"
+            key = "recently-update-tag",
+            span = { GridItemSpan(2) }
         ) {
             Text(
                 text = "Recently Updated",

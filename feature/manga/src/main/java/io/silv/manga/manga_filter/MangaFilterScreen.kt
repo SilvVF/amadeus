@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -45,6 +46,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.common.model.TimePeriod
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
+import io.silv.ui.CenterBox
 import io.silv.ui.MangaPager
 import io.silv.ui.header
 import io.silv.ui.theme.LocalSpacing
@@ -67,7 +69,9 @@ class MangaFilterScreen(
         val space = LocalSpacing.current
         val timePeriod by sm.timePeriod.collectAsStateWithLifecycle()
         val yearlyItemsState by sm.yearlyFilteredUiState.collectAsStateWithLifecycle()
-        val timePeriodItems = sm.timePeriodFilteredPagingFlow.collectAsLazyPagingItems()
+
+        val timePeriodPagingFlow by sm.timePeriodFilteredPagingFlow.collectAsStateWithLifecycle()
+        val timePeriodItems = timePeriodPagingFlow.collectAsLazyPagingItems()
 
         LaunchedEffect(Unit) {
             sm.updateTagId(tagId, tag)
@@ -177,6 +181,7 @@ class MangaFilterScreen(
                                 manga = manga,
                                 modifier = Modifier
                                     .padding(space.large)
+                                    .height((LocalConfiguration.current.screenHeightDp / 2.6f).dp)
                                     .clickable {
                                         navigator?.push(SharedScreen.MangaView(manga))
                                     },
@@ -193,14 +198,20 @@ class MangaFilterScreen(
                     }
                     if (timePeriodItems.loadState.append == LoadState.Loading) {
                         header {
-                            io.silv.ui.CenterBox(Modifier.fillMaxWidth().padding(space.med)) {
+                            CenterBox(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(space.med)) {
                                 CircularProgressIndicator()
                             }
                         }
                     }
                     if (timePeriodItems.loadState.append is LoadState.Error || timePeriodItems.loadState.refresh is LoadState.Error) {
                         header {
-                            io.silv.ui.CenterBox(Modifier.fillMaxWidth().padding(space.med)) {
+                            CenterBox(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(space.med)) {
                                 Button(
                                     onClick = { timePeriodItems.retry() }
                                 ) {

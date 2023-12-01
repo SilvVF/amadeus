@@ -4,7 +4,7 @@ import io.silv.common.model.TimePeriod
 import io.silv.common.time.timeStringMinus
 import io.silv.network.model.LocalizedString
 import io.silv.network.model.manga.Manga
-import java.time.Duration
+import kotlin.time.Duration.Companion.days
 
 fun coverArtUrl(
     fileName: String?,
@@ -13,15 +13,13 @@ fun coverArtUrl(
 
 fun TimePeriod.timeString(): String? {
     return timeStringMinus(
-        Duration.ofDays(
             when (this) {
-                TimePeriod.SixMonths -> 6 * 30
-                TimePeriod.ThreeMonths ->  3 * 30
-                TimePeriod.LastMonth -> 30
-                TimePeriod.OneWeek -> 7
+                TimePeriod.SixMonths -> (6 * 30).days
+                TimePeriod.ThreeMonths ->  (3 * 30).days
+                TimePeriod.LastMonth -> 30.days
+                TimePeriod.OneWeek -> 7.days
                 else -> return null
             }
-        )
     )
 }
 
@@ -32,6 +30,7 @@ fun coverArtUrl(
         .find { it.type == "cover_art" }
         ?.attributes
         ?.fileName
+        ?: ""
 
     return "https://uploads.mangadex.org/covers/${manga.id}/$fileName"
 }

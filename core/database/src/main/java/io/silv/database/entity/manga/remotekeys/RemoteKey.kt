@@ -15,10 +15,15 @@ import io.silv.database.entity.manga.SourceMangaResource
         onDelete = ForeignKey.CASCADE
     )]
 )
-data class FilteredRemoteKey(
+data class RemoteKey(
+
     @ColumnInfo("manga_id", index = true)
     val mangaId: String,
+
     val offset: Int,
+
+    @ColumnInfo(name = "query_id", index = true)
+    val queryId: String,
 
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,

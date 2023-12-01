@@ -2,13 +2,11 @@ package io.silv.database.dao.remotekeys
 
 import androidx.room.Dao
 import androidx.room.Delete
-import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Relation
 import androidx.room.Transaction
-import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.database.dao.SeasonalKeyWithSourceManga
 import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
 import kotlinx.coroutines.flow.Flow
 
@@ -44,15 +42,3 @@ interface SeasonalKeysDao {
     )
     suspend fun delete(mangaId: String, seasonId: String)
 }
-
-data class SeasonalKeyWithSourceManga(
-
-    @Embedded
-    val key: SeasonalRemoteKey,
-
-    @Relation(
-        parentColumn = "manga_id",
-        entityColumn = "id"
-    )
-    val manga: SourceMangaResource
-)

@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Transaction
 import io.silv.database.entity.list.SeasonalListEntity
+import io.silv.database.entity.manga.SourceMangaResource
 import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
 import kotlinx.coroutines.flow.Flow
 
@@ -29,18 +30,29 @@ interface SeasonalListDao {
 
     @Transaction
     @Query("SELECT * FROM SeasonalListEntity")
-    fun observeSeasonListWithManga(): Flow<List<SeasonalListWithKeyWithManga>>
+    fun observeSeasonListWithManga(): Flow<List<SeasonalListAndKeyAndManga>>
 }
 
-data class SeasonalListWithKeyWithManga(
+class SeasonalListAndKeyAndManga(
 
     @Embedded
     val list: SeasonalListEntity,
 
     @Relation(
         parentColumn = "id",
-        entityColumn = "season_id"
+        entityColumn = "season_id",
+        entity = SeasonalRemoteKey::class
     )
-    val keys: List<SeasonalRemoteKey>
+    val manga: List<SeasonalKeyWithSourceManga> = emptyList()
 )
+data class SeasonalKeyWithSourceManga(
 
+    @Embedded
+    val key: SeasonalRemoteKey,
+
+    @Relation(
+        parentColumn = "manga_id",
+        entityColumn = "id"
+    )
+    val manga: SourceMangaResource,
+)

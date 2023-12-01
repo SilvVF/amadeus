@@ -1,6 +1,5 @@
 package io.silv.data.manga
 
-import android.util.Log
 import androidx.room.withTransaction
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
@@ -19,7 +18,6 @@ import io.silv.network.requests.MangaRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -41,12 +39,11 @@ internal class SeasonalMangaRepositoryImpl(
     }
 
     override fun getSeasonalLists(): Flow<List<Pair<SeasonalListEntity, List<SourceMangaResource>>>> {
-        return seasonalListDao.observeSeasonListWithManga().map { seasonalListWithKeyWithMangas ->
-            seasonalListWithKeyWithMangas.map { lwkwm ->
-               lwkwm.list to sourceMangaDao.selectByIds(lwkwm.keys.map { it.mangaId })
+        return seasonalListDao.observeSeasonListWithManga().map { lists ->
+            lists.map { listWithKeys ->
+                listWithKeys.list to listWithKeys.manga.map { it.manga }
             }
         }
-            .onEach { Log.d("Seasonal", it.toString()) }
     }
 
 
@@ -58,7 +55,7 @@ internal class SeasonalMangaRepositoryImpl(
         else -> null
     }
 
-    private suspend fun fetchChuncked(seasonalLists: List<SeasonInfo>): List<Manga> {
+    private suspend fun fetchChunked(seasonalLists: List<SeasonInfo>): List<Manga> {
        return seasonalLists
            .asSequence()
             .map { (_, _, data) ->
@@ -89,7 +86,7 @@ internal class SeasonalMangaRepositoryImpl(
     ) {
         withContext(dispatchers.io) {
 
-            val response = fetchChuncked(seasonalLists)
+            val response = fetchChunked(seasonalLists)
 
             db.withTransaction {
 

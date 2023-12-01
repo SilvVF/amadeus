@@ -57,9 +57,7 @@ class ExploreScreen: Screen {
         val popularPagingFlowFlow by sm.popularMangaPagingFlow.collectAsStateWithLifecycle()
         val searchPagingFlowFlow by sm.searchMangaPagingFlow.collectAsStateWithLifecycle()
 
-//        val seasonalMangaState by sm.seasonalMangaUiState.collectAsStateWithLifecycle()
-//        val refreshingSeasonal by sm.refreshingSeasonal.collectAsStateWithLifecycle()
-        val searchQuery by sm.searchQuery.collectAsStateWithLifecycle()
+        val state by sm.state.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.current
 
         var searching by rememberSaveable {
@@ -79,7 +77,7 @@ class ExploreScreen: Screen {
                     navigationIcon = Icons.Filled.KeyboardArrowLeft,
                     onNavigationIconClicked = { searching = false },
                     actions = {},
-                    searchText = searchQuery,
+                    searchText = state.searchQuery,
                     showTextField = searching,
                     onSearchChanged = {
                         searching = it

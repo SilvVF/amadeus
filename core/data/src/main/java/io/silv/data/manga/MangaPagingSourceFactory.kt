@@ -47,7 +47,9 @@ class MangaPagingSourceFactory(
             remoteMediator = when (type) {
                 PagedType.Latest -> createMediator(LATEST_MANGA_QUERY, latestMangaRequest)
                 PagedType.Popular -> createMediator(POPULAR_MANGA_QUERY, popularMangaRequest)
-                is PagedType.Query -> createMediator(FILTER_MANGA_QUERY, MangaRequest())
+                is PagedType.Query -> createMediator(FILTER_MANGA_QUERY, MangaRequest(
+                    title = type.filters.query
+                ))
                 is PagedType.Period -> createMediator(
                     TIME_PERIOD_MANGA_QUERY,
                     MangaRequest(

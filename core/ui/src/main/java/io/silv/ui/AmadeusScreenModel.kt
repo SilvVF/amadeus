@@ -3,11 +3,14 @@ package io.silv.ui
 import android.annotation.SuppressLint
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.ScreenModelStore
+import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +25,31 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
 
+abstract class EventStateScreenModel<EVENT, STATE>(initialState: STATE): StateScreenModel<STATE>(initialState) {
+
+    protected val mutableEvents = Channel<EVENT>()
+
+    val events = mutableEvents.receiveAsFlow()
+
+    protected fun <T> Flow<T>.stateInUi(
+        initialValue: T
+    ) = this.stateIn(
+        screenModelScope,
+        SharingStarted.WhileSubscribed(5_000L),
+        initialValue
+    )
+}
+
+val ScreenModel.ioCoroutineScope: CoroutineScope
+    get() = ScreenModelStore.getOrPutDependency(
+        this,
+        name = "ScreenModelIoCoroutineScope",
+        factory = { key ->
+            CoroutineScope(Dispatchers.IO + SupervisorJob()) + CoroutineName(key)
+        },
+        onDispose = { scope -> scope.cancel() }
+    )
+
 abstract class EventScreenModel<EVENT>: ScreenModel {
 
     protected val mutableEvents = Channel<EVENT>()
@@ -32,20 +60,16 @@ abstract class EventScreenModel<EVENT>: ScreenModel {
         initialValue: T
     ) = this.stateIn(
         screenModelScope,
-        SharingStarted.WhileSubscribed(5000),
+        SharingStarted.WhileSubscribed(5_000L),
         initialValue
     )
-
-    val ioCoroutineScope: CoroutineScope
-        get() = ScreenModelStore.getOrPutDependency(
-            this,
-            name = "ScreenModelIoCoroutineScope",
-            factory = { key ->
-                CoroutineScope(Dispatchers.IO + SupervisorJob()) + CoroutineName(key)
-            },
-            onDispose = { scope -> scope.cancel() }
-        )
 }
+
+@Composable
+fun <STATE> StateScreenModel<STATE>.collectAsStateWithLifeCycle(): State<STATE> {
+    return state.collectAsStateWithLifecycle()
+}
+
 
 /**
  * Observe [AmadeusScreenModel.events] in a Compose [LaunchedEffect].

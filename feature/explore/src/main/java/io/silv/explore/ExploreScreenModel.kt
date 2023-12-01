@@ -1,5 +1,7 @@
 package io.silv.explore
 
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
@@ -9,11 +11,14 @@ import io.silv.data.manga.SavedMangaRepository
 import io.silv.data.manga.SeasonalMangaRepository
 import io.silv.domain.SubscribeToPagingData
 import io.silv.sync.SyncManager
-import io.silv.ui.EventScreenModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import io.silv.ui.EventStateScreenModel
+import io.silv.ui.ioCoroutineScope
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -22,23 +27,46 @@ class ExploreScreenModel(
     private val subscribeToPagingData: SubscribeToPagingData,
     private val savedMangaRepository: SavedMangaRepository,
     private val seasonalMangaSyncManager: SyncManager,
-): EventScreenModel<ExploreEvent>() {
+): EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState()) {
 
-    private val mutableSearchQuery = MutableStateFlow("")
-    val searchQuery = mutableSearchQuery.asStateFlow()
-
-    val refreshingSeasonal = seasonalMangaSyncManager.isSyncing.stateInUi(false)
-
-    private val forceSearchFlow = MutableStateFlow(false)
-    private var startFlag = false
-
-    fun startSearching() {
-        startFlag = true
-        forceSearchFlow.update { !it }
+    init {
+        screenModelScope.launch {
+            seasonalMangaSyncManager.isSyncing.collect { refreshing ->
+                mutableState.update { state ->
+                    state.copy(
+                        refreshingSeasonal = refreshing
+                    )
+                }
+            }
+        }
     }
 
+    fun startSearching() {
+        mutableState.update { state ->
+            state.copy(
+                forceSearch = true
+            )
+        }
+    }
+
+    @OptIn(FlowPreview::class)
+    val searchFlow = state.map { it.forceSearch to it.searchQuery }
+        .debounce { (skip, _) ->
+            if (skip) 0L else 1000L
+        }
+        .map { (_, searchQuery) -> searchQuery }
+        .distinctUntilChanged()
+        .onEach {
+            mutableState.update {state ->
+                state.copy(
+                    forceSearch = false
+                )
+            }
+        }
+        .stateInUi(state.value.searchQuery)
+
     val searchMangaPagingFlow = subscribeToPagingData(
-        typeFlow = flowOf(PagedType.Query(QueryFilters(""))),
+        typeFlow =  searchFlow.map { query -> PagedType.Query(QueryFilters(query = query)) },
         config = PagingConfig(30),
         scope = ioCoroutineScope
     )
@@ -66,7 +94,11 @@ class ExploreScreenModel(
 
 
     fun updateSearchQuery(query: String) {
-        mutableSearchQuery.update { query }
+        mutableState.update {state ->
+            state.copy(
+                searchQuery = query
+            )
+        }
     }
 
     fun bookmarkManga(mangaId: String) {
@@ -82,4 +114,10 @@ class ExploreScreenModel(
     }
 }
 
-
+@Immutable
+@Stable
+data class ExploreState(
+    val searchQuery: String = "",
+    val forceSearch: Boolean = false,
+    val refreshingSeasonal: Boolean = false,
+)

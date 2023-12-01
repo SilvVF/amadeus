@@ -20,6 +20,7 @@ import io.silv.model.DomainAuthor
 import io.silv.model.DomainTag
 import io.silv.network.requests.MangaRequest
 import io.silv.ui.EventScreenModel
+import io.silv.ui.ioCoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -14,6 +14,7 @@ import io.silv.data.manga.SavedMangaRepository
 import io.silv.domain.SubscribeToPagingData
 import io.silv.model.SavableManga
 import io.silv.ui.EventScreenModel
+import io.silv.ui.ioCoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

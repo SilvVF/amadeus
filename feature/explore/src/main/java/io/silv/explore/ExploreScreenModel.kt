@@ -7,16 +7,25 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.common.model.PagedType
 import io.silv.common.model.QueryFilters
+import io.silv.common.model.Season
 import io.silv.data.manga.SavedMangaRepository
 import io.silv.data.manga.SeasonalMangaRepository
 import io.silv.domain.SubscribeToPagingData
+import io.silv.domain.SubscribeToSeasonalLists
+import io.silv.model.DomainSeasonalList
+import io.silv.model.SavableManga
 import io.silv.sync.SyncManager
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ioCoroutineScope
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -26,19 +35,19 @@ class ExploreScreenModel(
     seasonalMangaRepository: SeasonalMangaRepository,
     private val subscribeToPagingData: SubscribeToPagingData,
     private val savedMangaRepository: SavedMangaRepository,
+    private val subscribeToSeasonalLists: SubscribeToSeasonalLists,
     private val seasonalMangaSyncManager: SyncManager,
 ): EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState()) {
 
     init {
-        screenModelScope.launch {
-            seasonalMangaSyncManager.isSyncing.collect { refreshing ->
-                mutableState.update { state ->
-                    state.copy(
-                        refreshingSeasonal = refreshing
-                    )
-                }
+        seasonalMangaSyncManager.isSyncing.onEach { refreshing ->
+            mutableState.update { state ->
+                state.copy(
+                    refreshingSeasonal = refreshing
+                )
             }
         }
+            .launchIn(screenModelScope)
     }
 
     fun startSearching() {
@@ -49,6 +58,14 @@ class ExploreScreenModel(
         }
     }
 
+    val seasonLists = subscribeToSeasonalLists
+        .getLists(ioCoroutineScope)
+        .map { lists ->
+            lists.map(::toUi).toImmutableList()
+        }
+        .stateInUi(persistentListOf())
+
+
     @OptIn(FlowPreview::class)
     val searchFlow = state.map { it.forceSearch to it.searchQuery }
         .debounce { (skip, _) ->
@@ -57,7 +74,7 @@ class ExploreScreenModel(
         .map { (_, searchQuery) -> searchQuery }
         .distinctUntilChanged()
         .onEach {
-            mutableState.update {state ->
+            mutableState.update { state ->
                 state.copy(
                     forceSearch = false
                 )
@@ -113,6 +130,19 @@ class ExploreScreenModel(
         }
     }
 }
+
+fun toUi(list: DomainSeasonalList): UiSeasonalList {
+    return UiSeasonalList(list.id, list.season, list.year, list.mangas)
+}
+
+@Immutable
+@Stable
+data class UiSeasonalList(
+    val id: String,
+    val season: Season,
+    val year: Int,
+    val mangas: ImmutableList<StateFlow<SavableManga>>
+)
 
 @Immutable
 @Stable

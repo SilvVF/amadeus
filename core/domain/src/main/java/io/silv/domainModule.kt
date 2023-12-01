@@ -7,6 +7,7 @@ import io.silv.domain.GetMangaStatisticsById
 import io.silv.domain.GetQueryPagingData
 import io.silv.domain.GetSavedMangaWithChaptersList
 import io.silv.domain.SubscribeToPagingData
+import io.silv.domain.SubscribeToSeasonalLists
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
@@ -25,4 +26,6 @@ val domainModule = module {
     factoryOf(::GetQueryPagingData)
 
     factoryOf(::SubscribeToPagingData)
+
+    factoryOf(::SubscribeToSeasonalLists)
 }

@@ -26,6 +26,25 @@ suspend inline fun <T, R> Iterable<T>.pmap(
     }
         .awaitAll()
 }
+
+@OptIn(ExperimentalContracts::class)
+suspend inline fun <T, R> Sequence<T>.pmap(
+    crossinline transform: suspend (T) -> R
+): List<R> {
+    contract { callsInPlace(transform) }
+    val list = this
+    return buildList {
+        coroutineScope {
+            for (item in list) {
+                add(
+                    async { transform(item) }
+                )
+            }
+        }
+    }
+        .awaitAll()
+}
+
 //@OptIn(ExperimentalContracts::class)
 //suspend inline fun <T, R> Array<T>.pmapIndexed(
 //    crossinline transform: suspend (Int, T) -> R

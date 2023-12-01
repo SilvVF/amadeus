@@ -47,7 +47,6 @@ import io.silv.common.model.TimePeriod
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.CenterBox
-import io.silv.ui.MangaPager
 import io.silv.ui.header
 import io.silv.ui.theme.LocalSpacing
 import org.koin.core.parameter.parametersOf
@@ -128,18 +127,7 @@ class MangaFilterScreen(
                                     .height(240.dp)
                                     .fillMaxWidth()
                             )
-                            is YearlyFilteredUiState.Success -> MangaPager(
-                                mangaList = yearlyItemsState.resources,
-                                onMangaClick = {
-                                    navigator?.push(SharedScreen.MangaView(it))
-                                },
-                                onBookmarkClick = {
-                                    sm.bookmarkManga(it.id)
-                                },
-                                onTagClick = { name, tag ->
-                                    sm.updateTagId(tag, name)
-                                },
-                            )
+                            is YearlyFilteredUiState.Success -> {}
                         }
                         Text(
                             text = "Popularity",

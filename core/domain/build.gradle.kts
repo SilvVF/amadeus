@@ -40,6 +40,10 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:common"))
 
+
+    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.6")
+
+
     implementation(libs.flow.combinetuple.kt)
     implementation(libs.tuples.kt)
 

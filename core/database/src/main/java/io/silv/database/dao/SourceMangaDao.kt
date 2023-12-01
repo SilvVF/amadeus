@@ -28,6 +28,9 @@ interface SourceMangaDao {
     suspend fun selectById(id: String): SourceMangaResource?
 
     @Query("SELECT * FROM SourceMangaResource WHERE id in (:ids)")
+    suspend fun selectByIds(ids: List<String>): List<SourceMangaResource>
+
+    @Query("SELECT * FROM SourceMangaResource WHERE id in (:ids)")
     fun observeByIds(ids: List<String>): Flow<List<SourceMangaResource>>
 
     @Query("SELECT * FROM SourceMangaResource WHERE id = :id LIMIT 1")

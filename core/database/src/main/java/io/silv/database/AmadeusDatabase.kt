@@ -11,7 +11,7 @@ import io.silv.database.dao.SourceMangaDao
 import io.silv.database.dao.TagDao
 import io.silv.database.dao.remotekeys.FilteredYearlyRemoteKeysDao
 import io.silv.database.dao.remotekeys.RemoteKeyDao
-import io.silv.database.dao.remotekeys.SeasonalRemoteKeysDao
+import io.silv.database.dao.remotekeys.SeasonalKeysDao
 import io.silv.database.entity.chapter.ChapterEntity
 import io.silv.database.entity.list.SeasonalListEntity
 import io.silv.database.entity.list.TagEntity
@@ -45,8 +45,7 @@ abstract class AmadeusDatabase: RoomDatabase() {
 
     abstract fun sourceMangaDao(): SourceMangaDao
 
-    abstract fun seasonalRemoteKeysDao(): SeasonalRemoteKeysDao
-
+    abstract fun seasonalRemoteKeysDao(): SeasonalKeysDao
 
     abstract fun filteredYearlyRemoteKeysDao(): FilteredYearlyRemoteKeysDao
 

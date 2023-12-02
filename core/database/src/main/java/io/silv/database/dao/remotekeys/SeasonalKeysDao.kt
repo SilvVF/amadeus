@@ -19,6 +19,9 @@ interface SeasonalKeysDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(key: SeasonalRemoteKey)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(keys: List<SeasonalRemoteKey>)
+
     @Query("DELETE FROM SeasonalRemoteKey")
     suspend fun clear()
 

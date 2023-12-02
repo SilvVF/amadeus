@@ -6,7 +6,5 @@ import kotlinx.coroutines.flow.Flow
 
 interface FilteredYearlyMangaRepository {
 
-    suspend fun refresh()
-
-    fun collectYearlyTopByTagId(tagId: String): Flow<Resource<List<SourceMangaResource>>>
+    fun getYearlyTopMangaByTagId(tagId: String): Flow<Resource<List<SourceMangaResource>>>
 }

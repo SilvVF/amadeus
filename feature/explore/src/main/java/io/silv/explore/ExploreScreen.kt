@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,7 +51,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -67,6 +65,7 @@ import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.AsyncImage
 import io.silv.explore.composables.SearchItemsPagingList
+import io.silv.explore.composables.TrendingMangaList
 import io.silv.explore.composables.recentMangaList
 import io.silv.model.SavableManga
 import io.silv.navigation.SharedScreen
@@ -248,17 +247,17 @@ fun BrowseMangaContent(
                 modifier = Modifier.padding(space.med)
             )
         }
-//        item(
-//            key = "trending-manga-list",
-//            span = { GridItemSpan(2) }
-//        ) {
-//            TrendingMangaList(
-//                manga = popularMangaList,
-//                onBookmarkClick = {
-//                    onBookmarkClick(it.id)
-//                }
-//            )
-//        }
+        item(
+            key = "trending-manga-list",
+            span = { GridItemSpan(2) }
+        ) {
+            TrendingMangaList(
+                manga = popularMangaList,
+                onBookmarkClick = {
+                    onBookmarkClick(it.id)
+                }
+            )
+        }
         item(
             key = "recently-update-tag",
             span = { GridItemSpan(2) }
@@ -300,7 +299,6 @@ fun SeasonalMangaPager(
     onTagClick: (name: String, id: String) -> Unit,
 ) {
     val space = LocalSpacing.current
-    val context = LocalContext.current
 
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -330,8 +328,6 @@ fun SeasonalMangaPager(
                 },
             url = manga.coverArt
         ) {
-
-            val lazyListState = rememberLazyListState()
 
             Column {
                 Row(

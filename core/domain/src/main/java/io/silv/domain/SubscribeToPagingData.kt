@@ -8,8 +8,6 @@ import androidx.paging.map
 import io.silv.common.model.PagedType
 import io.silv.data.manga.MangaPagingSourceFactory
 import io.silv.data.manga.SavedMangaRepository
-import io.silv.data.mappers.toSourceManga
-import io.silv.database.dao.SourceMangaDao
 import io.silv.model.SavableManga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -18,40 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-
-class GetQueryPagingData(
-    private val queryPagingSourceRepo: MangaPagingSourceFactory,
-    private val sourceMangaDao: SourceMangaDao,
-) {
-    operator fun invoke(
-        config: PagingConfig,
-        typeFlow: Flow<PagedType>,
-        scope: CoroutineScope
-    ): StateFlow<Flow<PagingData<StateFlow<SavableManga>>>> {
-        return typeFlow.distinctUntilChanged()
-            .map { type ->
-                queryPagingSourceRepo.memoryQueryPager(config, type)
-                    .flow.map { pagingData ->
-                        pagingData.map { manga ->
-
-                            sourceMangaDao.insert(manga.toSourceManga())
-
-                            sourceMangaDao.observeById(manga.id)
-                                .filterNotNull()
-                                .map {
-                                    SavableManga(it, null)
-                                }
-                                .stateIn(scope)
-                        }
-                    }
-                    .cachedIn(scope)
-            }
-            .stateIn(scope, SharingStarted.Lazily, emptyFlow())
-    }
-}
 
 
 class SubscribeToPagingData(
@@ -67,11 +33,11 @@ class SubscribeToPagingData(
         return typeFlow.distinctUntilChanged()
             .map { type ->
                 combine(
-                    pagingFactory.pager(type, config).flow,
+                    pagingFactory.pager(config, type).flow,
                     savedMangaRepository.getSavedMangas()
                 ) { pagingData, saved ->
                     Log.d("SubscribeToPagingData", "$type $pagingData")
-                        pagingData.map { (_, manga) ->
+                        pagingData.map { manga ->
                            // Log.d("SubscribeToPagingData", "$manga")
                             SavableManga(
                                 manga,

@@ -23,6 +23,7 @@ val daosModule = module {
         get<AmadeusDatabase>().seasonalListDao()
     }
 
+
     single {
         get<AmadeusDatabase>().tagDao()
     }

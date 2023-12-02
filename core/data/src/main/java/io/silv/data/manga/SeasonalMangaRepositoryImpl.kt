@@ -80,33 +80,32 @@ internal class SeasonalMangaRepositoryImpl(
 
             val response = fetchChunked(seasonalLists)
 
+            seasonalListDao.clearNonMathcingIds(seasonalLists.map { it.userList.id })
+
+            seasonalLists.forEach { (season, year, userList) ->
+                seasonalListDao.upsertSeasonalList(
+                    SeasonalListEntity(
+                        id = userList.id,
+                        year = year,
+                        season = season,)
+                )
+            }
+
             db.withTransaction {
+                sourceMangaDao.insertAll(response.map { it.toSourceManga() })
 
-                seasonalListDao.clearNonMathcingIds(seasonalLists.map { it.userList.id })
-
-                seasonalLists.forEach { (season, year, userList) ->
-                    seasonalListDao.upsertSeasonalList(
-                        SeasonalListEntity(
-                            id = userList.id,
-                            year = year,
-                            season = season,
-                        )
-                    )
-                }
-
-                for (manga in response) {
-                    sourceMangaDao.insert(manga.toSourceManga())
-                    keyDao.insert(
+                keyDao.insertAll(
+                    response.map {
                         SeasonalRemoteKey(
-                            mangaId = manga.id,
+                            mangaId = it.id,
                             seasonId = seasonalLists.find { list ->
                                 list.userList.relationships
-                                    .any { r -> r.type == "manga" && r.id == manga.id }
+                                    .any { r -> r.type == "manga" && r.id == it.id }
 
                             }?.userList?.id!!,
                         )
-                    )
-                }
+                    }
+                )
             }
         }
     }

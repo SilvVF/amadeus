@@ -10,14 +10,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -25,28 +20,19 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.TopAppBarScrollBehavior
-import androidx.compose.material3.contentColorFor
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
@@ -86,7 +72,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         val showBar by LocalBottomBarVisibility.current
 
-                        TabNavigator(tab = ExploreTab) {
+                        TabNavigator(tab = ExploreTab, disposeNestedNavigators = true) {
                             Scaffold(
                                 bottomBar = {
                                     if (shouldShowBottomBar(windowSizeClass) && showBar) {
@@ -114,63 +100,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AmadeusScaffold(
-    modifier: Modifier = Modifier,
-    scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState()),
-    showBottomBar: Boolean = true,
-    topBar: @Composable () -> Unit = {},
-    snackbarHost: @Composable () -> Unit = {},
-    containerColor: Color = MaterialTheme.colorScheme.background,
-    contentColor: Color = contentColorFor(containerColor),
-    contentWindowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
-    floatingActionButton: @Composable () -> Unit = {},
-    floatingActionButtonPosition: FabPosition = FabPosition.End,
-    content: @Composable (PaddingValues) -> Unit
-) {
-    val windowSizeClass = LocalWindowSizeClass.current
-    var bottomBarVisibility by LocalBottomBarVisibility.current
-
-    LaunchedEffect(showBottomBar) {
-        bottomBarVisibility = showBottomBar
-    }
-
-    if (shouldShowBottomBar(windowSizeClass)) {
-        Scaffold(
-            topBar = {
-                topBar()
-            },
-            snackbarHost = snackbarHost,
-            contentColor = contentColor,
-            contentWindowInsets = contentWindowInsets,
-            modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            floatingActionButton = floatingActionButton,
-            floatingActionButtonPosition = floatingActionButtonPosition
-        ) {
-            content(it)
-        }
-    } else {
-        Row {
-            if (showBottomBar) {
-                AmadeusNavRail(visible = showBottomBar)
-            }
-            Scaffold(
-                topBar = {
-                    topBar()
-                },
-                snackbarHost = snackbarHost,
-                contentColor = contentColor,
-                contentWindowInsets = contentWindowInsets,
-                modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-                floatingActionButton = floatingActionButton,
-                floatingActionButtonPosition = floatingActionButtonPosition
-            ) {
-                content(it)
-            }
-        }
-    }
-}
 
 fun shouldShowBottomBar(windowSizeClass: WindowSizeClass?): Boolean {
     return (windowSizeClass?.widthSizeClass ?: return true) == WindowWidthSizeClass.Compact

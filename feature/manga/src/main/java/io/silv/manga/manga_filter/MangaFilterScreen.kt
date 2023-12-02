@@ -38,7 +38,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -48,7 +47,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -95,18 +93,16 @@ class MangaFilterScreen(
         val navigator = LocalNavigator.current
         val space = LocalSpacing.current
         val timePeriod by sm.timePeriod.collectAsStateWithLifecycle()
-        val yearlyItemsState by sm.yearlyFilteredUiState.collectAsStateWithLifecycle(YearlyFilteredUiState.Loading)
-
-        val timePeriodPagingFlow by sm.timePeriodFilteredPagingFlow.collectAsStateWithLifecycle()
-        val timePeriodItems = timePeriodPagingFlow.collectAsLazyPagingItems()
-
-        LaunchedEffect(Unit) {
-            sm.updateTagId(tagId, tag)
-        }
+        val yearlyItemsState by sm.state.collectAsStateWithLifecycle()
+        
 
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
             state = rememberTopAppBarState()
         )
+
+        val timePeriodPager by sm.timePeriodFilteredPagingFlow.collectAsStateWithLifecycle()
+
+        val timePeriodItems = timePeriodPager.collectAsLazyPagingItems()
 
         Scaffold(
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -197,16 +193,17 @@ class MangaFilterScreen(
                     contentType = timePeriodItems.itemContentType()
                 ) { i ->
 
-                    val manga = timePeriodItems[i] ?: return@items
+                    val manga = timePeriodItems[i]
 
-                    MangaListItem(
-                        manga = manga,
+                    manga?.let {
+                        MangaListItem(
+                            manga = manga,
                             modifier = Modifier
                                 .padding(space.large)
                                 .height((LocalConfiguration.current.screenHeightDp / 2.6f).dp)
                                 .clickable {
                                     navigator?.push(SharedScreen.MangaView(manga))
-                            },
+                                },
                             onTagClick = { name ->
                                 manga.tagToId[name]?.let {
                                     sm.updateTagId(it, name)
@@ -217,6 +214,20 @@ class MangaFilterScreen(
                             }
                         )
                     }
+                }
+                if (timePeriodItems.loadState.refresh == LoadState.Loading) {
+                    header {
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(space.med)) {
+                            AnimatedBoxShimmer(
+                                Modifier
+                                    .height(300.dp)
+                                    .fillMaxWidth())
+                        }
+                    }
+                }
                 if (timePeriodItems.loadState.append == LoadState.Loading) {
                     header {
                         CenterBox(
@@ -255,7 +266,6 @@ fun YearlyMangaPager(
     onTagClick: (name: String, id: String) -> Unit,
 ) {
     val space = LocalSpacing.current
-    val context = LocalContext.current
 
     val pagerState = rememberPagerState(
         initialPage = 0,

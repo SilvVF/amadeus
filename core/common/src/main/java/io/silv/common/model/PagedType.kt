@@ -6,10 +6,6 @@ sealed class PagedType {
     data class Query(
         val filters: QueryFilters
     ): PagedType()
-    data class Period(
-        val tagId: String,
-        val timePeriod: TimePeriod = TimePeriod.AllTime
-    ): PagedType()
 }
 
 data class QueryFilters(

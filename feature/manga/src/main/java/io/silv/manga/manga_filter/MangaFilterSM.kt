@@ -6,82 +6,77 @@ import androidx.compose.runtime.setValue
 import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.PagedType
+import io.silv.common.model.QueryFilters
+import io.silv.common.model.Resource
 import io.silv.common.model.TimePeriod
 import io.silv.data.manga.FilteredYearlyMangaRepository
 import io.silv.data.manga.SavedMangaRepository
 import io.silv.domain.SubscribeToPagingData
 import io.silv.model.SavableManga
-import io.silv.ui.EventScreenModel
-import io.silv.ui.ioCoroutineScope
+import io.silv.ui.EventStateScreenModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class MangaFilterSM(
-    filteredYearlyMangaRepository: FilteredYearlyMangaRepository,
-    private val subscribeToPagingData: SubscribeToPagingData,
-    tagId: String,
-    private val savedMangaRepository: SavedMangaRepository
-): EventScreenModel<MangaFilterEvent>() {
+    private val filteredYearlyMangaRepository: FilteredYearlyMangaRepository,
+    subscribeToPagingData: SubscribeToPagingData,
+    private val savedMangaRepository: SavedMangaRepository,
+    tagId: String
+): EventStateScreenModel<MangaFilterEvent, YearlyFilteredUiState>(YearlyFilteredUiState.Loading) {
 
     private val currentTagId = MutableStateFlow(tagId)
 
     var currentTag by mutableStateOf("")
         private set
 
-    fun updateTagId(id: String, name: String) {
-        currentTag = name
-        currentTagId.update { id }
-    }
-
-
     private val mutableTimePeriod = MutableStateFlow(TimePeriod.AllTime)
     val timePeriod = mutableTimePeriod.asStateFlow()
 
 
+    init {
+        currentTagId.flatMapLatest { tag ->
+            filteredYearlyMangaRepository.getYearlyTopMangaByTagId(tag)
+        }.onEach {
+            mutableState.value = when (val resource = it) {
+                is Resource.Failure -> YearlyFilteredUiState.Loading
+                Resource.Loading -> YearlyFilteredUiState.Loading
+                is Resource.Success -> YearlyFilteredUiState.Success(
+                    resource.result.map { SavableManga(it, null) }.toImmutableList()
+                )
+            }
+        }
+            .launchIn(screenModelScope)
+    }
+
+    fun updateTagId(id: String, name: String) {
+        screenModelScope.launch {
+            currentTag = name
+            currentTagId.emit(id)
+        }
+    }
+
+
+    private val scope = CoroutineScope(Dispatchers.IO)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     val timePeriodFilteredPagingFlow = subscribeToPagingData(
-        config = PagingConfig(
-            pageSize = 30,
-            prefetchDistance = 30,
-            initialLoadSize = 30,
-        ),
-        typeFlow = timePeriod.map { PagedType.Period(tagId, it) },
-        scope = ioCoroutineScope
+        PagingConfig(30, 30),
+        currentTagId.combine(timePeriod){ tag, time -> PagedType.Query(QueryFilters("",tag, time)) },
+        scope
     )
-
-
-
-//    @OptIn(ExperimentalCoroutinesApi::class)
-//    val yearlyManga = currentTagId.flatMapLatest {
-////        filteredYearlyMangaRepository.collectYearlyTopByTagId(it)
-//    }
-//        .stateInUi(Resource.Loading)
-
-    val yearlyFilteredUiState = flowOf<YearlyFilteredUiState>(YearlyFilteredUiState.Loading)
-//    val yearlyFilteredUiState = combine(
-//        //yearlyManga,
-//        emptyFlow(),
-//        savedMangaRepository.getSavedMangas()
-//    ) {  resource, saved ->
-////        when (resource) {
-////            is Resource.Failure -> YearlyFilteredUiState.Success(persistentListOf())
-////            Resource.Loading -> YearlyFilteredUiState.Loading
-////            is Resource.Success -> YearlyFilteredUiState.Success(
-////                resource.result.map { source ->
-////                    SavableManga(source, saved.find { source.id == it.id })
-////                }
-////                    .toImmutableList()
-////            )
-////        }
-//
-//    }
-//        .catch { it.printStackTrace() }
-//        .stateInUi(YearlyFilteredUiState.Loading)
 
 
     fun changeTimePeriod(timePeriod: TimePeriod) {
@@ -94,6 +89,11 @@ class MangaFilterSM(
         screenModelScope.launch {
             savedMangaRepository.bookmarkManga(id)
         }
+    }
+
+    override fun onDispose() {
+        super.onDispose()
+        scope.cancel()
     }
 }
 

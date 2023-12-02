@@ -26,6 +26,7 @@ val dataModule = module {
 
     factoryOf(::GetMangaResourcesById)
 
+
     includes(
         networkModule,
         databaseModule,

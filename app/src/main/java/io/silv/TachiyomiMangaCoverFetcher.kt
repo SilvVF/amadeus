@@ -18,10 +18,13 @@ import io.silv.amadeus.CoverCache
 import io.silv.database.entity.manga.SavedMangaEntity
 import io.silv.model.SavableManga
 import io.silv.network.model.manga.Manga
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import okhttp3.CacheControl
 import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.Request
 import okhttp3.Response
 import okio.Path.Companion.toOkioPath
@@ -31,7 +34,47 @@ import okio.sink
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
+import java.io.IOException
 import java.net.HttpURLConnection.HTTP_NOT_MODIFIED
+import kotlin.coroutines.resumeWithException
+
+// Based on https://github.com/gildor/kotlin-coroutines-okhttp
+@OptIn(ExperimentalCoroutinesApi::class)
+private suspend fun Call.await(callStack: Array<StackTraceElement>): Response {
+    return suspendCancellableCoroutine { continuation ->
+        val callback =
+            object : Callback {
+                override fun onResponse(call: Call, response: Response) {
+                    continuation.resume(response) {
+                        response.body?.close()
+                    }
+                }
+
+                override fun onFailure(call: Call, e: IOException) {
+                    // Don't bother with resuming the continuation if it is already cancelled.
+                    if (continuation.isCancelled) return
+                    val exception = IOException(e.message, e).apply { stackTrace = callStack }
+                    continuation.resumeWithException(exception)
+                }
+            }
+
+        enqueue(callback)
+
+        continuation.invokeOnCancellation {
+            try {
+                cancel()
+            } catch (ex: Throwable) {
+                // Ignore cancel exception
+            }
+        }
+    }
+}
+
+suspend fun Call.await(): Response {
+    val callStack = Exception().stackTrace.run { copyOfRange(1, size) }
+    return await(callStack)
+}
+
 
 /**
  * A [Fetcher] that fetches cover image for [Manga] object.
@@ -150,9 +193,10 @@ class MangaCoverFetcher(
         }
     }
 
+
     private suspend fun executeNetworkRequest(): Response {
         val client = callFactoryLazy.value
-        val response = client.newCall(newRequest()).execute()
+        val response = client.newCall(newRequest()).await()
         if (!response.isSuccessful && response.code != HTTP_NOT_MODIFIED) {
             response.close()
             throw HttpException(response)
@@ -296,7 +340,7 @@ class MangaCoverFetcher(
         private val diskCacheLazy: Lazy<DiskCache>,
     ) : Fetcher.Factory<MangaCover>, KoinComponent {
 
-        private val coverCache: CoverCache by inject<CoverCache>()
+        private val coverCache: CoverCache by inject()
 
         override fun create(data: MangaCover, options: Options, imageLoader: ImageLoader): Fetcher {
             return MangaCoverFetcher(

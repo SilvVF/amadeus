@@ -1,5 +1,6 @@
 package io.silv.domain
 
+import android.util.Log
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
@@ -52,6 +53,7 @@ class GetQueryPagingData(
     }
 }
 
+
 class SubscribeToPagingData(
     private val pagingFactory: MangaPagingSourceFactory,
     private val savedMangaRepository: SavedMangaRepository,
@@ -65,10 +67,12 @@ class SubscribeToPagingData(
         return typeFlow.distinctUntilChanged()
             .map { type ->
                 combine(
-                    pagingFactory.pager(type, config).flow.cachedIn(scope),
+                    pagingFactory.pager(type, config).flow,
                     savedMangaRepository.getSavedMangas()
                 ) { pagingData, saved ->
+                    Log.d("SubscribeToPagingData", "$type $pagingData")
                         pagingData.map { (_, manga) ->
+                           // Log.d("SubscribeToPagingData", "$manga")
                             SavableManga(
                                 manga,
                                 saved.find { it.id == manga.id }
@@ -76,6 +80,7 @@ class SubscribeToPagingData(
                         }
                     }
                     .cachedIn(scope)
+
             }
             .stateIn(scope, SharingStarted.Lazily, emptyFlow())
     }

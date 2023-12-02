@@ -25,6 +25,7 @@ import io.silv.manga.search.SearchScreen
 import io.silv.navigation.SharedScreen
 import io.silv.network.util.MangaDexApiLogger
 import io.silv.reader.MangaReaderScreen
+import io.silv.sync.Sync
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import okhttp3.OkHttpClient
@@ -75,7 +76,7 @@ class AmadeusApp: Application(), ImageLoaderFactory {
             }
         }
 
-       // Sync.init(this)
+       Sync.init(this)
     }
 
     private fun isLowRamDevice(context: Context): Boolean {

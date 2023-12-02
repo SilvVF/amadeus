@@ -15,10 +15,8 @@ import io.silv.network.MangaDexApi
 import io.silv.network.model.list.Data
 import io.silv.network.model.manga.Manga
 import io.silv.network.requests.MangaRequest
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
@@ -31,12 +29,6 @@ internal class SeasonalMangaRepositoryImpl(
     private val seasonalListDao = db.seasonalListDao()
     private val sourceMangaDao = db.sourceMangaDao()
     private val keyDao = db.seasonalRemoteKeysDao()
-
-    init {
-        CoroutineScope(dispatchers.io).launch {
-            sync()
-        }
-    }
 
     override fun getSeasonalLists(): Flow<List<Pair<SeasonalListEntity, List<SourceMangaResource>>>> {
         return seasonalListDao.observeSeasonListWithManga().map { lists ->

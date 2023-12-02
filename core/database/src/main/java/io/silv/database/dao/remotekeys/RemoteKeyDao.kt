@@ -21,6 +21,9 @@ interface RemoteKeyDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(key: RemoteKey)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(key: List<RemoteKey>)
+
     @Query("DELETE FROM RemoteKey")
     suspend fun clearAllKeys()
 

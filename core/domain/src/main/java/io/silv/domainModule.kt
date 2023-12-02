@@ -4,7 +4,6 @@ import io.silv.domain.CombineSourceMangaWithSaved
 import io.silv.domain.GetCombinedMangaResources
 import io.silv.domain.GetCombinedSavableMangaWithChapters
 import io.silv.domain.GetMangaStatisticsById
-import io.silv.domain.GetQueryPagingData
 import io.silv.domain.GetSavedMangaWithChaptersList
 import io.silv.domain.SubscribeToPagingData
 import io.silv.domain.SubscribeToSeasonalLists
@@ -22,8 +21,6 @@ val domainModule = module {
     factoryOf(::GetMangaStatisticsById)
 
     factoryOf(::CombineSourceMangaWithSaved)
-
-    factoryOf(::GetQueryPagingData)
 
     factoryOf(::SubscribeToPagingData)
 

@@ -67,7 +67,6 @@ import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.AsyncImage
 import io.silv.explore.composables.SearchItemsPagingList
-import io.silv.explore.composables.TrendingMangaList
 import io.silv.explore.composables.recentMangaList
 import io.silv.model.SavableManga
 import io.silv.navigation.SharedScreen
@@ -249,17 +248,17 @@ fun BrowseMangaContent(
                 modifier = Modifier.padding(space.med)
             )
         }
-        item(
-            key = "trending-manga-list",
-            span = { GridItemSpan(2) }
-        ) {
-            TrendingMangaList(
-                manga = popularMangaList,
-                onBookmarkClick = {
-                    onBookmarkClick(it.id)
-                }
-            )
-        }
+//        item(
+//            key = "trending-manga-list",
+//            span = { GridItemSpan(2) }
+//        ) {
+//            TrendingMangaList(
+//                manga = popularMangaList,
+//                onBookmarkClick = {
+//                    onBookmarkClick(it.id)
+//                }
+//            )
+//        }
         item(
             key = "recently-update-tag",
             span = { GridItemSpan(2) }

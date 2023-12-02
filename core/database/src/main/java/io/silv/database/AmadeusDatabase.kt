@@ -9,18 +9,18 @@ import io.silv.database.dao.SavedMangaDao
 import io.silv.database.dao.SeasonalListDao
 import io.silv.database.dao.SourceMangaDao
 import io.silv.database.dao.TagDao
-import io.silv.database.dao.remotekeys.FilteredYearlyRemoteKeysDao
 import io.silv.database.dao.remotekeys.RemoteKeyDao
 import io.silv.database.dao.remotekeys.SeasonalKeysDao
+import io.silv.database.dao.remotekeys.YearlyTopKeyDao
 import io.silv.database.entity.chapter.ChapterEntity
 import io.silv.database.entity.list.SeasonalListEntity
 import io.silv.database.entity.list.TagEntity
 import io.silv.database.entity.manga.MangaUpdateEntity
 import io.silv.database.entity.manga.SavedMangaEntity
 import io.silv.database.entity.manga.SourceMangaResource
-import io.silv.database.entity.manga.remotekeys.FilteredYearlyRemoteKey
 import io.silv.database.entity.manga.remotekeys.RemoteKey
 import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
+import io.silv.database.entity.manga.remotekeys.YearlyTopKey
 
 @Database(
     entities = [
@@ -28,7 +28,7 @@ import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
         SavedMangaEntity::class,
         SourceMangaResource::class,
         SeasonalRemoteKey::class,
-        FilteredYearlyRemoteKey::class,
+        YearlyTopKey::class,
         SeasonalListEntity::class,
         TagEntity::class,
         MangaUpdateEntity::class,
@@ -47,7 +47,7 @@ abstract class AmadeusDatabase: RoomDatabase() {
 
     abstract fun seasonalRemoteKeysDao(): SeasonalKeysDao
 
-    abstract fun filteredYearlyRemoteKeysDao(): FilteredYearlyRemoteKeysDao
+    abstract fun yearlyTopKeyDao(): YearlyTopKeyDao
 
     abstract fun seasonalListDao(): SeasonalListDao
 

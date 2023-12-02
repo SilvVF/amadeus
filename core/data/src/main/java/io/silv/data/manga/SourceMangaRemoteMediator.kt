@@ -5,7 +5,6 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
-import androidx.room.withTransaction
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.data.mappers.toSourceManga
 import io.silv.database.AmadeusDatabase
@@ -14,6 +13,8 @@ import io.silv.database.entity.manga.remotekeys.RemoteKey
 import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalPagingApi::class)
 class SourceMangaRemoteMediator(
@@ -32,50 +33,53 @@ class SourceMangaRemoteMediator(
     ): MediatorResult {
         Log.d("SourceMediator", "loading...")
         return suspendRunCatching {
-            val offset = when(loadType) {
-                LoadType.REFRESH -> 0
-                LoadType.PREPEND -> return@suspendRunCatching MediatorResult.Success(
-                    endOfPaginationReached = true
-                )
-                LoadType.APPEND -> {
-                    val lastItem = state.lastItemOrNull()
-                    lastItem?.key?.offset ?: 0
+            withContext(Dispatchers.IO) {
+
+                val offset = when (loadType) {
+                    LoadType.REFRESH -> 0
+                    LoadType.PREPEND -> return@withContext MediatorResult.Success(true)
+                    LoadType.APPEND -> {
+                        val lastItem = state.lastItemOrNull()
+                        lastItem?.key?.offset ?: 0
+                    }
                 }
-            }
 
-            val response = mangaDexApi.getMangaList(
-                mangaRequest.copy(
-                    offset = offset,
-                    limit = state.config.pageSize,
-                    includes = (mangaRequest.includes ?: emptyList()) + listOf("cover_art", "author", "artist")
+                val response = mangaDexApi.getMangaList(
+                    mangaRequest.copy(
+                        offset = offset,
+                        limit = state.config.pageSize,
+                        includes = (mangaRequest.includes ?: emptyList()) + listOf(
+                            "cover_art",
+                            "author",
+                            "artist"
+                        )
+                    )
                 )
-            ).getOrThrow()
+                    .getOrThrow()
 
-            Log.d("SourceMediator", "response items count: ${response.data.size}")
+                Log.d("SourceMediator", "$query response items count: ${response.data.size}")
 
-            db.withTransaction {
-                if(loadType == LoadType.REFRESH) {
+                if (loadType == LoadType.REFRESH) {
                     remoteKeysDao.clearByQuery(query)
                 }
-                response.data.forEachIndexed { i, manga ->
-                    Log.d("SourceMediator", "inserting manga ${manga.id}")
-                    mangaDao.insert(manga.toSourceManga())
-                    Log.d("SourceMediator", "inserting key manga_id ${manga.id} @offset ${offset + i}")
-                    remoteKeysDao.insert(
+                mangaDao.insertAll(response.data.map { it.toSourceManga() })
+
+                remoteKeysDao.insertAll(
+                    response.data.mapIndexed { i, manga ->
                         RemoteKey(
                             mangaId = manga.id,
                             offset = offset + i,
                             queryId = query
                         )
-                    )
-                }
+                    }
+                )
+
+                Log.d("SourceMediator", "end")
+
+                MediatorResult.Success(
+                    endOfPaginationReached = offset + response.data.size >= response.total
+                )
             }
-
-            Log.d("SourceMediator", "end")
-
-            MediatorResult.Success(
-                endOfPaginationReached = offset + response.data.size >= response.total
-            )
         }.getOrElse {
             Log.d("SourceMediator", "failed  ${it.stackTraceToString()}")
             MediatorResult.Error(it)

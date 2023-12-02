@@ -14,4 +14,6 @@ sealed class PagedType {
 
 data class QueryFilters(
     val query: String = "",
+    val tagId: String? = null ,
+    val timePeriod: TimePeriod = TimePeriod.AllTime
 )

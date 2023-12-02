@@ -84,19 +84,31 @@ class ExploreScreenModel(
 
     val searchMangaPagingFlow = subscribeToPagingData(
         typeFlow =  searchFlow.map { query -> PagedType.Query(QueryFilters(query = query)) },
-        config = PagingConfig(30),
+        config = PagingConfig(
+            pageSize = 30,
+            prefetchDistance = 30,
+            initialLoadSize = 30,
+        ),
         scope = ioCoroutineScope
     )
 
     val popularMangaPagingFlow = subscribeToPagingData(
         typeFlow = flowOf(PagedType.Popular),
-        config = PagingConfig(30),
+        config = PagingConfig(
+            pageSize = 30,
+            prefetchDistance = 30,
+            initialLoadSize = 30,
+        ),
         scope = ioCoroutineScope
     )
 
     val recentMangaPagingFlow = subscribeToPagingData(
         typeFlow = flowOf(PagedType.Latest),
-        config = PagingConfig(30),
+        config = PagingConfig(
+            pageSize = 30,
+            prefetchDistance = 30,
+            initialLoadSize = 30,
+        ),
         scope = ioCoroutineScope
     )
 

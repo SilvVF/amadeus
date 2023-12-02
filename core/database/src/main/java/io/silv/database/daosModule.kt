@@ -20,10 +20,6 @@ val daosModule = module {
     }
 
     single {
-        get<AmadeusDatabase>().filteredYearlyRemoteKeysDao()
-    }
-
-    single {
         get<AmadeusDatabase>().seasonalListDao()
     }
 

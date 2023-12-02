@@ -25,7 +25,7 @@ class MangaPagingSourceFactory(
     )
 
 
-    val latestMangaRequest =  MangaRequest(
+    private val latestMangaRequest =  MangaRequest(
         includes = listOf("cover_art", "author", "artist"),
         availableTranslatedLanguage = listOf("en"),
         order = mapOf("createdAt" to "desc")
@@ -47,9 +47,7 @@ class MangaPagingSourceFactory(
             remoteMediator = when (type) {
                 PagedType.Latest -> createMediator(LATEST_MANGA_QUERY, latestMangaRequest)
                 PagedType.Popular -> createMediator(POPULAR_MANGA_QUERY, popularMangaRequest)
-                is PagedType.Query -> createMediator(FILTER_MANGA_QUERY, MangaRequest(
-                    title = type.filters.query
-                ))
+                is PagedType.Query -> createMediator(FILTER_MANGA_QUERY, MangaRequest(title = type.filters.query))
                 is PagedType.Period -> createMediator(
                     TIME_PERIOD_MANGA_QUERY,
                     MangaRequest(
@@ -60,7 +58,6 @@ class MangaPagingSourceFactory(
                         includedTags = listOf(type.tagId),
                         includedTagsMode = MangaRequest.TagsMode.AND,
                         createdAtSince = type.timePeriod.timeString(),
-                        contentRating = listOf("safe")
                     )
                 )
             },
@@ -124,6 +121,6 @@ class MangaPagingSourceFactory(
         const val LATEST_MANGA_QUERY =  "io.silv.query.latest"
         const val POPULAR_MANGA_QUERY =  "io.silv.query.popular"
         const val FILTER_MANGA_QUERY = "io.silv.query.filter"
-        const val TIME_PERIOD_MANGA_QUERY = "io.silv.query.time_period"
+        const val TIME_PERIOD_MANGA_QUERY = "io.silv.query.timeperiod"
     }
 }

@@ -18,7 +18,7 @@ fun TimePeriod.timeString(): String? {
                 TimePeriod.ThreeMonths ->  (3 * 30).days
                 TimePeriod.LastMonth -> 30.days
                 TimePeriod.OneWeek -> 7.days
-                else -> return null
+                TimePeriod.AllTime -> return null
             }
     )
 }

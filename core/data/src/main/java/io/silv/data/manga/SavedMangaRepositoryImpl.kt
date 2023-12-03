@@ -1,6 +1,7 @@
 package io.silv.data.manga
 
 import android.util.Log
+import com.skydoves.sandwich.getOrThrow
 import io.silv.common.model.ProgressState
 import io.silv.common.model.Status
 import io.silv.common.time.localDateTimeNow
@@ -13,7 +14,6 @@ import io.silv.data.workers.cover_art.CoverArtHandler
 import io.silv.database.dao.SavedMangaDao
 import io.silv.database.entity.manga.SavedMangaEntity
 import io.silv.database.entity.relations.SavedMangaWithChapters
-import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.model.manga.Manga
 import io.silv.network.requests.MangaRequest
 import kotlinx.coroutines.flow.Flow

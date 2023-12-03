@@ -1,5 +1,6 @@
 package io.silv.amadeus
 
+import eu.kanade.tachiyomi.CoverCache
 import io.silv.amadeus.ui.screens.screenModule
 import io.silv.common.AmadeusDispatchers
 import io.silv.data.dataModule

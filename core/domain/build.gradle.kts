@@ -2,7 +2,7 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
-    kotlin("plugin.serialization").version(libs.versions.org.jetbrains.kotlin.android)
+    kotlin("plugin.serialization") version "1.9.20" apply false
     id("kotlin-parcelize")
 }
 
@@ -30,6 +30,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.4"
+    }
     kotlinOptions {
         jvmTarget = "17"
     }
@@ -40,6 +43,9 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:common"))
 
+    implementation(libs.sandwich)
+
+    implementation("androidx.compose.runtime:runtime:1.5.4")
 
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.6")
 
@@ -47,7 +53,7 @@ dependencies {
     implementation(libs.flow.combinetuple.kt)
     implementation(libs.tuples.kt)
 
-    implementation(libs.kotlin.serialization)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
     implementation(libs.kotlinx.datetime)
 
     implementation(libs.koin.core)

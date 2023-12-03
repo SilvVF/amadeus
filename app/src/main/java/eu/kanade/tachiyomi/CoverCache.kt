@@ -1,4 +1,4 @@
-package io.silv.amadeus
+package eu.kanade.tachiyomi
 
 import android.content.Context
 import io.silv.database.entity.manga.SavedMangaEntity

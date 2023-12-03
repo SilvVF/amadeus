@@ -27,7 +27,6 @@
             <option value="$PROJECT_DIR$/feature/library" />
             <option value="$PROJECT_DIR$/feature/manga" />
             <option value="$PROJECT_DIR$/feature/reader" />
-            <option value="$PROJECT_DIR$/ktor-response-mapper" />
             <option value="$PROJECT_DIR$/macrobenchmark" />
             <option value="$PROJECT_DIR$/sync" />
           </set>

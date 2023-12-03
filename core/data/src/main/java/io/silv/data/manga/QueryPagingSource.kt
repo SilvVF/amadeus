@@ -2,10 +2,10 @@ package io.silv.data.manga
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.skydoves.sandwich.getOrThrow
 import io.silv.data.mappers.toSourceManga
 import io.silv.database.dao.SourceMangaDao
 import io.silv.database.entity.manga.SourceMangaResource
-import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
 import kotlinx.coroutines.Dispatchers

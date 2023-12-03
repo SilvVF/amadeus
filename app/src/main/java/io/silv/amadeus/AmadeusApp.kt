@@ -13,11 +13,13 @@ import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.disk.DiskCache
 import coil.util.DebugLogger
-import io.silv.MangaCoverFetcher
-import io.silv.MangaCoverKeyer
-import io.silv.MangaKeyer
+import com.skydoves.sandwich.SandwichInitializer
+import eu.kanade.tachiyomi.CoverCache
+import eu.kanade.tachiyomi.MangaCoverFetcher
+import eu.kanade.tachiyomi.MangaCoverKeyer
+import eu.kanade.tachiyomi.MangaKeyer
+import eu.kanade.tachiyomi.TachiyomiImageDecoder
 import io.silv.explore.ExploreScreen
-import io.silv.ktor_response_mapper.KSandwichInitializer
 import io.silv.library.LibraryScreen
 import io.silv.manga.manga_filter.MangaFilterScreen
 import io.silv.manga.manga_view.MangaViewScreen
@@ -38,11 +40,10 @@ import org.koin.core.logger.Level
 
 class AmadeusApp: Application(), ImageLoaderFactory {
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
 
-        KSandwichInitializer.sandwichOperators += MangaDexApiLogger<Any>()
+        SandwichInitializer.sandwichOperators += MangaDexApiLogger<Any>()
 
         startKoin {
             androidLogger(Level.DEBUG)
@@ -72,7 +73,7 @@ class AmadeusApp: Application(), ImageLoaderFactory {
                 MangaFilterScreen(it.tag, it.tagId)
             }
             register<SharedScreen.MangaView> {
-                MangaViewScreen(it.manga)
+                MangaViewScreen(it.mangaId)
             }
         }
 
@@ -90,8 +91,10 @@ class AmadeusApp: Application(), ImageLoaderFactory {
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun newImageLoader(): ImageLoader {
         return ImageLoader.Builder(this).apply {
+
             val callFactoryInit = inject<OkHttpClient>()
             val diskCacheInit = { CoilDiskCache.get(this@AmadeusApp) }
+
             components {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     add(ImageDecoderDecoder.Factory())
@@ -104,11 +107,15 @@ class AmadeusApp: Application(), ImageLoaderFactory {
                 add(MangaKeyer())
                 add(MangaCoverKeyer(coverCache = inject<CoverCache>().value))
             }
-            callFactory {
-                callFactoryInit.value
-            }
+            callFactory { callFactoryInit.value }
             diskCache(diskCacheInit)
-            crossfade((300 * Settings.Global.getFloat(this@AmadeusApp.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)).toInt())
+            crossfade(
+                (300 * Settings.Global.getFloat(
+                    this@AmadeusApp.contentResolver,
+                    Settings.Global.ANIMATOR_DURATION_SCALE,
+                    1f)
+                        ).toInt()
+            )
             allowRgb565(isLowRamDevice(this@AmadeusApp))
             logger(DebugLogger())
 

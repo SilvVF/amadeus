@@ -49,6 +49,8 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
 
+    implementation(libs.sandwich)
+
     implementation(project(":core:ui"))
     implementation(project(":core:common"))
     implementation(project(":core:domain"))

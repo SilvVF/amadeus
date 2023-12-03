@@ -1,33 +1,33 @@
 package io.silv.network.util
 
 import android.util.Log
-import io.silv.ktor_response_mapper.ApiResponse
-import io.silv.ktor_response_mapper.operators.ApiResponseSuspendOperator
+import com.skydoves.sandwich.ApiResponse
+import com.skydoves.sandwich.ktor.headers
+import com.skydoves.sandwich.ktor.statusCode
+import com.skydoves.sandwich.operators.ApiResponseSuspendOperator
 
-class MangaDexApiLogger<T>(): ApiResponseSuspendOperator<T>() {
 
-    private val tag = "MangaDexApi"
+class MangaDexApiLogger<T>: ApiResponseSuspendOperator<T>() {
+
+    private val tag = "MangaDexApiLogger"
 
     override suspend fun onSuccess(apiResponse: ApiResponse.Success<T>) {
         Log.d(
             tag,
-            "[onSuccess]" +
-                  "(apiResponse= " +
-                    "headers:${apiResponse.headers}," +
-                    " statusCode:${apiResponse.statusCode}," +
-                    " data:${
-                        if (apiResponse.data.toString().length > 50) apiResponse.data.toString().take(50)
-                        else apiResponse.data.toString()
-                    })"
-
+            """
+                [onSuccess]
+                (apiResponse)
+                headers:${apiResponse.headers}, 
+                statusCode:${apiResponse.statusCode}
+                """
         )
     }
 
-    override suspend fun onError(apiResponse: ApiResponse.Failure.Error<T>) {
+    override suspend fun onError(apiResponse: ApiResponse.Failure.Error) {
         Log.d(tag, "[onError](apiResponse=$apiResponse)")
     }
 
-    override suspend fun onException(apiResponse: ApiResponse.Failure.Exception<T>) {
+    override suspend fun onException(apiResponse: ApiResponse.Failure.Exception) {
         Log.d(tag, "[onException](apiResponse=${apiResponse})")
     }
 }

@@ -2,10 +2,10 @@ package io.silv.network
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
-import io.silv.ktor_response_mapper.client.KSandwichClient
 import io.silv.network.image_sources.ImageSourceFactory
 import io.silv.network.util.dohCloudflare
 import io.silv.network.util.rateLimit
@@ -29,11 +29,12 @@ val networkModule = module {
     single {
         HttpClient(OkHttp) {
             engine {
-                preconfigured = get<OkHttpClient>()
+                preconfigured = get()
             }
+            install(HttpCache)
             install(ContentNegotiation) {
                 json(
-                    json = get<Json>(),
+                    json = get(),
                     contentType = ContentType.Any
                 )
             }
@@ -53,10 +54,6 @@ val networkModule = module {
     }
 
     factoryOf(::ImageSourceFactory)
-
-    single {
-        KSandwichClient.create(get())
-    }
 
     single {
         MangaDexApi(get(), get())

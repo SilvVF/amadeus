@@ -7,6 +7,7 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
+    @Suppress("UnstableApiUsage")
     repositories {
         google()
         gradlePluginPortal()
@@ -18,7 +19,6 @@ dependencyResolutionManagement {
 rootProject.name = ("amadeus")
 include(":app")
 include(":app:ktor-response-mapper")
-include(":ktor-response-mapper")
 include(":core")
 include(":macrobenchmark")
 include(":core:network")

@@ -1,6 +1,6 @@
 package io.silv.domain
-
-import io.silv.ktor_response_mapper.mapSuccess
+import com.skydoves.sandwich.mapSuccess
+import io.silv.network.MangaDexApi
 import kotlin.math.roundToInt
 
 
@@ -15,7 +15,7 @@ data class MangaStats(
  * This always fetches from the network.
  */
 class GetMangaStatisticsById (
-    private val mangaDexApi: io.silv.network.MangaDexApi
+    private val mangaDexApi: MangaDexApi
 ) {
     suspend operator fun invoke(id: String) = mangaDexApi.getMangaStatistics(id)
         .mapSuccess {

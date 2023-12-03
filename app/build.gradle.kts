@@ -70,10 +70,10 @@ android {
 }
 dependencies {
 
-    implementation(project(":ktor-response-mapper"))
-
     implementation(libs.coil.gif)
-    implementation("com.github.tachiyomiorg:image-decoder:fbd6601290")
+    implementation(libs.image.decoder)
+
+    implementation(libs.sandwich)
 
     implementation(project(":core:common"))
     implementation(project(":core:navigation"))
@@ -89,8 +89,8 @@ dependencies {
     implementation(project(":feature:reader"))
     implementation(project(":feature:manga"))
 
-    implementation("com.github.tachiyomiorg:unifile:7c257e1c64")
-    implementation("com.google.accompanist:accompanist-webview:0.30.1")
+    implementation(libs.unifile)
+    implementation(libs.accompanist.webview)
 
     implementation(libs.flow.combinetuple.kt)
     implementation(libs.tuples.kt)

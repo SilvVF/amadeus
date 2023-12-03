@@ -1,5 +1,5 @@
 [versions]
-accompanistWebview = "0.31.6-rc"
+accompanistWebview = "0.33.2-alpha"
 accompanistWebviewVersion = "0.30.1"
 activityCompose = "1.8.1"
 androidxComposeBom = "2023.10.01"
@@ -9,11 +9,12 @@ appcompat = "1.6.1"
 coilGif = "2.5.0"
 datastorePreferences = "1.0.0"
 flowCombinetupleKt = "1.2.0"
-jsoup = "1.14.3"
-jsoupVersion = "1.16.1"
+imageDecoder = "fbd6601290"
+jsoup = "1.17.1"
+jsoupVersion = "1.17.1"
 kotlinxCoroutinesAndroid = "1.7.3"
 kotlinxCoroutinesGuava = "1.7.3"
-kotlinxSerializationJsonOkio = "1.5.1"
+kotlinxSerializationJsonOkio = "1.6.1"
 ktorClientOkhttp = "2.3.3"
 ktorServerRateLimit = "2.3.3"
 lifecycleRuntimeCompose = "2.6.2"
@@ -30,7 +31,7 @@ orbital = "0.2.4"
 pagingCommon = "3.2.1"
 pagingCompose = "3.2.1"
 pagingRuntime = "3.2.1"
-roomPaging = "2.6.0"
+roomPaging = "2.6.1"
 testJunit = "1.1.5"
 junit= "4.13.2"
 koinVersion="3.5.0"
@@ -38,27 +39,31 @@ koinCompose="3.5.0"
 coil = "2.4.0"
 tokenBucket = "1.2"
 tuplesKt = "1.2.0"
+unifile = "7c257e1c64"
 voyager="1.0.0-rc10"
-ktor="2.3.1"
-kotlinserialization="1.5.1"
+ktor="2.3.6"
+kotlinserialization="1.6.1"
 kotlinxdatetime="0.4.1"
-room_version = "2.6.0"
-workGcm = "2.9.0-rc01"
-workMultiprocess = "2.9.0-rc01"
-workRuntimeKtx = "2.9.0-rc01"
-workRuntimeKtxVersion = "2.8.1"
-workRxjava2 = "2.9.0-rc01"
-workTesting = "2.9.0-rc01"
+room_version = "2.6.1"
+workGcm = "2.9.0"
+workMultiprocess = "2.9.0"
+workRuntimeKtx = "2.9.0"
+workRuntimeKtxVersion = "2.9.0"
+workRxjava2 = "2.9.0"
+workTesting = "2.9.0"
 agp = "8.1.4"
 uiautomator = "2.2.0"
-benchmark-macro-junit4 = "1.2.1"
+benchmark-macro-junit4 = "1.2.2"
 org-jetbrains-kotlin-android = "1.9.20"
 org-jetbrains-kotlin-jvm = "1.9.20"
 kotlinCollectionsImmutable = "0.3.6"
+sandwich = "2.0.4"
 
 [libraries]
+image-decoder = { module = "com.github.tachiyomiorg:image-decoder", version.ref = "imageDecoder" }
+sandwich = { module = "com.github.skydoves:sandwich", version.ref= "sandwich"}
+sandwich-ktor = {module ="com.github.skydoves:sandwich-ktor", version.ref = "sandwich"}
 accompanist-webview = { module = "com.google.accompanist:accompanist-webview", version.ref = "accompanistWebview" }
-accompanist-webview-0_30_1 = { module = "com.google.accompanist:accompanist-webview", version.ref = "accompanistWebviewVersion" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "androidxComposeBom" }
@@ -125,6 +130,7 @@ junit={module = "junit:junit", version.ref ="junit"}
 
 token-bucket = { module = "org.isomorphism:token-bucket", version.ref = "tokenBucket" }
 tuples-kt = { module = "com.github.Zhuinden:tuples-kt", version.ref = "tuplesKt" }
+unifile = { module = "com.github.tachiyomiorg:unifile", version.ref = "unifile" }
 voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyager" }
 voyager-bottomSheetNavigator = { module = "cafe.adriel.voyager:voyager-bottom-sheet-navigator", version.ref = "voyager" }
 voyager-tabNavigator = { module = "cafe.adriel.voyager:voyager-tab-navigator", version.ref = "voyager" }

@@ -2,12 +2,12 @@ package io.silv.data.util
 
 import ChapterListResponse
 import android.util.Log
+import com.skydoves.sandwich.getOrThrow
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.data.mappers.toChapterEntity
 import io.silv.database.dao.ChapterDao
 import io.silv.database.entity.chapter.ChapterEntity
-import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
 import io.silv.network.model.chapter.Chapter
 import io.silv.network.requests.MangaFeedRequest

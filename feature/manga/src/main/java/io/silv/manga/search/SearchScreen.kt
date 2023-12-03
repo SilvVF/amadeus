@@ -67,7 +67,7 @@ class SearchScreen: Screen {
         val selectedTranslatedLanguages by sm.selectedTransLang.collectAsStateWithLifecycle()
         val selectedDemographics by sm.selectedDemographics.collectAsStateWithLifecycle()
 
-        val keyboardController = LocalSoftwareKeyboardController.current
+        val keyboardController = runCatching { LocalSoftwareKeyboardController.current }.getOrNull()
         val navigator = LocalNavigator.current
 
         LaunchedEffect(Unit) {
@@ -156,7 +156,7 @@ class SearchScreen: Screen {
                                 .padding(it),
                             items = searchMangaPagingFlow.collectAsLazyPagingItems(),
                             onMangaClick = {
-                                navigator?.push(SharedScreen.MangaView(it))
+                                navigator?.push(SharedScreen.MangaView(it.id))
                             },
                             onBookmarkClick = {
                                 sm.bookmarkManga(it.id)

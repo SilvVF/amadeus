@@ -1,6 +1,8 @@
 package io.silv.data.chapter
 
 import android.util.Log
+import com.skydoves.sandwich.getOrThrow
+import com.skydoves.sandwich.suspendOnFailure
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.ProgressState
 import io.silv.common.time.localDateTimeNow
@@ -8,8 +10,6 @@ import io.silv.common.time.minus
 import io.silv.data.mappers.coverArtUrl
 import io.silv.data.mappers.toChapterEntity
 import io.silv.database.entity.chapter.ChapterEntity
-import io.silv.ktor_response_mapper.getOrThrow
-import io.silv.ktor_response_mapper.suspendOnFailure
 import io.silv.network.requests.ChapterListRequest
 import io.silv.network.requests.CoverArtRequest
 import kotlinx.coroutines.CoroutineScope

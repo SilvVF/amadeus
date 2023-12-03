@@ -5,17 +5,19 @@ import androidx.compose.runtime.Stable
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.screenModelScope
+import com.skydoves.sandwich.message
+import com.skydoves.sandwich.suspendOnFailure
+import com.skydoves.sandwich.suspendOnSuccess
 import io.silv.common.filterUnique
 import io.silv.common.model.ProgressState
 import io.silv.data.chapter.ChapterEntityRepository
 import io.silv.data.manga.SavedMangaRepository
+import io.silv.data.workers.chapters.ChapterDeletionWorker
+import io.silv.data.workers.chapters.ChapterDownloadWorker
 import io.silv.datastore.UserSettingsStore
 import io.silv.datastore.model.Filters
 import io.silv.domain.GetCombinedSavableMangaWithChapters
 import io.silv.domain.GetMangaStatisticsById
-import io.silv.ktor_response_mapper.message
-import io.silv.ktor_response_mapper.suspendOnFailure
-import io.silv.ktor_response_mapper.suspendOnSuccess
 import io.silv.model.SavableChapter
 import io.silv.model.SavableManga
 import io.silv.sync.anyRunning
@@ -38,7 +40,7 @@ class MangaViewSM(
     private val savedMangaRepository: SavedMangaRepository,
     private val chapterEntityRepository: ChapterEntityRepository,
     private val workManager: WorkManager,
-    private val initialManga: SavableManga,
+    private val mangaId: String,
 ): EventScreenModel<MangaViewEvent>() {
 
     init {
@@ -51,8 +53,10 @@ class MangaViewSM(
 
     val statsUiState = flow {
         emit(StatsUiState(loading = true))
-        getMangaStatisticsById(initialManga.id)
-            .suspendOnFailure { emit(StatsUiState(error = message())) }
+        getMangaStatisticsById(mangaId)
+            .suspendOnFailure {
+                emit(StatsUiState(error = message()))
+            }
             .suspendOnSuccess { emit(StatsUiState(data = data)) }
     }
         .stateInUi(StatsUiState(loading = true))
@@ -63,7 +67,7 @@ class MangaViewSM(
             .map { it.anyRunning() },
         workManager.getWorkInfosByTagFlow(io.silv.data.workers.chapters.ChapterDeletionWorkerTag)
             .map { it.anyRunning() },
-        io.silv.data.workers.chapters.ChapterDownloadWorker.downloadingIdToProgress
+        ChapterDownloadWorker.downloadingIdToProgress
     ) { downloading, deleting, idsToProgress ->
         if (downloading || deleting) {
             idsToProgress
@@ -76,7 +80,7 @@ class MangaViewSM(
     private val mutableFilters = MutableStateFlow(Filters())
 
     val mangaViewStateUiState = combine(
-        getCombinedSavableMangaWithChapters(initialManga.id),
+        getCombinedSavableMangaWithChapters(mangaId),
         mutableFilters,
     ) { combinedSavableMangaWithChapters, filters ->
             combinedSavableMangaWithChapters.savableManga?.let { manga ->
@@ -91,9 +95,9 @@ class MangaViewSM(
                     filters = filters,
                     chapters = chapters.applyFilters(filters),
                 )
-            } ?: MangaViewState.Loading(initialManga)
+            } ?: MangaViewState.Loading
     }
-        .stateInUi(MangaViewState.Loading(initialManga))
+        .stateInUi(MangaViewState.Loading)
 
     fun bookmarkManga(id: String) {
         screenModelScope.launch {
@@ -210,7 +214,7 @@ class MangaViewSM(
     fun deleteChapterImages(chapterIds: List<String>) {
         screenModelScope.launch {
             workManager.enqueue(
-                io.silv.data.workers.chapters.ChapterDeletionWorker.deletionWorkRequest(chapterIds)
+               ChapterDeletionWorker.deletionWorkRequest(chapterIds)
             )
         }
     }
@@ -226,9 +230,9 @@ class MangaViewSM(
             workManager.enqueueUniqueWork(
                 chapterIds.toString(),
                 ExistingWorkPolicy.KEEP,
-                io.silv.data.workers.chapters.ChapterDownloadWorker.downloadWorkRequest(
+                ChapterDownloadWorker.downloadWorkRequest(
                     chapterIds,
-                    initialManga.id
+                    mangaId
                 )
             )
         }
@@ -281,19 +285,18 @@ class MangaViewSM(
 @Stable
 @Immutable
 sealed class MangaViewState(
-    open val manga: SavableManga,
-    open val chapters: List<SavableChapter>,
+    open val chapters: List<SavableChapter> = emptyList(),
     open val filters: Filters,
 ) {
-    data class Loading(override val manga: SavableManga) : MangaViewState(manga, emptyList(), Filters())
+    data object Loading : MangaViewState(emptyList(), Filters())
 
     data class Success(
         val loadingArt: Boolean,
         val volumeToArt: Map<Int, String>,
-        override val manga: SavableManga,
+        val manga: SavableManga,
         override val chapters: List<SavableChapter>,
         override val filters: Filters
-    ) : MangaViewState(manga, chapters, filters)
+    ) : MangaViewState(chapters, filters)
 
 
     val success: Success?

@@ -139,7 +139,7 @@ class ExploreScreen: Screen {
                             items = searchPagingFlowFlow.collectAsLazyPagingItems(),
                             onMangaClick = { manga ->
                                 navigator?.push(
-                                    SharedScreen.MangaView(manga)
+                                    SharedScreen.MangaView(manga.id)
                                 )
                             },
                             onBookmarkClick = { manga ->
@@ -282,7 +282,7 @@ fun BrowseMangaContent(
             },
             onMangaClick = { manga ->
                 navigator?.push(
-                    SharedScreen.MangaView(manga)
+                    SharedScreen.MangaView(manga.id)
                 )
             },
         )

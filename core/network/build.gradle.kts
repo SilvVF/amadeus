@@ -35,11 +35,11 @@ android {
 
 
 dependencies {
-    api(project(":ktor-response-mapper"))
     api(project(":core:common"))
 
     implementation(libs.koin.core)
     implementation(libs.okhttp)
+    implementation(libs.sandwich.ktor)
 
     implementation(libs.okhttp.dnsoverhttps)
     implementation(libs.okio)

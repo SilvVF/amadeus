@@ -1,4 +1,4 @@
-package io.silv.amadeus
+package eu.kanade.tachiyomi
 
 import android.os.Build
 import androidx.core.graphics.drawable.toDrawable

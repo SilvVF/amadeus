@@ -1,6 +1,7 @@
 package io.silv.data.manga
 
 import androidx.room.withTransaction
+import com.skydoves.sandwich.getOrThrow
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.Season
@@ -10,7 +11,6 @@ import io.silv.database.AmadeusDatabase
 import io.silv.database.entity.list.SeasonalListEntity
 import io.silv.database.entity.manga.SourceMangaResource
 import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
-import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
 import io.silv.network.model.list.Data
 import io.silv.network.model.manga.Manga
@@ -80,18 +80,19 @@ internal class SeasonalMangaRepositoryImpl(
 
             val response = fetchChunked(seasonalLists)
 
-            seasonalListDao.clearNonMathcingIds(seasonalLists.map { it.userList.id })
-
-            seasonalLists.forEach { (season, year, userList) ->
-                seasonalListDao.upsertSeasonalList(
-                    SeasonalListEntity(
-                        id = userList.id,
-                        year = year,
-                        season = season,)
-                )
-            }
-
             db.withTransaction {
+
+                seasonalListDao.clearNonMathcingIds(seasonalLists.map { it.userList.id })
+
+                seasonalLists.forEach { (season, year, userList) ->
+                    seasonalListDao.upsertSeasonalList(
+                        SeasonalListEntity(
+                            id = userList.id,
+                            year = year,
+                            season = season,)
+                    )
+                }
+
                 sourceMangaDao.insertAll(response.map { it.toSourceManga() })
 
                 keyDao.insertAll(

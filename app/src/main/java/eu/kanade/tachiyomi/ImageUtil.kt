@@ -1,8 +1,7 @@
-package io.silv.amadeus
+package eu.kanade.tachiyomi
 
 import android.content.Context
 import android.content.res.Configuration
-import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
@@ -577,5 +576,3 @@ object ImageUtil {
     )
 }
 
-val getDisplayMaxHeightInPx: Int
-    get() = Resources.getSystem().displayMetrics.let { kotlin.math.max(it.heightPixels, it.widthPixels) }

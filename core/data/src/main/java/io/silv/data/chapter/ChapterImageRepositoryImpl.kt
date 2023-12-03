@@ -1,9 +1,9 @@
 package io.silv.data.chapter
 
 import android.util.Log
+import com.skydoves.sandwich.getOrThrow
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.Resource
-import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.image_sources.ImageSourceFactory
 import io.silv.network.model.chapter.Chapter
 import io.silv.network.requests.ChapterListRequest

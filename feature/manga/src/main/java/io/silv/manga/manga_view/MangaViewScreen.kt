@@ -8,7 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -60,6 +61,7 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -81,9 +83,9 @@ import io.silv.manga.composables.MangaContent
 import io.silv.manga.composables.WebViewOverlay
 import io.silv.manga.composables.chapterListItems
 import io.silv.manga.composables.volumePosterItems
-import io.silv.model.SavableManga
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
+import io.silv.ui.AnimatedBoxShimmer
 import io.silv.ui.collectEvents
 import io.silv.ui.isScrollingUp
 import org.koin.core.parameter.parametersOf
@@ -91,15 +93,15 @@ import org.koin.core.parameter.parametersOf
 
 
 class MangaViewScreen(
-    private val manga: SavableManga,
+    private val mangaId: String,
 ): Screen {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
 
-        val sm = getScreenModel<MangaViewSM> { parametersOf(manga) }
-        val mangaViewState by sm.mangaViewStateUiState.collectAsStateWithLifecycle()
+        val sm = getScreenModel<MangaViewSM> { parametersOf(mangaId) }
+        val mangaViewState = sm.mangaViewStateUiState.collectAsStateWithLifecycle().value
         val downloading by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.current
         val statsUiState by sm.statsUiState.collectAsStateWithLifecycle()
@@ -251,7 +253,7 @@ class MangaViewScreen(
                         onClick = {
 
                             val lastUnread = mangaViewState.chapters
-                                .sortedBy { it.chapter.takeIf { it >= 0 } ?: Long.MAX_VALUE }
+                                .sortedBy { chapter -> chapter.chapter.takeIf { it >= 0 } ?: Long.MAX_VALUE }
                                 .fastFirstOrNull { !it.read }
                                 ?: mangaViewState.chapters.minByOrNull { it.chapter } ?: return@ExtendedFloatingActionButton
 
@@ -270,40 +272,48 @@ class MangaViewScreen(
                     .navigationBarsPadding()
             ) {
                 item {
-                    MainPoster(
-                        manga = manga,
-                        modifier = Modifier.fillMaxWidth(),
-                        viewMangaArtClick = {
-                            showArtBottomSheet = !showArtBottomSheet
-                        },
-                        statsState = statsUiState,
-                        padding = paddingValues
-                    )
+                    when (mangaViewState) {
+                        MangaViewState.Loading -> AnimatedBoxShimmer(Modifier.fillMaxWidth().height(300.dp))
+                        is MangaViewState.Success ->  MainPoster(
+                            manga = mangaViewState.manga,
+                            modifier = Modifier.fillMaxWidth(),
+                            viewMangaArtClick = {
+                                showArtBottomSheet = !showArtBottomSheet
+                            },
+                            statsState = statsUiState,
+                            padding = paddingValues
+                        )
+                    }
                 }
                 item {
                     Column {
-                        MangaContent(
-                            manga = manga,
-                            bookmarked = mangaViewState.manga.bookmarked,
-                            onBookmarkClicked = sm::bookmarkManga,
-                            onTagSelected = { tag ->
-                                manga.tagToId[tag]?.let { id ->
-                                    navigator?.push(SharedScreen.MangaFilter(tag, id))
-                                }
-                            },
-                            viewOnWebClicked = {
-                                webUrl = "https://mangadex.org/title/${manga.id}"
-                            },
-                            showChapterArt = {
-                                showArtBottomSheet = !showArtBottomSheet
+                        when (mangaViewState) {
+                            MangaViewState.Loading -> {}
+                            is MangaViewState.Success -> {
+                                MangaContent(
+                                    manga = mangaViewState.manga,
+                                    bookmarked = mangaViewState.manga.bookmarked,
+                                    onBookmarkClicked = sm::bookmarkManga,
+                                    onTagSelected = { tag ->
+                                        mangaViewState.manga.tagToId[tag]?.let { id ->
+                                            navigator?.push(SharedScreen.MangaFilter(tag, id))
+                                        }
+                                    },
+                                    viewOnWebClicked = {
+                                        webUrl = "https://mangadex.org/title/${mangaId}"
+                                    },
+                                    showChapterArt = {
+                                        showArtBottomSheet = !showArtBottomSheet
+                                    }
+                                )
+                                FilterIcon(
+                                    modifier = Modifier.align(Alignment.End),
+                                    onClick = {
+                                        showFilterBottomSheet = !showFilterBottomSheet
+                                    }
+                                )
                             }
-                        )
-                        FilterIcon(
-                            modifier = Modifier.align(Alignment.End),
-                            onClick = {
-                                showFilterBottomSheet = !showFilterBottomSheet
-                            }
-                        )
+                        }
                     }
                 }
                 chapterListItems(
@@ -316,7 +326,7 @@ class MangaViewScreen(
                         sm.deleteChapterImages(listOf(it))
                     },
                     onReadClicked = {
-                        navigator?.push(SharedScreen.Reader(manga.id, it))
+                        navigator?.push(SharedScreen.Reader(mangaId, it))
                     },
                     onBookmark = sm::changeChapterBookmarked,
                     onMarkAsRead = sm::changeChapterReadStatus,
@@ -349,7 +359,7 @@ fun FilterBottomSheet(
 ) {
     val space = io.silv.ui.theme.LocalSpacing.current
     var selectedTabIdx by rememberSaveable {
-        mutableStateOf(0)
+        mutableIntStateOf(0)
     }
     var dropdownVisible by rememberSaveable {
         mutableStateOf(false)
@@ -411,9 +421,9 @@ fun FilterBottomSheet(
                     .fillMaxHeight(0.25f),
                 transitionSpec = {
                        if (initialState < targetState) {
-                           slideInHorizontally { it } with slideOutHorizontally { -it }
+                           slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
                        } else {
-                           slideInHorizontally { -it } with slideOutHorizontally { it }
+                           slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
                        }
                 },
                 label = "filter"

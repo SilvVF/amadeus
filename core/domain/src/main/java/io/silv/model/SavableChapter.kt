@@ -2,6 +2,7 @@ package io.silv.model
 
 import android.os.Parcel
 import android.os.Parcelable
+import androidx.compose.runtime.Stable
 import io.silv.DateTimeAsLongSerializer
 import io.silv.common.model.ProgressState
 import io.silv.common.time.localDateTimeNow
@@ -23,6 +24,7 @@ private val implementedImageSources = listOf(
     "comikey.com"
 )
 
+@Stable
 @Parcelize
 data class SavableChapter(
     val id: String,

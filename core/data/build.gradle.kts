@@ -39,6 +39,7 @@ dependencies {
     api(project(":core:database"))
     api(project(":core:common"))
 
+    implementation(libs.sandwich.ktor)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

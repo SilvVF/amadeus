@@ -1,7 +1,9 @@
 package io.silv.model
 
+import androidx.compose.runtime.Stable
 import io.silv.database.entity.list.TagEntity
 
+@Stable
 data class DomainTag(
     val group: String,
     val name: String,

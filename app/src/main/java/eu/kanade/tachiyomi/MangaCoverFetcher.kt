@@ -1,4 +1,4 @@
-package io.silv
+package eu.kanade.tachiyomi
 
 import android.util.Log
 import coil.ImageLoader
@@ -9,22 +9,13 @@ import coil.disk.DiskCache
 import coil.fetch.FetchResult
 import coil.fetch.Fetcher
 import coil.fetch.SourceResult
-import coil.key.Keyer
 import coil.network.HttpException
 import coil.request.Options
 import coil.request.Parameters
-import io.silv.MangaCoverFetcher.Companion.USE_CUSTOM_COVER
-import io.silv.amadeus.CoverCache
-import io.silv.database.entity.manga.SavedMangaEntity
+import eu.kanade.tachiyomi.MangaCoverFetcher.Companion.USE_CUSTOM_COVER
 import io.silv.model.SavableManga
-import io.silv.network.model.manga.Manga
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import okhttp3.CacheControl
 import okhttp3.Call
-import okhttp3.Callback
 import okhttp3.Request
 import okhttp3.Response
 import okio.Path.Companion.toOkioPath
@@ -34,52 +25,13 @@ import okio.sink
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
-import java.io.IOException
 import java.net.HttpURLConnection.HTTP_NOT_MODIFIED
-import kotlin.coroutines.resumeWithException
-
-// Based on https://github.com/gildor/kotlin-coroutines-okhttp
-@OptIn(ExperimentalCoroutinesApi::class)
-private suspend fun Call.await(callStack: Array<StackTraceElement>): Response {
-    return suspendCancellableCoroutine { continuation ->
-        val callback =
-            object : Callback {
-                override fun onResponse(call: Call, response: Response) {
-                    continuation.resume(response) {
-                        response.body?.close()
-                    }
-                }
-
-                override fun onFailure(call: Call, e: IOException) {
-                    // Don't bother with resuming the continuation if it is already cancelled.
-                    if (continuation.isCancelled) return
-                    val exception = IOException(e.message, e).apply { stackTrace = callStack }
-                    continuation.resumeWithException(exception)
-                }
-            }
-
-        enqueue(callback)
-
-        continuation.invokeOnCancellation {
-            try {
-                cancel()
-            } catch (ex: Throwable) {
-                // Ignore cancel exception
-            }
-        }
-    }
-}
-
-suspend fun Call.await(): Response {
-    val callStack = Exception().stackTrace.run { copyOfRange(1, size) }
-    return await(callStack)
-}
 
 
 /**
- * A [Fetcher] that fetches cover image for [Manga] object.
+ * A [Fetcher] that fetches cover image for [SavableManga] object.
  *
- * It uses [Manga.thumbnailUrl] if custom cover is not set by the user.
+ * It uses [SavableManga.coverArt] if custom cover is not set by the user.
  * Disk caching for library items is handled by [CoverCache], otherwise
  * handled by Coil's [DiskCache].
  *
@@ -364,48 +316,3 @@ class MangaCoverFetcher(
     }
 }
 
-/**
- * Contains the required data for MangaCoverFetcher
- */
-data class MangaCover(
-    val mangaId: String,
-    val url: String?,
-    val isMangaFavorite: Boolean,
-    val lastModified: Long,
-)
-
-fun SavedMangaEntity.asMangaCover(): MangaCover {
-    return MangaCover(
-        mangaId = id,
-        url = coverArt,
-        isMangaFavorite = true,
-        lastModified = savedAtLocal.toInstant(TimeZone.currentSystemDefault()).epochSeconds,
-    )
-}
-
-fun SavableManga.hasCustomCover(): Boolean {
-    return false
-}
-
-class MangaKeyer : Keyer<SavableManga> {
-    override fun key(data: SavableManga, options: Options): String {
-        return if (data.hasCustomCover()) {
-            "${data.id};${data.savedLocalAtEpochSeconds}"
-        } else {
-            "${data.coverArt};${data.savedLocalAtEpochSeconds}"
-        }
-    }
-}
-
-
-class MangaCoverKeyer(
-    private val coverCache: CoverCache,
-) : Keyer<MangaCover> {
-    override fun key(data: MangaCover, options: Options): String {
-        return if (coverCache.getCustomCoverFile(data.mangaId).exists()) {
-            "${data.mangaId};${data.lastModified}"
-        } else {
-            "${data.url};${data.lastModified}"
-        }
-    }
-}

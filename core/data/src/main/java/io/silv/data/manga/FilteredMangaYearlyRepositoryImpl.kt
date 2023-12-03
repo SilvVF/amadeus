@@ -1,13 +1,13 @@
 package io.silv.data.manga
 
+import com.skydoves.sandwich.ApiResponse
+import com.skydoves.sandwich.message
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.model.Resource
 import io.silv.common.time.timeStringMinus
 import io.silv.data.mappers.toSourceManga
 import io.silv.database.dao.SourceMangaDao
 import io.silv.database.entity.manga.SourceMangaResource
-import io.silv.ktor_response_mapper.ApiResponse
-import io.silv.ktor_response_mapper.message
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
 import kotlinx.coroutines.Dispatchers

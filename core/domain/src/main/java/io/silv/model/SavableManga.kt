@@ -1,8 +1,6 @@
 package io.silv.model
 
-import android.os.Parcel
-import android.os.Parcelable
-import io.silv.DateTimeAsLongSerializer
+import androidx.compose.runtime.Stable
 import io.silv.common.model.ContentRating
 import io.silv.common.model.ProgressState
 import io.silv.common.model.PublicationDemographic
@@ -11,13 +9,9 @@ import io.silv.common.model.Status
 import io.silv.database.entity.manga.SavedMangaEntity
 import io.silv.database.entity.manga.SourceMangaResource
 import kotlinx.datetime.LocalDateTime
-import kotlinx.parcelize.Parcelize
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.serializer
 
-@Parcelize
-@Serializable
+
+@Stable
 data class SavableManga(
     val id: String,
     val bookmarked: Boolean = false,
@@ -36,32 +30,14 @@ data class SavableManga(
     val lastVolume: Int,
     val lastChapter: Long,
     val version: Int,
-    @Serializable(with= DateTimeAsLongSerializer::class)
     val createdAt: LocalDateTime,
-    @Serializable(with= DateTimeAsLongSerializer::class)
     val updatedAt: LocalDateTime,
-    @Serializable(with= DateTimeAsLongSerializer::class)
     val savedLocalAtEpochSeconds: LocalDateTime,
     val volumeToCoverArtUrl: Map<String, String>,
     val authors: List<String>,
     val artists: List<String>,
     val year: Int,
-): Parcelable {
-
-    companion object : kotlinx.parcelize.Parceler<SavableManga>   {
-        override fun SavableManga.write(parcel: Parcel, flags: Int) {
-            parcel.writeString(
-                Json.encodeToString(
-                    serializer(),
-                    this
-                )
-            )
-        }
-
-        override fun create(parcel: Parcel): SavableManga {
-            return Json.decodeFromString(serializer(), parcel.readString() ?: "")
-        }
-    }
+) {
 
     constructor(savedManga: SavedMangaEntity) : this(
         id = savedManga.id,

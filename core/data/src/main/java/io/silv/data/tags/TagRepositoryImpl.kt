@@ -1,10 +1,10 @@
 package io.silv.data.tags
 
+import com.skydoves.sandwich.getOrThrow
 import io.silv.common.time.epochSeconds
 import io.silv.data.util.syncVersions
 import io.silv.database.dao.TagDao
 import io.silv.database.entity.list.TagEntity
-import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first

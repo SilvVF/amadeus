@@ -1,7 +1,6 @@
 package io.silv.navigation
 
 import cafe.adriel.voyager.core.registry.ScreenProvider
-import io.silv.model.SavableManga
 
 sealed class SharedScreen : ScreenProvider {
 
@@ -15,7 +14,7 @@ sealed class SharedScreen : ScreenProvider {
     ): SharedScreen()
 
     data class MangaView(
-        val manga: SavableManga
+        val mangaId: String
     ): SharedScreen()
 
     data class MangaFilter(

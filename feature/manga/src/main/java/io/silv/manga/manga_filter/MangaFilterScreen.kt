@@ -202,7 +202,7 @@ class MangaFilterScreen(
                                 .padding(space.large)
                                 .height((LocalConfiguration.current.screenHeightDp / 2.6f).dp)
                                 .clickable {
-                                    navigator?.push(SharedScreen.MangaView(manga))
+                                    navigator?.push(SharedScreen.MangaView(manga.id))
                                 },
                             onTagClick = { name ->
                                 manga.tagToId[name]?.let {

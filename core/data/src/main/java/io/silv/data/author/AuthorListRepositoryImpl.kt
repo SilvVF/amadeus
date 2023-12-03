@@ -1,8 +1,8 @@
 package io.silv.data.author
 
+import com.skydoves.sandwich.getOrThrow
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.model.QueryResult
-import io.silv.ktor_response_mapper.getOrThrow
 import io.silv.network.MangaDexApi
 import io.silv.network.model.author.AuthorListResponse
 import io.silv.network.requests.AuthorListRequest

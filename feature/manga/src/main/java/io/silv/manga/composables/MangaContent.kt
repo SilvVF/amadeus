@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.silv.model.SavableManga
+import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.noRippleClickable
 import kotlin.math.roundToInt
 
@@ -93,7 +94,7 @@ fun TagsAndLanguages(
             }
         }
         Text("Translated Languages", style = MaterialTheme.typography.labelSmall)
-        io.silv.ui.TranslatedLanguageTags(tags = manga.availableTranslatedLanguages)
+        TranslatedLanguageTags(tags = manga.availableTranslatedLanguages)
     }
 }
 

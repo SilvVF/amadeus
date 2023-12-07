@@ -1,4 +1,4 @@
-package io.silv.ui
+package io.silv.ui.composables
 
 import androidx.compose.material3.DismissState
 import androidx.compose.material3.ExperimentalMaterial3Api

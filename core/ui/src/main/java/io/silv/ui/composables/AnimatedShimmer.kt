@@ -1,4 +1,4 @@
-package io.silv.ui
+package io.silv.ui.composables
 
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.animation.core.FastOutSlowInEasing

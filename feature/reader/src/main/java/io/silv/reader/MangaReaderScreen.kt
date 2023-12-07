@@ -56,6 +56,7 @@ import io.silv.datastore.model.ReaderSettings
 import io.silv.model.SavableChapter
 import io.silv.reader.composables.ReaderMenuOverlay
 import io.silv.reader.composables.rememberGestureHandler
+import io.silv.ui.composables.AnimatedBoxShimmer
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 import kotlin.math.absoluteValue
@@ -155,7 +156,7 @@ fun MangaReaderContent(
         }
         MangaReaderState.Loading -> {
             io.silv.ui.CenterBox(Modifier.fillMaxSize()) {
-                io.silv.ui.AnimatedBoxShimmer(Modifier.fillMaxSize(0.8f))
+                AnimatedBoxShimmer(Modifier.fillMaxSize(0.8f))
             }
         }
         is MangaReaderState.Success -> {
@@ -239,12 +240,13 @@ fun MangaReaderContent(
 
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MangaReader(
     verticalReaderState: LazyListState,
     horizontalReaderState: PagerState,
     readerChapters: ReaderChapters,
-    settings: io.silv.datastore.model.ReaderSettings,
+    settings: ReaderSettings,
     readChapter: (id: String) -> Unit,
 ) {
     val space = io.silv.ui.theme.LocalSpacing.current

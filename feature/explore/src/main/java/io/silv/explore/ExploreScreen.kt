@@ -1,11 +1,14 @@
 package io.silv.explore
 
-import androidx.compose.animation.AnimatedContent
+import android.util.Log
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -35,13 +38,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -57,29 +61,28 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil.compose.AsyncImage
-import io.silv.explore.composables.SearchItemsPagingList
-import io.silv.explore.composables.TrendingMangaList
-import io.silv.explore.composables.recentMangaList
+import io.silv.explore.composables.ExploreTopAppBar
+import io.silv.explore.composables.mangaGrid
 import io.silv.model.SavableManga
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
-import io.silv.ui.BlurImageBackground
 import io.silv.ui.CenterBox
-import io.silv.ui.MangaGenreTags
-import io.silv.ui.PullRefresh
-import io.silv.ui.SearchTopAppBar
-import io.silv.ui.TranslatedLanguageTags
+import io.silv.ui.composables.BlurImageBackground
+import io.silv.ui.composables.MangaGenreTags
+import io.silv.ui.composables.TranslatedLanguageTags
+import io.silv.ui.layout.ExpandableInfoLayout
+import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 
@@ -89,111 +92,100 @@ class ExploreScreen: Screen {
     @Composable
     override fun Content() {
 
-        val sm = getScreenModel<ExploreScreenModel>()
+        val screenModel = getScreenModel<ExploreScreenModel>()
 
-        val recentPagingFlowFlow by sm.recentMangaPagingFlow.collectAsStateWithLifecycle()
-        val popularPagingFlowFlow by sm.popularMangaPagingFlow.collectAsStateWithLifecycle()
-        val searchPagingFlowFlow by sm.searchMangaPagingFlow.collectAsStateWithLifecycle()
-        val seasonalLists by sm.seasonLists.collectAsStateWithLifecycle()
-
-        val state by sm.state.collectAsStateWithLifecycle()
-        val navigator = LocalNavigator.current
-
-        var searching by rememberSaveable {
-            mutableStateOf(false)
-        }
+        val seasonalLists by screenModel.seasonLists.collectAsStateWithLifecycle()
+        val pagingFlowFlow by screenModel.mangaPagingFlow.collectAsStateWithLifecycle()
+        val state by screenModel.state.collectAsStateWithLifecycle()
 
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState())
 
+        val expandableState = rememberExpandableState(startProgress = SheetValue.Hidden)
+
+        LaunchedEffect(ExploreTab.reselectChannel) {
+            ExploreTab.reselectChannel.receiveAsFlow().collect {
+                Log.d("Explore", "received reselect event")
+                expandableState.toggleProgress()
+            }
+        }
 
         Scaffold(
             topBar = {
-                SearchTopAppBar(
+                val scope = rememberCoroutineScope()
+
+                ExploreTopAppBar(
+                    selected = state.pagedType,
                     scrollBehavior = scrollBehavior,
-                    onSearchText = sm::updateSearchQuery,
-                    color = Color.Transparent,
-                    navigationIconLabel = "",
-                    navigationIcon = Icons.Filled.KeyboardArrowLeft,
-                    onNavigationIconClicked = { searching = false },
-                    actions = {},
-                    searchText = state.searchQuery,
-                    showTextField = searching,
-                    onSearchChanged = {
-                        searching = it
+                    onWebClick = {  },
+                    onDisplayOptionsClick = {
+                        scope.launch {
+                            if (expandableState.isExpanded)
+                                expandableState.hide()
+                            else
+                                expandableState.expand()
+                        }
                     },
-                    onForceSearch = {
-                        sm.startSearching()
-                    }
+                    onSearch = {  },
+                    onFilterSelected = screenModel::changePagingType
                 )
             },
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
         ) { paddingValues ->
-            Column(Modifier.padding(paddingValues)) {
-                AnimatedContent(
-                    targetState = searching,
-                    label = "searching"
-                ) {
-                    if (it) {
-                        SearchItemsPagingList(
-                            modifier = Modifier.fillMaxSize(),
-                            items = searchPagingFlowFlow.collectAsLazyPagingItems(),
-                            onMangaClick = { manga ->
-                                navigator?.push(
-                                    SharedScreen.MangaView(manga.id)
+
+            Box(Modifier.fillMaxSize()) {
+
+                BrowseMangaContent(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPaddingValues = paddingValues,
+                    seasonalLists = seasonalLists,
+                    mangaList = pagingFlowFlow.collectAsLazyPagingItems(),
+                    onBookmarkClick = {}
+                )
+                ExpandableInfoLayout(
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    state = expandableState,
+                    peekContent = {
+                        LazyRow {
+                            items(10) {
+                                FilterChip(
+                                    selected = true,
+                                    onClick = { /*TODO*/ },
+                                    label = { Text(it.toString()) }
                                 )
-                            },
-                            onBookmarkClick = { manga ->
-                                sm.bookmarkManga(manga.id)
-                            },
-                        )
-                    } else {
-
-                        val recentMangaItems = recentPagingFlowFlow.collectAsLazyPagingItems()
-                        val popularMangaItems = popularPagingFlowFlow.collectAsLazyPagingItems()
-
-                        PullRefresh(
-                            refreshing = recentMangaItems.loadState.refresh is LoadState.Loading
-                                    && popularMangaItems.loadState.refresh == LoadState.Loading,
-                            onRefresh = {
-                                recentMangaItems.refresh()
-                                popularMangaItems.refresh()
-                                sm.refreshSeasonalManga()
                             }
-                        ) {
-                            BrowseMangaContent(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f),
-                                recentMangaList = recentMangaItems,
-                                onBookmarkClick = sm::bookmarkManga,
-                                popularMangaList = popularMangaItems,
-                                seasonalLists = seasonalLists,
-                            )
                         }
                     }
+                ) {
+                    Box(modifier = Modifier
+                        .height(100.dp)
+                        .fillMaxWidth()
+                        .background(Color.Red)
+                    )
                 }
             }
         }
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowseMangaContent(
     modifier: Modifier,
+    contentPaddingValues: PaddingValues,
     gridState: LazyGridState = rememberLazyGridState(),
     seasonalLists: ImmutableList<UiSeasonalList>,
-    recentMangaList: LazyPagingItems<SavableManga>,
-    popularMangaList: LazyPagingItems<SavableManga>,
+    mangaList: LazyPagingItems<SavableManga>,
     onBookmarkClick: (mangaId: String) -> Unit
 ) {
     val space = LocalSpacing.current
     val navigator = LocalNavigator.current
 
     LazyVerticalGrid(
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         state = gridState,
-        columns = GridCells.Fixed(2)
+        columns = GridCells.Fixed(2),
+        contentPadding = contentPaddingValues
     ) {
         item(
             key = "seasonal-tag",
@@ -203,7 +195,7 @@ fun BrowseMangaContent(
                 mutableIntStateOf(0)
             }
 
-            Column(Modifier.padding(space.med)) {
+            Column(Modifier) {
                 Text(
                     "seasonal lists",
                     style = MaterialTheme.typography.labelSmall,
@@ -237,39 +229,8 @@ fun BrowseMangaContent(
                 )
             }
         }
-        item(
-            key = "trending-tag",
-            span = { GridItemSpan(2) }
-        ) {
-            Text(
-                text = "Trending",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(space.med)
-            )
-        }
-        item(
-            key = "trending-manga-list",
-            span = { GridItemSpan(2) }
-        ) {
-            TrendingMangaList(
-                manga = popularMangaList,
-                onBookmarkClick = {
-                    onBookmarkClick(it.id)
-                }
-            )
-        }
-        item(
-            key = "recently-update-tag",
-            span = { GridItemSpan(2) }
-        ) {
-            Text(
-                text = "Recently Updated",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(space.med)
-            )
-        }
-        recentMangaList(
-            manga = recentMangaList,
+        mangaGrid(
+            manga = mangaList,
             onBookmarkClick = { manga ->
                 onBookmarkClick(manga.id)
             },

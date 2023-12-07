@@ -4,7 +4,7 @@ sealed class PagedType {
     data object Popular: PagedType()
     data object Latest: PagedType()
     data class Query(
-        val filters: QueryFilters
+        val filters: QueryFilters = QueryFilters()
     ): PagedType()
 }
 

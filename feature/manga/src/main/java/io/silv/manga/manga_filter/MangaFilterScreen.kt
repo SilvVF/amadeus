@@ -65,12 +65,12 @@ import io.silv.common.model.TimePeriod
 import io.silv.model.SavableManga
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
-import io.silv.ui.AnimatedBoxShimmer
-import io.silv.ui.BlurImageBackground
+import io.silv.ui.composables.AnimatedBoxShimmer
+import io.silv.ui.composables.BlurImageBackground
 import io.silv.ui.CenterBox
-import io.silv.ui.MangaGenreTags
-import io.silv.ui.MangaListItem
-import io.silv.ui.TranslatedLanguageTags
+import io.silv.ui.composables.MangaGenreTags
+import io.silv.ui.composables.MangaListItem
+import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.header
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList

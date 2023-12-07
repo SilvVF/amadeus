@@ -71,7 +71,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -135,7 +134,7 @@ fun FilterScreen(
         hide()
     }
 
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
     val groupedTags = remember(tagsUiState) {
         tagsUiState.groupBy { it.group }
     }
@@ -284,7 +283,7 @@ private fun LanguageSelection(
     val maxHeight = remember(screenHeightDp) {
         screenHeightDp / 3f
     }
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
 
     Box(
         modifier = modifier
@@ -368,7 +367,7 @@ private fun LanguageSelection(
 private fun FilterTopBar(
     onCloseIconClick: () -> Unit
 ) {
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
     Row(
         Modifier
             .fillMaxWidth()
@@ -397,7 +396,7 @@ private fun TagsList(
     excludedIds: List<String>,
     excludedSelected: (String) -> Unit
 ) {
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
     Column(Modifier.padding(horizontal = space.med)) {
         AnimatedVisibility(
             visible = tagsVisible
@@ -454,7 +453,7 @@ private fun TagsFilterHeader(
     includedChange: (Boolean) -> Unit,
     included: Boolean,
 ) {
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
     Surface {
         Column {
             Row(
@@ -559,8 +558,7 @@ private fun AuthorSearchBar(
 ) {
     val focusRequester = remember { FocusRequester() }
     var focused by remember { mutableStateOf(false) }
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
     val focusManager = LocalFocusManager.current
     var currentCoordinates: IntOffset by remember { mutableStateOf(IntOffset(0, 0)) }
     var sizeOffset: IntSize by remember { mutableStateOf(IntSize(0, 0)) }
@@ -586,7 +584,6 @@ private fun AuthorSearchBar(
         LaunchedEffect(Unit) {
             snapshotFlow { currentCoordinates.y }.collect {
                 if((it > (0 + sizeOffset.height)) && focused) {
-                    keyboardController?.hide()
                     focusManager.clearFocus(true)
                 }
             }
@@ -662,7 +659,7 @@ private fun AuthorSearchBar(
                         }
                         QueryResult.Loading ->  {
                             item {
-                                io.silv.ui.CenterBox(
+                                CenterBox(
                                     Modifier
                                         .fillMaxWidth()
                                         .padding(space.med)

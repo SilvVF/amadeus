@@ -1,4 +1,4 @@
-package io.silv.ui
+package io.silv.ui.composables
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,8 +42,13 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.model.SavableManga
+import io.silv.ui.CenterBox
+import io.silv.ui.Language
+import io.silv.ui.noRippleClickable
+import io.silv.ui.shadow
 import io.silv.ui.theme.LocalSpacing
 import io.silv.ui.theme.Pastel
+import io.silv.ui.vertical
 
 @Composable
 fun MangaListItem(
@@ -122,7 +127,7 @@ fun MangaListItemSideTitle(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            io.silv.ui.CenterBox(
+            CenterBox(
                 Modifier
                     .shadow(
                         color = Color.DarkGray,
@@ -211,7 +216,7 @@ fun TranslatedLanguageTags(
 
             val text = remember(showLang) {
                 if (showLang) {
-                    io.silv.ui.Language.values().find { it.code == language }?.string ?: language
+                    Language.values().find { it.code == language }?.string ?: language
                 } else {
                     language
                 }

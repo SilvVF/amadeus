@@ -8,7 +8,7 @@ import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -85,20 +85,29 @@ import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
-import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.model.SavableChapter
-import io.silv.ui.Reset
-import io.silv.ui.SearchTopAppBar
+import io.silv.ui.CenterBox
+import io.silv.ui.ReselectTab
 import io.silv.ui.collectEvents
+import io.silv.ui.composables.Reset
+import io.silv.ui.composables.SearchTopAppBar
 import io.silv.ui.header
 import io.silv.ui.noRippleClickable
+import io.silv.ui.theme.LocalSpacing
 import io.silv.ui.theme.Pastel
+import kotlinx.coroutines.channels.Channel
 
-object LibraryTab: Tab {
+object LibraryTab: ReselectTab {
+
+    private val reselectChannel = Channel<Unit>()
+
+    override suspend fun onReselect(navigator: Navigator) {
+        reselectChannel.send(Unit)
+    }
 
     @OptIn(ExperimentalAnimationGraphicsApi::class)
     override val options: TabOptions
@@ -123,15 +132,13 @@ object LibraryTab: Tab {
 
 class LibraryScreen: Screen {
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class,
-        ExperimentalFoundationApi::class
-    )
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class,)
     @Composable
     override fun Content() {
 
         val sm = getScreenModel<LibrarySM>()
         val mangasToChapters by sm.mangaWithDownloadedChapters.collectAsStateWithLifecycle()
-        val space = io.silv.ui.theme.LocalSpacing.current
+        val space = LocalSpacing.current
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState())
         val bookmarkedChapters by sm.bookmarkedChapters.collectAsStateWithLifecycle()
         val downloadingOrDeletingIds by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
@@ -251,9 +258,9 @@ class LibraryScreen: Screen {
                     modifier = Modifier.padding(space.large),
                     transitionSpec = {
                         if (initialState < targetState) {
-                            slideInHorizontally { it } with slideOutHorizontally { -it }
+                            slideInHorizontally { it } togetherWith  slideOutHorizontally { -it }
                         } else {
-                            slideInHorizontally { -it } with slideOutHorizontally { it }
+                            slideInHorizontally { -it } togetherWith  slideOutHorizontally { it }
                         }
                     }
                 ) { selectedTab ->
@@ -308,8 +315,7 @@ fun UpdatesList(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val space = io.silv.ui.theme.LocalSpacing.current
-    val navigator = LocalNavigator.current
+    val space = LocalSpacing.current
     if (updates.isEmpty()) {
         io.silv.ui.CenterBox(modifier = Modifier.fillMaxSize()) {
             Text(text = "No updates for manga.")
@@ -411,12 +417,12 @@ fun BookmarkedChapterList(
                 .map { (k, v) -> v.toList() }
         }
     }
-    val space = io.silv.ui.theme.LocalSpacing.current
-    val navigator = LocalNavigator.current
+    val space = LocalSpacing.current
+
     LazyColumn(modifier) {
         if (chaptersByManga.isEmpty()) {
             item {
-                io.silv.ui.CenterBox(
+                CenterBox(
                     Modifier
                         .fillMaxSize()
                         .padding(space.med)
@@ -528,11 +534,11 @@ fun BookmarkedChapterList(
 fun LibraryMangaPoster(
     libraryManga: LibraryManga
 ) {
-    val (manga, chapters) = libraryManga
+    val (manga, _) = libraryManga
     val ctx = LocalContext.current
-    val space = io.silv.ui.theme.LocalSpacing.current
-    val navigator = LocalNavigator.current
-    io.silv.ui.CenterBox(
+    val space = LocalSpacing.current
+
+    CenterBox(
         Modifier.padding(space.large)
     ) {
         val colorPlaceholder = remember {
@@ -607,7 +613,7 @@ fun ChapterListItem(
     onDeleteClicked: () -> Unit,
     onReadClicked: () -> Unit,
 ) {
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,

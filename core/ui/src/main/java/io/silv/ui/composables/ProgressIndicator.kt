@@ -1,4 +1,4 @@
-package io.silv.ui
+package io.silv.ui.composables
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi

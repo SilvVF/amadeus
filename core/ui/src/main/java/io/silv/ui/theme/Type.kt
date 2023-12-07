@@ -1,34 +1,40 @@
 package io.silv.ui.theme
 
 import androidx.compose.material3.Typography
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+import io.silv.ui.R
 
-// Set of Material typography styles to start with
-val Typography = Typography(
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    )
-    /* Other default text styles to override
-    titleLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
-    ),
-    labelSmall = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp
-    )
-    */
+private val defaultTypography = Typography()
+
+private val montserrat = FontFamily(
+    Font(R.font.montserrat_thin, FontWeight.Thin),
+    Font(R.font.montserrat_black, FontWeight.Black),
+    Font(R.font.montserrat_bold, FontWeight.Bold),
+    Font(R.font.montserrat_extrabold, FontWeight.ExtraBold),
+    Font(R.font.montserrat_medium, FontWeight.Medium),
+    Font(R.font.montserrat_semibold, FontWeight.SemiBold),
+    Font(R.font.montserrat_regular, FontWeight.Normal),
 )
+
+private val appTypography = Typography(
+    displayLarge = defaultTypography.displayLarge.copy(fontFamily = montserrat),
+    displayMedium = defaultTypography.displayMedium.copy(fontFamily = montserrat),
+    displaySmall = defaultTypography.displaySmall.copy(fontFamily = montserrat),
+    headlineLarge = defaultTypography.headlineLarge.copy(fontFamily = montserrat),
+    headlineMedium = defaultTypography.headlineMedium.copy(fontFamily = montserrat),
+    headlineSmall = defaultTypography.headlineSmall.copy(fontFamily = montserrat),
+    titleLarge = defaultTypography.titleLarge.copy(fontFamily = montserrat),
+    titleMedium = defaultTypography.titleMedium.copy(fontFamily = montserrat),
+    titleSmall = defaultTypography.titleSmall.copy(fontFamily = montserrat),
+    bodyLarge = defaultTypography.bodyLarge.copy(fontFamily = montserrat),
+    bodyMedium = defaultTypography.bodyMedium.copy(fontFamily = montserrat),
+    bodySmall = defaultTypography.bodySmall.copy(fontFamily = montserrat),
+    labelLarge = defaultTypography.labelLarge.copy(fontFamily = montserrat),
+    labelMedium = defaultTypography.labelMedium.copy(fontFamily = montserrat),
+    labelSmall = defaultTypography.labelSmall.copy(fontFamily = montserrat),
+)
+
+
+val Typography = appTypography

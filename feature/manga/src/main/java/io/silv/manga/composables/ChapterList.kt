@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import io.silv.manga.manga_view.MangaViewState
 import io.silv.model.SavableChapter
+import io.silv.ui.composables.AnimatedBoxShimmer
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -170,14 +171,14 @@ fun LazyListScope.chapterListItems(
 private fun ChapterItemPlaceHolder() {
     val space = io.silv.ui.theme.LocalSpacing.current
     Column {
-        io.silv.ui.AnimatedBoxShimmer(
+        AnimatedBoxShimmer(
             Modifier
                 .fillMaxWidth()
                 .height(40.dp)
                 .padding(horizontal = space.med)
         )
         repeat(4) {
-            io.silv.ui.AnimatedBoxShimmer(
+            AnimatedBoxShimmer(
                 Modifier
                     .fillMaxWidth()
                     .height(80.dp)

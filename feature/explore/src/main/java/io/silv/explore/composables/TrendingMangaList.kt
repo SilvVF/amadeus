@@ -21,6 +21,8 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.model.SavableManga
+import io.silv.ui.composables.AnimatedBoxShimmer
+import io.silv.ui.composables.MangaListItemSideTitle
 
 @Composable
 fun TrendingMangaList(
@@ -51,7 +53,7 @@ fun TrendingMangaList(
             contentType = manga.itemContentType()
         ) { i ->
             manga[i]?.let {
-                io.silv.ui.MangaListItemSideTitle(
+                MangaListItemSideTitle(
                     manga = it,
                     modifier = Modifier
                         .padding(space.med)
@@ -78,7 +80,7 @@ fun TrendingMangaList(
         if (manga.loadState.refresh is LoadState.Loading) {
             items(4) {
                 io.silv.ui.CenterBox(Modifier.size(200.dp)) {
-                    io.silv.ui.AnimatedBoxShimmer(
+                    AnimatedBoxShimmer(
                         Modifier
                             .size(200.dp)
                             .padding(space.med)

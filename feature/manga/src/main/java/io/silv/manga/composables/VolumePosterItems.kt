@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.manga.manga_view.MangaViewState
+import io.silv.ui.composables.AnimatedBoxShimmer
 
 fun LazyListScope.volumePosterItems(
     mangaState: MangaViewState
@@ -52,7 +53,7 @@ fun LazyListScope.volumePosterItems(
 private fun VolumePostersPlaceHolder() {
     FlowRow {
         repeat(4) {
-            io.silv.ui.AnimatedBoxShimmer(
+            AnimatedBoxShimmer(
                 modifier = Modifier
                     .fillMaxWidth(0.4f)
                     .height(200.dp)

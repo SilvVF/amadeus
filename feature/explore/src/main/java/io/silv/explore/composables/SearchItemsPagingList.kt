@@ -25,10 +25,10 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.model.SavableManga
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
-import io.silv.ui.AnimatedBoxShimmer
+import io.silv.ui.composables.AnimatedBoxShimmer
 import io.silv.ui.CenterBox
-import io.silv.ui.MangaListItem
-import io.silv.ui.PullRefresh
+import io.silv.ui.composables.MangaListItem
+import io.silv.ui.composables.PullRefresh
 import io.silv.ui.header
 
 @Composable

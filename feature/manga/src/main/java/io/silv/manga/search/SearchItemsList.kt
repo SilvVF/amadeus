@@ -23,9 +23,10 @@ import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.manga.manga_filter.MangaFilterScreen
 import io.silv.model.SavableManga
-import io.silv.ui.AnimatedBoxShimmer
-import io.silv.ui.MangaListItem
-import io.silv.ui.PullRefresh
+import io.silv.ui.composables.AnimatedBoxShimmer
+import io.silv.ui.CenterBox
+import io.silv.ui.composables.MangaListItem
+import io.silv.ui.composables.PullRefresh
 import io.silv.ui.header
 import io.silv.ui.theme.LocalSpacing
 
@@ -94,12 +95,12 @@ fun SearchItemsPagingList(
                 key = "loading-indicator"
             ) {
                 if (items.loadState.append is LoadState.Loading) {
-                    io.silv.ui.CenterBox(Modifier.size(200.dp)) {
+                    CenterBox(Modifier.size(200.dp)) {
                         CircularProgressIndicator()
                     }
                 }
                 if (items.loadState.append is LoadState.Error || items.loadState.refresh is LoadState.Error) {
-                    io.silv.ui.CenterBox(Modifier.size(200.dp)) {
+                    CenterBox(Modifier.size(200.dp)) {
                         Button(onClick = { items.retry() }) {
                             Text("Retry loading manga")
                         }

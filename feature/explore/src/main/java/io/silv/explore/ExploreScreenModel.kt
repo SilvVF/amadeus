@@ -22,9 +22,9 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -82,8 +82,16 @@ class ExploreScreenModel(
         }
         .stateInUi(state.value.searchQuery)
 
-    val searchMangaPagingFlow = subscribeToPagingData(
-        typeFlow =  searchFlow.map { query -> PagedType.Query(QueryFilters(query = query)) },
+    val mangaPagingFlow = subscribeToPagingData(
+        typeFlow =  state.map { it.pagedType }.combine(searchFlow) { pageType, query ->
+                when(pageType) {
+                    PagedType.Latest -> pageType
+                    PagedType.Popular -> pageType
+                    is PagedType.Query -> pageType.copy(
+                        filters = QueryFilters(query)
+                    )
+                }
+        },
         config = PagingConfig(
             pageSize = 30,
             prefetchDistance = 30,
@@ -92,25 +100,6 @@ class ExploreScreenModel(
         scope = ioCoroutineScope
     )
 
-    val popularMangaPagingFlow = subscribeToPagingData(
-        typeFlow = flowOf(PagedType.Popular),
-        config = PagingConfig(
-            pageSize = 30,
-            prefetchDistance = 30,
-            initialLoadSize = 30,
-        ),
-        scope = ioCoroutineScope
-    )
-
-    val recentMangaPagingFlow = subscribeToPagingData(
-        typeFlow = flowOf(PagedType.Latest),
-        config = PagingConfig(
-            pageSize = 30,
-            prefetchDistance = 30,
-            initialLoadSize = 30,
-        ),
-        scope = ioCoroutineScope
-    )
 
     val seasonalMangaUiState = combineTuple(
         seasonalMangaRepository.getSeasonalLists(),
@@ -121,6 +110,16 @@ class ExploreScreenModel(
         .stateInUi(SeasonalMangaUiState(emptyList()))
 
 
+
+    fun changePagingType(type: PagedType) {
+        screenModelScope.launch {
+            mutableState.update {state ->
+                state.copy(
+                    pagedType = type
+                )
+            }
+        }
+    }
 
     fun updateSearchQuery(query: String) {
         mutableState.update {state ->
@@ -162,4 +161,5 @@ data class ExploreState(
     val searchQuery: String = "",
     val forceSearch: Boolean = false,
     val refreshingSeasonal: Boolean = false,
+    val pagedType: PagedType = PagedType.Popular
 )

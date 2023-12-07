@@ -1,4 +1,4 @@
-package io.silv.ui
+package io.silv.ui.composables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

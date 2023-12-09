@@ -287,7 +287,7 @@ class MangaViewScreen(
                             Modifier
                                 .fillMaxWidth()
                                 .height(300.dp))
-                        is MangaViewState.Success ->  MainPoster(
+                        is MangaViewState.Success -> MainPoster(
                             manga = mangaViewState.manga,
                             modifier = Modifier.fillMaxWidth(),
                             viewMangaArtClick = {

@@ -82,7 +82,6 @@ import androidx.compose.ui.util.fastFirstOrNull
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
-import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
@@ -143,7 +142,6 @@ class LibraryScreen: Screen {
         val bookmarkedChapters by sm.bookmarkedChapters.collectAsStateWithLifecycle()
         val downloadingOrDeletingIds by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
         val updatedManga by sm.updates.collectAsStateWithLifecycle()
-        val navigator = LocalNavigator.current
         val snackbarHostState = remember { SnackbarHostState() }
 
         sm.collectEvents { event ->
@@ -413,8 +411,8 @@ fun BookmarkedChapterList(
     val chaptersByManga by remember {
         derivedStateOf {
             bookmarkedChapters.groupBy { chapter -> chapter.mangaId }
-                .mapKeys { (k, chapter) -> chapter.sortedBy { it.chapter } }
-                .map { (k, v) -> v.toList() }
+                .mapKeys { (_, chapter) -> chapter.sortedBy { it.chapter } }
+                .map { (_, v) -> v.toList() }
         }
     }
     val space = LocalSpacing.current

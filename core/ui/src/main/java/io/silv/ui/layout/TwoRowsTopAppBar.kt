@@ -1,6 +1,5 @@
 package io.silv.ui.layout
 
-import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationState
@@ -305,10 +304,6 @@ private fun TopAppBarLayoutCopy(
         val bottomContentPlaceable =
             measurables.first { it.layoutId == "bottomContent" }
                 .measure(constraints.copy(minWidth = 0, maxHeight = 64.dp.roundToPx()))
-
-
-        Log.d("title", titlePlaceable.height.toString(),)
-        Log.d("title", titleBaseline.toString(),)
 
         val layoutHeight = heightPx.roundToInt()
         val offset = heightOffset.roundToInt()

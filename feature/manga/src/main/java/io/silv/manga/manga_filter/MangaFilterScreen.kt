@@ -65,9 +65,9 @@ import io.silv.common.model.TimePeriod
 import io.silv.model.SavableManga
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
+import io.silv.ui.CenterBox
 import io.silv.ui.composables.AnimatedBoxShimmer
 import io.silv.ui.composables.BlurImageBackground
-import io.silv.ui.CenterBox
 import io.silv.ui.composables.MangaGenreTags
 import io.silv.ui.composables.MangaListItem
 import io.silv.ui.composables.TranslatedLanguageTags
@@ -333,7 +333,7 @@ fun YearlyMangaPager(
                             modifier = Modifier.fillMaxWidth()
                         )
                         MangaGenreTags(
-                            tags = manga.tagToId.keys.toList(),
+                            tags = manga.tags,
                             modifier = Modifier.fillMaxWidth(),
                             onTagClick = { name ->
                                 manga.tagToId[name]?.let {

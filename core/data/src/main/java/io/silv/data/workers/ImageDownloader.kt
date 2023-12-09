@@ -16,30 +16,6 @@ internal class ImageDownloader(
     private val context: Context,
     private val dispatchers: AmadeusDispatchers
 ) {
-    suspend fun writeMangaCoverArt(
-        mangaId: String,
-        url: String,
-    ) = withContext(dispatchers.io) {
-        val image = URL(url)
-        val inputStream = image.openStream().buffered()
-        val bitmap = BitmapFactory.decodeStream(inputStream)
-
-        val ext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) "webp" else "png"
-
-        val fileName = "cover_art-$mangaId.$ext"
-
-        val file = File(context.filesDir, fileName)
-
-        file.outputStream().buffered().use {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, it)
-            } else {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
-            }
-        }
-
-        file.toUri()
-    }
 
     suspend fun write(
         mangaId: String,

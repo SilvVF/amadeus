@@ -2,7 +2,7 @@ package io.silv.library
 
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
-import cafe.adriel.voyager.core.model.coroutineScope
+import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.ProgressState
 import io.silv.common.model.UpdateType
 import io.silv.data.chapter.ChapterEntityRepository
@@ -74,13 +74,13 @@ class LibrarySM(
     }
         .stateInUi(emptyList())
 
-    fun deleteChapterImages(chapterIds: List<String>) = coroutineScope.launch {
+    fun deleteChapterImages(chapterIds: List<String>) = screenModelScope.launch {
         workManager.enqueue(
             io.silv.data.workers.chapters.ChapterDeletionWorker.deletionWorkRequest(chapterIds)
         )
     }
 
-    fun downloadChapterImages(chapterIds: List<String>, mangaId: String) = coroutineScope.launch {
+    fun downloadChapterImages(chapterIds: List<String>, mangaId: String) = screenModelScope.launch {
         workManager.enqueueUniqueWork(
             chapterIds.toString(),
             ExistingWorkPolicy.KEEP,
@@ -91,7 +91,7 @@ class LibrarySM(
         )
     }
 
-    fun changeChapterBookmarked(id: String) = coroutineScope.launch {
+    fun changeChapterBookmarked(id: String) = screenModelScope.launch {
         var new = false
         chapterEntityRepository.updateChapter(id) { entity ->
             entity.copy(
@@ -103,7 +103,7 @@ class LibrarySM(
         )
     }
 
-    fun changeChapterReadStatus(id: String) = coroutineScope.launch {
+    fun changeChapterReadStatus(id: String) = screenModelScope.launch {
         var new = false
         chapterEntityRepository.updateChapter(id) { entity ->
             entity.copy(

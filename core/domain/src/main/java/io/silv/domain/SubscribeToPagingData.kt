@@ -33,7 +33,7 @@ class SubscribeToPagingData(
         return typeFlow.distinctUntilChanged()
             .map { type ->
                 combine(
-                    pagingFactory.pager(config, type).flow,
+                    pagingFactory.pager(config, type).flow.cachedIn(scope),
                     savedMangaRepository.getSavedMangas()
                 ) { pagingData, saved ->
                     Log.d("SubscribeToPagingData", "$type $pagingData")

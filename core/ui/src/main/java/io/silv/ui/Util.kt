@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
@@ -60,6 +61,8 @@ fun Modifier.shadow(
         }
     }
 )
+
+fun Color.isLight() = this.luminance() > 0.5
 
 fun Modifier.fillMaxAfterMesaure(context: BoxScope, @FloatRange(0.0, 1.0, true, true) size: Float) = with(context) {
     this@fillMaxAfterMesaure

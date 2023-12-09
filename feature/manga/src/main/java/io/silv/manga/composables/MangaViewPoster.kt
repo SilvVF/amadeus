@@ -24,19 +24,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import io.silv.manga.manga_view.StatsUiState
-import io.silv.ui.fillMaxAfterMesaure
 import io.silv.common.filterUnique
 import io.silv.common.model.Status
+import io.silv.manga.manga_view.StatsUiState
 import io.silv.model.SavableManga
+import io.silv.ui.fillMaxAfterMesaure
 
 @Composable
 fun MainPoster(
@@ -46,7 +44,6 @@ fun MainPoster(
     viewMangaArtClick: () -> Unit,
     statsState: StatsUiState,
 ) {
-    val ctx = LocalContext.current
     val space = io.silv.ui.theme.LocalSpacing.current
 
     Box(modifier = modifier) {
@@ -55,7 +52,7 @@ fun MainPoster(
                 .fillMaxWidth()
                 .fillMaxAfterMesaure(this, 1f)
                 .align(TopStart),
-            url = manga.coverArt
+            manga = manga
         )
         Row(
             Modifier
@@ -64,9 +61,7 @@ fun MainPoster(
                 .padding(space.med)
         ) {
             AsyncImage(
-                model = ImageRequest.Builder(ctx)
-                    .data(manga.coverArt)
-                    .build(),
+                model = manga,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
@@ -187,17 +182,14 @@ fun MangaTitle(
 @Composable
 fun BackgroundImageDarkened(
     modifier: Modifier,
-    url: String
+    manga: SavableManga
 ) {
-    val ctx = LocalContext.current
     Box(
         modifier = modifier
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
-                model = ImageRequest.Builder(ctx)
-                    .data(url)
-                    .build(),
+                model = manga,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxWidth()

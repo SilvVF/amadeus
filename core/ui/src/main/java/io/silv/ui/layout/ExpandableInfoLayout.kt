@@ -1,6 +1,5 @@
 package io.silv.ui.layout
 
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -27,7 +26,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.Layout
@@ -38,7 +36,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
@@ -94,16 +91,19 @@ class ExpandableState(
 
     internal var peekHeightPx by mutableIntStateOf(0)
 
-    internal val dragHeightOffset = Animatable(
-        when (progress) {
-            Hidden -> Float.MIN_VALUE
-            Expanded -> 0f
-            PartiallyExpanded -> Float.MIN_VALUE
-        }
-    )
+    // Derived state allows animatable initial value to be set by layout
+    // before it is used to calculate height based on max and peek heights
+    internal val dragHeightOffset by derivedStateOf {
+        Animatable(
+            when (progress) {
+                Hidden -> maxHeightPx.toFloat()
+                Expanded -> 0f
+                PartiallyExpanded -> maxHeightPx.toFloat() - peekHeightPx.toFloat()
+            }
+        )
+    }
 
     init {
-        scope.launch { updateInitial(startProgress) }
         scope.launch {
             withContext(Dispatchers.Main.immediate) {
                 dragChannel.consumeAsFlow().collectLatest { action ->
@@ -121,7 +121,7 @@ class ExpandableState(
                         }
                         is DragAction.Stopped -> {
 
-                            val useDecay = !(dragHeightOffset.value >= maxHeightPx || dragHeightOffset.value <= 0.01f)
+                            val useDecay = !(dragHeightOffset.value >= maxHeightPx * 0.99f || dragHeightOffset.value <= 0.01f)
 
                             val height = maxHeightPx - if (useDecay)
                                 decay.calculateTargetValue(dragHeightOffset.value, action.velocity)
@@ -159,19 +159,6 @@ class ExpandableState(
         }
     }
 
-    private suspend fun updateInitial(startProgress: SheetValue) {
-        snapshotFlow { peekHeightPx to maxHeightPx }.distinctUntilChanged().collect { (peek, max) ->
-            if (peek != 0 && max != 0 && progress == startProgress) {
-                when(startProgress) {
-                    Hidden -> hide()
-                    Expanded -> expand()
-                    PartiallyExpanded -> show()
-                }
-            }
-        }
-    }
-
-
     private val animSpec: TweenSpec<Float> = tween(300,0, LinearOutSlowInEasing)
 
     private var jobToTarget: Pair<Job, SheetValue>? = null
@@ -185,42 +172,56 @@ class ExpandableState(
             field = value
         }
 
+
     suspend fun hide() {
 
         jobToTarget.let { it?.first?.cancel() }
 
-        jobToTarget = scope.launch {
-            dragHeightOffset.animateTo(maxHeightPx.toFloat(), animSpec, initialVelocity = dragHeightOffset.velocity)
+        val job = scope.launch {
+            dragHeightOffset.animateTo(
+                maxHeightPx.toFloat(),
+                animSpec,
+                initialVelocity = dragHeightOffset.velocity
+            )
             progress = Hidden
-        } to Hidden
+        }
+
+        jobToTarget = job to Hidden
     }
 
     suspend fun expand() {
 
         jobToTarget.let { it?.first?.cancel() }
 
-        jobToTarget = scope.launch {
-            dragHeightOffset.animateTo(0f, animSpec, initialVelocity = dragHeightOffset.velocity)
+        val job = scope.launch {
+            dragHeightOffset.animateTo(
+                0f,
+                animSpec,
+                initialVelocity = dragHeightOffset.velocity
+            )
             progress = Expanded
-        } to Expanded
+        }
+
+        jobToTarget = job to Expanded
     }
 
     suspend fun show() {
 
         jobToTarget.let { it?.first?.cancel() }
 
-        jobToTarget = scope.launch {
+        val job = scope.launch {
             dragHeightOffset.animateTo(
                 maxHeightPx.toFloat() - peekHeightPx.toFloat(),
                 animSpec,
                 initialVelocity = dragHeightOffset.velocity
             )
             progress = PartiallyExpanded
-        } to PartiallyExpanded
+        }
+
+        jobToTarget = job to PartiallyExpanded
     }
 
     suspend fun toggleProgress() {
-        Log.d("Expandable", "${jobToTarget?.second} $progress ")
         when (jobToTarget?.second ?: progress) {
             Hidden -> show()
             Expanded -> hide()
@@ -271,9 +272,11 @@ fun ExpandableInfoLayout(
         val contentPlaceable = measurables.first{ it.layoutId == "content" }
             .measure(constraints.copy(minWidth = 0))
 
+
         state.peekHeightPx = peekPlaceable.height
 
         val maxHeight = peekPlaceable.height + contentPlaceable.height
+
 
         state.maxHeightPx = maxHeight
 

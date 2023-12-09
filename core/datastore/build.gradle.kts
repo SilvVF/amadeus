@@ -32,11 +32,19 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    buildFeatures{
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.4"
+    }
 }
 
 dependencies {
 
     implementation(project(":core:common"))
+
+    implementation("androidx.compose.runtime:runtime:1.5.4")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

@@ -19,11 +19,13 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,12 +33,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -48,54 +53,96 @@ import io.silv.ui.noRippleClickable
 import io.silv.ui.shadow
 import io.silv.ui.theme.LocalSpacing
 import io.silv.ui.theme.Pastel
+import io.silv.ui.theme.md_theme_dark_onSurface
 import io.silv.ui.vertical
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+
+@Stable
+enum class CardType(val string: String) {
+    List("List"),
+    SemiCompact("Semi-Compact Card"),
+    Compact("Compact Card"),
+    ExtraCompact("Extra-Compact Card")
+}
+
 
 @Composable
 fun MangaListItem(
     modifier: Modifier = Modifier,
     manga: SavableManga,
     onTagClick: (tag: String) -> Unit,
-    onBookmarkClick: () -> Unit
+    onBookmarkClick: () -> Unit,
+    cardType: CardType = CardType.Compact
 ) {
 
     val space = LocalSpacing.current
 
-    Column(modifier.heightIn(min = 90.dp, max = (LocalConfiguration.current.screenHeightDp / 2).dp)) {
-        Box(Modifier.weight(1f).fillMaxWidth()) {
+    Column(
+        modifier = modifier
+            .heightIn(
+                min = 90.dp,
+                max = (LocalConfiguration.current.screenHeightDp / 2).dp
+            )
+    ) {
+        Box(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .clip(
+                    RoundedCornerShape(8.dp)
+                )
+        ) {
             AsyncImage(
                 model = manga,
                 contentDescription = null,
                 modifier = Modifier
-                    .clip(
-                        RoundedCornerShape(8.dp)
-                    )
                     .fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            Column(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()) {
-                Spacer(modifier = Modifier.height(space.small))
-                Spacer(modifier = Modifier.height(space.small))
+            if (cardType != CardType.ExtraCompact) {
                 Text(
                     text = manga.titleEnglish,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        color = MaterialTheme.colorScheme.background
-                    )
+                    maxLines = 2,
+                    textAlign = TextAlign.Start,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = md_theme_dark_onSurface,
+                    modifier = Modifier
+                        .drawWithCache {
+                            onDrawBehind {
+                                drawRect(
+                                    brush = Brush.verticalGradient(
+                                        colors = persistentListOf(
+                                            Color.Transparent,
+                                            Color.Black.copy(alpha = 0.7f),
+                                            Color.Black.copy(alpha = 0.9f)
+                                        )
+                                    )
+                                )
+                            }
+                        }
+                        .padding(
+                            top = space.large,
+                            bottom = space.med,
+                            start = space.small,
+                            end = space.small
+                        )
+                        .align(Alignment.BottomCenter)
                 )
             }
-
         }
-        GenreTagsWithBookmark(
-            tags = manga.tagToId.keys.toList(),
-            onBookmarkClick = onBookmarkClick,
-            bookmarked = manga.bookmarked,
-            modifier = Modifier.fillMaxWidth(),
-            onTagClick = {
-                onTagClick(it)
-            }
-        )
+        if (cardType == CardType.SemiCompact) {
+            GenreTagsWithBookmark(
+                tags = manga.tags,
+                onBookmarkClick = onBookmarkClick,
+                bookmarked = manga.bookmarked,
+                modifier = Modifier.fillMaxWidth(),
+                onTagClick = {
+                    onTagClick(it)
+                }
+            )
+        }
     }
 }
 
@@ -161,7 +208,7 @@ fun MangaListItemSideTitle(
         }
         Spacer(modifier = Modifier.height(space.small))
         GenreTagsWithBookmark(
-            tags =  manga.tagToId.keys.toList(),
+            tags =  manga.tags,
             onBookmarkClick = onBookmarkClick,
             bookmarked = manga.bookmarked,
             modifier = Modifier.fillMaxWidth(),
@@ -173,7 +220,8 @@ fun MangaListItemSideTitle(
 @Composable
 fun MangaGenreTags(
     modifier: Modifier = Modifier,
-    tags: List<String>,
+    tags: ImmutableList<String>,
+    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     onTagClick: (tag: String) -> Unit = {}
 ) {
     val space = LocalSpacing.current
@@ -185,12 +233,15 @@ fun MangaGenreTags(
         ) {language ->
             SuggestionChip(
                 onClick = { onTagClick(language) },
-                label = { Text(language) },
+                label = { Text(text = language, color = textColor) },
                 modifier = Modifier.padding(horizontal = space.small),
                 colors = SuggestionChipDefaults.suggestionChipColors(
                     labelColor = MaterialTheme.colorScheme.onBackground,
                     disabledLabelColor = MaterialTheme.colorScheme.onBackground
-                )
+                ),
+                border = SuggestionChipDefaults.suggestionChipBorder(
+                    borderColor = textColor
+                ),
             )
         }
     }
@@ -199,7 +250,8 @@ fun MangaGenreTags(
 @Composable
 fun TranslatedLanguageTags(
     modifier: Modifier = Modifier,
-    tags: List<String>,
+    tags: ImmutableList<String>,
+    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     onLanguageClick: (language: String) -> Unit = {}
 ) {
     val space = LocalSpacing.current
@@ -228,10 +280,13 @@ fun TranslatedLanguageTags(
                     onLanguageClick(language)
                 },
                 colors = SuggestionChipDefaults.suggestionChipColors(
-                    labelColor = MaterialTheme.colorScheme.onBackground,
-                    disabledLabelColor = MaterialTheme.colorScheme.onBackground
+                    labelColor = textColor,
+                    disabledLabelColor = textColor,
                 ),
-                label = { Text(text) },
+                border = SuggestionChipDefaults.suggestionChipBorder(
+                    borderColor = textColor
+                ),
+                label = { Text(text, color = textColor) },
                 modifier = Modifier.padding(horizontal = space.small)
             )
         }
@@ -241,10 +296,12 @@ fun TranslatedLanguageTags(
 @Composable
 fun GenreTagsWithBookmark(
     modifier: Modifier = Modifier,
-    tags: List<String>,
+    tags: ImmutableList<String>,
     bookmarked: Boolean,
     onBookmarkClick: () -> Unit,
-    onTagClick: (tag: String) -> Unit = {}
+    onTagClick: (tag: String) -> Unit = {},
+    iconTint: Color = LocalContentColor.current,
+    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
 ) {
     val space = LocalSpacing.current
 
@@ -253,11 +310,13 @@ fun GenreTagsWithBookmark(
             IconButton(onClick = onBookmarkClick) {
                 if (bookmarked) Icon(
                     imageVector = Icons.Filled.Favorite,
-                    contentDescription = null
+                    contentDescription = null,
+                    tint = iconTint
                 )
                 else Icon(
                     imageVector = Icons.Outlined.FavoriteBorder,
-                    contentDescription = null
+                    contentDescription = null,
+                    tint = iconTint
                 )
             }
         }
@@ -269,8 +328,11 @@ fun GenreTagsWithBookmark(
                 onClick = { onTagClick(tag) },
                 label = { Text(tag) },
                 colors = SuggestionChipDefaults.suggestionChipColors(
-                    labelColor = MaterialTheme.colorScheme.onBackground,
-                    disabledLabelColor = MaterialTheme.colorScheme.onBackground
+                    labelColor = textColor,
+                    disabledLabelColor = textColor
+                ),
+                border = SuggestionChipDefaults.suggestionChipBorder(
+                    borderColor = textColor
                 ),
                 modifier = Modifier.padding(horizontal = space.small)
             )

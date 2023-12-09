@@ -47,6 +47,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
+    implementation(project(":core:datastore"))
     implementation(project(":sync"))
 
 
@@ -78,6 +79,8 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
+
+    implementation("androidx.palette:palette:1.0.0")
     // Paging 3
     implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.paging.runtime)

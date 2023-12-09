@@ -53,7 +53,6 @@ fun Manga.toSavedManga(saved: SavedMangaEntity? = null): SavedMangaEntity {
         lastVolume = network.attributes.lastVolume?.toIntOrNull() ?: - 1,
         lastChapter = network.attributes.lastChapter?.toLongOrNull() ?: -1L,
         version = network.attributes.version,
-        bookmarked = saved?.bookmarked ?: false,
         volumeToCoverArt = saved?.volumeToCoverArt ?: emptyMap(),
         createdAt = network.attributes.createdAt.parseMangaDexTimeToDateTime(),
         updatedAt = network.attributes.updatedAt.parseMangaDexTimeToDateTime(),

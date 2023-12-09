@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
+    implementation(libs.kotlin.collections.immutable)
 
 
     // COIL

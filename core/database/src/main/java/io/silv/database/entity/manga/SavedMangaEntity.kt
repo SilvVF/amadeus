@@ -23,56 +23,34 @@ data class SavedMangaEntity(
     val originalCoverArtUrl: String,
 
     override val coverArt: String,
-
     override val description: String,
-
     override val titleEnglish: String,
-
     override val alternateTitles: Map<String, String>,
-
     override val originalLanguage: String,
-
     override val availableTranslatedLanguages: List<String>,
-
     override val status: Status,
-
     override val tagToId: Map<String, String>,
-
     override val contentRating: ContentRating,
-
     override val lastVolume: Int,
-
     override val lastChapter: Long,
-
     override val version: Int,
-
-    val bookmarked: Boolean,
-
     override val publicationDemographic: PublicationDemographic?,
-
     override val createdAt: LocalDateTime,
-
     override val updatedAt: LocalDateTime,
-
     override val volumeToCoverArt: Map<String, String>,
-
     override val savedAtLocal: LocalDateTime = localDateTimeNow(),
-
     override val year: Int,
-
     override val latestUploadedChapter: String?,
-
     override val authors: List<String>,
-
     override val artists: List<String>
-
 ): AmadeusEntity<String>, MangaResource {
+
     constructor(mangaResource: MangaResource): this(
         id = mangaResource.id,
         progressState = ProgressState.NotStarted,
         readingStatus = ReadingStatus.None,
         originalCoverArtUrl = mangaResource.coverArt,
-        coverArt = "",
+        coverArt = mangaResource.coverArt,
         description = mangaResource.description,
         titleEnglish = mangaResource.titleEnglish,
         alternateTitles = mangaResource.alternateTitles,
@@ -84,7 +62,6 @@ data class SavedMangaEntity(
         lastVolume = mangaResource.lastVolume,
         lastChapter = mangaResource.lastChapter,
         version = mangaResource.version,
-        bookmarked = false,
         createdAt = mangaResource.createdAt,
         updatedAt = mangaResource.updatedAt,
         volumeToCoverArt = emptyMap(),
@@ -115,7 +92,6 @@ data class SavedMangaEntity(
             lastVolume = recent.lastVolume,
             lastChapter = recent.lastChapter,
             version = recent.version,
-            bookmarked = false,
             createdAt = recent.createdAt,
             updatedAt = recent.updatedAt,
             publicationDemographic = recent.publicationDemographic,

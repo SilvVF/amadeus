@@ -56,7 +56,8 @@ fun ExploreTopAppBar(
     onWebClick: () -> Unit,
     onDisplayOptionsClick: () -> Unit,
     onSearch: (query: String) -> Unit,
-    onFilterSelected: (PagedType) -> Unit,
+    onPageTypeSelected: (PagedType) -> Unit,
+    onFilterClick: () -> Unit
 ) {
     val space = LocalSpacing.current
 
@@ -80,7 +81,12 @@ fun ExploreTopAppBar(
                     FilterChip(
                         modifier = Modifier.padding(space.xs),
                         selected = selected::class == type::class,
-                        onClick = { onFilterSelected(type) },
+                        onClick = {
+                           if (type is PagedType.Query)
+                               onFilterClick()
+                            else
+                                onPageTypeSelected(type)
+                        },
                         leadingIcon = {
                             Icon(
                                 imageVector = icon,

@@ -21,11 +21,13 @@ import androidx.paging.compose.itemKey
 import io.silv.model.SavableManga
 import io.silv.ui.CenterBox
 import io.silv.ui.composables.AnimatedBoxShimmer
+import io.silv.ui.composables.CardType
 import io.silv.ui.composables.MangaListItem
 import io.silv.ui.theme.LocalSpacing
 
 fun LazyGridScope.mangaGrid(
     manga: LazyPagingItems<SavableManga>,
+    cardType: CardType,
     onTagClick: (manga: SavableManga, name: String) -> Unit,
     onBookmarkClick: (manga: SavableManga) -> Unit,
     onMangaClick: (manga: SavableManga) -> Unit,
@@ -42,8 +44,9 @@ fun LazyGridScope.mangaGrid(
         item?.let { manga ->
             MangaListItem(
                 manga = item,
+                cardType = cardType,
                 modifier = Modifier
-                    .padding(space.med)
+                    .padding(space.small)
                     .height((LocalConfiguration.current.screenHeightDp / 2.6f).dp)
                     .clickable {
                         onMangaClick(manga)

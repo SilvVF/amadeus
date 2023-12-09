@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi
+package io.silv.common
 
 import java.security.MessageDigest
 

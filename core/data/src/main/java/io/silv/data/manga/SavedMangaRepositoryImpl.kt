@@ -2,32 +2,28 @@ package io.silv.data.manga
 
 import android.util.Log
 import com.skydoves.sandwich.getOrThrow
-import io.silv.common.model.ProgressState
 import io.silv.common.model.Status
 import io.silv.common.time.localDateTimeNow
 import io.silv.data.mappers.toSavedManga
-import io.silv.data.util.GetMangaResourcesById
 import io.silv.data.util.UpdateChapterList
 import io.silv.data.util.createSyncer
 import io.silv.data.util.syncUsing
-import io.silv.data.workers.cover_art.CoverArtHandler
 import io.silv.database.dao.SavedMangaDao
+import io.silv.database.dao.SourceMangaDao
 import io.silv.database.entity.manga.SavedMangaEntity
 import io.silv.database.entity.relations.SavedMangaWithChapters
 import io.silv.network.model.manga.Manga
 import io.silv.network.requests.MangaRequest
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 
 internal class SavedMangaRepositoryImpl(
     private val savedMangaDao: SavedMangaDao,
-    private val getMangaResourceById: GetMangaResourcesById,
+    private val sourceMangaDao: SourceMangaDao,
     private val mangaDexApi: io.silv.network.MangaDexApi,
     private val dispatchers: io.silv.common.AmadeusDispatchers,
     private val updateChapterList: UpdateChapterList,
-    private val coverArtManager: CoverArtHandler,
     private val mangaUpdateRepository: MangaUpdateRepository
 ): SavedMangaRepository {
 
@@ -36,54 +32,29 @@ internal class SavedMangaRepositoryImpl(
     private fun log(msg: String) = Log.d(TAG, msg)
 
     override suspend fun bookmarkManga(id: String): Unit = withContext(dispatchers.io) {
-            log("bookmarking $id")
-            savedMangaDao.getSavedMangaWithChaptersById(id).first()?.let { (manga, chapters) ->
-                log("saved found $id")
-                if (!manga.bookmarked) {
-                    savedMangaDao.updateSavedManga(
-                        manga.copy(bookmarked = true)
-                    )
-                } else {
-                    // Check if any images are downloaded or the progress state needs to be tracked
-                    if (
-                        chapters.all { it.chapterImages.isEmpty() } &&
-                        manga.progressState == ProgressState.NotStarted
-                    ) {
-                        // delete if above is true
-                        savedMangaDao.deleteSavedManga(manga)
-                        coverArtManager.deleteCover(manga.coverArt)
-                    } else {
-                        // need the saved manga to track progress and save the images
-                        savedMangaDao.updateSavedManga(
-                            manga.copy(bookmarked = false)
-                        )
-                    }
-                }
-            }
-                ?: run {
-                    getMangaResourceById(id).maxBy { it.first.savedAtLocal }.let { resource ->
-                        log("No Saved found using resource $id")
-                        saveManga(id) {
-                            it.copy(bookmarked = true)
-                        }
-                        log("Inserted Saved manga using resource $id and set bookmarked true")
-                    }
-                }
+        val saved = savedMangaDao.getSavedMangaById(id).firstOrNull()
+
+        if (saved == null) {
+            val sourceManga = sourceMangaDao.selectById(id) ?: return@withContext
+            savedMangaDao.upsertSavedManga(SavedMangaEntity(sourceManga))
+        } else {
+            savedMangaDao.deleteSavedManga(saved)
+        }
     }
 
     override suspend fun saveManga(
         id: String,
-        copy: ((SavedMangaEntity) -> SavedMangaEntity)?
-    ): Unit = withContext(dispatchers.io) {
-        getMangaResourceById(id)
-            .maxByOrNull { it.first.savedAtLocal }
-            ?.let { (resource, _) ->
-                val entity = copy?.invoke(SavedMangaEntity(resource)) ?: SavedMangaEntity(resource)
-                savedMangaDao.upsertSavedManga(entity)
-                log("Inserted Saved manga using resource $id")
-                updateChapterList(id)
-                coverArtManager.saveCover(id, entity.originalCoverArtUrl)
-            }
+        block: (SavedMangaEntity) -> SavedMangaEntity
+    ): Boolean = withContext(dispatchers.io) {
+        sourceMangaDao.selectById(id)?.let { resource ->
+            val saved = block(SavedMangaEntity(resource))
+
+            savedMangaDao.upsertSavedManga(saved)
+            updateChapterList(saved.id)
+
+            true
+        }
+            ?: false
     }
 
 
@@ -111,10 +82,7 @@ internal class SavedMangaRepositoryImpl(
             },
             upsert = {
                 savedMangaDao.upsertSavedManga(it)
-                if (it.coverArt.isBlank()) {
-                    coverArtManager.saveCover(it.id, it.originalCoverArtUrl)
-                    updateChapterList(it.id)
-                }
+                updateChapterList(it.id)
             }
         )
 

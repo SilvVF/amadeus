@@ -4,7 +4,6 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
-import com.zhuinden.flowcombinetuplekt.combineTuple
 import io.silv.common.model.PagedType
 import io.silv.common.model.QueryFilters
 import io.silv.common.model.Season
@@ -48,6 +47,15 @@ class ExploreScreenModel(
             }
         }
             .launchIn(screenModelScope)
+
+        subscribeToSeasonalLists.getLists(ioCoroutineScope).onEach { lists ->
+            mutableState.update { state ->
+                state.copy(
+                    seasonalLists =  lists.map(::toUi).toImmutableList()
+                )
+            }
+        }
+            .launchIn(screenModelScope)
     }
 
     fun startSearching() {
@@ -57,13 +65,6 @@ class ExploreScreenModel(
             )
         }
     }
-
-    val seasonLists = subscribeToSeasonalLists
-        .getLists(ioCoroutineScope)
-        .map { lists ->
-            lists.map(::toUi).toImmutableList()
-        }
-        .stateInUi(persistentListOf())
 
 
     @OptIn(FlowPreview::class)
@@ -99,15 +100,6 @@ class ExploreScreenModel(
         ),
         scope = ioCoroutineScope
     )
-
-
-    val seasonalMangaUiState = combineTuple(
-        seasonalMangaRepository.getSeasonalLists(),
-        savedMangaRepository.getSavedMangas()
-    ).map { (seasonWithManga, saved)->
-        SeasonalMangaUiState(emptyList())
-    }
-        .stateInUi(SeasonalMangaUiState(emptyList()))
 
 
 
@@ -161,5 +153,6 @@ data class ExploreState(
     val searchQuery: String = "",
     val forceSearch: Boolean = false,
     val refreshingSeasonal: Boolean = false,
-    val pagedType: PagedType = PagedType.Popular
+    val pagedType: PagedType = PagedType.Popular,
+    val seasonalLists: ImmutableList<UiSeasonalList> = persistentListOf(),
 )

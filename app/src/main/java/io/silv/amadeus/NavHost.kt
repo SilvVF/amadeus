@@ -21,6 +21,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -36,7 +37,6 @@ import io.silv.ui.locals.LocalNavBarVisibility
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 
@@ -47,8 +47,13 @@ object NavHost: Screen {
     @Composable
     override fun Content() {
 
+        val navigator = LocalNavigator.currentOrThrow
         val showBottomBar by produceState(initialValue = true) {
-            bottomBarVisibility.receiveAsFlow().onEach { value = it }.collect()
+            snapshotFlow { navigator.canPop }.onEach { canPop ->
+                value = !canPop
+            }
+                .collect()
+            //bottomBarVisibility.receiveAsFlow().onEach { value = it }.collect()
         }
 
         TabNavigator(

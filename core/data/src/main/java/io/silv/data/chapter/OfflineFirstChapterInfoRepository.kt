@@ -9,6 +9,7 @@ import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.minus
 import io.silv.data.mappers.coverArtUrl
 import io.silv.data.mappers.toChapterEntity
+import io.silv.database.dao.SourceMangaDao
 import io.silv.database.entity.chapter.ChapterEntity
 import io.silv.network.requests.ChapterListRequest
 import io.silv.network.requests.CoverArtRequest
@@ -28,8 +29,8 @@ import kotlin.time.Duration.Companion.hours
 internal class OfflineFirstChapterInfoRepository(
     private val chapterDao: io.silv.database.dao.ChapterDao,
     private val mangaDexApi: io.silv.network.MangaDexApi,
+    private val sourceMangaDao: SourceMangaDao,
     private val savedMangaDao: io.silv.database.dao.SavedMangaDao,
-    private val getMangaResourcesById: io.silv.data.util.GetMangaResourcesById,
     private val updateVolumeWithCoverArt: io.silv.data.util.UpdateMangaResourceWithArt,
     private val updateChapterList: io.silv.data.util.UpdateChapterList,
     private val dispatchers: io.silv.common.AmadeusDispatchers,
@@ -135,9 +136,6 @@ internal class OfflineFirstChapterInfoRepository(
             loadingVolumeArtIds.update { it + mangaId }
 
             val savedManga = savedMangaDao.getSavedMangaById(mangaId).first()
-            val resourceToIdList = getMangaResourcesById(mangaId).also {
-                Log.d("ChapterInfoRepositoryImpl", it.size.toString() + "resources")
-            }
 
             val list = mangaDexApi.getCoverArtList(
                 CoverArtRequest(
@@ -164,9 +162,15 @@ internal class OfflineFirstChapterInfoRepository(
                     )
                 )
             }
-            resourceToIdList.forEach { (r, id) ->
-                Log.d("ChapterInfoRepositoryImpl", id.toString() + "trying to update")
-                updateVolumeWithCoverArt(id, r, volumeCoverArt + r.volumeToCoverArt)
+            list.data.forEach {
+                sourceMangaDao.update(
+                    sourceMangaDao.selectById(it.id)?.let { sourceManga ->
+                        sourceManga.copy(
+                            volumeToCoverArt = sourceManga.volumeToCoverArt + volumeCoverArt
+                        )
+                    }
+                        ?: return@forEach
+                )
             }
         }
             .onSuccess {

@@ -12,6 +12,22 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
+
+interface UserSettingsStore {
+
+    suspend fun updateDefaultFilter(filters: Filters): Boolean
+
+    suspend fun updateReaderSettings(readerSettings: ReaderSettings): Boolean
+
+    fun observeDefaultFilter(): Flow<Filters>
+
+    fun observeReaderSettings(): Flow<ReaderSettings>
+
+    fun observeLanguage(): Flow<String>
+
+    suspend fun updateLanguage(code: String): Boolean
+}
 
 class UserSettingsStoreImpl(
     private val dataStore: DataStore<Preferences>,

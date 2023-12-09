@@ -5,6 +5,7 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.StatFs
 import com.hippo.unifile.UniFile
+import io.silv.common.Hash
 import java.io.File
 
 

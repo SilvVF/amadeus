@@ -59,7 +59,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -89,7 +88,6 @@ import io.silv.navigation.push
 import io.silv.ui.collectEvents
 import io.silv.ui.composables.AnimatedBoxShimmer
 import io.silv.ui.isScrollingUp
-import io.silv.ui.locals.LocalNavBarVisibility
 import org.koin.core.parameter.parametersOf
 
 
@@ -110,14 +108,6 @@ class MangaViewScreen(
         val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(state = rememberTopAppBarState())
         val listState = rememberLazyListState()
         val snackbarHostState = remember { SnackbarHostState() }
-
-        val navBarChannel = LocalNavBarVisibility.current
-
-        DisposableEffect(Unit) {
-            navBarChannel.trySend(false)
-
-            onDispose { navBarChannel.trySend(true) }
-        }
 
         sm.collectEvents { event ->
             suspend fun showSnackBar(message: String) {

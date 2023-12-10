@@ -2,6 +2,7 @@ package io.silv.ui
 
 import android.graphics.BlurMaskFilter
 import androidx.annotation.FloatRange
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -10,8 +11,8 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
@@ -146,9 +147,21 @@ fun LazyListState.isScrolledToEnd(): Boolean {
 }
 
 @Composable
+fun ScrollState.isScrollingUp(): Boolean {
+    var previousScrollOffset by remember { mutableIntStateOf(this.value) }
+    return remember {
+        derivedStateOf {
+            isScrollInProgress && previousScrollOffset < value
+        }.also {
+            previousScrollOffset = value
+        }
+    }.value
+}
+
+@Composable
 fun LazyListState.isScrollingUp(): Boolean {
-    var previousIndex by remember { mutableStateOf(firstVisibleItemIndex) }
-    var previousScrollOffset by remember { mutableStateOf(firstVisibleItemScrollOffset) }
+    var previousIndex by remember { mutableIntStateOf(firstVisibleItemIndex) }
+    var previousScrollOffset by remember { mutableIntStateOf(firstVisibleItemScrollOffset) }
     return remember {
         derivedStateOf {
             if (previousIndex != firstVisibleItemIndex) {
@@ -165,8 +178,8 @@ fun LazyListState.isScrollingUp(): Boolean {
 
 @Composable
 fun LazyListState.isScrollingDown(): Boolean {
-    var previousIndex by remember { mutableStateOf(firstVisibleItemIndex) }
-    var previousScrollOffset by remember { mutableStateOf(firstVisibleItemScrollOffset) }
+    var previousIndex by remember { mutableIntStateOf(firstVisibleItemIndex) }
+    var previousScrollOffset by remember { mutableIntStateOf(firstVisibleItemScrollOffset) }
     return remember {
         derivedStateOf {
             if (previousIndex != firstVisibleItemIndex) {

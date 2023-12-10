@@ -2,6 +2,7 @@
 
 package io.silv.network.requests
 
+import io.silv.common.model.TagsMode
 import io.silv.network.requests.query.QueryParam
 import io.silv.network.requests.query.QueryParams
 
@@ -64,12 +65,6 @@ data class MangaRequest(
             .map {
                 QueryParam(it.first, it.second.toString())
             }
-    }
-
-    enum class TagsMode(
-        val string: String
-    ) {
-        OR("OR"), AND("AND")
     }
 }
 

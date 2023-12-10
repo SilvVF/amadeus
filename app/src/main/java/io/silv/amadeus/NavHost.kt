@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,11 +18,9 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -32,29 +31,29 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.explore.ExploreTab
 import io.silv.library.LibraryTab
 import io.silv.manga.search.SearchTab
+import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
-import io.silv.ui.locals.LocalNavBarVisibility
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 
 object NavHost: Screen {
 
-    private val bottomBarVisibility = Channel<Boolean>()
+    internal val bottomBarVisibility = Channel<Boolean>()
 
     @Composable
     override fun Content() {
 
         val navigator = LocalNavigator.currentOrThrow
-        val showBottomBar by produceState(initialValue = true) {
-            snapshotFlow { navigator.canPop }.onEach { canPop ->
-                value = !canPop
-            }
-                .collect()
-            //bottomBarVisibility.receiveAsFlow().onEach { value = it }.collect()
+        val appState = LocalAppState.current
+
+        val visibilityChannel by produceState(initialValue = true) {
+            bottomBarVisibility.receiveAsFlow().onEach { value = it }.collect()
         }
+
 
         TabNavigator(
             tab = ExploreTab,
@@ -63,28 +62,25 @@ object NavHost: Screen {
                 modifier = Modifier.fillMaxSize(),
                 contentWindowInsets = WindowInsets(0),
                 bottomBar = {
-                    if (shouldShowBottomBar(LocalWindowSizeClass.current) && showBottomBar) {
-                        AnimatedVisibility(
-                            visible = showBottomBar,
-                            enter = slideInVertically { it },
-                            exit = slideOutVertically { -it }
-                        ) {
-                            AmadeusBottomBar(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                            )
-                        }
+                    AnimatedVisibility(
+                        visible = appState.shouldShowBottomBar && visibilityChannel,
+                        enter = slideInVertically { it },
+                        exit = slideOutVertically { it }
+                    ) {
+                        AmadeusBottomBar(
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             ) { incoming ->
-                CompositionLocalProvider(
-                    LocalNavBarVisibility provides bottomBarVisibility
-                ) {
+                Row {
+                    if (appState.shouldShowNavRail && visibilityChannel) {
+                        AmadeusNavRail()
+                    }
                     Box(
                         Modifier
                             .padding(incoming)
                             .consumeWindowInsets(incoming)
-
                     ) {
                         CurrentTab()
                     }

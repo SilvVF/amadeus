@@ -7,12 +7,17 @@ import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
+import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onEach
 
 object ExploreTab: ReselectTab {
 
@@ -39,8 +44,23 @@ object ExploreTab: ReselectTab {
     @OptIn(ExperimentalAnimationApi::class)
     @Composable
     override fun Content() {
-        Navigator(ExploreScreen()) {
-            FadeTransition(it)
+
+        val appState = LocalAppState.current
+
+        Navigator(ExploreScreen()) { navigator ->
+
+            LaunchedEffect(appState) {
+                snapshotFlow { navigator.lastEvent }.onEach { event ->
+                    if (navigator.items.size > 1) {
+                        appState.bottomBarVisibilityChannel.send(false)
+                    } else {
+                        appState.bottomBarVisibilityChannel.send(true)
+                    }
+                }
+                    .collect()
+            }
+
+            FadeTransition(navigator)
         }
     }
 }

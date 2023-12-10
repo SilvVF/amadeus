@@ -1,12 +1,14 @@
 package io.silv.amadeus.ui.screens
 
 import io.silv.explore.ExploreScreenModel
+import io.silv.explore.FilterScreenViewModel
 import io.silv.library.LibrarySM
 import io.silv.manga.manga_filter.MangaFilterSM
 import io.silv.manga.manga_view.MangaViewSM
 import io.silv.manga.search.SearchSM
 import io.silv.reader.MangaReaderSM
 import io.silv.sync.SeasonalMangaSyncWorkName
+import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -25,10 +27,11 @@ val screenModule = module {
 
     factoryOf(::SearchSM)
 
+    viewModelOf(::FilterScreenViewModel)
+
     factory {
         ExploreScreenModel(
             subscribeToPagingData = get(),
-            seasonalMangaRepository = get(),
             savedMangaRepository = get(),
             subscribeToSeasonalLists = get(),
             seasonalMangaSyncManager = get(qualifier = named(SeasonalMangaSyncWorkName)),

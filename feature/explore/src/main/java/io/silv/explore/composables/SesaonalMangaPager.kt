@@ -57,8 +57,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
@@ -79,10 +77,7 @@ import io.silv.ui.CenterBox
 import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.isLight
 import io.silv.ui.theme.LocalSpacing
-import io.silv.ui.theme.md_theme_dark_onSurface
-import io.silv.ui.theme.md_theme_light_onSurface
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
@@ -267,12 +262,13 @@ fun SeasonalPagingCard(
     onTagClick: (name: String) -> Unit,
 ) {
     val context = LocalContext.current
-    val surface = MaterialTheme.colorScheme.surface
+    val bg = MaterialTheme.colorScheme.background
+    val onSurface = MaterialTheme.colorScheme.onSurfaceVariant
     val imageLoader = context.imageLoader
     val space = LocalSpacing.current
 
-    var dominantColor by remember { mutableStateOf(surface) }
-    var mutedColor by remember { mutableStateOf(surface) }
+    var dominantColor by remember { mutableStateOf(onSurface) }
+    var vibrantColor by remember { mutableStateOf(onSurface) }
 
     LaunchedEffect(Unit) {
         try {
@@ -288,14 +284,14 @@ fun SeasonalPagingCard(
             val dominantColorInt = palette
                 .getDominantColor(dominantColor.toArgb())
 
-            val mutedColorInt = if (dominantColor.isLight()) {
-                palette.getLightMutedColor(mutedColor.toArgb())
+            val vibrantColorInt = if (!bg.isLight()) {
+                palette.getLightVibrantColor(vibrantColor.toArgb())
             } else {
-                palette.getDarkMutedColor(mutedColor.toArgb())
+                palette.getDarkVibrantColor(vibrantColor.toArgb())
             }
 
             dominantColor = Color(dominantColorInt)
-            mutedColor = Color(mutedColorInt)
+            vibrantColor = Color(vibrantColorInt)
         } catch (e: Exception) {
             Log.e("MangaPager", e.stackTraceToString())
         }
@@ -329,86 +325,67 @@ fun SeasonalPagingCard(
                     fraction = 1f - pageOffset.coerceIn(0f, 1f)
                 )
             },
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
+        colors = CardDefaults.outlinedCardColors(
+            contentColor = vibrantColor,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),
         onClick = onClick
     ) {
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .drawWithCache {
-                onDrawBehind {
-                    drawRect(
-                        Brush.verticalGradient(
-                            persistentListOf(
-                                dominantColor,
-                                mutedColor,
-                            )
-                        )
-                    )
-                }
-            }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(space.med)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            AsyncImage(
+                model = manga,
+                contentDescription = null,
+                contentScale = ContentScale.Inside,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(space.med)
+                    .fillMaxHeight(0.9f)
+                    .fillMaxWidth(0.4f)
+            )
+            Spacer(modifier = Modifier.width(space.med))
+            Column(
+                verticalArrangement = Arrangement.Top,
+                modifier = Modifier
+                    .fillMaxHeight(0.9f)
+                    .weight(1f)
             ) {
-                AsyncImage(
-                    model = manga,
-                    contentDescription = null,
-                    contentScale = ContentScale.Inside,
-                    modifier = Modifier
-                        .fillMaxHeight(0.9f)
-                        .fillMaxWidth(0.4f)
-                )
-                Spacer(modifier = Modifier.width(space.med))
-                Column(
-                    verticalArrangement = Arrangement.Top,
-                    modifier = Modifier
-                        .fillMaxHeight(0.9f)
-                        .weight(1f)
-                ) {
-                    val textColor = if (dominantColor.isLight()) {
-                        md_theme_light_onSurface
-                    } else {
-                        md_theme_dark_onSurface
-                    }
+                val textColor = vibrantColor
 
-                    Text(
-                        text = manga.titleEnglish,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            color = textColor
-                        )
+                Text(
+                    text = manga.titleEnglish,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        color = vibrantColor
                     )
-                    Text(
-                        text = manga.alternateTitles.getOrDefault("ja-ro", ""),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            color = textColor
-                        )
+                )
+                Text(
+                    text = manga.alternateTitles.getOrDefault("ja-ro", ""),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = vibrantColor
                     )
-                    TranslatedLanguageTags(
-                        tags = manga.availableTranslatedLanguages,
-                        textColor = textColor
+                )
+                TranslatedLanguageTags(
+                    tags = manga.availableTranslatedLanguages,
+                    textColor = textColor
+                )
+                Box(modifier = Modifier.weight(1f)) {
+                    TagsGridWithBookMark(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter),
+                        tags = remember(manga) { manga.tagToId.map { it.key } },
+                        bookmarked = manga.bookmarked,
+                        onBookmarkClick = onBookmarkClick,
+                        onTagClick = onTagClick,
+                        textColor = textColor,
+                        iconTint = textColor
                     )
-                    Box(modifier = Modifier.weight(1f)) {
-                        TagsGridWithBookMark(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomCenter),
-                            tags = remember(manga) { manga.tagToId.map { it.key }},
-                            bookmarked = manga.bookmarked,
-                            onBookmarkClick = onBookmarkClick,
-                            onTagClick = onTagClick,
-                            textColor = textColor,
-                            iconTint = textColor
-                        )
-                    }
                 }
             }
         }

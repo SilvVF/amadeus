@@ -44,6 +44,7 @@ dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:common"))
 
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -71,7 +72,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
 
     implementation(libs.kotlin.collections.immutable)
-
 
     // COIL
     implementation(libs.coil.compose)

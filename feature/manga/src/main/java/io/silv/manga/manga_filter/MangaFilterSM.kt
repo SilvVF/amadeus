@@ -6,7 +6,6 @@ import androidx.compose.runtime.setValue
 import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.PagedType
-import io.silv.common.model.QueryFilters
 import io.silv.common.model.Resource
 import io.silv.common.model.TimePeriod
 import io.silv.data.manga.FilteredYearlyMangaRepository
@@ -74,7 +73,7 @@ class MangaFilterSM(
     @OptIn(ExperimentalCoroutinesApi::class)
     val timePeriodFilteredPagingFlow = subscribeToPagingData(
         PagingConfig(30, 30),
-        currentTagId.combine(timePeriod){ tag, time -> PagedType.Query(QueryFilters("",tag, time)) },
+        currentTagId.combine(timePeriod){ tag, time -> PagedType.TimePeriod(tag, time) },
         scope
     )
 

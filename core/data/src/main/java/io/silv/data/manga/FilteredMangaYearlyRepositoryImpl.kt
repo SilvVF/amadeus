@@ -4,6 +4,7 @@ import com.skydoves.sandwich.ApiResponse
 import com.skydoves.sandwich.message
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.model.Resource
+import io.silv.common.model.TagsMode
 import io.silv.common.time.timeStringMinus
 import io.silv.data.mappers.toSourceManga
 import io.silv.database.dao.SourceMangaDao
@@ -30,7 +31,7 @@ internal class FilteredYearlyMangaRepositoryImpl(
         hasAvailableChapters = true,
         order = mapOf("followedCount" to "desc"),
         includedTags = listOf(tagId),
-        includedTagsMode = MangaRequest.TagsMode.AND,
+        includedTagsMode = TagsMode.AND,
         createdAtSince = timeStringMinus(365.days)
     )
 

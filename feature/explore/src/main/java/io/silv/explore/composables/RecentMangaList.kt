@@ -1,16 +1,11 @@
 package io.silv.explore.composables
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
@@ -20,7 +15,6 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import io.silv.model.SavableManga
 import io.silv.ui.CenterBox
-import io.silv.ui.composables.AnimatedBoxShimmer
 import io.silv.ui.composables.CardType
 import io.silv.ui.composables.MangaListItem
 import io.silv.ui.theme.LocalSpacing
@@ -62,45 +56,10 @@ fun LazyGridScope.mangaGrid(
     }
     if (manga.loadState.append is LoadState.Loading) {
         item(
-            key = "loading-append",
-            span = { GridItemSpan(2) }
+            key = "load-state-append-manga"
         ) {
-            val space = LocalSpacing.current
-
-            CenterBox(Modifier.padding(space.med)) {
+            CenterBox(Modifier.fillMaxWidth()) {
                 CircularProgressIndicator()
-            }
-        }
-    }
-    if (manga.loadState.refresh is LoadState.Loading) {
-        items(
-            count = 6,
-            key = { it } 
-        ) {
-            val space = LocalSpacing.current
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier.padding(space.large)
-            ) {
-                AnimatedBoxShimmer(
-                    Modifier
-                        .weight(1f)
-                        .height(200.dp))
-            }
-        }
-    } else if (manga.loadState.append is LoadState.Error || manga.loadState.refresh is LoadState.Error) {
-        item(
-            key = "loading-error"
-        ) {
-            val space = LocalSpacing.current
-            CenterBox(
-                Modifier
-                    .fillMaxSize()
-                    .padding(space.large)
-            ) {
-                Button(onClick = { manga.retry() }) {
-                    Text("Retry loading manga.")
-                }
             }
         }
     }

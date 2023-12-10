@@ -4,7 +4,10 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import io.silv.common.model.PagedType
 import io.silv.common.model.QueryFilters
+import io.silv.common.model.TagsMode
+import io.silv.common.model.TimePeriod
 import io.silv.common.time.timeStringMinus
+import io.silv.common.time.toMangaDexTimeString
 import io.silv.data.mappers.timeString
 import io.silv.database.AmadeusDatabase
 import io.silv.network.MangaDexApi
@@ -30,15 +33,41 @@ class MangaPagingSourceFactory(
         hasAvailableChapters = true,
         createdAtSince = timeStringMinus(30.days)
     )
+
+    private fun timePeriodsMangaRequest(tagId: String, timePeriod: TimePeriod) =  MangaRequest(
+        includes = listOf("cover_art", "author", "artist"),
+        order = mapOf("followedCount" to "desc"),
+        availableTranslatedLanguage = listOf("en"),
+        includedTags = listOf(tagId),
+        includedTagsMode = TagsMode.OR,
+        hasAvailableChapters = true,
+        createdAtSince = timePeriod.timeString()
+    )
+
     private fun queryMangaRequest(
         filters: QueryFilters
     ) =  MangaRequest(
         includes = listOf("cover_art", "author", "artist"),
         order = mapOf("followedCount" to "desc"),
-        includedTags = filters.tagId?.let { listOf(it) },
+        includedTags = filters.includedTags,
         availableTranslatedLanguage = listOf("en"),
         hasAvailableChapters = true,
-        createdAtSince = filters.timePeriod.timeString()
+        createdAtSince = filters.createdAtSince?.toMangaDexTimeString(),
+        includedTagsMode = filters.includedTagsMode,
+        excludedTagsMode = filters.excludedTagsMode,
+        artists = filters.artists,
+        authors = filters.authors,
+        title = filters.title,
+        year = filters.year,
+        excludedTags = filters.excludedTags,
+        status = filters.status,
+        originalLanguage = filters.originalLanguage,
+        excludedOriginalLanguage = filters.excludedOriginalLanguage,
+        publicationDemographic = filters.publicationDemographic,
+        ids = filters.ids,
+        contentRating = filters.contentRating,
+        updatedAtSince = filters.updatedAtSince?.toMangaDexTimeString(),
+        group = filters.group
     )
 
     fun pager(config: PagingConfig, type: PagedType) = Pager(
@@ -50,6 +79,7 @@ class MangaPagingSourceFactory(
                    PagedType.Latest -> latestMangaRequest
                    PagedType.Popular -> popularMangaRequest
                    is PagedType.Query -> queryMangaRequest(type.filters)
+                   is PagedType.TimePeriod -> timePeriodsMangaRequest(type.tagId, type.timePeriod)
                },
                db.sourceMangaDao()
            )

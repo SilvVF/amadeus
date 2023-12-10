@@ -87,9 +87,9 @@ import io.silv.common.model.ContentRating
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.QueryResult
 import io.silv.common.model.Status
+import io.silv.common.model.TagsMode
 import io.silv.model.DomainAuthor
 import io.silv.model.DomainTag
-import io.silv.network.requests.MangaRequest
 import io.silv.ui.CenterBox
 import io.silv.ui.noRippleClickable
 import io.silv.ui.theme.LocalSpacing
@@ -114,10 +114,10 @@ fun FilterScreen(
     artistListState: QueryResult<List<DomainAuthor>>,
     selectedArtists: List<DomainAuthor>,
     selectedAuthors: List<DomainAuthor>,
-    includedTagsMode: MangaRequest.TagsMode,
-    excludedTagsMode: MangaRequest.TagsMode,
-    includedTagsModeChanged: (MangaRequest.TagsMode) -> Unit,
-    excludedTagsModeChanged: (MangaRequest.TagsMode) -> Unit,
+    includedTagsMode: TagsMode,
+    excludedTagsMode: TagsMode,
+    includedTagsModeChanged: (TagsMode) -> Unit,
+    excludedTagsModeChanged: (TagsMode) -> Unit,
     tagsUiState: List<DomainTag>,
     includedIds: List<String>,
     excludedIds: List<String>,
@@ -444,10 +444,10 @@ private fun TagsList(
 
 @Composable
 private fun TagsFilterHeader(
-    includedTagsMode: MangaRequest.TagsMode,
-    includedTagsModeChanged: (MangaRequest.TagsMode) -> Unit,
-    excludedTagsMode: MangaRequest.TagsMode,
-    excludedTagsModeChanged: (MangaRequest.TagsMode) -> Unit,
+    includedTagsMode: TagsMode,
+    includedTagsModeChanged: (TagsMode) -> Unit,
+    excludedTagsMode: TagsMode,
+    excludedTagsModeChanged: (TagsMode) -> Unit,
     tagsVisible: Boolean,
     tagsVisibleChange: (Boolean) -> Unit,
     includedChange: (Boolean) -> Unit,
@@ -679,12 +679,12 @@ private fun AuthorSearchBar(
 private fun TagModeSwitch(
     modifier: Modifier = Modifier,
     title: String,
-    mode: MangaRequest.TagsMode = MangaRequest.TagsMode.AND,
+    mode: TagsMode = TagsMode.AND,
     icon: (@Composable () -> Unit)? = null,
-    onModeChange: (MangaRequest.TagsMode) -> Unit,
+    onModeChange: (TagsMode) -> Unit,
 ) {
     val space = LocalSpacing.current
-    val transformed = remember(mode) { mode == MangaRequest.TagsMode.OR }
+    val transformed = remember(mode) { mode == TagsMode.OR }
     Column(modifier,
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally

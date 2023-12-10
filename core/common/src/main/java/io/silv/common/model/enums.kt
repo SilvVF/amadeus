@@ -14,6 +14,24 @@ enum class Group {
     content, format, genre, theme
 }
 
+enum class TagsMode(
+    val string: String
+) {
+    OR("OR"), AND("AND")
+}
+
+enum class Order {
+    createdAt,
+    updatedAt,
+    publishAt,
+    readableAt,
+    volume,
+    chapter,
+}
+
+enum class OrderBy {
+    asc,  desc
+}
 
 enum class ContentRating {
     safe, suggestive, erotica, pornographic

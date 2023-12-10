@@ -1,6 +1,8 @@
 package io.silv.network.requests
 
 import io.silv.common.model.ContentRating
+import io.silv.common.model.Order
+import io.silv.common.model.OrderBy
 import io.silv.network.requests.query.QueryParam
 import io.silv.network.requests.query.QueryParams
 

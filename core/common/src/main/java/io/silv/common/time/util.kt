@@ -39,6 +39,14 @@ fun timeStringMinus(duration: Duration): String {
             it != '.'
         }
 }
+fun LocalDateTime.toMangaDexTimeString(): String {
+    return this
+        .toString()
+        .replace(":", "%3A")
+        .takeWhile {
+            it != '.'
+        }
+}
 
 fun String.parseMangaDexTimeToDateTime(): LocalDateTime {
     // "2021-10-10T23:19:03+00:00",

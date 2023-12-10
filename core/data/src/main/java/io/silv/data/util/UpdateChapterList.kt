@@ -5,14 +5,14 @@ import android.util.Log
 import com.skydoves.sandwich.getOrThrow
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
+import io.silv.common.model.Order
+import io.silv.common.model.OrderBy
 import io.silv.data.mappers.toChapterEntity
 import io.silv.database.dao.ChapterDao
 import io.silv.database.entity.chapter.ChapterEntity
 import io.silv.network.MangaDexApi
 import io.silv.network.model.chapter.Chapter
 import io.silv.network.requests.MangaFeedRequest
-import io.silv.network.requests.Order
-import io.silv.network.requests.OrderBy
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 

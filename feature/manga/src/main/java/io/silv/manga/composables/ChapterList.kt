@@ -4,11 +4,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,11 +16,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowCircleDown
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkAdd
-import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.twotone.Archive
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DismissDirection.*
 import androidx.compose.material3.DismissState
@@ -30,10 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismiss
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDismissState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -41,13 +34,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import io.silv.manga.manga_view.MangaViewState
 import io.silv.model.SavableChapter
 import io.silv.ui.composables.AnimatedBoxShimmer
+import io.silv.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
+import me.saket.swipe.SwipeAction
+import me.saket.swipe.SwipeableActionsBox
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,87 +78,52 @@ fun LazyListScope.chapterListItems(
                 items = mangaViewState.chapters,
                 key = { it.id }
             ) { chapter ->
-                val space = io.silv.ui.theme.LocalSpacing.current
-                val dismissState = rememberDismissState()
-                when  {
-                    dismissState.isDismissed(EndToStart) ->
-                        Reset(dismissState = dismissState) {
-                            onMarkAsRead(chapter.id)
-                        }
-                    dismissState.isDismissed(StartToEnd) ->
-                        Reset(dismissState = dismissState){
-                            onBookmark(chapter.id)
-                        }
-                }
-                SwipeToDismiss(
-                    state = dismissState,
-                    background = {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Box(Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = space.large)
-                            ) {
-                                when (dismissState.dismissDirection) {
-                                    StartToEnd ->  Column(
-                                        verticalArrangement = Arrangement.Center,
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.align(Alignment.CenterStart)
-                                    ) {
-                                        Icon(
-                                            imageVector = if(chapter.bookmarked)
-                                                Icons.Default.BookmarkRemove
-                                            else Icons.Default.BookmarkAdd,
-                                            contentDescription = "bookmark"
-                                        )
-                                        Text(if(chapter.bookmarked) "Remove bookmark" else "Add bookmark")
-                                    }
-                                    EndToStart ->  Column(
-                                        verticalArrangement = Arrangement.Center,
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.align(Alignment.CenterEnd)
-                                    ) {
-                                        Icon(
-                                            imageVector = if(chapter.read)
-                                                Icons.Default.VisibilityOff
-                                            else Icons.Default.Visibility,
-                                            contentDescription = "read"
-                                        )
-                                        Text(if(chapter.read) "Mark unread" else "Mark read")
-                                    }
-                                    else -> Unit
-                                }
-                            }
-                        }
-                    },
-                    modifier = Modifier
-                        .animateItemPlacement(),
-                    dismissContent = {
-                        ChapterListItem(
-                            modifier = Modifier
-                                .background(MaterialTheme.colorScheme.background)
-                                .fillMaxWidth()
-                                .padding(
-                                    vertical = space.med,
-                                    horizontal = space.large
-                                ),
-                            chapter = chapter,
-                            downloadProgress = downloadingIds.fastFirstOrNull { it.first == chapter.id }?.second,
-                            showFullTitle = showFullTitle,
-                            onDownloadClicked = {
-                                onDownloadClicked(listOf(chapter.id))
-                            },
-                            onDeleteClicked = {
-                                onDeleteClicked(chapter.id)
-                            },
-                            onReadClicked = {
-                                onReadClicked(chapter.id)
-                            }
-                        )
+                val space = LocalSpacing.current
+
+                val archive = SwipeAction(
+                    icon = rememberVectorPainter(Icons.TwoTone.Archive),
+                    background = Color.Green,
+                    isUndo = chapter.bookmarked,
+                    onSwipe = {
+
                     }
                 )
+
+                val read = SwipeAction(
+                    icon = rememberVectorPainter(Icons.Filled.Visibility),
+                    background = Color.Yellow,
+                    isUndo = chapter.read,
+                    onSwipe = {
+
+                    },
+                )
+
+                SwipeableActionsBox(
+                    startActions = listOf(archive),
+                    endActions = listOf(read)
+                ) {
+                    ChapterListItem(
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.background)
+                            .fillMaxWidth()
+                            .padding(
+                                vertical = space.med,
+                                horizontal = space.large
+                            ),
+                        chapter = chapter,
+                        downloadProgress = downloadingIds.fastFirstOrNull { it.first == chapter.id }?.second,
+                        showFullTitle = showFullTitle,
+                        onDownloadClicked = {
+                            onDownloadClicked(listOf(chapter.id))
+                        },
+                        onDeleteClicked = {
+                            onDeleteClicked(chapter.id)
+                        },
+                        onReadClicked = {
+                            onReadClicked(chapter.id)
+                        }
+                    )
+                }
             }
         }
     }
@@ -169,7 +131,7 @@ fun LazyListScope.chapterListItems(
 
 @Composable
 private fun ChapterItemPlaceHolder() {
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
     Column {
         AnimatedBoxShimmer(
             Modifier
@@ -198,7 +160,7 @@ fun ChapterListItem(
     onDeleteClicked: () -> Unit,
     onReadClicked: () -> Unit,
 ) {
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,

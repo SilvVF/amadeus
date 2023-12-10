@@ -7,6 +7,8 @@ import io.silv.data.dataModule
 import io.silv.datastore.dataStoreModule
 import io.silv.domainModule
 import io.silv.sync.syncModule
+import io.silv.ui.NetworkConnectivity
+import io.silv.ui.NetworkConnectivityImpl
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
@@ -18,6 +20,10 @@ val appModule = module {
 
     single {
         CoverCache(androidContext())
+    }
+
+    single<NetworkConnectivity> {
+        NetworkConnectivityImpl(androidContext())
     }
 
     includes(

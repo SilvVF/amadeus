@@ -12,13 +12,13 @@ import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.QueryFilters
 import io.silv.common.model.QueryResult
 import io.silv.common.model.Status
+import io.silv.common.model.TagsMode
 import io.silv.data.author.AuthorListRepository
 import io.silv.data.manga.SavedMangaRepository
 import io.silv.data.tags.TagRepository
 import io.silv.domain.SubscribeToPagingData
 import io.silv.model.DomainAuthor
 import io.silv.model.DomainTag
-import io.silv.network.requests.MangaRequest
 import io.silv.ui.EventScreenModel
 import io.silv.ui.ioCoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SearchSM(
-    private val subscribeToPagingData: SubscribeToPagingData,
+    subscribeToPagingData: SubscribeToPagingData,
     tagRepository: TagRepository,
     private val savedMangaRepository: SavedMangaRepository,
     private val authorListRepository: AuthorListRepository,
@@ -82,10 +82,10 @@ class SearchSM(
     private val mutableExcludedIds = MutableStateFlow( emptyList<String>())
     val excludedIds = mutableExcludedIds.asStateFlow()
 
-    private val mutableIncludedTagMode = MutableStateFlow(MangaRequest.TagsMode.AND)
+    private val mutableIncludedTagMode = MutableStateFlow(TagsMode.AND)
     val includedTagsMode = mutableIncludedTagMode
 
-    private val mutableExcludedTagMode = MutableStateFlow(MangaRequest.TagsMode.OR)
+    private val mutableExcludedTagMode = MutableStateFlow(TagsMode.OR)
     val excludedTagsMode = mutableExcludedTagMode
 
     val tagsUiState = tagRepository.allTags().map {
@@ -265,13 +265,13 @@ class SearchSM(
         }
     }
 
-    fun includedTagModeChange(mode: MangaRequest.TagsMode) {
+    fun includedTagModeChange(mode: TagsMode) {
         screenModelScope.launch {
             mutableIncludedTagMode.update { mode }
         }
     }
 
-    fun excludedTagModeChange(mode: MangaRequest.TagsMode) {
+    fun excludedTagModeChange(mode: TagsMode) {
         screenModelScope.launch {
             mutableExcludedTagMode.update { mode }
         }

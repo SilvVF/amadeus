@@ -11,5 +11,5 @@ object ExplorePrefs {
     val cardTypePrefKey = stringPreferencesKey("io.silv.card_types_key")
 
     val showSeasonalListPrefKey = booleanPreferencesKey("io.silv.show_seasonal_lists")
-    const val showSeasonalDefault = true
+    const val showSeasonalDefault = false
 }

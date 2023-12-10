@@ -7,18 +7,19 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Web
+import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -43,7 +44,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.util.fastForEach
-import io.silv.common.model.PagedType
+import io.silv.explore.UiPagedType
+import io.silv.explore.UiQueryFilters
 import io.silv.ui.layout.TopAppBarWithBottomContent
 import io.silv.ui.theme.LocalSpacing
 
@@ -51,13 +53,13 @@ import io.silv.ui.theme.LocalSpacing
 @Composable
 fun ExploreTopAppBar(
     modifier: Modifier = Modifier,
-    selected: PagedType,
+    selected: UiPagedType,
     scrollBehavior: TopAppBarScrollBehavior,
     onWebClick: () -> Unit,
     onDisplayOptionsClick: () -> Unit,
     onSearch: (query: String) -> Unit,
-    onPageTypeSelected: (PagedType) -> Unit,
-    onFilterClick: () -> Unit
+    onPageTypeSelected: (UiPagedType) -> Unit,
+    onFilterClick: () -> Unit,
 ) {
     val space = LocalSpacing.current
 
@@ -71,32 +73,37 @@ fun ExploreTopAppBar(
         bottomContent = {
             val filters = remember {
                 listOf(
-                    Triple("Trending", Icons.Filled.TrendingUp, PagedType.Popular),
-                    Triple("Recent", Icons.Outlined.AutoAwesome, PagedType.Latest),
-                    Triple("Filter", Icons.Filled.FilterList, PagedType.Query()),
+                    Triple("Trending", Icons.Filled.Whatshot, UiPagedType.Popular),
+                    Triple("Recent", Icons.Outlined.AutoAwesome, UiPagedType.Latest),
+                    Triple("Seasonal", Icons.Filled.CalendarMonth, UiPagedType.Seasonal),
+                    Triple("Filter", Icons.Filled.FilterList, UiPagedType.Query(UiQueryFilters()))
                 )
             }
-            Row {
+            LazyRow {
                 filters.fastForEach { (tag, icon, type) ->
-                    FilterChip(
-                        modifier = Modifier.padding(space.xs),
-                        selected = selected::class == type::class,
-                        onClick = {
-                           if (type is PagedType.Query)
-                               onFilterClick()
-                            else
-                                onPageTypeSelected(type)
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = icon.name
-                            )
-                        },
-                        label = {
-                            Text(text = tag)
-                        }
-                    )
+                    item(
+                        key = type.toString()
+                    ) {
+                        FilterChip(
+                            modifier = Modifier.padding(space.xs),
+                            selected = selected::class == type::class,
+                            onClick = {
+                                when (type) {
+                                    is UiPagedType.Query -> onFilterClick()
+                                    else -> onPageTypeSelected(type)
+                                }
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = icon.name
+                                )
+                            },
+                            label = {
+                                Text(text = tag)
+                            }
+                        )
+                    }
                 }
             }
         },

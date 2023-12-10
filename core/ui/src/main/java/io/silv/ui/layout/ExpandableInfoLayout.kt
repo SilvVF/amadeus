@@ -45,7 +45,7 @@ import kotlin.math.roundToInt
 fun rememberExpandableState(
     startProgress: SheetValue,
     scope: CoroutineScope = rememberCoroutineScope(),
-    decay: DecayAnimationSpec<Float> =  rememberSplineBasedDecay<Float>()
+    decay: DecayAnimationSpec<Float> =  rememberSplineBasedDecay()
 ) = rememberSaveable(
     saver = Saver(
         save = { it.progress },
@@ -78,6 +78,7 @@ class ExpandableState(
     }
 
     var progress by mutableStateOf(startProgress)
+        private set
 
     val isExpanded by derivedStateOf {
         progress == Expanded
@@ -257,6 +258,7 @@ fun ExpandableInfoLayout(
             .draggable(
                 state = state.dragState,
                 orientation = Orientation.Vertical,
+                startDragImmediately = state.dragHeightOffset.isRunning,
                 onDragStarted = {
                     state.dragChannel.trySend(DragAction.Start(it))
                 },

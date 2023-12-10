@@ -109,6 +109,7 @@ fun MangaListItem(
                     style = MaterialTheme.typography.labelMedium,
                     color = md_theme_dark_onSurface,
                     modifier = Modifier
+                        .fillMaxWidth()
                         .drawWithCache {
                             onDrawBehind {
                                 drawRect(

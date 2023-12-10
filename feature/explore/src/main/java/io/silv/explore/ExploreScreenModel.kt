@@ -36,51 +36,55 @@ class ExploreScreenModel(
 ): EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState()) {
 
     init {
-        seasonalMangaSyncManager.isSyncing.onEach { refreshing ->
-            mutableState.update { state ->
-                state.copy(
-                    refreshingSeasonal = refreshing
-                )
+        seasonalMangaSyncManager.isSyncing
+            .onEach { refreshing ->
+                mutableState.update { state ->
+                    state.copy(
+                        refreshingSeasonal = refreshing
+                    )
+                }
             }
-        }
             .launchIn(screenModelScope)
 
-        subscribeToSeasonalLists.getLists(ioCoroutineScope).onEach { lists ->
-            mutableState.update { state ->
-                state.copy(
-                    seasonalLists =  lists.map(::toUi).toImmutableList()
-                )
+        subscribeToSeasonalLists.getLists(ioCoroutineScope)
+            .onEach { lists ->
+                mutableState.update { state ->
+                    state.copy(
+                        seasonalLists = lists.map(::toUi)
+                            .toImmutableList()
+                    )
+                }
             }
-        }
             .launchIn(screenModelScope)
 
-        recentSearchHandler.recentSearchList.onEach { recentSearchResults ->
-            mutableState.update { state ->
-                state.copy(
-                    recentSearchUiState = RecentSearchUiState.Success(recentSearchResults)
-                )
+        recentSearchHandler.recentSearchList
+            .onEach { recentSearchResults ->
+                mutableState.update { state ->
+                    state.copy(
+                        recentSearchUiState = RecentSearchUiState.Success(recentSearchResults)
+                    )
+                }
             }
-        }
             .launchIn(screenModelScope)
     }
 
     val mangaPagingFlow = subscribeToPagingData(
         typeFlow =  state.map { it.pagedType }
-            .filterNot {
-                it is UiPagedType.Seasonal
-            }.map { pageType ->
+            .filterNot { pageType -> pageType is UiPagedType.Seasonal }
+            .map { pageType ->
                 when(pageType) {
                     UiPagedType.Latest -> PagedType.Latest
                     UiPagedType.Popular -> PagedType.Popular
                     is UiPagedType.Query -> PagedType.Query(pageType.filters.toQueryFilters())
                     else -> error("Page type could not be converted")
                 }
-        }.onEach { pageType ->
-            if (pageType is PagedType.Query) {
-                pageType.filters.title?.let { title ->
-                    recentSearchHandler.onSearchTriggered(title)
-                }
             }
+            .onEach { pageType ->
+                if (pageType is PagedType.Query && !pageType.filters.title.isNullOrBlank()) {
+                    screenModelScope.launch {
+                        recentSearchHandler.onSearchTriggered(pageType.filters.title ?: return@launch)
+                    }
+                }
         },
         config = PagingConfig(
             pageSize = 30,
@@ -101,16 +105,11 @@ class ExploreScreenModel(
 
     fun onSearch(query: String) {
         mutableState.update { state ->
-
-            val prev = state.pagedType as? UiPagedType.Query
-
             state.copy(
-                pagedType = prev?.copy(
+                pagedType = (state.pagedType as? UiPagedType.Query)?.copy(
                     filters = state.pagedType.filters.copy(title = query)
                 )
-                    ?: UiPagedType.Query(
-                        UiQueryFilters(title = query)
-                    )
+                    ?: UiPagedType.Query(UiQueryFilters(title = query))
             )
         }
     }

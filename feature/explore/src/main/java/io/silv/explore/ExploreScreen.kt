@@ -85,6 +85,7 @@ import io.silv.ui.CenterBox
 import io.silv.ui.composables.AnimatedBoxShimmer
 import io.silv.ui.composables.CardType
 import io.silv.ui.composables.MangaListItem
+import io.silv.ui.composables.PullRefresh
 import io.silv.ui.layout.ExpandableInfoLayout
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.LocalSpacing
@@ -167,26 +168,37 @@ class ExploreScreen: Screen {
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
         ) { paddingValues ->
 
+            val pagingItems = pagingFlowFlow.collectAsLazyPagingItems()
+
             Box(Modifier.fillMaxSize()) {
-                BrowseMangaContent(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPaddingValues = paddingValues,
-                    seasonalLists = state.seasonalLists,
-                    refreshingSeasonal = state.refreshingSeasonal,
-                    mangaList = pagingFlowFlow.collectAsLazyPagingItems(),
-                    onBookmarkClick = screenModel::bookmarkManga,
-                    onMangaClick = {
-                        navigator.push(
-                            SharedScreen.MangaView(it.id)
-                        )
-                    },
-                    onTagClick = { name, id ->
-                        navigator.push(
-                            SharedScreen.MangaFilter(name, id)
-                        )
-                    },
-                    pagedType = state.pagedType,
-                )
+                PullRefresh(
+                    paddingValues = paddingValues,
+                    refreshing = false, // refresh indicator handled by BrowseMangaContent
+                    onRefresh = when (state.pagedType) {
+                        UiPagedType.Seasonal -> screenModel::refreshSeasonalManga
+                        else -> pagingItems::refresh
+                    }
+                ) {
+                    BrowseMangaContent(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPaddingValues = paddingValues,
+                        seasonalLists = state.seasonalLists,
+                        refreshingSeasonal = state.refreshingSeasonal,
+                        mangaList = pagingItems,
+                        onBookmarkClick = screenModel::bookmarkManga,
+                        onMangaClick = {
+                            navigator.push(
+                                SharedScreen.MangaView(it.id)
+                            )
+                        },
+                        onTagClick = { name, id ->
+                            navigator.push(
+                                SharedScreen.MangaFilter(name, id)
+                            )
+                        },
+                        pagedType = state.pagedType,
+                    )
+                }
                 ExpandableInfoLayout(
                     modifier = Modifier.align(Alignment.BottomCenter),
                     state = expandableState,

@@ -24,6 +24,14 @@ class Converters {
     }
 
     @TypeConverter
+    fun longToInstant(value: Long?): Instant? =
+        value?.let(Instant::fromEpochMilliseconds)
+
+    @TypeConverter
+    fun instantToLong(instant: Instant?): Long? =
+        instant?.toEpochMilliseconds()
+
+    @TypeConverter
     fun fromIntList(list: List<Int>): String {
         return list.joinToString(separator ="<divider>")
     }

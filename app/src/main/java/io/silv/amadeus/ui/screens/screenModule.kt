@@ -34,6 +34,7 @@ val screenModule = module {
             subscribeToPagingData = get(),
             savedMangaRepository = get(),
             subscribeToSeasonalLists = get(),
+            recentSearchHandler = get(),
             seasonalMangaSyncManager = get(qualifier = named(SeasonalMangaSyncWorkName)),
         )
     }

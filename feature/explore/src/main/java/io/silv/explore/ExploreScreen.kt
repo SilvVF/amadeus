@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.outlined.More
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedSuggestionChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -37,6 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -188,15 +191,11 @@ class ExploreScreen: Screen {
                     modifier = Modifier.align(Alignment.BottomCenter),
                     state = expandableState,
                     peekContent = {
-                        LazyRow {
-                            items(10) {
-                                FilterChip(
-                                    selected = true,
-                                    onClick = { /*TODO*/ },
-                                    label = { Text(it.toString()) }
-                                )
-                            }
-                        }
+                        RecentSearchesPeekContent(
+                            modifier = Modifier.fillMaxWidth(),
+                            recentSearchUiState = state.recentSearchUiState,
+                            onRecentSearchClick = screenModel::onSearch
+                        )
                     }
                 ) {
                     ExpandableInfoLayoutContent(
@@ -210,6 +209,55 @@ class ExploreScreen: Screen {
                             showDisplayOptionsBottomSheet = !showDisplayOptionsBottomSheet
                         }
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun RecentSearchesPeekContent(
+    modifier: Modifier = Modifier,
+    recentSearchUiState: RecentSearchUiState,
+    onRecentSearchClick: (String) -> Unit,
+) {
+    val space = LocalSpacing.current
+    when (recentSearchUiState) {
+        RecentSearchUiState.Loading -> {
+            Row(modifier) {
+                repeat(5) {
+                    AnimatedBoxShimmer(
+                        Modifier
+                            .height(SuggestionChipDefaults.Height + 8.dp)
+                            .weight(1f)
+                            .padding(horizontal = space.small)
+                    )
+                }
+            }
+        }
+        is RecentSearchUiState.Success -> {
+            LazyRow(
+                modifier = modifier
+            ) {
+                items(recentSearchUiState.recentQueries) { recentSearch ->
+                    ElevatedSuggestionChip(
+                        modifier = Modifier.padding(space.small),
+                        onClick = { onRecentSearchClick(recentSearch.query) },
+                        label = { Text(text = recentSearch.query) }
+                    )
+                }
+                if (recentSearchUiState.recentQueries.isEmpty()) {
+                    items(
+                        items = persistentListOf(
+                            "Steins Gate", "Dr Stone", "Bleach"
+                        )
+                    ) { suggestedSearch ->
+                        ElevatedSuggestionChip(
+                            modifier = Modifier.padding(space.small),
+                            onClick = { onRecentSearchClick(suggestedSearch) },
+                            label = { Text(text = suggestedSearch) }
+                        )
+                    }
                 }
             }
         }

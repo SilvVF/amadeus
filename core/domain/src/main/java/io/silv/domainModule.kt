@@ -5,6 +5,7 @@ import io.silv.domain.GetCombinedMangaResources
 import io.silv.domain.GetCombinedSavableMangaWithChapters
 import io.silv.domain.GetMangaStatisticsById
 import io.silv.domain.GetSavedMangaWithChaptersList
+import io.silv.domain.RecentSearchHandler
 import io.silv.domain.SubscribeToPagingData
 import io.silv.domain.SubscribeToSeasonalLists
 import org.koin.core.module.dsl.factoryOf
@@ -25,4 +26,6 @@ val domainModule = module {
     factoryOf(::SubscribeToPagingData)
 
     factoryOf(::SubscribeToSeasonalLists)
+
+    factoryOf(::RecentSearchHandler)
 }

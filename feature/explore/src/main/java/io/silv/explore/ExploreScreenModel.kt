@@ -7,9 +7,11 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.PagedType
 import io.silv.common.model.Season
 import io.silv.data.manga.SavedMangaRepository
+import io.silv.domain.RecentSearchHandler
 import io.silv.domain.SubscribeToPagingData
 import io.silv.domain.SubscribeToSeasonalLists
 import io.silv.model.DomainSeasonalList
+import io.silv.model.RecentSearch
 import io.silv.model.SavableManga
 import io.silv.sync.SyncManager
 import io.silv.ui.EventStateScreenModel
@@ -28,6 +30,7 @@ import kotlinx.coroutines.launch
 class ExploreScreenModel(
     subscribeToPagingData: SubscribeToPagingData,
     subscribeToSeasonalLists: SubscribeToSeasonalLists,
+    private val recentSearchHandler: RecentSearchHandler,
     private val savedMangaRepository: SavedMangaRepository,
     private val seasonalMangaSyncManager: SyncManager,
 ): EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState()) {
@@ -50,6 +53,15 @@ class ExploreScreenModel(
             }
         }
             .launchIn(screenModelScope)
+
+        recentSearchHandler.recentSearchList.onEach { recentSearchResults ->
+            mutableState.update { state ->
+                state.copy(
+                    recentSearchUiState = RecentSearchUiState.Success(recentSearchResults)
+                )
+            }
+        }
+            .launchIn(screenModelScope)
     }
 
     val mangaPagingFlow = subscribeToPagingData(
@@ -60,9 +72,15 @@ class ExploreScreenModel(
                 when(pageType) {
                     UiPagedType.Latest -> PagedType.Latest
                     UiPagedType.Popular -> PagedType.Popular
-                    UiPagedType.Seasonal -> PagedType.Query()
                     is UiPagedType.Query -> PagedType.Query(pageType.filters.toQueryFilters())
+                    else -> error("Page type could not be converted")
                 }
+        }.onEach { pageType ->
+            if (pageType is PagedType.Query) {
+                pageType.filters.title?.let { title ->
+                    recentSearchHandler.onSearchTriggered(title)
+                }
+            }
         },
         config = PagingConfig(
             pageSize = 30,
@@ -114,6 +132,14 @@ fun toUi(list: DomainSeasonalList): UiSeasonalList {
     return UiSeasonalList(list.id, list.season, list.year, list.mangas)
 }
 
+sealed interface RecentSearchUiState {
+    data object Loading : RecentSearchUiState
+
+    data class Success(
+        val recentQueries: ImmutableList<RecentSearch> = persistentListOf(),
+    ) : RecentSearchUiState
+}
+
 @Stable
 sealed interface UiPagedType {
     data object Popular: UiPagedType
@@ -138,4 +164,5 @@ data class ExploreState(
     val refreshingSeasonal: Boolean = false,
     val pagedType: UiPagedType = UiPagedType.Popular,
     val seasonalLists: ImmutableList<UiSeasonalList> = persistentListOf(),
+    val recentSearchUiState: RecentSearchUiState = RecentSearchUiState.Loading
 )

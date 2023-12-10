@@ -18,43 +18,42 @@ import io.silv.data.tags.TagRepository
 import io.silv.data.tags.TagRepositoryImpl
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
-import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 
 val mangaModule = module {
 
 
-    singleOf(::SavedMangaRepositoryImpl) withOptions {
+    singleOf(::SavedMangaRepositoryImpl)  {
         bind<SavedMangaRepository>()
     }
 
-    singleOf(::OfflineFirstChapterInfoRepository) withOptions {
+    singleOf(::OfflineFirstChapterInfoRepository) {
         bind<ChapterEntityRepository>()
     }
 
-    singleOf(::SeasonalMangaRepositoryImpl) withOptions {
+    singleOf(::SeasonalMangaRepositoryImpl) {
         bind<SeasonalMangaRepository>()
     }
 
-    singleOf(::FilteredYearlyMangaRepositoryImpl) withOptions {
+    singleOf(::FilteredYearlyMangaRepositoryImpl) {
         bind<FilteredYearlyMangaRepository>()
     }
 
 
-    singleOf(::TagRepositoryImpl) withOptions {
+    singleOf(::TagRepositoryImpl) {
         bind<TagRepository>()
     }
 
-    singleOf(::AuthorListRepositoryImpl) withOptions {
+    singleOf(::AuthorListRepositoryImpl) {
         bind<AuthorListRepository>()
     }
 
 
-    singleOf(::ChapterImageRepositoryImpl) withOptions {
+    singleOf(::ChapterImageRepositoryImpl) {
         bind<ChapterImageRepository>()
     }
 
-    singleOf(::MangaUpdateRepositoryImpl) withOptions {
+    singleOf(::MangaUpdateRepositoryImpl) {
         bind<MangaUpdateRepository>()
     }
 }

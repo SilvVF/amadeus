@@ -11,6 +11,7 @@ import io.silv.data.util.UpdateMangaResourceWithArt
 import io.silv.database.daosModule
 import io.silv.database.databaseModule
 import io.silv.network.networkModule
+import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
@@ -23,6 +24,9 @@ val dataModule = module {
 
     singleOf(::MangaPagingSourceFactory)
 
+    singleOf(::RecentSearchRepositoryImpl) {
+        bind<RecentSearchRepository>()
+    }
 
     includes(
         networkModule,

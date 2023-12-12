@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.TopStart
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -28,23 +28,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import io.silv.common.filterUnique
 import io.silv.common.model.Status
-import io.silv.manga.manga_view.StatsUiState
 import io.silv.model.SavableManga
 import io.silv.ui.fillMaxAfterMesaure
+import io.silv.ui.theme.LocalSpacing
 
 @Composable
 fun MainPoster(
     manga: SavableManga,
     modifier: Modifier,
     padding: PaddingValues,
-    viewMangaArtClick: () -> Unit,
-    statsState: StatsUiState,
 ) {
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
 
     Box(modifier = modifier) {
         BackgroundImageDarkened(
@@ -68,75 +65,55 @@ fun MainPoster(
                     .fillMaxWidth(0.35f)
                     .clip(RoundedCornerShape(12.dp))
             )
-            MangaInfo(
+            MangaTitle(
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = space.med),
-                manga = manga,
+                status = manga.status,
+                year = manga.year,
+                title = manga.titleEnglish,
+                altTitle = manga.alternateTitles["ja-ro"] ?: "",
+                authors = remember(manga) { (manga.authors + manga.artists).filterUnique { it }.joinToString() }
             )
         }
     }
 }
-
-@Composable
-fun MangaInfo(
-    modifier: Modifier = Modifier,
-    manga: SavableManga,
-) {
-    val space = io.silv.ui.theme.LocalSpacing.current
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start
-    ) {
-        MangaTitle(
-            modifier = Modifier
-                .padding(bottom = space.med)
-                .fillMaxWidth()
-                .wrapContentHeight(),
-            title = manga.titleEnglish,
-            altTitle = manga.alternateTitles["ja-ro"]?.ifEmpty { null } ?: manga.titleEnglish,
-            authors = remember(manga) { (manga.authors + manga.artists).filterUnique { it }.joinToString() }
-        )
-        PublicationStatusIndicator(status = manga.status, year = manga.year)
-    }
-}
-
 @Composable
 fun PublicationStatusIndicator(
+    modifier: Modifier = Modifier,
     status: Status,
     year: Int?
 ) {
-    val space = io.silv.ui.theme.LocalSpacing.current
-    Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(space.small)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(
-                        when (status) {
-                            Status.completed -> Color.Cyan
-                            Status.ongoing -> Color.Green
-                            Status.cancelled -> Color.Red
-                            Status.hiatus -> Color.Yellow
-                        }
-                    )
+    val space = LocalSpacing.current
+    Row(modifier, verticalAlignment = Alignment.CenterVertically,  horizontalArrangement = Arrangement.Start) {
+        Box(
+            modifier = Modifier
+                .padding(space.small)
+                .size(8.dp)
+                .clip(CircleShape)
+                .drawWithCache {
+                    onDrawBehind {
+                        drawRect(
+                            color = when (status) {
+                                Status.completed -> Color.Cyan
+                                Status.ongoing -> Color.Green
+                                Status.cancelled -> Color.Red
+                                Status.hiatus -> Color.Yellow
+                            }
+                        )
+                    }
+                }
+        )
+        year?.let {
+            Text(
+                text = "Pub: $year;",
+                modifier = Modifier.padding(horizontal = space.small),
+                style = MaterialTheme.typography.labelMedium
             )
-            year?.let {
-                Text(
-                    text = "Publication: $year",
-                    modifier = Modifier.padding(horizontal = space.xs),
-                    fontSize = 16.sp
-                )
-            }
         }
         Text(
             text = "Status, ${status.name}",
-            fontSize = 16.sp,
+            style = MaterialTheme.typography.labelMedium
         )
     }
 }
@@ -146,36 +123,46 @@ fun MangaTitle(
     modifier: Modifier = Modifier,
     title: String,
     altTitle: String,
-    authors: String
+    authors: String,
+    status: Status,
+    year: Int?
 ) {
-    val space = io.silv.ui.theme.LocalSpacing.current
-    Column(modifier) {
+    val space = LocalSpacing.current
+    Column(modifier,
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
+    ) {
         Text(
             text = title,
             fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
+            style = MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Start,
             overflow = TextOverflow.Ellipsis,
         )
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(vertical = space.xs),
+                .padding(vertical = space.med),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.Start
         ) {
             Text(
                 text = altTitle,
                 textAlign = TextAlign.Start,
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleSmall,
                 maxLines = 2
             )
             Text(
                 text = authors,
+                style = MaterialTheme.typography.titleSmall,
                 textAlign = TextAlign.Start,
-                fontSize = 12.sp,
             )
         }
+        PublicationStatusIndicator(
+            modifier = Modifier.fillMaxWidth(),
+            status = status,
+            year = year
+        )
     }
 }
 

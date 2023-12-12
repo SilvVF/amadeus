@@ -23,7 +23,6 @@ import io.silv.explore.ExploreScreen
 import io.silv.library.LibraryScreen
 import io.silv.manga.manga_filter.MangaFilterScreen
 import io.silv.manga.manga_view.MangaViewScreen
-import io.silv.manga.search.SearchScreen
 import io.silv.navigation.SharedScreen
 import io.silv.network.util.MangaDexApiLogger
 import io.silv.reader.MangaReaderScreen
@@ -65,9 +64,6 @@ class AmadeusApp: Application(), ImageLoaderFactory {
                     mangaId = it.mangaId,
                     initialChapterId = it.initialChapterId
                 )
-            }
-            register<SharedScreen.MangaSearch> {
-                SearchScreen()
             }
             register<SharedScreen.MangaFilter> {
                 MangaFilterScreen(it.tag, it.tagId)

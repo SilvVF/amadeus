@@ -49,13 +49,11 @@ class LibrarySM(
 
     val mangaWithDownloadedChapters = getSavedMangaWithChaptersList()
         .map { list ->
-            list.mapNotNull { (manga, chapters) ->
-                manga?.let { saved ->
-                    LibraryManga(
-                        chapters = chapters.map { SavableChapter(it) },
-                        savableManga = saved
-                    )
-                }
+            list.map { (manga, chapters) ->
+                LibraryManga(
+                    chapters = chapters,
+                    savableManga = manga
+                )
             }
         }
         .stateInUi(emptyList())

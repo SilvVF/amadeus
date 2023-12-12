@@ -2,11 +2,14 @@ package io.silv.domain
 
 import io.silv.data.chapter.ChapterEntityRepository
 import io.silv.data.manga.SavedMangaRepository
+import io.silv.database.dao.SourceMangaDao
+import io.silv.model.SavableChapter
 import io.silv.model.SavableManga
 import io.silv.model.SavableMangaWithChapters
-import io.silv.toSavable
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
 
 /**
  * Combines Saved manga with all resource repository's and transforms the manga received by id into a
@@ -14,28 +17,27 @@ import kotlinx.coroutines.flow.combine
  * If the manga is not found it will try to fetch it from the MangaDexApi and save it in memory.
  */
 class GetCombinedSavableMangaWithChapters(
-    private val getCombinedMangaResources: GetCombinedMangaResources,
+    private val sourceMangaDao: SourceMangaDao,
     private val savedMangaRepository: SavedMangaRepository,
     private val chapterInfoRepository: ChapterEntityRepository,
 ) {
 
     operator fun invoke(id: String): Flow<SavableMangaWithChapters> {
         return combine(
-            getCombinedMangaResources(id),
+            sourceMangaDao.observeById(id),
             savedMangaRepository.getSavedManga(id),
             chapterInfoRepository.getChapters(id),
-        ) { resources, saved, chapterInfo ->
-
-            return@combine saved?.let { savedManga ->
-                SavableMangaWithChapters(
-                    savableManga = savedManga.toSavable(resources.ifEmpty { null }, savedManga),
-                    chapters = chapterInfo
-                )
-            } ?: SavableMangaWithChapters(
-                savableManga = SavableManga(resources.first(), null),
-                chapters = chapterInfo
+        ) { source, saved, chapterInfo ->
+            SavableMangaWithChapters(
+                savableManga = if (saved != null) {
+                    SavableManga(saved)
+                } else {
+                    SavableManga(source ?: error("unable to find manga"), null)
+                },
+                chapters = chapterInfo.map(::SavableChapter).toImmutableList()
             )
         }
+            .conflate()
     }
 }
 

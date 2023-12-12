@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FiltersBottomSheet(
-    optionsTitle: @Composable () -> Unit = {},
     onSaveQuery: (UiQueryFilters) -> Unit,
     onDismissRequest: () -> Unit,
 ) {

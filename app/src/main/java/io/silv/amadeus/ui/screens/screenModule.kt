@@ -4,8 +4,7 @@ import io.silv.explore.ExploreScreenModel
 import io.silv.explore.FilterScreenViewModel
 import io.silv.library.LibrarySM
 import io.silv.manga.manga_filter.MangaFilterSM
-import io.silv.manga.manga_view.MangaViewSM
-import io.silv.manga.search.SearchSM
+import io.silv.manga.manga_view.MangaViewScreenModel
 import io.silv.reader.MangaReaderSM
 import io.silv.sync.SeasonalMangaSyncWorkName
 import org.koin.androidx.viewmodel.dsl.viewModelOf
@@ -21,11 +20,9 @@ val screenModule = module {
         MangaReaderSM(get(), get(), get(), get(), mangaId, initialChapterId)
     }
 
-    factoryOf(::MangaViewSM)
+    factoryOf(::MangaViewScreenModel)
 
     factoryOf(::MangaFilterSM)
-
-    factoryOf(::SearchSM)
 
     viewModelOf(::FilterScreenViewModel)
 

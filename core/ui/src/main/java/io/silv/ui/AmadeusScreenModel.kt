@@ -72,13 +72,38 @@ fun <STATE> StateScreenModel<STATE>.collectAsStateWithLifeCycle(): State<STATE> 
 
 
 /**
- * Observe [AmadeusScreenModel.events] in a Compose [LaunchedEffect].
+ * Observe [EventScreenModel.events] in a Compose [LaunchedEffect].
  * @param lifecycleState [Lifecycle.State] in which [event] block runs.
  * [orbit_Impl](https://github.com/orbit-mvi/orbit-mvi/blob/main/orbit-compose/src/main/kotlin/org/orbitmvi/orbit/compose/ContainerHostExtensions.kt)
  */
 @SuppressLint("ComposableNaming")
 @Composable
 fun <EVENT> EventScreenModel<EVENT>.collectEvents(
+    lifecycleState: Lifecycle.State = Lifecycle.State.STARTED,
+    event: (suspend (event: EVENT) -> Unit)
+) {
+    val sideEffectFlow = events
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(sideEffectFlow, lifecycleOwner) {
+
+        lifecycleOwner.lifecycle.repeatOnLifecycle(lifecycleState) {
+
+            withContext(Dispatchers.Main.immediate) {
+                sideEffectFlow.collect { event(it) }
+            }
+        }
+    }
+}
+
+/**
+ * Observe [EventStateScreenModel.events] in a Compose [LaunchedEffect].
+ * @param lifecycleState [Lifecycle.State] in which [event] block runs.
+ * [orbit_Impl](https://github.com/orbit-mvi/orbit-mvi/blob/main/orbit-compose/src/main/kotlin/org/orbitmvi/orbit/compose/ContainerHostExtensions.kt)
+ */
+@SuppressLint("ComposableNaming")
+@Composable
+fun <EVENT> EventStateScreenModel<EVENT, *>.collectEvents(
     lifecycleState: Lifecycle.State = Lifecycle.State.STARTED,
     event: (suspend (event: EVENT) -> Unit)
 ) {

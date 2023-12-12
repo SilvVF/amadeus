@@ -1,7 +1,6 @@
 package io.silv
 
 import io.silv.domain.CombineSourceMangaWithSaved
-import io.silv.domain.GetCombinedMangaResources
 import io.silv.domain.GetCombinedSavableMangaWithChapters
 import io.silv.domain.GetMangaStatisticsById
 import io.silv.domain.GetSavedMangaWithChaptersList
@@ -16,8 +15,6 @@ val domainModule = module {
     factoryOf(::GetCombinedSavableMangaWithChapters)
 
     factoryOf(::GetSavedMangaWithChaptersList)
-
-    factoryOf(::GetCombinedMangaResources)
 
     factoryOf(::GetMangaStatisticsById)
 

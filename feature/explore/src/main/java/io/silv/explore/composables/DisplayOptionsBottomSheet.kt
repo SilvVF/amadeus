@@ -38,12 +38,14 @@ import androidx.compose.ui.util.fastForEachIndexed
 import io.silv.datastore.asState
 import io.silv.datastore.model.ExplorePrefs
 import io.silv.ui.composables.CardType
+import io.silv.ui.theme.LocalSpacing
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DisplayOptionsBottomSheet(
     optionsTitle: @Composable () -> Unit = {},
+    clearSearchHistory: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(
@@ -67,6 +69,8 @@ fun DisplayOptionsBottomSheet(
         sheetState.show()
     }
 
+    val space = LocalSpacing.current
+
     ModalBottomSheet(
         sheetState = sheetState,
         onDismissRequest = onDismissRequest
@@ -89,6 +93,17 @@ fun DisplayOptionsBottomSheet(
                     gridCells = it
                 },
                 size = gridCells
+            )
+            Text(
+                text = "Clear search history",
+                style = MaterialTheme.typography.labelLarge.copy(
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(space.med)
+                    .clickable { clearSearchHistory() }
             )
             ShowSeasonalLists(
                 checked = showSeasonalLists,
@@ -169,13 +184,14 @@ fun GridSizeSelector(
     onSizeSelected: (Int) -> Unit,
     size: Int
 ) {
+    val space = LocalSpacing.current
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         Column(
-            Modifier.padding(horizontal = 12.dp),
+            Modifier.padding(horizontal = space.med),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.Start
         ) {

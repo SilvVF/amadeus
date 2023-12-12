@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface SavedMangaRepository: Syncable {
 
-    suspend fun bookmarkManga(id: String)
+    suspend fun addMangaToLibrary(id: String)
 
     suspend fun saveManga(
         id: String,

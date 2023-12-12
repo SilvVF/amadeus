@@ -30,7 +30,6 @@ import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.explore.ExploreTab
 import io.silv.library.LibraryTab
-import io.silv.manga.search.SearchTab
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
 import kotlinx.coroutines.channels.Channel
@@ -47,7 +46,6 @@ object NavHost: Screen {
     @Composable
     override fun Content() {
 
-        val navigator = LocalNavigator.currentOrThrow
         val appState = LocalAppState.current
 
         val visibilityChannel by produceState(initialValue = true) {
@@ -96,7 +94,6 @@ fun AmadeusBottomBar(
 ) {
     BottomAppBar(modifier) {
         TabNavigationItem(ExploreTab)
-        TabNavigationItem(SearchTab)
         TabNavigationItem(LibraryTab)
     }
 }
@@ -109,7 +106,6 @@ fun AmadeusNavRail(
     AnimatedVisibility(visible = visible) {
         NavigationRail(modifier) {
             TabNavigationItem(ExploreTab)
-            TabNavigationItem(SearchTab)
             TabNavigationItem(LibraryTab)
         }
     }

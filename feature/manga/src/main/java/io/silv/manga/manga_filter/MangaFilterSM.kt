@@ -86,7 +86,7 @@ class MangaFilterSM(
 
     fun bookmarkManga(id: String) {
         screenModelScope.launch {
-            savedMangaRepository.bookmarkManga(id)
+            savedMangaRepository.addMangaToLibrary(id)
         }
     }
 

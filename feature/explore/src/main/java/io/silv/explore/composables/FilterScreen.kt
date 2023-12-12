@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,15 +25,12 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
@@ -94,6 +92,7 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.silv.common.model.ContentRating
+import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.QueryResult
 import io.silv.common.model.Status
 import io.silv.common.model.TagsMode
@@ -107,12 +106,14 @@ import io.silv.ui.Language
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import org.koin.androidx.compose.koinViewModel
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FilterBottomSheetContent(
     hide: () -> Unit,
@@ -127,6 +128,15 @@ fun FilterBottomSheetContent(
             updateFilter = update
         )
     },
+    publicationDemographicFilters: @Composable ColumnScope.(
+       updateFilter: (FilterAction.ChangePublicationDemographic) -> Unit,
+       selected: ImmutableList<PublicationDemographic>
+    ) -> Unit = {updateFilter, selected ->
+        DefaultPublicationDemographicFilter(
+            updateFilter = updateFilter,
+            selectedDemographics = selected
+        )
+    },
     statusFilters: @Composable ColumnScope.(
       selected: ImmutableList<Status>,
       updateFilter: (FilterAction.ChangeStatus) -> Unit
@@ -137,14 +147,21 @@ fun FilterBottomSheetContent(
         )
     },
     languagesFilter: @Composable ColumnScope.(
-        includedLanguages: ImmutableList<Language>,
-        excludedLanguages: ImmutableList<Language>,
+        translatedLanguage: ImmutableList<Language>,
         updateFilter: (FilterAction) -> Unit
-    ) -> Unit = { includedLanguages, excludedLanguages, updateFilter ->
+    ) -> Unit = { translatedLanguage, updateFilter ->
         DefaultLanguageFilter(
-            includedLanguages = includedLanguages,
-            excludedLanguages = excludedLanguages,
+            translatedLanguage = translatedLanguage,
             updateFilter = updateFilter
+        )
+    },
+    mangaTypeFilter: @Composable ColumnScope.(
+        updateFilter: (FilterAction.MangaType) -> Unit,
+        originalLanguages: ImmutableList<Language>
+    ) -> Unit = { updateFilter, originalLanguages ->
+        DefaultMangaTypeFilter(
+            updateFilter = updateFilter ,
+            selectedLanguages = originalLanguages
         )
     },
     tagsFilter: @Composable ColumnScope.(
@@ -169,17 +186,19 @@ fun FilterBottomSheetContent(
        updateFilter: (FilterAction.ToggleHasAvailableChapters) -> Unit
     ) -> Unit = {hasAvailableChapters, updateFilter ->
         Row(
-            Modifier.clickable {
-                updateFilter(FilterAction.ToggleHasAvailableChapters)
-            }
+            modifier = Modifier
+                .clickable { updateFilter(FilterAction.ToggleHasAvailableChapters) }
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
         ) {
-            Text("Has available chapters")
             Checkbox(
                 checked = hasAvailableChapters,
                 onCheckedChange = {
-                     updateFilter(FilterAction.ToggleHasAvailableChapters)
+                    updateFilter(FilterAction.ToggleHasAvailableChapters)
                 }
             )
+            Text("Has available chapters")
         }
     }
 ) {
@@ -199,7 +218,6 @@ fun FilterBottomSheetContent(
 
     val state by viewModel.state.collectAsStateWithLifecycle()
     val space = LocalSpacing.current
-    val scrollState = rememberScrollState()
 
     val applyButton = @Composable {
         ExtendedFloatingActionButton(
@@ -212,43 +230,78 @@ fun FilterBottomSheetContent(
     }
 
     Column {
-        Column(
+        LazyColumn(
             Modifier
                 .weight(1f)
-                .verticalScroll(scrollState)
                 .padding(space.med),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.Start
         ) {
-            contentRatingFilters(
-                state.queryFilters.contentRating,
-                viewModel::updateFilter
-            )
-            Divider()
-            statusFilters(
-                state.queryFilters.status,
-                viewModel::updateFilter
-            )
-            Divider()
-            tagsFilter(
-                state.queryFilters.includedTags,
-                state.queryFilters.excludedTags,
-                state.categoryToTags,
-                state.queryFilters.includedTagsMode,
-                state.queryFilters.excludedTagsMode,
-                viewModel::updateFilter
-            )
-            Divider()
-            languagesFilter(
-                state.queryFilters.originalLanguage,
-                state.queryFilters.excludedOriginalLanguage,
-                viewModel::updateFilter
-            )
-            Divider()
-            hasAvailableChaptersFilter(
-                state.queryFilters.hasAvailableChapters,
-                viewModel::updateFilter
-            )
+            item(key = "content-rating-filters") {
+                Column(Modifier.animateItemPlacement()) {
+                    contentRatingFilters(
+                        state.queryFilters.contentRating,
+                        viewModel::updateFilter
+                    )
+                    Divider()
+                }
+            }
+            item(key = "status-filters") {
+                Column(Modifier.animateItemPlacement()) {
+                    statusFilters(
+                        state.queryFilters.status,
+                        viewModel::updateFilter
+                    )
+                    Divider()
+                }
+            }
+            item(key = "manga-type-filtesr") {
+                Column(Modifier.animateItemPlacement()) {
+                    mangaTypeFilter(
+                        viewModel::updateFilter,
+                        state.queryFilters.originalLanguage
+                    )
+                    Divider()
+                }
+            }
+            item(key = "publication-demographic-filters") {
+                Column(Modifier.animateItemPlacement()) {
+                    publicationDemographicFilters(
+                        viewModel::updateFilter,
+                        state.queryFilters.publicationDemographic
+                    )
+                    Divider()
+                }
+            }
+            item(key = "language-filters") {
+                Column(Modifier.animateItemPlacement()) {
+                    languagesFilter(
+                        state.queryFilters.availableTranslatedLanguage,
+                        viewModel::updateFilter
+                    )
+                    Divider()
+                }
+            }
+            item(key = "tags-filters") {
+                Column(Modifier.animateItemPlacement()) {
+                    tagsFilter(
+                        state.queryFilters.includedTags,
+                        state.queryFilters.excludedTags,
+                        state.categoryToTags,
+                        state.queryFilters.includedTagsMode,
+                        state.queryFilters.excludedTagsMode,
+                        viewModel::updateFilter
+                    )
+                    Divider()
+                }
+            }
+            item(key = "available-chapters") {
+                hasAvailableChaptersFilter(
+                    state.queryFilters.hasAvailableChapters,
+                    viewModel::updateFilter
+                )
+                Divider()
+            }
         }
         Row(
             modifier = Modifier
@@ -280,9 +333,11 @@ fun DefaultTagsModeFilter(
     tagsMode: TagsMode,
     onToggle: () -> Unit
 ) {
+    val space = LocalSpacing.current
     Row(
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(space.med)
     ) {
         Text("Tags mode")
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -309,42 +364,14 @@ fun DefaultTagsModeFilter(
 
 @Composable
 fun DefaultLanguageFilter(
-    includedLanguages: ImmutableList<Language>,
-    excludedLanguages: ImmutableList<Language>,
+    translatedLanguage: ImmutableList<Language>,
     updateFilter: (FilterAction) -> Unit
 ) {
-    var included by rememberSaveable { mutableStateOf(false) }
-
-    Row(
-        Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        StateFilterChip(
-            state = included,
-            hideIcons = !included,
-            toggleState = { included = !included },
-            name = "included languages"
-        )
-        StateFilterChip(
-            state = !included,
-            hideIcons = included,
-            toggleState = { included = !included },
-            name = "excluded languages"
-        )
-    }
     LanguageSelection(
-        selectedLanguages = if (included)
-            includedLanguages
-        else
-            excludedLanguages,
+        selectedLanguages = translatedLanguage,
         onLanguageClick = {
             updateFilter(
-                if (included) {
-                    FilterAction.IncludeLanguage(it)
-                }  else {
-                    FilterAction.ExcludeLanguage(it)
-                }
+                FilterAction.ChangeTranslatedLanguage(it)
             )
         }
     )
@@ -359,9 +386,8 @@ fun DefaultTagsFilter(
     categoryToTag: ImmutableMap<String, ImmutableList<DomainTag>>,
     updateFilter: (FilterAction) -> Unit,
 ) {
-    var included by rememberSaveable {
-        mutableStateOf(true)
-    }
+    var included by rememberSaveable { mutableStateOf(true) }
+
     Row(
         Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -380,20 +406,21 @@ fun DefaultTagsFilter(
             name ="excluded tags"
         )
     }
-    CenterBox(Modifier.fillMaxWidth()) {
-        DefaultTagsModeFilter(
-            if (included) includeTagsMode else excludeTagsMode,
-            onToggle = {
-                updateFilter(
-                    if (included) {
-                        FilterAction.ToggleIncludeTagMode
-                    } else {
-                        FilterAction.ToggleExcludeTagMode
-                    }
-                )
-            }
-        )
-    }
+    DefaultTagsModeFilter(
+        tagsMode = if (included)
+            includeTagsMode
+        else
+            excludeTagsMode,
+        onToggle = {
+            updateFilter(
+                if (included) {
+                    FilterAction.ToggleIncludeTagMode
+                } else {
+                    FilterAction.ToggleExcludeTagMode
+                }
+            )
+        }
+    )
     TagsList(
         categoryToTags = categoryToTag,
         selectedTags = if (included) {
@@ -572,6 +599,7 @@ private fun LanguageSelection(
         modifier = modifier,
         horizontalAlignment = Alignment.Start,
     ) {
+        Text(text = "Translated languages")
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
@@ -640,24 +668,154 @@ private fun LanguageSelection(
     }
 }
 
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun FilterTopBar(
-    onCloseIconClick: () -> Unit
+fun DefaultMangaTypeFilter(
+    updateFilter: (FilterAction.MangaType) -> Unit,
+    selectedLanguages: ImmutableList<Language>,
 ) {
     val space = LocalSpacing.current
+
+    val mangaTypes = remember {
+        persistentListOf(
+            "Japanese (Manga)" to listOf(Language.Japanese),
+            "Chinese (Manhua)" to listOf(Language.ChineseTrad, Language.ChineseSimp),
+            "Korean (Manhwa)" to listOf(Language.Korean)
+        )
+    }
+
+    var expanded by rememberSaveable { mutableStateOf(false) }
     Row(
-        Modifier
+        modifier = Modifier
             .fillMaxWidth()
+            .clickable { expanded = !expanded }
             .padding(space.med),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = "Filters", style = MaterialTheme.typography.titleLarge)
-        IconButton(onClick = onCloseIconClick) {
+        Text(
+            text = "Original language",
+            style = MaterialTheme.typography.labelLarge
+        )
+        IconButton(
+            modifier = Modifier.padding(horizontal = space.small),
+            onClick = { expanded = !expanded }
+        ) {
             Icon(
-                imageVector = Icons.Filled.Close,
+                imageVector = if (!expanded) {
+                    Icons.Filled.ArrowDropDown
+                } else {
+                    Icons.Filled.ArrowDropUp
+                },
                 contentDescription = null
             )
+        }
+    }
+    AnimatedVisibility(
+        visible = expanded,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        Column {
+            mangaTypes.fastForEach { (title, languageList) ->
+                val selected by remember(selectedLanguages) {
+                    derivedStateOf { selectedLanguages.containsAll(languageList) }
+                }
+                Row(
+                    modifier = Modifier
+                        .clickable {
+                            updateFilter(FilterAction.MangaType(languageList))
+                        }
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    Checkbox(
+                        checked = selected,
+                        onCheckedChange = {
+                            updateFilter(FilterAction.MangaType(languageList))
+                        }
+                    )
+                    Text(title)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun DefaultPublicationDemographicFilter(
+    updateFilter: (FilterAction.ChangePublicationDemographic) -> Unit,
+    selectedDemographics: ImmutableList<PublicationDemographic>,
+) {
+    val space = LocalSpacing.current
+
+    val demographics = remember {
+        PublicationDemographic.values().toList().toImmutableList()
+    }
+
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = !expanded }
+            .padding(space.med),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = "Publication demographic",
+            style = MaterialTheme.typography.labelLarge
+        )
+        IconButton(
+            modifier = Modifier.padding(horizontal = space.small),
+            onClick = { expanded = !expanded }
+        ) {
+            Icon(
+                imageVector = if (!expanded) {
+                    Icons.Filled.ArrowDropDown
+                } else {
+                    Icons.Filled.ArrowDropUp
+                },
+                contentDescription = null
+            )
+        }
+    }
+    AnimatedVisibility(
+        visible = expanded,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        Column {
+            demographics.fastForEach { demographic ->
+                val selected by remember(selectedDemographics) {
+                    derivedStateOf { selectedDemographics.contains(demographic) }
+                }
+                Row(
+                    modifier = Modifier
+                        .clickable {
+                            updateFilter(FilterAction.ChangePublicationDemographic(demographic))
+                        }
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    Checkbox(
+                        checked = selected,
+                        onCheckedChange = {
+                            updateFilter(FilterAction.ChangePublicationDemographic(demographic))
+                        }
+                    )
+                    Text(
+                        text = remember(demographic) {
+                            demographic.toString()
+                                .replaceFirstChar { it.uppercaseChar() }
+                        }
+                    )
+                }
+            }
         }
     }
 }
@@ -674,7 +832,6 @@ private fun TagsList(
 
     Column(
         Modifier
-            .padding(space.med)
             .fillMaxWidth()
             .wrapContentHeight()
     ) {
@@ -682,20 +839,18 @@ private fun TagsList(
 
             var expanded by rememberSaveable { mutableStateOf(false) }
 
-            val categorySelected by remember(tags, selectedTags) {
-                derivedStateOf { tags.filter { it.id in selectedTags } }
-            }
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { expanded = !expanded }
-                    .padding(space.xs),
+                    .padding(space.med),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = group,
+                    text = remember(group) {
+                        group.replaceFirst(group[0], group[0].uppercaseChar())
+                    },
                     style = MaterialTheme.typography.labelLarge
                 )
                 IconButton(
@@ -711,25 +866,13 @@ private fun TagsList(
                         contentDescription = null
                     )
                 }
-                AnimatedVisibility(!expanded) {
-                    LazyRow(Modifier.weight(1f)) {
-                        items(categorySelected) { tag ->
-                            FilterChip(
-                                selected = true,
-                                onClick = { onTagSelected(tag.id) },
-                                label = { Text(tag.name) },
-                                modifier = Modifier.padding(horizontal = space.xs)
-                            )
-                        }
-                    }
-                }
             }
             AnimatedVisibility(
                 visible = expanded,
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                FlowRow {
+                FlowRow(Modifier.padding(space.med)) {
                     tags.fastForEach { tag ->
                         FilterChip(
                             selected = tag.id in selectedTags,

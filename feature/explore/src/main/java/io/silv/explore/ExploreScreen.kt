@@ -1,13 +1,13 @@
 package io.silv.explore
 
 import android.util.Log
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,7 +20,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -31,7 +31,7 @@ import androidx.compose.material.icons.outlined.More
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedSuggestionChip
+import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -60,7 +60,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -97,7 +96,7 @@ import kotlinx.coroutines.launch
 
 class ExploreScreen: Screen {
 
-    @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
 
@@ -132,6 +131,7 @@ class ExploreScreen: Screen {
                     Text("Explore display options",)
                 },
                 onDismissRequest = { showDisplayOptionsBottomSheet = false },
+                clearSearchHistory = screenModel::clearSearchHistory
             )
             showFiltersBottomSheet -> FiltersBottomSheet(
                 onSaveQuery = {
@@ -206,6 +206,7 @@ class ExploreScreen: Screen {
                         RecentSearchesPeekContent(
                             modifier = Modifier.fillMaxWidth(),
                             recentSearchUiState = state.recentSearchUiState,
+                            query = state.filters?.title,
                             onRecentSearchClick = screenModel::onSearch
                         )
                     }
@@ -227,9 +228,11 @@ class ExploreScreen: Screen {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecentSearchesPeekContent(
     modifier: Modifier = Modifier,
+    query: String?,
     recentSearchUiState: RecentSearchUiState,
     onRecentSearchClick: (String) -> Unit,
 ) {
@@ -251,25 +254,42 @@ fun RecentSearchesPeekContent(
             LazyRow(
                 modifier = modifier
             ) {
-                items(recentSearchUiState.recentQueries) { recentSearch ->
-                    ElevatedSuggestionChip(
-                        modifier = Modifier.padding(space.small),
-                        onClick = { onRecentSearchClick(recentSearch.query) },
-                        label = { Text(text = recentSearch.query) }
-                    )
+                item(
+                    key = "padding-start"
+                ) {
+                    Spacer(modifier = Modifier.padding(space.small))
                 }
                 if (recentSearchUiState.recentQueries.isEmpty()) {
                     items(
                         items = persistentListOf(
-                            "Steins Gate", "Dr Stone", "Bleach"
-                        )
+                            "Oshi no ko", "Steins Gate", "Dr Stone", "Bleach"
+                        ),
+                        key = { item -> item }
                     ) { suggestedSearch ->
-                        ElevatedSuggestionChip(
+                        ElevatedFilterChip(
+                            selected = suggestedSearch == query,
                             modifier = Modifier.padding(space.small),
                             onClick = { onRecentSearchClick(suggestedSearch) },
                             label = { Text(text = suggestedSearch) }
                         )
                     }
+                } else {
+                    items(
+                        recentSearchUiState.recentQueries,
+                        key = { item -> item.query }
+                    ) { recentSearch ->
+                        ElevatedFilterChip(
+                            selected = recentSearch.query == query,
+                            modifier = Modifier.padding(space.small),
+                            onClick = { onRecentSearchClick(recentSearch.query) },
+                            label = { Text(text = recentSearch.query) }
+                        )
+                    }
+                }
+                item(
+                    key = "padding-end"
+                ) {
+                    Spacer(modifier = Modifier.padding(space.small))
                 }
             }
         }
@@ -440,10 +460,10 @@ private fun LazyGridScope.seasonalMangaGrid(
     onTagClick: (name: String, id: String) -> Unit,
 ) {
     seasonalList?.let {
-        itemsIndexed(
+        items(
             items = seasonalList.mangas,
-            key = { i, v -> v.value.id }
-        ) { _, item ->
+            key = { v -> v.value.id }
+        ) { item ->
 
             val space = LocalSpacing.current
             val manga by item.collectAsState()
@@ -453,7 +473,7 @@ private fun LazyGridScope.seasonalMangaGrid(
                 cardType = cardType,
                 modifier = Modifier
                     .padding(space.small)
-                    .height((LocalConfiguration.current.screenHeightDp / 2.6f).dp)
+                    .aspectRatio(2f / 3f)
                     .clickable {
                         onMangaClick(manga)
                     },

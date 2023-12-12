@@ -132,7 +132,10 @@ fun ExploreTopAppBar(
                     SearchTextField(
                         searchText = searchText,
                         onValueChange = { searchText = it },
-                        onSearch = onSearch,
+                        onSearch = {
+                            focusRequester.freeFocus()
+                            onSearch(it)
+                        },
                         focusRequester = focusRequester,
                     )
                 } else {

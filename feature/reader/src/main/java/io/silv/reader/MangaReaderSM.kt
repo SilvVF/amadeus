@@ -46,16 +46,11 @@ class MangaReaderSM(
     ).map { (chapterId, savableWithChapters, downloadingIds) ->
             val (manga, chapters) = savableWithChapters
 
-            if (manga == null) { return@map MangaReaderState.Failure("manga not found") }
-
             val chapter = chapters
                 .find { c -> c.id == chapterId }
-                ?.let { SavableChapter(it) }
                 ?: return@map MangaReaderState.Failure("chapter not found")
 
-            val sortedChapters = chapters
-                .map { SavableChapter(it) }
-                .sortedBy { it.chapter }
+            val sortedChapters = chapters.sortedBy { it.chapter }
 
             if (chapter.downloaded || chapter.id in downloadingIds.map { it.first }) {
                 if (chapter.downloaded && chapter.id !in downloadingIds.map { it.first } && chapter.imageUris.isEmpty()) {

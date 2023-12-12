@@ -2,15 +2,10 @@ package io.silv.ui.composables
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,27 +29,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import io.silv.model.SavableManga
-import io.silv.ui.CenterBox
 import io.silv.ui.Language
-import io.silv.ui.noRippleClickable
-import io.silv.ui.shadow
 import io.silv.ui.theme.LocalSpacing
-import io.silv.ui.theme.Pastel
-import io.silv.ui.theme.md_theme_dark_onSurface
-import io.silv.ui.vertical
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -96,8 +81,7 @@ fun MangaListItem(
             AsyncImage(
                 model = manga,
                 contentDescription = null,
-                modifier = Modifier
-                    .fillMaxSize(),
+                modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
             if (cardType != CardType.ExtraCompact) {
@@ -107,7 +91,7 @@ fun MangaListItem(
                     textAlign = TextAlign.Start,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.labelMedium,
-                    color = md_theme_dark_onSurface,
+                    color = Color(0xFFEDE0DD),
                     modifier = Modifier
                         .fillMaxWidth()
                         .drawWithCache {
@@ -147,76 +131,6 @@ fun MangaListItem(
     }
 }
 
-@Composable
-fun MangaListItemSideTitle(
-    modifier: Modifier = Modifier,
-    index: Int,
-    manga: SavableManga,
-    onTagClick: (tag: String) -> Unit,
-    onMangaImageClick: () -> Unit,
-    onBookmarkClick: () -> Unit
-) {
-
-    val context = LocalContext.current
-    val space = LocalSpacing.current
-
-    Column(modifier) {
-        Row {
-            Text(
-                modifier = Modifier
-                    .vertical()
-                    .rotate(-90f)
-                    .width(180.dp)
-                    .align(Alignment.Top),
-                text = "${index + 1} ${manga.titleEnglish}",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.ExtraBold
-                ),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            CenterBox(
-                Modifier
-                    .shadow(
-                        color = Color.DarkGray,
-                        blurRadius = 12.dp,
-                        offsetY = space.xs,
-                        offsetX = space.xs
-                    )
-                    .padding(space.xs)
-                    .noRippleClickable { onMangaImageClick() }
-            ) {
-                val placeHolderColor = remember {
-                    Pastel.getColorLight()
-                }
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(manga.coverArt)
-                        .placeholder(placeHolderColor)
-                        .error(placeHolderColor)
-                        .fallback(placeHolderColor)
-                        .build(),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(180.dp)
-                        .clip(
-                            RoundedCornerShape(12.dp)
-                        )
-                        .padding(space.xs),
-                    contentScale = ContentScale.Crop
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(space.small))
-        GenreTagsWithBookmark(
-            tags =  manga.tags,
-            onBookmarkClick = onBookmarkClick,
-            bookmarked = manga.bookmarked,
-            modifier = Modifier.fillMaxWidth(),
-            onTagClick = onTagClick
-        )
-    }
-}
 
 @Composable
 fun MangaGenreTags(

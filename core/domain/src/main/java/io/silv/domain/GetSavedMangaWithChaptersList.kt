@@ -2,8 +2,10 @@ package io.silv.domain
 
 import io.silv.data.chapter.ChapterEntityRepository
 import io.silv.data.manga.SavedMangaRepository
+import io.silv.model.SavableChapter
 import io.silv.model.SavableManga
 import io.silv.model.SavableMangaWithChapters
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
@@ -23,7 +25,7 @@ class GetSavedMangaWithChaptersList(
             saved.map { entity ->
                 SavableMangaWithChapters(
                     savableManga = SavableManga(entity),
-                    chapters = chapterInfo.filter { it.mangaId == entity.id }
+                    chapters = chapterInfo.filter { it.mangaId == entity.id }.map(::SavableChapter).toImmutableList()
                 )
             }
         }

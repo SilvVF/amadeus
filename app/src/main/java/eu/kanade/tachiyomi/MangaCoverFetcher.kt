@@ -13,6 +13,7 @@ import coil.network.HttpException
 import coil.request.Options
 import coil.request.Parameters
 import eu.kanade.tachiyomi.MangaCoverFetcher.Companion.USE_CUSTOM_COVER
+import io.silv.common.model.MangaCover
 import io.silv.model.SavableManga
 import okhttp3.CacheControl
 import okhttp3.Call

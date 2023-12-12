@@ -2,20 +2,11 @@ package eu.kanade.tachiyomi
 
 import coil.key.Keyer
 import coil.request.Options
+import io.silv.common.model.MangaCover
 import io.silv.database.entity.manga.SavedMangaEntity
 import io.silv.model.SavableManga
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
-
-/**
- * Contains the required data for MangaCoverFetcher
- */
-data class MangaCover(
-    val mangaId: String,
-    val url: String?,
-    val isMangaFavorite: Boolean,
-    val lastModified: Long,
-)
 
 fun SavedMangaEntity.asMangaCover(): MangaCover {
     return MangaCover(

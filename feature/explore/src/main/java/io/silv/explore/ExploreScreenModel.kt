@@ -1,5 +1,6 @@
 package io.silv.explore
 
+import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.paging.PagingConfig
@@ -20,6 +21,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -36,6 +38,8 @@ class ExploreScreenModel(
 ): EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState()) {
 
     init {
+        state.onEach { Log.d("ExploreState", "updated $it") }.launchIn(screenModelScope)
+
         seasonalMangaSyncManager.isSyncing
             .onEach { refreshing ->
                 mutableState.update { state ->
@@ -79,6 +83,7 @@ class ExploreScreenModel(
                     else -> error("Page type could not be converted")
                 }
             }
+            .distinctUntilChanged()
             .onEach { pageType ->
                 if (pageType is PagedType.Query && !pageType.filters.title.isNullOrBlank()) {
                     screenModelScope.launch {
@@ -116,13 +121,20 @@ class ExploreScreenModel(
 
     fun bookmarkManga(mangaId: String) {
         screenModelScope.launch {
-            savedMangaRepository.bookmarkManga(mangaId)
+            savedMangaRepository.addMangaToLibrary(mangaId)
         }
     }
 
     fun refreshSeasonalManga(){
         screenModelScope.launch {
             seasonalMangaSyncManager.requestSync()
+        }
+    }
+
+    fun clearSearchHistory() {
+        screenModelScope.launch {
+            Log.d("search-history", "clearSearchHistory")
+            recentSearchHandler.clearRecentSearches()
         }
     }
 }
@@ -159,9 +171,12 @@ data class UiSeasonalList(
 @Immutable
 @Stable
 data class ExploreState(
-    val forceSearch: Boolean = false,
     val refreshingSeasonal: Boolean = false,
     val pagedType: UiPagedType = UiPagedType.Popular,
     val seasonalLists: ImmutableList<UiSeasonalList> = persistentListOf(),
     val recentSearchUiState: RecentSearchUiState = RecentSearchUiState.Loading
-)
+) {
+
+    val filters
+        get() = (this.pagedType as? UiPagedType.Query)?.filters
+}

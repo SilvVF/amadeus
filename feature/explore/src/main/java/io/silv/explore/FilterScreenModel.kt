@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 
 class FilterScreenViewModel(
-    private val tagRepository: TagRepository
+    tagRepository: TagRepository
 ) : ViewModel() {
 
     private val mutableState = MutableStateFlow(FilterState())
@@ -55,6 +55,13 @@ class FilterScreenViewModel(
         return (
             if (contains(item)) this - item else this + item
         )
+            .toImmutableList()
+    }
+
+    private fun <T> List<T>.toggleItems(items: List<T>): ImmutableList<T> {
+        return (
+                if (containsAll(items)) this - items.toSet() else this + items
+                )
             .toImmutableList()
     }
 
@@ -121,11 +128,6 @@ class FilterScreenViewModel(
                         orderBy = action.order
                     )
                 }
-                is FilterAction.IncludeLanguage -> updateFilters {
-                    it.copy(
-                        originalLanguage = it.originalLanguage.toggleItem(action.language)
-                    )
-                }
                 is FilterAction.ChangePublicationDemographic -> updateFilters {
                     it.copy(
                         publicationDemographic = it.publicationDemographic.toggleItem(action.demographic)
@@ -146,11 +148,6 @@ class FilterScreenViewModel(
                 }
                 is FilterAction.ChangeYear -> updateFilters {
                     it.copy(year = it.year)
-                }
-                is FilterAction.ExcludeLanguage -> updateFilters {
-                    it.copy(
-                        excludedOriginalLanguage = it.excludedOriginalLanguage.toggleItem(action.language)
-                    )
                 }
                 is FilterAction.ExcludeTag -> updateFilters {
                     it.copy(excludedTags = it.excludedTags.toggleItem(action.tag))
@@ -173,6 +170,11 @@ class FilterScreenViewModel(
                         TagsMode.AND -> TagsMode.OR
                     })
                 }
+                is FilterAction.MangaType -> updateFilters {
+                    it.copy(
+                        originalLanguage = it.originalLanguage.toggleItems(action.languages),
+                    )
+                }
             }
         }
     }
@@ -188,8 +190,7 @@ sealed interface FilterAction {
     data object ToggleIncludeTagMode: FilterAction
     data object ToggleExcludeTagMode: FilterAction
     data class ChangeStatus(val status: Status): FilterAction
-    data class IncludeLanguage(val language: Language): FilterAction
-    data class ExcludeLanguage(val language: Language): FilterAction
+    data class MangaType(val languages: List<Language>): FilterAction
     data class ChangeTranslatedLanguage(val language: Language): FilterAction
     data class ChangePublicationDemographic(val demographic: PublicationDemographic): FilterAction
     data class ChangeIds(val id: String): FilterAction
@@ -220,7 +221,6 @@ data class UiQueryFilters(
     val excludedTagsMode: TagsMode = TagsMode.OR,
     val status: ImmutableList<Status> = persistentListOf(),
     val originalLanguage: ImmutableList<Language> = persistentListOf(),
-    val excludedOriginalLanguage: ImmutableList<Language> = persistentListOf(),
     val availableTranslatedLanguage: ImmutableList<Language> = persistentListOf(),
     val publicationDemographic: ImmutableList<PublicationDemographic> = persistentListOf(),
     val ids: ImmutableList<String>  = persistentListOf(),
@@ -247,7 +247,6 @@ fun UiQueryFilters.toQueryFilters(): QueryFilters {
         excludedTagsMode = excludedTagsMode,
         status = status.map { it.toString() }.ifEmpty { null },
         originalLanguage = originalLanguage.map { it.toString() }.ifEmpty { null },
-        excludedOriginalLanguage = excludedOriginalLanguage.map { it.toString() }.ifEmpty { null },
         availableTranslatedLanguage = availableTranslatedLanguage.map { it.toString() }.ifEmpty { null },
         publicationDemographic = publicationDemographic.map { it.toString() }.ifEmpty { null },
         ids = ids.ifEmpty { null },

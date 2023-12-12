@@ -1,10 +1,10 @@
 package io.silv.model
 
 import androidx.compose.runtime.Stable
-import io.silv.database.entity.chapter.ChapterEntity
+import kotlinx.collections.immutable.ImmutableList
 
 @Stable
 data class SavableMangaWithChapters(
-    val savableManga: SavableManga?,
-    val chapters: List<ChapterEntity>
+    val savableManga: SavableManga,
+    val chapters: ImmutableList<SavableChapter>
 )

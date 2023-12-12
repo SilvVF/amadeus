@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import io.silv.model.SavableManga
 import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.noRippleClickable
+import io.silv.ui.theme.LocalSpacing
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -53,7 +54,7 @@ fun TagsAndLanguages(
     manga: SavableManga,
     navigate: (name: String) -> Unit,
 ) {
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
     val list = remember(manga) {
         manga.tagToId.keys.toList()
     }
@@ -107,7 +108,7 @@ fun MangaContent(
     showChapterArt: () -> Unit,
     viewOnWebClicked: () -> Unit,
 ) {
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
     Column(Modifier.padding(horizontal = space.med)) {
         MangaActions(
             manga = manga,
@@ -131,7 +132,7 @@ private fun MangaActions(
     onBookmarkClicked: (String) -> Unit,
     viewOnWebClicked: () -> Unit,
 ) {
-    val space = io.silv.ui.theme.LocalSpacing.current
+    val space = LocalSpacing.current
     Row(
         Modifier
             .padding(vertical = space.med)

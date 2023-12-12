@@ -31,7 +31,7 @@ internal class SavedMangaRepositoryImpl(
 
     private fun log(msg: String) = Log.d(TAG, msg)
 
-    override suspend fun bookmarkManga(id: String): Unit = withContext(dispatchers.io) {
+    override suspend fun addMangaToLibrary(id: String): Unit = withContext(dispatchers.io) {
         val saved = savedMangaDao.getSavedMangaById(id).firstOrNull()
 
         if (saved == null) {

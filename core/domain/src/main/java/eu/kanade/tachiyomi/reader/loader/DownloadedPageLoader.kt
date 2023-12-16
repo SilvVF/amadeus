@@ -3,12 +3,13 @@ package eu.kanade.tachiyomi.reader.loader
 import android.content.Context
 import android.net.Uri
 import androidx.core.net.toUri
-import eu.kanade.tachiyomi.MangaDexSource
-import eu.kanade.tachiyomi.reader.DownloadManager
-import eu.kanade.tachiyomi.reader.model.Page
 import eu.kanade.tachiyomi.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.reader.model.ReaderPage
+import io.silv.common.model.MangaDexSource
+import io.silv.common.model.Page
+import io.silv.data.download.DownloadManager
 import io.silv.model.SavableManga
+import io.silv.model.toResource
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -29,7 +30,7 @@ internal class DownloadPageLoader(
 
 
     private fun getPagesFromDirectory(): List<ReaderPage> {
-        val pages = downloadManager.buildPageList(source, manga, chapter.chapter)
+        val pages = downloadManager.buildPageList(source, manga.toResource(), chapter.chapter.toResource())
         return pages.map { page ->
             ReaderPage(page.index, page.url, page.imageUrl) {
                 context.contentResolver.openInputStream(page.imageUrl?.toUri() ?: Uri.EMPTY)!!

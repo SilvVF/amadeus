@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi
+package io.silv.data.util
 
 import android.content.Context
 import android.content.res.Configuration
@@ -23,6 +23,7 @@ import androidx.core.graphics.get
 import androidx.core.graphics.green
 import androidx.core.graphics.red
 import com.hippo.unifile.UniFile
+import io.silv.data.download.getDisplayMaxHeightInPx
 import tachiyomi.decoder.Format
 import tachiyomi.decoder.ImageDecoder
 import java.io.BufferedInputStream

@@ -2,7 +2,7 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
-    kotlin("plugin.serialization").version(libs.versions.org.jetbrains.kotlin.android)
+    kotlin("plugin.serialization") version "1.9.20"
 }
 
 android {
@@ -56,7 +56,8 @@ dependencies {
     //Datastore
     implementation(libs.androidx.datastore.preferences)
 
-    implementation(libs.kotlin.serialization)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation(libs.kotlinx.serialization.json.okio)
 
     implementation(libs.koin.android)
     implementation(libs.koin.core)

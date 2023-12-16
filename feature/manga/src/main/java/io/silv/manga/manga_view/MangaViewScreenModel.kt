@@ -1,10 +1,12 @@
 package io.silv.manga.manga_view
 
+import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.skydoves.sandwich.ApiResponse
 import com.skydoves.sandwich.message
+import io.silv.data.download.DownloadManager
 import io.silv.datastore.UserSettingsStore
 import io.silv.datastore.model.Filters
 import io.silv.domain.chapter.ChapterHandler
@@ -14,7 +16,9 @@ import io.silv.domain.manga.MangaHandler
 import io.silv.model.MangaStats
 import io.silv.model.SavableChapter
 import io.silv.model.SavableManga
+import io.silv.model.toResource
 import io.silv.ui.EventStateScreenModel
+import io.silv.ui.ioCoroutineScope
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
@@ -37,7 +41,7 @@ class MangaViewScreenModel(
     private val userSettingsStore: UserSettingsStore,
     private val mangaHandler: MangaHandler,
     private val chapterHandler: ChapterHandler,
-    private val downloadManager: eu.kanade.tachiyomi.reader.DownloadManager,
+    private val downloadManager: DownloadManager,
     mangaId: String,
 ): EventStateScreenModel<MangaViewEvent, MangaViewState>(MangaViewState.Loading) {
 
@@ -212,7 +216,7 @@ class MangaViewScreenModel(
     fun deleteChapterImages(chapterId: String) {
         state.value.success?.let {
             screenModelScope.launch {
-                downloadManager.deleteChapters(listOf(it.chapters.firstOrNull { it.id == chapterId } ?: return@launch), it.manga)
+                downloadManager.deleteChapters(listOf(it.chapters.firstOrNull { it.id == chapterId }?.toResource() ?: return@launch), it.manga.toResource())
             }
         }
     }
@@ -225,8 +229,14 @@ class MangaViewScreenModel(
 
     fun downloadChapterImages(chapterId: String) {
         state.value.success?.let {
-            screenModelScope.launch {
-                downloadManager.downloadChapters(it.manga, listOf(it.chapters.firstOrNull { it.id == chapterId } ?: return@launch))
+            ioCoroutineScope.launch {
+                Log.d("MangaViewScreenModel", "Calling download chapter images")
+                downloadManager.downloadChapters(
+                    it.manga.toResource(),
+                    listOf(
+                        it.chapters.firstOrNull { it.id == chapterId }?.toResource()!!
+                    )
+                )
             }
         }
     }

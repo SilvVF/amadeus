@@ -14,7 +14,7 @@ fun Manga.toSourceManga(): SourceMangaResource {
         id = id,
         coverArt = coverArtUrl(this),
         description = descriptionEnglish,
-        titleEnglish = titleEnglish,
+        title = titleEnglish,
         alternateTitles = alternateTitles,
         originalLanguage = attributes.originalLanguage,
         availableTranslatedLanguages = attributes.availableTranslatedLanguages.filterNotNull(),
@@ -44,7 +44,7 @@ fun Manga.toSavedManga(saved: SavedMangaEntity? = null): SavedMangaEntity {
         id = network.id,
         progressState = saved?.progressState ?: ProgressState.NotStarted,
         description = network.descriptionEnglish,
-        titleEnglish = network.titleEnglish,
+        title = network.titleEnglish,
         alternateTitles = network.alternateTitles,
         originalLanguage = network.attributes.originalLanguage,
         availableTranslatedLanguages = network.attributes.availableTranslatedLanguages

@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi
+package io.silv.data.util
 
 import android.content.Context
 import android.media.MediaScannerConnection

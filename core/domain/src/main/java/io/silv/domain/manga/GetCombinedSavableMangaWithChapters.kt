@@ -1,7 +1,7 @@
 package io.silv.domain.manga
 
-import eu.kanade.tachiyomi.reader.DownloadManager
 import io.silv.data.chapter.ChapterRepository
+import io.silv.data.download.DownloadManager
 import io.silv.data.manga.SavedMangaRepository
 import io.silv.data.manga.SourceMangaRepository
 import io.silv.model.SavableChapter
@@ -35,7 +35,7 @@ class GetCombinedSavableMangaWithChapters(
                 savableManga = saved?.let(::SavableManga) ?: source!!.let(::SavableManga),
                 chapters = chapterInfo.map(::SavableChapter).map {
                     it.copy(
-                        downloaded = downloadManager.isChapterDownloaded(it.title, it.scanlator, saved?.titleEnglish ?: source!!.titleEnglish)
+                        downloaded = downloadManager.isChapterDownloaded(it.title, it.scanlator, saved?.title ?: source!!.title)
                     )
                 }.toImmutableList(),
             )

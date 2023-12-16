@@ -2,6 +2,7 @@ package io.silv.model
 
 import androidx.compose.runtime.Stable
 import io.silv.common.model.ContentRating
+import io.silv.common.model.MangaResource
 import io.silv.common.model.ProgressState
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.ReadingStatus
@@ -50,7 +51,7 @@ data class SavableManga(
         description = savedManga.description,
         progressState = savedManga.progressState,
         coverArt = savedManga.coverArt,
-        titleEnglish = savedManga.titleEnglish,
+        titleEnglish = savedManga.title,
         alternateTitles = savedManga.alternateTitles,
         originalLanguage = savedManga.originalLanguage,
         availableTranslatedLanguages = savedManga.availableTranslatedLanguages.toImmutableList(),
@@ -76,7 +77,7 @@ data class SavableManga(
         description = mangaResource.description,
         progressState = mangaResource.progressState,
         coverArt =  mangaResource.coverArt,
-        titleEnglish = mangaResource.titleEnglish,
+        titleEnglish = mangaResource.title,
         alternateTitles = mangaResource.alternateTitles,
         originalLanguage = mangaResource.originalLanguage,
         availableTranslatedLanguages = mangaResource.availableTranslatedLanguages.toImmutableList(),
@@ -96,4 +97,16 @@ data class SavableManga(
         artists = mangaResource.artists,
         authors = mangaResource.authors
     )
+}
+
+fun SavableManga.toResource(): MangaResource {
+    val m = this
+    return object : MangaResource {
+        override val id: String = m.id
+        override val coverArt: String = m.coverArt
+        override val title: String = m.titleEnglish
+        override val version: Int = m.version
+        override val createdAt: LocalDateTime = m.createdAt
+        override val updatedAt: LocalDateTime= m.updatedAt
+    }
 }

@@ -2,7 +2,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    kotlin("plugin.serialization").version(libs.versions.org.jetbrains.kotlin.android)
+    kotlin("plugin.serialization")
     id("com.google.devtools.ksp")
     id("kotlin-parcelize")
 }
@@ -71,6 +71,9 @@ android {
 dependencies {
 
     implementation(libs.sandwich)
+
+    implementation(libs.image.decoder)
+
 
     implementation(project(":core:common"))
     implementation(project(":core:navigation"))

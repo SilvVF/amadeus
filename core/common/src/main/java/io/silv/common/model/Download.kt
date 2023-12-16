@@ -1,10 +1,5 @@
-package eu.kanade.tachiyomi
+package io.silv.common.model
 
-import eu.kanade.tachiyomi.reader.model.Page
-import io.silv.domain.chapter.GetChapter
-import io.silv.domain.manga.GetManga
-import io.silv.model.SavableChapter
-import io.silv.model.SavableManga
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,8 +11,8 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 
 data class Download(
-    val manga: SavableManga,
-    val chapter: SavableChapter,
+    val manga: MangaResource,
+    val chapter: ChapterResource,
 ) {
     var pages: List<Page>? = null
 
@@ -66,18 +61,5 @@ data class Download(
         DOWNLOADING(2),
         DOWNLOADED(3),
         ERROR(4),
-    }
-
-    companion object {
-        suspend fun fromChapterId(
-            chapterId: String,
-            getChapter: GetChapter,
-            getManga: GetManga,
-        ): Download? {
-            val chapter = getChapter.await(chapterId) ?: return null
-            val manga = getManga.await(chapter.mangaId) ?: return null
-
-            return Download(manga, chapter)
-        }
     }
 }

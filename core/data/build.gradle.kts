@@ -2,6 +2,7 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
+    kotlin("plugin.serialization")  version "1.9.20"
 }
 
 android {
@@ -38,7 +39,11 @@ dependencies {
     api(project(":core:network"))
     api(project(":core:database"))
     api(project(":core:common"))
+    api(project(":core:datastore"))
 
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.disklrucache)
+    implementation(libs.image.decoder)
     implementation(libs.unifile)
     implementation(libs.sandwich.ktor)
     implementation(libs.androidx.core.ktx)
@@ -49,6 +54,11 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.core)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.guava)
+
+    implementation(libs.ktor.serialization.json)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.kotlin.serialization)
+    implementation(libs.kotlinx.serialization.json.okio)
 
     //KOIN
     implementation(libs.koin.android)
@@ -67,7 +77,8 @@ dependencies {
     testImplementation(libs.room.test)
 
     //WorkManager
-    implementation(libs.androidx.work.runtime.ktx)
     androidTestImplementation(libs.androidx.work.testing)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.work.multiprocess)
+    implementation(libs.androidx.work.gcm)
 }

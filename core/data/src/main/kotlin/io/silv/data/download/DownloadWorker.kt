@@ -1,16 +1,14 @@
-package eu.kanade.tachiyomi
+package io.silv.data.download
 
 import android.content.Context
+import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
-import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import eu.kanade.tachiyomi.reader.DownloadManager
-import io.silv.data.workers.createForegroundInfo
-import io.silv.domain.NetworkConnectivity
+import io.silv.common.model.NetworkConnectivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -27,19 +25,21 @@ import org.koin.core.component.inject
  * This worker is used to manage the downloader. The system can decide to stop the worker, in
  * which case the downloader is also stopped. It's also stopped while there's no network available.
  */
-class DownloadJob(private val context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams), KoinComponent {
+class DownloadWorker(
+    applicationContext: Context,
+    workerParams: WorkerParameters
+) : CoroutineWorker(applicationContext, workerParams), KoinComponent {
 
-    private val downloadManager: DownloadManager by inject()
+    private val downloadManager by inject<DownloadManager>()
     private val connectivityManager by inject<NetworkConnectivity>()
 
     private val isOnline = connectivityManager.online.stateIn(CoroutineScope(Dispatchers.Default), SharingStarted.Eagerly, true)
 
-    override suspend fun getForegroundInfo(): ForegroundInfo {
-        return context.createForegroundInfo(12, "DownloadJob")
-    }
-
     override suspend fun doWork(): Result {
+
         var active = checkConnectivity() && downloadManager.downloaderStart()
+
+        Log.d("DownloadWorker", "starting work active $active")
 
         if (!active) {
             return Result.failure()
@@ -50,6 +50,8 @@ class DownloadJob(private val context: Context, workerParams: WorkerParameters) 
             delay(100)
             active = !isStopped && downloadManager.isRunning && checkConnectivity()
         }
+
+        Log.d("DownloadWorker", "ending work not active")
 
         return Result.success()
     }
@@ -67,7 +69,7 @@ class DownloadJob(private val context: Context, workerParams: WorkerParameters) 
         private const val TAG = "Downloader"
 
         fun start(context: Context) {
-            val request = OneTimeWorkRequestBuilder<DownloadJob>()
+            val request = OneTimeWorkRequestBuilder<DownloadWorker>()
                 .addTag(TAG)
                 .build()
 

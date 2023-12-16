@@ -1,15 +1,12 @@
-package eu.kanade.tachiyomi.reader.cache
+package io.silv.data.download
 
 import android.content.Context
 import android.net.Uri
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.Downloader
-import eu.kanade.tachiyomi.MangaDexSource
-import eu.kanade.tachiyomi.reader.DownloadProvider
-import eu.kanade.tachiyomi.reader.StorageManager
-import eu.kanade.tachiyomi.reader.model.Source
-import io.silv.model.SavableChapter
-import io.silv.model.SavableManga
+import io.silv.common.model.ChapterResource
+import io.silv.common.model.MangaDexSource
+import io.silv.common.model.Source
+import io.silv.common.model.MangaResource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,16 +30,18 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.Json.Default.encodeToString
 import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.serializer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import java.io.File
@@ -54,8 +53,8 @@ import kotlin.time.Duration.Companion.hours
  * defined in [renewInterval] as we don't have any control over the filesystem and the user can
  * delete the folders at any time without the app noticing.
  */
-@OptIn(ExperimentalSerializationApi::class)
-class DownloadCache(
+@OptIn(ExperimentalSerializationApi::class, ExperimentalSerializationApi::class)
+internal class DownloadCache(
     private val context: Context,
     private val provider: DownloadProvider,
     private val storageManager: StorageManager,
@@ -162,12 +161,12 @@ class DownloadCache(
      *
      * @param manga the manga to check.
      */
-    fun getDownloadCount(manga: SavableManga): Int {
+    fun getDownloadCount(manga: MangaResource): Int {
         renewCache()
 
         val sourceDir = rootDownloadsDir.sourceDirs[MangaDexSource.id]
         if (sourceDir != null) {
-            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga.titleEnglish)]
+            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga.title)]
             if (mangaDir != null) {
                 return mangaDir.chapterDirs.size
             }
@@ -182,7 +181,7 @@ class DownloadCache(
      * @param mangaUniFile the directory of the manga.
      * @param manga the manga of the chapter.
      */
-    suspend fun addChapter(chapterDirName: String, mangaUniFile: UniFile, manga: SavableManga) {
+    suspend fun addChapter(chapterDirName: String, mangaUniFile: UniFile, manga: MangaResource) {
         rootDownloadsDirLock.withLock {
             // Retrieve the cached source directory or cache a new one
             var sourceDir = rootDownloadsDir.sourceDirs[MangaDexSource.id]
@@ -194,7 +193,7 @@ class DownloadCache(
             }
 
             // Retrieve the cached manga directory or cache a new one
-            val mangaDirName = provider.getMangaDirName(manga.titleEnglish)
+            val mangaDirName = provider.getMangaDirName(manga.title)
             var mangaDir = sourceDir.mangaDirs[mangaDirName]
             if (mangaDir == null) {
                 mangaDir = MangaDirectory(mangaUniFile)
@@ -214,10 +213,10 @@ class DownloadCache(
      * @param chapter the chapter to remove.
      * @param manga the manga of the chapter.
      */
-    suspend fun removeChapter(chapter: SavableChapter, manga: SavableManga) {
+    suspend fun removeChapter(chapter: ChapterResource, manga: MangaResource) {
         rootDownloadsDirLock.withLock {
             val sourceDir = rootDownloadsDir.sourceDirs[MangaDexSource.id] ?: return
-            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga.titleEnglish)] ?: return
+            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga.title)] ?: return
             provider.getValidChapterDirNames(chapter.title, chapter.scanlator).forEach {
                 if (it in mangaDir.chapterDirs) {
                     mangaDir.chapterDirs -= it
@@ -234,10 +233,10 @@ class DownloadCache(
      * @param chapters the list of chapter to remove.
      * @param manga the manga of the chapter.
      */
-    suspend fun removeChapters(chapters: List<SavableChapter>, manga: SavableManga) {
+    suspend fun removeChapters(chapters: List<ChapterResource>, manga: MangaResource) {
         rootDownloadsDirLock.withLock {
             val sourceDir = rootDownloadsDir.sourceDirs[MangaDexSource.id] ?: return
-            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga.titleEnglish)] ?: return
+            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga.title)] ?: return
             chapters.forEach { chapter ->
                 provider.getValidChapterDirNames(chapter.title, chapter.scanlator).forEach {
                     if (it in mangaDir.chapterDirs) {
@@ -255,10 +254,10 @@ class DownloadCache(
      *
      * @param manga the manga to remove.
      */
-    suspend fun removeManga(manga: SavableManga) {
+    suspend fun removeManga(manga: MangaResource) {
         rootDownloadsDirLock.withLock {
             val sourceDir = rootDownloadsDir.sourceDirs[MangaDexSource.id] ?: return
-            val mangaDirName = provider.getMangaDirName(manga.titleEnglish)
+            val mangaDirName = provider.getMangaDirName(manga.title)
             if (sourceDir.mangaDirs.containsKey(mangaDirName)) {
                 sourceDir.mangaDirs -= mangaDirName
             }
@@ -368,12 +367,14 @@ class DownloadCache(
     }
 
     private var updateDiskCacheJob: Job? = null
+
+    @OptIn(InternalSerializationApi::class)
     private fun updateDiskCache() {
         updateDiskCacheJob?.cancel()
         updateDiskCacheJob = scope.launch(Dispatchers.IO) {
             delay(1000)
             ensureActive()
-            val bytes = Json.encodeToString(rootDownloadsDir).toByteArray()
+            val bytes = encodeToString(RootDirectory::class.serializer(), rootDownloadsDir).toByteArray()
             ensureActive()
             try {
                 diskCacheFile.writeBytes(bytes)

@@ -3,6 +3,7 @@ package io.silv.database.entity.chapter
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import io.silv.common.model.ChapterResource
 import io.silv.common.model.ProgressState
 import io.silv.common.time.localDateTimeNow
 import io.silv.database.entity.AmadeusEntity
@@ -15,16 +16,16 @@ data class ChapterEntity(
     override val id: String,
 
     @ColumnInfo("manga_id")
-    val mangaId: String,
+    override val mangaId: String,
     val progressState: ProgressState = ProgressState.NotStarted,
     val languageCode: String,
     val scanlationGroupId: String?,
-    val scanlationGroup: String?,
+    override val scanlator: String = "",
     val userId: String?,
     val user: String?,
     val volume: Int = -1,
     val lastPageRead: Int,
-    val title: String,
+    override val title: String,
     val pages: Int,
     val bookmarked: Boolean,
     val chapterNumber: Long = -1L,
@@ -32,10 +33,10 @@ data class ChapterEntity(
     val updatedAt: LocalDateTime,
     val readableAt: LocalDateTime,
     val uploader: String?,
-    val externalUrl: String?,
+    override val url: String = "",
     val version: Int,
     val savedLocalAt: LocalDateTime = localDateTimeNow()
-): AmadeusEntity<Any> {
+): ChapterResource, AmadeusEntity<Any> {
 
     val isRecognizedNumber: Boolean
         get() = chapterNumber >= 0f

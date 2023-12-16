@@ -1,7 +1,7 @@
 package eu.kanade.tachiyomi.reader.loader
 
-import eu.kanade.tachiyomi.reader.DownloadManager
 import eu.kanade.tachiyomi.reader.model.ReaderChapter
+import io.silv.data.download.DownloadManager
 import io.silv.model.SavableManga
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

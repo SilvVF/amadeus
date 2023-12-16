@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.reader.model
 
 import androidx.compose.runtime.Stable
+import io.silv.common.model.Page
 import java.io.InputStream
 
 

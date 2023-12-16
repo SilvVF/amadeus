@@ -1,12 +1,11 @@
-package eu.kanade.tachiyomi.reader.cache
+package io.silv.data.download
 
 import android.content.Context
 import android.text.format.Formatter
 import com.jakewharton.disklrucache.DiskLruCache
-import eu.kanade.tachiyomi.DiskUtil
-import eu.kanade.tachiyomi.reader.model.Page
-import eu.kanade.tachiyomi.saveTo
-import io.silv.model.SavableChapter
+import io.silv.common.model.ChapterResource
+import io.silv.common.model.Page
+import io.silv.data.util.DiskUtil
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Response
@@ -60,7 +59,7 @@ class ChapterCache(
      * @param chapter the chapter.
      * @return the list of pages.
      */
-    fun getPageListFromCache(chapter: SavableChapter): List<Page> {
+    fun getPageListFromCache(chapter: ChapterResource): List<Page> {
         // Get the key for the chapter.
         val key = DiskUtil.hashKeyForDisk(getKey(chapter))
 
@@ -76,7 +75,7 @@ class ChapterCache(
      * @param chapter the chapter.
      * @param pages list of pages.
      */
-    fun putPageListToCache(chapter: SavableChapter, pages: List<Page>) {
+    fun putPageListToCache(chapter: ChapterResource, pages: List<Page>) {
         // Convert list of pages to json string.
         val cachedValue = json.encodeToString(pages)
 
@@ -191,7 +190,7 @@ class ChapterCache(
         }
     }
 
-    private fun getKey(chapter: SavableChapter): String {
+    private fun getKey(chapter: ChapterResource): String {
         return "${chapter.mangaId}${chapter.url}"
     }
 }

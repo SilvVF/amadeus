@@ -1,30 +1,28 @@
-package eu.kanade.tachiyomi.reader
+package io.silv.data.download
 
 import android.content.Context
-import eu.kanade.tachiyomi.Download
-import eu.kanade.tachiyomi.DownloadJob
-import eu.kanade.tachiyomi.Downloader
-import eu.kanade.tachiyomi.MangaDexSource
-import eu.kanade.tachiyomi.reader.cache.DownloadCache
-import eu.kanade.tachiyomi.reader.model.Page
-import eu.kanade.tachiyomi.reader.model.Source
+import android.util.Log
 import io.silv.common.ApplicationScope
-import io.silv.domain.chapter.GetChapter
-import io.silv.domain.manga.GetManga
-import io.silv.model.SavableChapter
-import io.silv.model.SavableManga
+import io.silv.common.model.ChapterResource
+import io.silv.common.model.Download
+import io.silv.common.model.MangaDexSource
+import io.silv.common.model.MangaResource
+import io.silv.common.model.Page
+import io.silv.common.model.Source
+import io.silv.data.chapter.GetChapter
+import io.silv.data.manga.GetManga
+import io.silv.database.entity.chapter.ChapterEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
-class DownloadManager(
+class DownloadManager internal constructor(
     private val context: Context,
+    private val applicationScope: ApplicationScope,
     private val downloadProvider: DownloadProvider,
     private val downloader: Downloader,
+    private val downloadCache: DownloadCache,
     private val getManga: GetManga,
     private val getChapter: GetChapter,
-    private val downloadCache: DownloadCache,
-    private val applicationScope: ApplicationScope,
 ) {
 
     val isRunning: Boolean
@@ -44,10 +42,10 @@ class DownloadManager(
     fun startDownloads() {
         if (downloader.isRunning) return
 
-        if (DownloadJob.isRunning(context)) {
+        if (DownloadWorker.isRunning(context)) {
             downloader.start()
         } else {
-            DownloadJob.start(context)
+            DownloadWorker.start(context)
         }
     }
 
@@ -62,7 +60,7 @@ class DownloadManager(
     /**
      * Empties the download queue.
      */
-    fun clearQueue() {
+    suspend fun clearQueue() {
         downloader.clearQueue()
         downloader.stop()
     }
@@ -76,16 +74,26 @@ class DownloadManager(
         return queueState.value.find { it.chapter.id == chapterId }
     }
 
+    private suspend fun downloadFromChapterId(id: String): Download? {
+
+        val chapter = getChapter.await(id) ?: return null
+        val manga = getManga.await(chapter.mangaId) ?: return null
+
+        return Download(manga, chapter)
+    }
+
     fun startDownloadNow(chapterId: String) {
-        val existingDownload = getQueuedDownloadOrNull(chapterId)
-        // If not in queue try to start a new download
-        val toAdd = existingDownload ?: runBlocking { Download.fromChapterId(chapterId, getChapter, getManga) } ?: return
-        queueState.value.toMutableList().apply {
-            existingDownload?.let { remove(it) }
-            add(0, toAdd)
-            reorderQueue(this)
+        applicationScope.launch {
+            val existingDownload = getQueuedDownloadOrNull(chapterId)
+            // If not in queue try to start a new download
+            val toAdd = existingDownload ?: downloadFromChapterId(chapterId) ?: return@launch
+            queueState.value.toMutableList().apply {
+                existingDownload?.let { remove(it) }
+                add(0, toAdd)
+                reorderQueue(this)
+            }
+            startDownloads()
         }
-        startDownloads()
     }
 
     /**
@@ -94,7 +102,9 @@ class DownloadManager(
      * @param downloads value to set the download queue to
      */
     fun reorderQueue(downloads: List<Download>) {
-        downloader.updateQueue(downloads)
+        applicationScope.launch {
+            downloader.updateQueue(downloads)
+        }
     }
     /**
      * Tells the downloader to enqueue the given list of chapters.
@@ -103,8 +113,11 @@ class DownloadManager(
      * @param chapters the list of chapters to enqueue.
      * @param autoStart whether to start the downloader after enqueing the chapters.
      */
-    fun downloadChapters(manga: SavableManga, chapters: List<SavableChapter>, autoStart: Boolean = true) {
-        downloader.queueChapters(manga, chapters, autoStart)
+    fun downloadChapters(manga: MangaResource, chapters: List<ChapterResource>, autoStart: Boolean = true) {
+        applicationScope.launch {
+            Log.d("DownloadManager", "queing chapters $chapters manga $manga auto start $autoStart")
+            downloader.queueChapters(manga, chapters, autoStart)
+        }
     }
 
     /**
@@ -139,13 +152,13 @@ class DownloadManager(
      *
      * @param downloads the list of downloads to enqueue.
      */
-    fun addDownloadsToStartOfQueue(downloads: List<Download>) {
+    suspend fun addDownloadsToStartOfQueue(downloads: List<Download>) {
         if (downloads.isEmpty()) return
         queueState.value.toMutableList().apply {
             addAll(0, downloads)
             reorderQueue(this)
         }
-        if (!DownloadJob.isRunning(context)) startDownloads()
+        if (!DownloadWorker.isRunning(context)) startDownloads()
     }
 
 
@@ -159,8 +172,8 @@ class DownloadManager(
      * @param chapter the downloaded chapter.
      * @return the list of pages from the chapter.
      */
-    fun buildPageList(source: Source, manga: SavableManga, chapter: SavableChapter): List<Page> {
-        val chapterDir = downloadProvider.findChapterDir(chapter.title, chapter.scanlator, manga.titleEnglish, source)
+    fun buildPageList(source: Source, manga: MangaResource, chapter: ChapterResource): List<Page> {
+        val chapterDir = downloadProvider.findChapterDir(chapter.title, chapter.scanlator, manga.title, source)
         val files = chapterDir?.listFiles().orEmpty()
             .filter { "image" in it.type.orEmpty() }
 
@@ -185,12 +198,14 @@ class DownloadManager(
      *
      * @param manga the manga to check.
      */
-    fun getDownloadCount(manga: SavableManga): Int {
+    fun getDownloadCount(manga: MangaResource): Int {
         return downloadCache.getDownloadCount(manga)
     }
 
     fun cancelQueuedDownloads(downloads: List<Download>) {
-        removeFromDownloadQueue(downloads.map { it.chapter })
+        applicationScope.launch {
+            removeFromDownloadQueue(downloads.map { it.chapter })
+        }
     }
 
     /**
@@ -200,7 +215,7 @@ class DownloadManager(
      * @param manga the manga of the chapters.
      * @param source the source of the chapters.
      */
-    fun deleteChapters(chapters: List<SavableChapter>, manga: SavableManga) {
+    fun deleteChapters(chapters: List<ChapterResource>, manga: MangaResource) {
         applicationScope.launch(Dispatchers.IO) {
             val filteredChapters = getChaptersToDelete(chapters, manga)
             if (filteredChapters.isEmpty()) {
@@ -209,7 +224,11 @@ class DownloadManager(
 
             removeFromDownloadQueue(filteredChapters)
 
-            val (mangaDir, chapterDirs) = downloadProvider.findChapterDirs(filteredChapters, manga, MangaDexSource)
+            val (mangaDir, chapterDirs) = downloadProvider.findChapterDirs(
+                filteredChapters,
+                manga.title,
+                MangaDexSource
+            )
             chapterDirs.forEach { it.delete() }
             downloadCache.removeChapters(filteredChapters, manga)
 
@@ -219,7 +238,7 @@ class DownloadManager(
             }
         }
     }
-    private suspend fun getChaptersToDelete(chapters: List<SavableChapter>, manga: SavableManga): List<SavableChapter> {
+    private fun getChaptersToDelete(chapters: List<ChapterResource>, manga: MangaResource): List<ChapterEntity> {
         return emptyList()
     }
 
@@ -230,12 +249,12 @@ class DownloadManager(
      * @param source the source of the manga.
      * @param removeQueued whether to also remove queued downloads.
      */
-    fun deleteManga(manga: SavableManga, source: Source, removeQueued: Boolean = true) {
+    fun deleteManga(manga: MangaResource, source: Source, removeQueued: Boolean = true) {
         applicationScope.launch(Dispatchers.IO) {
             if (removeQueued) {
                 downloader.removeFromQueue(manga)
             }
-            downloadProvider.findMangaDir(manga.titleEnglish, source)?.delete()
+            downloadProvider.findMangaDir(manga.title, source)?.delete()
             downloadCache.removeManga(manga)
 
             // Delete source directory if empty
@@ -247,7 +266,7 @@ class DownloadManager(
         }
     }
 
-    private fun removeFromDownloadQueue(chapters: List<SavableChapter>) {
+    private suspend fun removeFromDownloadQueue(chapters: List<ChapterResource>) {
         val wasRunning = downloader.isRunning
         if (wasRunning) {
             downloader.pause()

@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi.reader.model
+package io.silv.common.model
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,10 +14,10 @@ open class Page(
     val number: Int
         get() = index + 1
 
-    @Transient
+    @kotlinx.serialization.Transient
     private val _statusFlow = MutableStateFlow(State.QUEUE)
 
-    @Transient
+    @kotlinx.serialization.Transient
     val statusFlow = _statusFlow.asStateFlow()
     var status: State
         get() = _statusFlow.value
@@ -25,10 +25,10 @@ open class Page(
             _statusFlow.value = value
         }
 
-    @Transient
+    @kotlinx.serialization.Transient
     private val _progressFlow = MutableStateFlow(0)
 
-    @Transient
+    @kotlinx.serialization.Transient
     val progressFlow = _progressFlow.asStateFlow()
 
     var progress: Int

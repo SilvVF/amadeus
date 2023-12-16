@@ -1,10 +1,13 @@
 package io.silv.data
 
+import io.silv.data.chapter.GetChapter
 import io.silv.data.di.authorModule
 import io.silv.data.di.chapterModule
+import io.silv.data.di.downloadModule
 import io.silv.data.di.mangaModule
 import io.silv.data.di.tagsModule
 import io.silv.data.di.workersModule
+import io.silv.data.manga.GetManga
 import io.silv.data.manga.MangaPagingSourceFactory
 import io.silv.data.util.UpdateChapterList
 import io.silv.database.daosModule
@@ -16,6 +19,10 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 val dataModule = module {
+
+    factoryOf(::GetChapter)
+
+    factoryOf(::GetManga)
 
     factoryOf(::UpdateChapterList)
 
@@ -32,7 +39,8 @@ val dataModule = module {
         authorModule,
         chapterModule,
         mangaModule,
+        workersModule,
         tagsModule,
-        workersModule
+        downloadModule
     )
 }

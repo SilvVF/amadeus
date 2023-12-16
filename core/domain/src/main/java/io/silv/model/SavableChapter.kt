@@ -4,6 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import androidx.compose.runtime.Stable
 import io.silv.DateTimeAsLongSerializer
+import io.silv.common.model.ChapterResource
 import io.silv.common.model.ProgressState
 import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.minus
@@ -40,7 +41,6 @@ data class SavableChapter(
     val lastReadPage: Int,
     val translatedLanguage: String,
     val uploader: String,
-    val externalUrl: String? = null,
     val scanlationGroupToId: Pair<String, String>? = null,
     val userToId: Pair<String,String>? = null,
     val version: Int,
@@ -58,7 +58,7 @@ data class SavableChapter(
 
     constructor(entity: ChapterEntity, downloaded: Boolean = false): this(
         id = entity.id,
-        url = entity.externalUrl ?: "",
+        url = entity.url,
         bookmarked = entity.bookmarked,
         downloaded = downloaded,
         progress = entity.progressState,
@@ -69,14 +69,13 @@ data class SavableChapter(
         pages = entity.pages,
         translatedLanguage = entity.languageCode,
         uploader = entity.uploader ?: "",
-        externalUrl = entity.externalUrl,
         lastReadPage = entity.lastPageRead,
         version = entity.version,
         createdAt = entity.createdAt,
         updatedAt = entity.updatedAt,
         readableAt = entity.readableAt,
         scanlationGroupToId = entity
-            .scanlationGroup?.let { group ->
+            .scanlator.let { group ->
                 entity.scanlationGroupId?.let { id ->
                     group to id
                 }
@@ -87,7 +86,7 @@ data class SavableChapter(
                     user to id
                 }
             },
-        ableToDownload = entity.externalUrl == null || implementedImageSources.any { it in (entity.externalUrl ?: "") },
+        ableToDownload = implementedImageSources.any { it in (entity.url) } || entity.url.isBlank(),
     )
     private val daysSinceCreated: Long
         get() = (localDateTimeNow() - this.createdAt).inWholeDays
@@ -132,5 +131,21 @@ data class SavableChapter(
         override fun create(parcel: Parcel): SavableChapter {
             return Json.decodeFromString(serializer(), parcel.readString() ?: "")
         }
+    }
+}
+
+fun SavableChapter.toResource() : ChapterResource {
+    val c = this
+    return object : ChapterResource {
+        override val id: String
+            get() = c.id
+        override val mangaId: String
+            get() = c.mangaId
+        override val scanlator: String
+            get() = c.scanlator
+        override val title: String
+            get() = c.title
+        override val url: String
+            get() = c.url
     }
 }

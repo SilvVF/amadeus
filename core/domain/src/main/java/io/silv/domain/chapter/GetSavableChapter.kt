@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-class GetChapter(
+class GetSavableChapter(
     private val chapterRepository: ChapterRepository,
 ) {
 

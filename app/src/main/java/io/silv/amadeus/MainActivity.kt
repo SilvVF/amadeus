@@ -19,7 +19,7 @@ import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.navigator.Navigator
 import io.silv.amadeus.crash.CrashActivity
 import io.silv.amadeus.crash.GlobalExceptionHandler
-import io.silv.domain.NetworkConnectivity
+import io.silv.common.model.NetworkConnectivity
 import io.silv.ui.LocalAppState
 import io.silv.ui.rememberAppState
 import io.silv.ui.theme.AmadeusTheme

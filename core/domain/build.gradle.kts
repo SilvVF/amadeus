@@ -2,7 +2,7 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
-    kotlin("plugin.serialization").version(libs.versions.org.jetbrains.kotlin.android)
+    kotlin("plugin.serialization")  version "1.9.20"
     id("kotlin-parcelize")
 }
 
@@ -44,10 +44,6 @@ dependencies {
     implementation(project(":core:common"))
 
     implementation(libs.sandwich)
-    implementation(libs.coil)
-    implementation(libs.coil.gif)
-    implementation(libs.image.decoder)
-    implementation(libs.unifile)
 
     implementation("androidx.compose.runtime:runtime:1.5.4")
     implementation(libs.disklrucache)
@@ -62,6 +58,8 @@ dependencies {
 
     implementation(libs.flow.combinetuple.kt)
     implementation(libs.tuples.kt)
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 
 
     // KOTLIN

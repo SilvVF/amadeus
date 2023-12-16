@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi
+package io.silv.data.download
 
 import android.content.Context
 import android.content.res.Resources

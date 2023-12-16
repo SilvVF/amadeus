@@ -2,6 +2,7 @@
 plugins {
     id("java-library")
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
+    kotlin("plugin.serialization")  version "1.9.20"
 }
 
 java {
@@ -12,4 +13,6 @@ java {
 dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlin.collections.immutable)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 }

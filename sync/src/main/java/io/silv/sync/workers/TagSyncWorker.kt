@@ -15,7 +15,8 @@ import io.silv.data.workers.createForegroundInfo
 import io.silv.sync.TagSyncWorkName
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 internal class TagSyncWorker(
     appContext: Context,
@@ -48,7 +49,7 @@ internal class TagSyncWorker(
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .setBackoffCriteria(
                     BackoffPolicy.EXPONENTIAL,
-                    Duration.ofSeconds(15),
+                    15.seconds.toJavaDuration(),
                 )
                 .setConstraints(SyncConstraints)
                 .build()

@@ -5,7 +5,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.PagedType
 import io.silv.common.model.TimePeriod
 import io.silv.data.manga.SavedMangaRepository
-import io.silv.domain.manga.GetManga
+import io.silv.domain.manga.GetSavableManga
 import io.silv.domain.manga.SubscribeToPagingData
 import io.silv.model.SavableManga
 import io.silv.ui.EventStateScreenModel
@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MangaFilterScreenModel(
-    getManga: GetManga,
+    getManga: GetSavableManga,
     subscribeToPagingData: SubscribeToPagingData,
     private val savedMangaRepository: SavedMangaRepository,
     tagId: String

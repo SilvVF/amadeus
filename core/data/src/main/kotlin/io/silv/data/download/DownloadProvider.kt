@@ -1,13 +1,11 @@
-package eu.kanade.tachiyomi.reader
+package io.silv.data.download
 
 import android.content.Context
 import android.util.Log
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.DiskUtil
-import eu.kanade.tachiyomi.reader.model.Source
-import io.silv.database.entity.chapter.ChapterEntity
-import io.silv.model.SavableChapter
-import io.silv.model.SavableManga
+import io.silv.common.model.ChapterResource
+import io.silv.common.model.Source
+import io.silv.data.util.DiskUtil
 
 /**
  * This class is used to provide the directories where the downloads should be saved.
@@ -15,7 +13,7 @@ import io.silv.model.SavableManga
  *
  * @param context the application context.
  */
-class DownloadProvider(
+internal class DownloadProvider(
     private val context: Context,
     storageManager: StorageManager,
 ) {
@@ -81,8 +79,8 @@ class DownloadProvider(
      * @param manga the manga of the chapter.
      * @param source the source of the chapter.
      */
-    fun findChapterDirs(chapters: List<SavableChapter>, manga: SavableManga, source: Source): Pair<UniFile?, List<UniFile>> {
-        val mangaDir = findMangaDir(manga.titleEnglish, source) ?: return null to emptyList()
+    fun findChapterDirs(chapters: List<ChapterResource>, mangaTitle: String, source: Source): Pair<UniFile?, List<UniFile>> {
+        val mangaDir = findMangaDir(mangaTitle, source) ?: return null to emptyList()
         return mangaDir to chapters.mapNotNull { chapter ->
             getValidChapterDirNames(chapter.title, chapter.scanlator).asSequence()
                 .mapNotNull { mangaDir.findFile(it, true) }
@@ -135,9 +133,9 @@ class DownloadProvider(
         }
     }
 
-    fun isChapterDirNameChanged(oldChapter: ChapterEntity, newChapter: ChapterEntity): Boolean {
+    fun isChapterDirNameChanged(oldChapter: ChapterResource, newChapter: ChapterResource): Boolean {
         return oldChapter.title != newChapter.title ||
-                oldChapter.scanlationGroup?.takeIf { it.isNotBlank() } != newChapter.scanlationGroup?.takeIf { it.isNotBlank() }
+                oldChapter.scanlator.takeIf { it.isNotBlank() } != newChapter.scanlator.takeIf { it.isNotBlank() }
     }
 
     /**

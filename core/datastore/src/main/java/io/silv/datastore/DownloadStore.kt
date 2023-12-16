@@ -1,12 +1,19 @@
-package eu.kanade.tachiyomi
+package io.silv.datastore
 
 import android.content.Context
-import androidx.core.content.edit
-import io.silv.domain.chapter.GetChapter
-import io.silv.domain.manga.GetManga
-import io.silv.model.SavableManga
-import kotlinx.coroutines.runBlocking
+import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import io.silv.common.model.ChapterResource
+import io.silv.common.model.Download
+import io.silv.common.model.MangaResource
+import kotlinx.coroutines.flow.first
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -19,21 +26,17 @@ import kotlinx.serialization.json.Json
  */
 @Serializable
 private data class DownloadObject(val mangaId: String, val chapterId: String, val order: Int)
+
 /**
  * This class is used to persist active downloads across application restarts.
  */
 class DownloadStore(
-    context: Context,
-    private val json: Json,
-    private val getManga: GetManga,
-    private val getChapter: GetChapter,
+    context: Context
 ) {
 
-    /**
-     * Preference file where active downloads are stored.
-     */
-    private val preferences = context.getSharedPreferences("active_downloads", Context.MODE_PRIVATE)
+    private val Context.store: DataStore<Preferences> by preferencesDataStore(name = "download_store")
 
+    private val datastore = context.store
     /**
      * Counter used to keep the queue order.
      */
@@ -44,9 +47,12 @@ class DownloadStore(
      *
      * @param downloads the list of downloads to add.
      */
-    fun addAll(downloads: List<Download>) {
-        preferences.edit {
-            downloads.forEach { putString(getKey(it), serialize(it)) }
+    suspend fun addAll(downloads: List<Download>)  {
+        Log.d("DownloadStore", "serializing")
+        datastore.edit { prefs ->
+            downloads.forEach {
+                prefs[getKey(it)] = serialize(it)
+            }
         }
     }
 
@@ -55,9 +61,9 @@ class DownloadStore(
      *
      * @param download the download to remove.
      */
-    fun remove(download: Download) {
-        preferences.edit {
-            remove(getKey(download))
+    suspend fun remove(download: Download)  {
+        datastore.edit {
+            it.remove(getKey(download))
         }
     }
 
@@ -66,18 +72,20 @@ class DownloadStore(
      *
      * @param downloads the download to remove.
      */
-    fun removeAll(downloads: List<Download>) {
-        preferences.edit {
-            downloads.forEach { remove(getKey(it)) }
+    suspend fun removeAll(downloads: List<Download>) {
+        datastore.edit {
+            downloads.forEach { download ->
+                it.remove(getKey(download))
+            }
         }
     }
 
     /**
      * Removes all the downloads from the store.
      */
-    fun clear() {
-        preferences.edit {
-            clear()
+    suspend fun clear()  {
+        datastore.edit {
+            it.clear()
         }
     }
 
@@ -86,27 +94,31 @@ class DownloadStore(
      *
      * @param download the download.
      */
-    private fun getKey(download: Download): String {
-        return download.chapter.id
+    private fun getKey(download: Download): Preferences.Key<String> {
+        return stringPreferencesKey(download.chapter.id)
     }
+
 
     /**
      * Returns the list of downloads to restore. It should be called in a background thread.
      */
-    fun restore(): List<Download> {
-        val objs = preferences.all
+    suspend fun restore(
+        getManga: suspend (id: String) -> MangaResource?,
+        getChapter: suspend (id: String) -> ChapterResource?
+    ): List<Download> {
+        val objs = datastore.data.first().asMap()
             .mapNotNull { it.value as? String }
             .mapNotNull { deserialize(it) }
             .sortedBy { it.order }
 
         val downloads = mutableListOf<Download>()
         if (objs.isNotEmpty()) {
-            val cachedManga = mutableMapOf<String, SavableManga?>()
+            val cachedManga = mutableMapOf<String, MangaResource?>()
             for ((mangaId, chapterId) in objs) {
-                val manga = cachedManga.getOrPut(mangaId) {
-                    runBlocking { getManga.await(mangaId) }
-                } ?: continue
-                val chapter = runBlocking { getChapter.await(chapterId) } ?: continue
+
+                val manga = cachedManga.getOrPut(mangaId) { getManga(mangaId) } ?: continue
+                val chapter =  getChapter(chapterId) ?: continue
+
                 downloads.add(Download(manga, chapter))
             }
         }
@@ -121,9 +133,15 @@ class DownloadStore(
      *
      * @param download the download to serialize.
      */
+    @OptIn(InternalSerializationApi::class)
     private fun serialize(download: Download): String {
         val obj = DownloadObject(download.manga.id, download.chapter.id, counter++)
-        return json.encodeToString(obj)
+        return try {
+            Json.encodeToString<DownloadObject>(obj)
+        } catch (e: SerializationException) {
+            Log.d("DownloadStore", e.stackTraceToString())
+            ""
+        }
     }
 
     /**
@@ -133,8 +151,9 @@ class DownloadStore(
      */
     private fun deserialize(string: String): DownloadObject? {
         return try {
-            json.decodeFromString<DownloadObject>(string)
+            Json.decodeFromString<DownloadObject>(string)
         } catch (e: Exception) {
+            Log.d("DownloadStore", e.stackTraceToString())
             null
         }
     }

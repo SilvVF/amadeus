@@ -2,7 +2,7 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    kotlin("plugin.serialization").version(libs.versions.org.jetbrains.kotlin.android)
+    kotlin("plugin.serialization")  version "1.9.20"
     id("kotlin-parcelize")
 }
 android {
@@ -57,5 +57,5 @@ dependencies {
 
     // KOTLIN
     implementation(libs.kotlinx.datetime)
-    implementation(libs.kotlin.serialization)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 }

@@ -1,12 +1,13 @@
 package eu.kanade.tachiyomi.reader.loader
 
 import com.skydoves.sandwich.getOrThrow
-import eu.kanade.tachiyomi.await
-import eu.kanade.tachiyomi.reader.cache.ChapterCache
-import eu.kanade.tachiyomi.reader.model.Page
 import eu.kanade.tachiyomi.reader.model.PriorityPage
 import eu.kanade.tachiyomi.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.reader.model.ReaderPage
+import io.silv.common.model.Page
+import io.silv.data.download.ChapterCache
+import io.silv.data.download.await
+import io.silv.model.toResource
 import io.silv.network.MangaDexApi
 import io.silv.network.image_sources.ImageSourceFactory
 import kotlinx.coroutines.CancellationException
@@ -69,7 +70,7 @@ internal class HttpPageLoader(
                     response.chapter.data.mapIndexed { i, data ->
                         Page(
                             index = i,
-                            url = chapter.chapter.externalUrl ?: "",
+                            url = chapter.chapter.url,
                             imageUrl = "${response.baseUrl}/data/${response.chapter.hash}/$data"
                         )
                     }
@@ -79,7 +80,7 @@ internal class HttpPageLoader(
                     .mapIndexed { i, data ->
                         Page(
                             index = i,
-                            url = chapter.chapter.externalUrl ?: "",
+                            url = chapter.chapter.url,
                             imageUrl = data,
                         )
                     }
@@ -92,12 +93,12 @@ internal class HttpPageLoader(
      */
     override suspend fun getPages(): List<ReaderPage> {
         val pages = try {
-            chapterCache.getPageListFromCache(chapter.chapter)
+            chapterCache.getPageListFromCache(chapter.chapter.toResource())
         } catch (e: Throwable) {
             if (e is CancellationException) {
                 throw e
             }
-            val externalUrl = chapter.chapter.externalUrl?.replace("\\", "") ?: ""
+            val externalUrl = chapter.chapter.url.replace("\\", "")
 
             getImages(externalUrl, chapter.chapter.id)
         }
@@ -164,7 +165,7 @@ internal class HttpPageLoader(
                 try {
                     // Convert to pages without reader information
                     val pagesToSave = pages.map { Page(it.index, it.url, it.imageUrl) }
-                    chapterCache.putPageListToCache(chapter.chapter, pagesToSave)
+                    chapterCache.putPageListToCache(chapter.chapter.toResource(), pagesToSave)
                 } catch (e: Throwable) {
                     if (e is CancellationException) {
                         throw e

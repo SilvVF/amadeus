@@ -1,6 +1,5 @@
-package eu.kanade.tachiyomi
+package io.silv.common.model
 
-import eu.kanade.tachiyomi.reader.model.Source
 
 val MangaDexSource = Source(
     id = 0L,

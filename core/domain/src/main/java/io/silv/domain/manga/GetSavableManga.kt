@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlin.time.Duration.Companion.days
 
-class GetManga(
+class GetSavableManga(
     private val mangaRepository: SavedMangaRepository,
     private val sourceMangaRepository: SourceMangaRepository,
     private val mangaDexApi: MangaDexApi,

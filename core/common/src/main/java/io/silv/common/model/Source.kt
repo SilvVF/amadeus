@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi.reader.model
+package io.silv.common.model
 
 data class Source(
     val id: Long,

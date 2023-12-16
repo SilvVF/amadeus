@@ -13,4 +13,6 @@ val dataStoreModule = module {
     singleOf(::UserSettingsStoreImpl) withOptions {
         bind<UserSettingsStore>()
     }
+
+    singleOf(::DownloadStore)
 }

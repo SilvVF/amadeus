@@ -86,10 +86,10 @@ class MangaPagingSourceFactory(
         },
     )
 
-    companion object {
-        const val LATEST_MANGA_QUERY =  "io.silv.query.latest"
-        const val POPULAR_MANGA_QUERY =  "io.silv.query.popular"
-        const val FILTER_MANGA_QUERY = "io.silv.query.filter"
-        const val TIME_PERIOD_MANGA_QUERY = "io.silv.query.timeperiod"
-    }
+//    companion object {
+//        const val LATEST_MANGA_QUERY =  "io.silv.query.latest"
+//        const val POPULAR_MANGA_QUERY =  "io.silv.query.popular"
+//        const val FILTER_MANGA_QUERY = "io.silv.query.filter"
+//        const val TIME_PERIOD_MANGA_QUERY = "io.silv.query.timeperiod"
+//    }
 }

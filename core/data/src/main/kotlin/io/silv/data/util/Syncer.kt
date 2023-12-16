@@ -3,7 +3,7 @@ package io.silv.data.util
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.time.epochSeconds
 import io.silv.database.entity.AmadeusEntity
-import java.time.Duration
+import kotlin.time.Duration.Companion.days
 
 /**
  * updates and all local entities with the given network response.
@@ -72,7 +72,7 @@ internal suspend fun <Key, Local: AmadeusEntity<Key>, Network> syncVersions(
     val toUpdate = mutableListOf<Pair<Network, Local>>()
     val toDelete = mutableListOf<Local>()
 
-    if (epochSeconds() - lastUpdatedEpochSeconds() > Duration.ofDays(30).seconds) {
+    if (epochSeconds() - lastUpdatedEpochSeconds() > 30.days.inWholeSeconds) {
         val network = getNetworkWithVersion()
         val local = getLocalWithVersions()
         val networkWithKey = network.map { it to networkToKey(it.second) }

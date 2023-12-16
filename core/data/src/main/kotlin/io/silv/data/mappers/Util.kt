@@ -6,11 +6,6 @@ import io.silv.network.model.LocalizedString
 import io.silv.network.model.manga.Manga
 import kotlin.time.Duration.Companion.days
 
-fun coverArtUrl(
-    fileName: String?,
-    mangaId: String,
-) =  "https://uploads.mangadex.org/covers/${mangaId}/$fileName"
-
 fun TimePeriod.timeString(): String? {
     return timeStringMinus(
             when (this) {

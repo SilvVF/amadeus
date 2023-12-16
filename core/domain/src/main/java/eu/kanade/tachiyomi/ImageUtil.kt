@@ -32,6 +32,7 @@ import java.io.InputStream
 import java.net.URLConnection
 import kotlin.math.min
 
+@Suppress("unused")
 object ImageUtil {
 
     fun isImage(name: String?, openStream: (() -> InputStream)? = null): Boolean {

@@ -1,13 +1,18 @@
 package eu.kanade.tachiyomi.reader
 
 import android.content.Context
+import android.util.Log
 import com.hippo.unifile.UniFile
+import java.io.File
 
 class StorageManager(
     context: Context,
 ) {
 
-    private var baseDir: UniFile? = UniFile.fromFile(context.filesDir.absoluteFile)
+    private var baseDir: UniFile? = UniFile.fromFile(
+        File(context.getExternalFilesDir(null)!!.absolutePath + File.separator + "Amadeus").also { it.mkdirs() }
+            .also { Log.d("BASEDIR", it.absolutePath) }
+    )
 
 
     fun getDownloadsDirectory(): UniFile? {

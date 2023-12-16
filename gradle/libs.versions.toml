@@ -8,6 +8,7 @@ androidxTestEspressoCore = "3.5.1"
 appcompat = "1.6.1"
 coilGif = "2.5.0"
 datastorePreferences = "1.0.0"
+disklrucache = "2.0.2"
 flowCombinetupleKt = "1.2.0"
 imageDecoder = "fbd6601290"
 jsoup = "1.17.1"
@@ -60,6 +61,7 @@ kotlinCollectionsImmutable = "0.3.6"
 sandwich = "2.0.4"
 
 [libraries]
+disklrucache = { module = "com.jakewharton:disklrucache", version.ref = "disklrucache" }
 image-decoder = { module = "com.github.tachiyomiorg:image-decoder", version.ref = "imageDecoder" }
 sandwich = { module = "com.github.skydoves:sandwich", version.ref= "sandwich"}
 sandwich-ktor = {module ="com.github.skydoves:sandwich-ktor", version.ref = "sandwich"}

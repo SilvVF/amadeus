@@ -70,9 +70,6 @@ android {
 }
 dependencies {
 
-    implementation(libs.coil.gif)
-    implementation(libs.image.decoder)
-
     implementation(libs.sandwich)
 
     implementation(project(":core:common"))
@@ -89,7 +86,8 @@ dependencies {
     implementation(project(":feature:reader"))
     implementation(project(":feature:manga"))
 
-    implementation(libs.unifile)
+    implementation(libs.coil.gif)
+    implementation(libs.coil.svg)
     implementation(libs.accompanist.webview)
 
     implementation(libs.flow.combinetuple.kt)
@@ -129,6 +127,9 @@ dependencies {
 
 
     implementation(libs.androidx.navigation.compose)
+
+    implementation(libs.disklrucache)
+    implementation(libs.okio)
 
     //ROOM
     ksp(libs.room.ksp)

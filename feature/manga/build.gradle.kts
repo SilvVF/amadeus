@@ -51,6 +51,9 @@ dependencies {
 
     implementation(libs.sandwich)
 
+    implementation("com.halilibo.compose-richtext:richtext-commonmark:0.17.0")
+    implementation("com.halilibo.compose-richtext:richtext-ui-material3:0.17.0")
+
     implementation("me.saket.swipe:swipe:1.2.0")
 
     implementation(project(":core:ui"))

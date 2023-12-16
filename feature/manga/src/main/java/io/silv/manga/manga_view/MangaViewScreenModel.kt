@@ -2,18 +2,16 @@ package io.silv.manga.manga_view
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
-import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.skydoves.sandwich.ApiResponse
 import com.skydoves.sandwich.message
-import io.silv.common.model.ProgressState
-import io.silv.data.chapter.ChapterEntityRepository
-import io.silv.data.manga.SavedMangaRepository
 import io.silv.datastore.UserSettingsStore
 import io.silv.datastore.model.Filters
-import io.silv.domain.GetCombinedSavableMangaWithChapters
-import io.silv.domain.GetMangaStatisticsById
-import io.silv.domain.MangaStats
+import io.silv.domain.chapter.ChapterHandler
+import io.silv.domain.manga.GetCombinedSavableMangaWithChapters
+import io.silv.domain.manga.GetMangaStatisticsById
+import io.silv.domain.manga.MangaHandler
+import io.silv.model.MangaStats
 import io.silv.model.SavableChapter
 import io.silv.model.SavableManga
 import io.silv.ui.EventStateScreenModel
@@ -37,9 +35,9 @@ class MangaViewScreenModel(
     getCombinedSavableMangaWithChapters: GetCombinedSavableMangaWithChapters,
     getMangaStatisticsById: GetMangaStatisticsById,
     private val userSettingsStore: UserSettingsStore,
-    private val savedMangaRepository: SavedMangaRepository,
-    private val chapterEntityRepository: ChapterEntityRepository,
-    private val workManager: WorkManager,
+    private val mangaHandler: MangaHandler,
+    private val chapterHandler: ChapterHandler,
+    private val downloadManager: eu.kanade.tachiyomi.reader.DownloadManager,
     mangaId: String,
 ): EventStateScreenModel<MangaViewEvent, MangaViewState>(MangaViewState.Loading) {
 
@@ -52,7 +50,7 @@ class MangaViewScreenModel(
     private val mutableFilters = MutableStateFlow(Filters())
 
     init {
-        getCombinedSavableMangaWithChapters(mangaId)
+        getCombinedSavableMangaWithChapters.subscribe(mangaId)
             .onEach { (manga, chapters) ->
                 mutableState.update {
                     (it.success ?: MangaViewState.Success(manga)).copy(
@@ -64,6 +62,15 @@ class MangaViewScreenModel(
             .catch {
                 mutableState.value = MangaViewState.Error(it.localizedMessage ?: "")
             }
+            .launchIn(screenModelScope)
+
+        downloadManager.queueState.onEach { downloads ->
+            updateSuccess {
+                it.copy(
+                    downloadingIds = downloads.map { it.chapter.id }.toImmutableList()
+                )
+            }
+        }
             .launchIn(screenModelScope)
 
         state.map { it.success?.chapters }
@@ -87,7 +94,7 @@ class MangaViewScreenModel(
 
         state.map { it.success?.manga?.id }.filterNotNull()
             .onEach { id ->
-                val response = getMangaStatisticsById(id)
+                val response = getMangaStatisticsById.await(id)
                 updateSuccess {state ->
                     state.copy(
                         statsUiState =  when(response) {
@@ -101,42 +108,31 @@ class MangaViewScreenModel(
     }
 
 
-    fun addMangaToLibrary(id: String) {
+    fun toggleLibraryManga(id: String) {
         screenModelScope.launch {
-            savedMangaRepository.addMangaToLibrary(id)
+            mangaHandler.addOrRemoveFromLibrary(id)
         }
     }
 
     fun changeChapterBookmarked(id: String) {
         screenModelScope.launch {
-            chapterEntityRepository.updateChapter(id) { entity ->
-                entity.copy(
-                    bookmarked = (!entity.bookmarked).also {
-                        mutableEvents.trySend(
-                            MangaViewEvent.BookmarkStatusChanged(id, it)
-                        )
-                    }
-                )
-            }
+            chapterHandler.toggleChapterBookmarked(id)
+                .onSuccess {
+                    mutableEvents.send(
+                        MangaViewEvent.BookmarkStatusChanged(id, it.bookmarked)
+                    )
+                }
         }
     }
 
     fun changeChapterReadStatus(id: String) {
         screenModelScope.launch {
-            var new = false
-            chapterEntityRepository.updateChapter(id) { entity ->
-                entity.copy(
-                    progressState = when (entity.progressState) {
-                        ProgressState.Finished -> ProgressState.NotStarted.also { new = false }
-                        ProgressState.NotStarted, ProgressState.Reading -> ProgressState.Finished.also {
-                            new = true
-                        }
-                    }
-                )
-            }
-            mutableEvents.send(
-                MangaViewEvent.ReadStatusChanged(id, new)
-            )
+            chapterHandler.toggleReadOrUnread(id)
+                .onSuccess {
+                    mutableEvents.send(
+                        MangaViewEvent.ReadStatusChanged(id, it.read)
+                    )
+                }
         }
     }
 
@@ -213,8 +209,12 @@ class MangaViewScreenModel(
         }
     }
 
-    fun deleteChapterImages(chapterIds: String) {
-
+    fun deleteChapterImages(chapterId: String) {
+        state.value.success?.let {
+            screenModelScope.launch {
+                downloadManager.deleteChapters(listOf(it.chapters.firstOrNull { it.id == chapterId } ?: return@launch), it.manga)
+            }
+        }
     }
 
     fun setFilterAsDefault() {
@@ -224,7 +224,11 @@ class MangaViewScreenModel(
     }
 
     fun downloadChapterImages(chapterId: String) {
-
+        state.value.success?.let {
+            screenModelScope.launch {
+                downloadManager.downloadChapters(it.manga, listOf(it.chapters.firstOrNull { it.id == chapterId } ?: return@launch))
+            }
+        }
     }
 
     private fun List<SavableChapter>.applyFilters(filters: Filters): ImmutableList<SavableChapter> {
@@ -279,6 +283,7 @@ sealed interface MangaViewState {
 
     data class Success(
         val manga: SavableManga,
+        val downloadingIds: ImmutableList<String> = persistentListOf(),
         val loadingArt: Boolean = false,
         val volumeToArt: ImmutableMap<Int, String> = persistentMapOf(),
         val statsUiState: StatsUiState = StatsUiState.Loading,

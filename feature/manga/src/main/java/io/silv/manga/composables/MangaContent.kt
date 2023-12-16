@@ -6,26 +6,28 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.AssistChip
+import androidx.compose.material3.ElevatedSuggestionChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,167 +39,148 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastForEach
+import com.halilibo.richtext.markdown.Markdown
+import com.halilibo.richtext.ui.material3.Material3RichText
 import io.silv.model.SavableManga
 import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.noRippleClickable
 import io.silv.ui.theme.LocalSpacing
+import kotlinx.collections.immutable.persistentListOf
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun TagsAndLanguages(
-    manga: SavableManga,
-    navigate: (name: String) -> Unit,
-) {
-    val space = LocalSpacing.current
-    val list = remember(manga) {
-        manga.tagToId.keys.toList()
-    }
-    var expanded by rememberSaveable {
-        mutableStateOf(list.size < 4)
-    }
-    Text("Tags", style = MaterialTheme.typography.labelSmall)
-    Column(Modifier.animateContentSize()) {
-        FlowRow {
-            if (!expanded) {
-                list.take(3).forEach {name ->
-                    AssistChip(
-                        onClick = { navigate(name)},
-                        label = { Text(name) },
-                        modifier = Modifier.padding(horizontal = space.xs)
-                    )
-                }
-                if (list.size > 4) {
-                    AssistChip(
-                        onClick = { expanded = true },
-                        label = { Text("+ ${list.size - 3} more") },
-                        modifier = Modifier.padding(horizontal = space.xs)
-                    )
-                }
-            } else {
-                list.forEach { name ->
-                    AssistChip(
-                        onClick = { navigate(name) },
-                        label = { Text(name) },
-                        modifier = Modifier.padding(horizontal = space.xs)
-                    )
-                }
-                if (list.size > 4) {
-                    IconButton(onClick = { expanded = false }) {
-                        Icon(imageVector = Icons.Filled.KeyboardArrowLeft, contentDescription = null)
-                    }
-                }
-            }
-        }
-        Text("Translated Languages", style = MaterialTheme.typography.labelSmall)
-        TranslatedLanguageTags(tags = manga.availableTranslatedLanguages)
-    }
-}
 
 @Composable
-fun MangaContent(
+fun ColumnScope.MangaDescriptionWithActions(
     manga: SavableManga,
-    bookmarked: Boolean,
-    onBookmarkClicked: (String) -> Unit,
+    inLibrary: Boolean,
+    addToLibraryClicked: (String) -> Unit,
     onTagSelected: (tag: String) -> Unit,
     showChapterArt: () -> Unit,
     viewOnWebClicked: () -> Unit,
 ) {
     val space = LocalSpacing.current
-    Column(Modifier.padding(horizontal = space.med)) {
-        MangaActions(
-            manga = manga,
-            bookmarked = bookmarked,
-            onBookmarkClicked = onBookmarkClicked,
-            viewOnWebClicked = viewOnWebClicked,
-            showChapterArt = showChapterArt
-        )
-        MangaInfo(
-            manga = manga,
-            onTagSelected = onTagSelected
-        )
-    }
+    MangaActions(
+        modifier = Modifier
+            .padding(vertical = space.med)
+            .fillMaxWidth(),
+        inLibrary = inLibrary,
+        addToLibraryClicked = {
+            addToLibraryClicked(manga.id)
+        },
+        viewOnWebClicked = viewOnWebClicked,
+        showChapterArt = showChapterArt
+    )
+    MangaInfo(
+        manga = manga,
+        onTagSelected = onTagSelected
+    )
 }
+
+@Stable
+private data class MangaActionItem(
+    val icon: ImageVector,
+    val label: String,
+    val action: () -> Unit,
+    val selected: Boolean = false,
+)
 
 @Composable
 private fun MangaActions(
-    manga: SavableManga,
-    bookmarked: Boolean,
+    modifier: Modifier,
+    inLibrary: Boolean,
     showChapterArt: () -> Unit,
-    onBookmarkClicked: (String) -> Unit,
+    addToLibraryClicked: () -> Unit,
     viewOnWebClicked: () -> Unit,
 ) {
     val space = LocalSpacing.current
     Row(
-        Modifier
-            .padding(vertical = space.med)
-            .fillMaxWidth(),
+        modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            IconButton(
-                onClick = { onBookmarkClicked(manga.id) },
-                modifier = Modifier.padding(horizontal = space.large)
-            ) {
-                Icon(
-                    imageVector = if (bookmarked) {
-                        Icons.Filled.Favorite
-                    } else {
-                        Icons.Outlined.FavoriteBorder
-                    },
-                    contentDescription = null,
-                    tint = if(bookmarked) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onBackground
+        val items by remember(inLibrary) {
+            derivedStateOf {
+                persistentListOf(
+                   MangaActionItem(
+                       icon = if (inLibrary) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                       label =  if (inLibrary) "Added to library" else "Add to library",
+                       selected = inLibrary,
+                       action = addToLibraryClicked
+                   ),
+                    MangaActionItem(Icons.Filled.TravelExplore, "View on web", viewOnWebClicked),
+                    MangaActionItem(Icons.Filled.Image, "Cover art", showChapterArt)
                 )
             }
-            Text(
-                text = if (bookmarked) "Added to library" else "Add to library",
-                style = MaterialTheme.typography.labelMedium
-                    .copy(
-                        color = if(bookmarked) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onBackground
+        }
+
+        items.fastForEach { (icon, label, action, selected) ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                val color = if (selected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onBackground
+                }
+                IconButton(
+                    onClick = action,
+                    modifier = Modifier.padding(horizontal = space.large)
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = icon.name,
+                        tint = color
                     )
-            )
-        }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            IconButton(
-                onClick = viewOnWebClicked,
-                modifier = Modifier.padding(horizontal = space.large)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.TravelExplore,
-                    contentDescription = null
+                }
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium.copy(color = color)
                 )
             }
-            Text(text = "View on web", style = MaterialTheme.typography.labelMedium)
         }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            IconButton(
-                onClick = showChapterArt,
-                modifier = Modifier.padding(horizontal = space.large)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Image,
-                    contentDescription = null
+    }
+}
+
+@Composable
+private fun TagsAndLanguages(
+    manga: SavableManga,
+    navigate: (name: String) -> Unit,
+) {
+    val space = LocalSpacing.current
+    val tags = remember(manga) { manga.tagToId.keys.toList() }
+
+    Text(
+        text = "Tags",
+        style = MaterialTheme.typography.labelSmall,
+        modifier = Modifier.padding(space.med)
+    )
+    Column(Modifier.animateContentSize()) {
+        LazyRow {
+            items(
+                tags,
+                key = { item -> item }
+            ) {tag ->
+                ElevatedSuggestionChip(
+                    onClick = { navigate(tag) },
+                    label = { Text(tag) },
+                    modifier = Modifier.padding(horizontal = space.small)
                 )
             }
-            Text(text = "Cover art", style = MaterialTheme.typography.labelMedium)
         }
+        Text(
+            text ="Translated Languages",
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(space.med)
+        )
+        TranslatedLanguageTags(tags = manga.availableTranslatedLanguages)
     }
 }
 
@@ -212,16 +195,16 @@ private fun MangaInfo(
     var expanded by rememberSaveable {
         mutableStateOf(false)
     }
+    val space = LocalSpacing.current
     TagsAndLanguages(
         manga = manga,
         navigate = onTagSelected
     )
-    Column(
-        Modifier
-    ) {
+    Column(Modifier.fillMaxWidth()) {
         Text(
             text = "Description",
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(space.med)
         )
         MangaSummary(
             modifier = Modifier
@@ -262,22 +245,32 @@ private fun MangaSummary(
         shrunkHeight = shrunkPlaceable.maxByOrNull { it.height }?.height ?: 0
 
         val expandedPlaceable = subcompose("description-l") {
-            Text(
-                text = expandedDescription,
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            Material3RichText(
+                modifier = Modifier.alpha(0.78f),
+            ) {
+                Markdown(content = expandedDescription)
+            }
         }.map { it.measure(constraints) }
+
         expandedHeight = expandedPlaceable.maxByOrNull { it.height }?.height?.coerceAtLeast(shrunkHeight) ?: 0
 
         val actualPlaceable = subcompose("description") {
             SelectionContainer {
-                Text(
-                    text = if (expanded) expandedDescription else shrunkDescription,
-                    maxLines = Int.MAX_VALUE,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.alpha(0.78f),
-                )
+                if (expanded) {
+                    Material3RichText(
+                        modifier = Modifier.alpha(0.78f),
+                    ) {
+                        Markdown(content = expandedDescription)
+                    }
+                } else {
+                    Text(
+                        shrunkDescription,
+                        maxLines = Int.MAX_VALUE,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.alpha(0.78f),
+                    )
+                }
             }
         }.map { it.measure(constraints) }
 

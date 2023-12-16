@@ -25,7 +25,7 @@ import io.silv.manga.manga_filter.MangaFilterScreen
 import io.silv.manga.manga_view.MangaViewScreen
 import io.silv.navigation.SharedScreen
 import io.silv.network.util.MangaDexApiLogger
-import io.silv.reader.MangaReaderScreen
+import io.silv.reader.ReaderScreen
 import io.silv.sync.Sync
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -60,9 +60,9 @@ class AmadeusApp: Application(), ImageLoaderFactory {
                 LibraryScreen()
             }
             register<SharedScreen.Reader> {
-                MangaReaderScreen(
+                ReaderScreen(
                     mangaId = it.mangaId,
-                    initialChapterId = it.initialChapterId
+                    chapterId = it.initialChapterId
                 )
             }
             register<SharedScreen.MangaFilter> {

@@ -140,7 +140,7 @@ class LibraryScreen: Screen {
         val space = LocalSpacing.current
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState())
         val bookmarkedChapters by sm.bookmarkedChapters.collectAsStateWithLifecycle()
-        val downloadingOrDeletingIds by sm.downloadingOrDeleting.collectAsStateWithLifecycle()
+        val downloadingOrDeletingIds by sm.downloadingOrDeleting.collectAsStateWithLifecycle(emptyList())
         val updatedManga by sm.updates.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }
 
@@ -269,7 +269,7 @@ class LibraryScreen: Screen {
                         ) {
                             if (filteredItems.isEmpty()) {
                                 header {
-                                    io.silv.ui.CenterBox(
+                                    CenterBox(
                                         Modifier
                                             .fillMaxSize()
                                             .padding(space.med)
@@ -315,7 +315,7 @@ fun UpdatesList(
     val context = LocalContext.current
     val space = LocalSpacing.current
     if (updates.isEmpty()) {
-        io.silv.ui.CenterBox(modifier = Modifier.fillMaxSize()) {
+        CenterBox(modifier = Modifier.fillMaxSize()) {
             Text(text = "No updates for manga.")
         }
     } else {
@@ -665,7 +665,7 @@ fun ChapterListItem(
             )
         }
         if (downloadProgress != null) {
-            io.silv.ui.CenterBox {
+            CenterBox {
                 Icon(
                     imageVector = Icons.Default.ArrowDownward,
                     contentDescription = null

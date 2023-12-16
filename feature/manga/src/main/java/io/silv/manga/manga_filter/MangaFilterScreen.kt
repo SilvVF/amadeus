@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -27,8 +29,8 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,7 +48,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -60,20 +61,22 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
 import io.silv.common.model.TimePeriod
 import io.silv.model.SavableManga
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
+import io.silv.navigation.replace
 import io.silv.ui.CenterBox
 import io.silv.ui.composables.AnimatedBoxShimmer
 import io.silv.ui.composables.BlurImageBackground
 import io.silv.ui.composables.MangaGenreTags
 import io.silv.ui.composables.MangaListItem
 import io.silv.ui.composables.TranslatedLanguageTags
-import io.silv.ui.header
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 
@@ -89,19 +92,17 @@ class MangaFilterScreen(
     @Composable
     override fun Content() {
 
-        val sm = getScreenModel<MangaFilterSM> { parametersOf(tagId) }
-        val navigator = LocalNavigator.current
+        val sm = getScreenModel<MangaFilterScreenModel> { parametersOf(tagId) }
+        val navigator = LocalNavigator.currentOrThrow
         val space = LocalSpacing.current
         val timePeriod by sm.timePeriod.collectAsStateWithLifecycle()
-        val yearlyItemsState by sm.state.collectAsStateWithLifecycle()
+        val yearlyItemsState = sm.state.collectAsStateWithLifecycle().value
         
 
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
             state = rememberTopAppBarState()
         )
-
         val timePeriodPager by sm.timePeriodFilteredPagingFlow.collectAsStateWithLifecycle()
-
         val timePeriodItems = timePeriodPager.collectAsLazyPagingItems()
 
         Scaffold(
@@ -111,7 +112,7 @@ class MangaFilterScreen(
                     scrollBehavior = scrollBehavior,
                     navigationIcon = {
                         IconButton(
-                            onClick = { navigator?.pop() },
+                            onClick = { navigator.pop() },
                             modifier = Modifier.padding(space.small)
                         ) {
                             Icon(
@@ -121,7 +122,7 @@ class MangaFilterScreen(
                         }
                     },
                     title = {
-                        Text(sm.currentTag)
+                        Text(tag)
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
@@ -129,17 +130,19 @@ class MangaFilterScreen(
                     )
                 )
             }
-        ) {
+        ) { paddingValues ->
             LazyVerticalGrid(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(it),
-                columns = GridCells.Fixed(2)
+                modifier = Modifier.fillMaxSize(),
+                columns = GridCells.Fixed(2),
+                contentPadding = paddingValues
             ) {
-                header {
+                item(
+                    key = "time-period-tags",
+                    span = { GridItemSpan(maxLineSpan) }
+                ) {
                     Column {
                         Text(
-                            "${sm.currentTag} trending this year",
+                            "$tag trending this year",
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold
                             ),
@@ -157,7 +160,9 @@ class MangaFilterScreen(
                                     onMangaClick = {},
                                     onBookmarkClick = {},
                                     onTagClick = { name, id ->
-                                        sm.updateTagId(id, name)
+                                        if (id != tagId) {
+                                            navigator.replace(SharedScreen.MangaFilter(name, id))
+                                        }
                                     }
                                 )
                             }
@@ -175,7 +180,7 @@ class MangaFilterScreen(
                                 "last month" to TimePeriod.LastMonth,
                                 "last week" to TimePeriod.OneWeek
                             ).forEach { (text, time) ->
-                                FilterChip(
+                                ElevatedFilterChip(
                                     selected = time == timePeriod,
                                     onClick = { sm.changeTimePeriod(time) },
                                     label = {
@@ -187,67 +192,63 @@ class MangaFilterScreen(
                         }
                     }
                 }
-                items(
-                    count = timePeriodItems.itemCount,
-                    key = timePeriodItems.itemKey(),
-                    contentType = timePeriodItems.itemContentType()
-                ) { i ->
-
-                    val manga = timePeriodItems[i]
-
-                    manga?.let {
-                        MangaListItem(
-                            manga = manga,
-                            modifier = Modifier
-                                .padding(space.large)
-                                .height((LocalConfiguration.current.screenHeightDp / 2.6f).dp)
-                                .clickable {
-                                    navigator?.push(SharedScreen.MangaView(manga.id))
-                                },
-                            onTagClick = { name ->
-                                manga.tagToId[name]?.let {
-                                    sm.updateTagId(it, name)
-                                }
-                            },
-                            onBookmarkClick = {
-                                sm.bookmarkManga(manga.id)
-                            }
-                        )
-                    }
-                }
-                if (timePeriodItems.loadState.refresh == LoadState.Loading) {
-                    header {
-                        Column(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(space.med)) {
-                            AnimatedBoxShimmer(
-                                Modifier
-                                    .height(300.dp)
-                                    .fillMaxWidth())
-                        }
-                    }
-                }
-                if (timePeriodItems.loadState.append == LoadState.Loading) {
-                    header {
-                        CenterBox(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(space.med)) {
+                if (timePeriodItems.loadState.refresh is LoadState.Loading) {
+                    item("loading-refresh", span = { GridItemSpan(maxLineSpan) }) {
+                        CenterBox(Modifier.fillMaxWidth().height(200.dp)) {
                             CircularProgressIndicator()
                         }
                     }
-                }
-                if (timePeriodItems.loadState.append is LoadState.Error || timePeriodItems.loadState.refresh is LoadState.Error) {
-                    header {
-                        CenterBox(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(space.med)) {
-                            Button(
-                                onClick = { timePeriodItems.retry() }
+                } else {
+                    items(
+                        count = timePeriodItems.itemCount,
+                        key = timePeriodItems.itemKey(),
+                        contentType = timePeriodItems.itemContentType()
+                    ) { i ->
+
+                        val manga = timePeriodItems[i]
+
+                        manga?.let {
+                            MangaListItem(
+                                manga = manga,
+                                modifier = Modifier
+                                    .padding(space.small)
+                                    .aspectRatio(2f / 3f)
+                                    .clickable {
+                                        navigator.push(SharedScreen.MangaView(manga.id))
+                                    },
+                                onTagClick = { name ->
+                                    manga.tagToId[name]?.let { id ->
+                                        navigator.replace(SharedScreen.MangaFilter(name, id))
+                                    }
+                                },
+                                onBookmarkClick = {
+                                    sm.bookmarkManga(manga.id)
+                                }
+                            )
+                        }
+                    }
+                    if (timePeriodItems.loadState.append == LoadState.Loading) {
+                        item(
+                            key = "append-loading",
+                            span = { GridItemSpan(maxLineSpan) }
+                        ) {
+                            CenterBox(Modifier.fillMaxWidth()) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
+                    if (timePeriodItems.loadState.append is LoadState.Error || timePeriodItems.loadState.refresh is LoadState.Error) {
+                        item(
+                            key = "retry-loading"
+                        ) {
+                            CenterBox(
+                                Modifier.fillMaxWidth()
                             ) {
-                                Text("Retry loading items")
+                                Button(
+                                    onClick = { timePeriodItems.retry() }
+                                ) {
+                                    Text("Retry loading items")
+                                }
                             }
                         }
                     }
@@ -260,7 +261,7 @@ class MangaFilterScreen(
 @OptIn(ExperimentalFoundationApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun YearlyMangaPager(
-    mangaList: ImmutableList<SavableManga>,
+    mangaList: ImmutableList<StateFlow<SavableManga>>,
     onMangaClick: (manga: SavableManga) -> Unit,
     onBookmarkClick: (manga: SavableManga) -> Unit,
     onTagClick: (name: String, id: String) -> Unit,
@@ -283,7 +284,7 @@ fun YearlyMangaPager(
             .fillMaxWidth()
     ) { page ->
 
-        val manga = mangaList[page]
+        val manga by mangaList[page].collectAsStateWithLifecycle()
 
         BlurImageBackground(
             modifier = Modifier
@@ -353,7 +354,7 @@ fun YearlyMangaPager(
                             ) {
                                 IconButton(onClick = { onBookmarkClick(manga) }) {
                                     Icon(
-                                        imageVector = if (manga.bookmarked)
+                                        imageVector = if (manga.inLibrary)
                                             Icons.Filled.Favorite
                                         else
                                             Icons.Outlined.FavoriteBorder,
@@ -362,7 +363,7 @@ fun YearlyMangaPager(
                                     )
                                 }
                                 Text(
-                                    text = if (manga.bookmarked)
+                                    text = if (manga.inLibrary)
                                         "In library"
                                     else
                                         "Add to library",

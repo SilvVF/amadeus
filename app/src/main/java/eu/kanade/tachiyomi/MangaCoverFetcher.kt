@@ -277,7 +277,7 @@ class MangaCoverFetcher(
         override fun create(data: SavableManga, options: Options, imageLoader: ImageLoader): Fetcher {
             return MangaCoverFetcher(
                 url = data.coverArt,
-                isLibraryManga = data.bookmarked,
+                isLibraryManga = data.inLibrary,
                 options = options,
                 coverFileLazy = lazy { coverCache.getCoverFile(data.coverArt) },
                 customCoverFileLazy = lazy { coverCache.getCustomCoverFile(data.id) },

@@ -3,9 +3,9 @@ package io.silv.amadeus.ui.screens
 import io.silv.explore.ExploreScreenModel
 import io.silv.explore.FilterScreenViewModel
 import io.silv.library.LibrarySM
-import io.silv.manga.manga_filter.MangaFilterSM
+import io.silv.manga.manga_filter.MangaFilterScreenModel
 import io.silv.manga.manga_view.MangaViewScreenModel
-import io.silv.reader.MangaReaderSM
+import io.silv.reader.ReaderScreenModel
 import io.silv.sync.SeasonalMangaSyncWorkName
 import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.core.module.dsl.factoryOf
@@ -17,12 +17,12 @@ val screenModule = module {
     factoryOf(::LibrarySM)
 
     factory {(mangaId: String, initialChapterId: String) ->
-        MangaReaderSM(get(), get(), get(), get(), mangaId, initialChapterId)
+        ReaderScreenModel(get(),get(), mangaId, initialChapterId, get())
     }
 
     factoryOf(::MangaViewScreenModel)
 
-    factoryOf(::MangaFilterSM)
+    factoryOf(::MangaFilterScreenModel)
 
     viewModelOf(::FilterScreenViewModel)
 

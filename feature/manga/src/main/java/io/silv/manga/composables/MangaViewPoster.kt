@@ -1,6 +1,5 @@
 package io.silv.manga.composables
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +35,7 @@ import io.silv.ui.fillMaxAfterMesaure
 import io.silv.ui.theme.LocalSpacing
 
 @Composable
-fun MainPoster(
+fun MangaImageWithTitle(
     manga: SavableManga,
     modifier: Modifier,
     padding: PaddingValues,
@@ -79,7 +78,7 @@ fun MainPoster(
     }
 }
 @Composable
-fun PublicationStatusIndicator(
+private fun PublicationStatusIndicator(
     modifier: Modifier = Modifier,
     status: Status,
     year: Int?
@@ -119,7 +118,7 @@ fun PublicationStatusIndicator(
 }
 
 @Composable
-fun MangaTitle(
+private fun MangaTitle(
     modifier: Modifier = Modifier,
     title: String,
     altTitle: String,
@@ -167,31 +166,32 @@ fun MangaTitle(
 }
 
 @Composable
-fun BackgroundImageDarkened(
+private fun BackgroundImageDarkened(
     modifier: Modifier,
-    manga: SavableManga
+    manga: SavableManga,
+    background: Color = MaterialTheme.colorScheme.background
 ) {
     Box(
         modifier = modifier
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            AsyncImage(
-                model = manga,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.DarkGray.copy(alpha = 0.6f),
-                        MaterialTheme.colorScheme.background
+            .drawWithCache {
+                onDrawWithContent {
+                    drawContent()
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.DarkGray.copy(alpha = 0.6f),
+                                background
+                            )
+                        )
                     )
-                )
-            )
+                }
+            }
+    ) {
+        AsyncImage(
+            model = manga,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
         )
     }
 }

@@ -2,7 +2,7 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
-    kotlin("plugin.serialization") version "1.9.20" apply false
+    kotlin("plugin.serialization").version(libs.versions.org.jetbrains.kotlin.android)
     id("kotlin-parcelize")
 }
 
@@ -44,8 +44,18 @@ dependencies {
     implementation(project(":core:common"))
 
     implementation(libs.sandwich)
+    implementation(libs.coil)
+    implementation(libs.coil.gif)
+    implementation(libs.image.decoder)
+    implementation(libs.unifile)
 
     implementation("androidx.compose.runtime:runtime:1.5.4")
+    implementation(libs.disklrucache)
+    implementation(libs.okio)
+    implementation(libs.okhttp)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.work.multiprocess)
+    implementation(libs.androidx.work.gcm)
 
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.6")
 
@@ -53,8 +63,11 @@ dependencies {
     implementation(libs.flow.combinetuple.kt)
     implementation(libs.tuples.kt)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
+
+    // KOTLIN
     implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlin.serialization)
+    implementation(libs.koin.workmanager)
 
     implementation(libs.koin.core)
 

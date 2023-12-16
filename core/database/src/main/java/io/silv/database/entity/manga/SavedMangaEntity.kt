@@ -15,13 +15,8 @@ import kotlinx.datetime.LocalDateTime
 data class SavedMangaEntity(
 
     @PrimaryKey override val id: String,
-
-    val progressState: ProgressState = ProgressState.NotStarted,
-
-    val readingStatus: ReadingStatus,
-
-    val originalCoverArtUrl: String,
-
+    override val progressState: ProgressState = ProgressState.NotStarted,
+    override val readingStatus: ReadingStatus,
     override val coverArt: String,
     override val description: String,
     override val titleEnglish: String,
@@ -49,7 +44,6 @@ data class SavedMangaEntity(
         id = mangaResource.id,
         progressState = ProgressState.NotStarted,
         readingStatus = ReadingStatus.None,
-        originalCoverArtUrl = mangaResource.coverArt,
         coverArt = mangaResource.coverArt,
         description = mangaResource.description,
         titleEnglish = mangaResource.titleEnglish,
@@ -71,37 +65,4 @@ data class SavedMangaEntity(
         authors = mangaResource.authors,
         artists = mangaResource.artists
     )
-
-    constructor(
-        mangaResources: List<MangaResource>,
-        recent: MangaResource = mangaResources.maxBy { it.savedAtLocal }
-    ): this(
-            id = recent.id,
-            progressState = ProgressState.NotStarted,
-            readingStatus = ReadingStatus.None,
-            coverArt = "",
-            description = recent.description,
-            titleEnglish = recent.titleEnglish,
-            originalCoverArtUrl = recent.coverArt,
-            alternateTitles = recent.alternateTitles,
-            originalLanguage = recent.originalLanguage,
-            availableTranslatedLanguages = recent.availableTranslatedLanguages,
-            status = recent.status,
-            tagToId = recent.tagToId,
-            contentRating = recent.contentRating,
-            lastVolume = recent.lastVolume,
-            lastChapter = recent.lastChapter,
-            version = recent.version,
-            createdAt = recent.createdAt,
-            updatedAt = recent.updatedAt,
-            publicationDemographic = recent.publicationDemographic,
-            volumeToCoverArt = mangaResources
-                .filter { it.volumeToCoverArt.isNotEmpty() }
-                .maxBy { it.savedAtLocal }
-                .volumeToCoverArt,
-            latestUploadedChapter = recent.latestUploadedChapter,
-            year = recent.year,
-            authors = recent.authors,
-            artists = recent.artists
-        )
 }

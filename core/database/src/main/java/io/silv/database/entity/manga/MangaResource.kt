@@ -2,12 +2,16 @@ package io.silv.database.entity.manga
 
 import androidx.room.Entity
 import io.silv.common.model.ContentRating
+import io.silv.common.model.ProgressState
 import io.silv.common.model.PublicationDemographic
+import io.silv.common.model.ReadingStatus
 import io.silv.common.model.Status
 import kotlinx.datetime.LocalDateTime
 
 @Entity
 interface MangaResource {
+    val progressState: ProgressState
+    val readingStatus: ReadingStatus
     val id: String
     val coverArt: String
     val description: String

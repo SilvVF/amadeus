@@ -3,17 +3,16 @@ package eu.kanade.tachiyomi
 import coil.key.Keyer
 import coil.request.Options
 import io.silv.common.model.MangaCover
-import io.silv.database.entity.manga.SavedMangaEntity
 import io.silv.model.SavableManga
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 
-fun SavedMangaEntity.asMangaCover(): MangaCover {
+fun SavableManga.asMangaCover(): MangaCover {
     return MangaCover(
         mangaId = id,
         url = coverArt,
-        isMangaFavorite = true,
-        lastModified = savedAtLocal.toInstant(TimeZone.currentSystemDefault()).epochSeconds,
+        isMangaFavorite = inLibrary,
+        lastModified = savedLocalAtEpochSeconds.toInstant(TimeZone.currentSystemDefault()).epochSeconds,
     )
 }
 

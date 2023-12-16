@@ -370,17 +370,14 @@ fun SeasonalPagingCard(
                         color = vibrantColor
                     )
                 )
-                TranslatedLanguageTags(
-                    tags = manga.availableTranslatedLanguages,
-                    textColor = textColor
-                )
+                TranslatedLanguageTags(tags = manga.availableTranslatedLanguages,)
                 Box(modifier = Modifier.weight(1f)) {
                     TagsGridWithBookMark(
                         modifier = Modifier
                             .fillMaxWidth()
                             .align(Alignment.BottomCenter),
                         tags = remember(manga) { manga.tagToId.map { it.key } },
-                        bookmarked = manga.bookmarked,
+                        bookmarked = manga.inLibrary,
                         onBookmarkClick = onBookmarkClick,
                         onTagClick = onTagClick,
                         textColor = textColor,

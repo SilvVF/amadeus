@@ -28,11 +28,11 @@ private val implementedImageSources = listOf(
 @Parcelize
 data class SavableChapter(
     val id: String,
+    val url: String,
     val bookmarked: Boolean,
     val downloaded: Boolean,
     val progress: ProgressState,
     val mangaId: String,
-    val imageUris: List<String> = emptyList(),
     val title: String,
     val volume: Int,
     val chapter: Long,
@@ -53,13 +53,16 @@ data class SavableChapter(
     val ableToDownload: Boolean,
 ): Parcelable {
 
-    constructor(entity: ChapterEntity): this(
+    val scanlator = scanlationGroupToId?.first ?: ""
+    val scanlatorid = scanlationGroupToId?.second ?: ""
+
+    constructor(entity: ChapterEntity, downloaded: Boolean = false): this(
         id = entity.id,
+        url = entity.externalUrl ?: "",
         bookmarked = entity.bookmarked,
-        downloaded = entity.chapterImages.isNotEmpty(),
+        downloaded = downloaded,
         progress = entity.progressState,
         mangaId = entity.mangaId,
-        imageUris = entity.chapterImages,
         title = entity.title,
         volume = entity.volume,
         chapter = entity.chapterNumber,

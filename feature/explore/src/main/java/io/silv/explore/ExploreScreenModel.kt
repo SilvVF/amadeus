@@ -8,9 +8,9 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.PagedType
 import io.silv.common.model.Season
 import io.silv.data.manga.SavedMangaRepository
-import io.silv.domain.RecentSearchHandler
-import io.silv.domain.SubscribeToPagingData
-import io.silv.domain.SubscribeToSeasonalLists
+import io.silv.domain.search.RecentSearchHandler
+import io.silv.domain.manga.SubscribeToPagingData
+import io.silv.domain.manga.SubscribeToSeasonalLists
 import io.silv.model.DomainSeasonalList
 import io.silv.model.RecentSearch
 import io.silv.model.SavableManga
@@ -121,7 +121,7 @@ class ExploreScreenModel(
 
     fun bookmarkManga(mangaId: String) {
         screenModelScope.launch {
-            savedMangaRepository.addMangaToLibrary(mangaId)
+            savedMangaRepository.addOrRemoveFromLibrary(mangaId)
         }
     }
 

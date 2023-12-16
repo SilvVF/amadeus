@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.silv.common.model.MangaCover
@@ -22,13 +21,12 @@ fun LazyListScope.volumePosterItems(
         items = state.volumeToArtList,
         key = { item -> item.toString() }
     ) { (_, url) ->
-        val context = LocalContext.current
         val space = io.silv.ui.theme.LocalSpacing.current
         val cover = remember(state.manga, url) {
             MangaCover(
                 mangaId = state.manga.id,
                 url = url,
-                isMangaFavorite = state.manga.bookmarked,
+                isMangaFavorite = state.manga.inLibrary,
                 lastModified = state.manga.updatedAt.toInstant(TimeZone.currentSystemDefault()).epochSeconds
             )
         }

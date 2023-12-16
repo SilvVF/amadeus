@@ -11,13 +11,14 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.common.pmap
-import io.silv.data.chapter.ChapterEntityRepository
+import io.silv.data.chapter.ChapterRepository
 import io.silv.data.manga.SavedMangaRepository
 import io.silv.data.workers.createForegroundInfo
 import io.silv.sync.MangaSyncWorkName
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 internal class MangaSyncWorker(
     appContext: Context,
@@ -25,7 +26,7 @@ internal class MangaSyncWorker(
 ): CoroutineWorker(appContext, workerParams), KoinComponent {
 
     private val savedMangaRepository by inject<SavedMangaRepository>()
-    private val chapterInfoRepository by inject<ChapterEntityRepository>()
+    private val chapterInfoRepository by inject<ChapterRepository>()
 
     override suspend fun doWork(): Result {
 
@@ -62,7 +63,7 @@ internal class MangaSyncWorker(
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .setBackoffCriteria(
                     BackoffPolicy.EXPONENTIAL,
-                    Duration.ofSeconds(15),
+                    15.seconds.toJavaDuration(),
                 )
                 .setConstraints(SyncConstraints)
                 .build()

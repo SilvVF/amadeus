@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.ElevatedSuggestionChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -121,7 +122,7 @@ fun MangaListItem(
             GenreTagsWithBookmark(
                 tags = manga.tags,
                 onBookmarkClick = onBookmarkClick,
-                bookmarked = manga.bookmarked,
+                bookmarked = manga.inLibrary,
                 modifier = Modifier.fillMaxWidth(),
                 onTagClick = {
                     onTagClick(it)
@@ -136,7 +137,6 @@ fun MangaListItem(
 fun MangaGenreTags(
     modifier: Modifier = Modifier,
     tags: ImmutableList<String>,
-    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     onTagClick: (tag: String) -> Unit = {}
 ) {
     val space = LocalSpacing.current
@@ -146,17 +146,10 @@ fun MangaGenreTags(
             items = tags,
             key = { item -> item }
         ) {language ->
-            SuggestionChip(
+            ElevatedSuggestionChip(
                 onClick = { onTagClick(language) },
-                label = { Text(text = language, color = textColor) },
+                label = { Text(text = language) },
                 modifier = Modifier.padding(horizontal = space.small),
-                colors = SuggestionChipDefaults.suggestionChipColors(
-                    labelColor = MaterialTheme.colorScheme.onBackground,
-                    disabledLabelColor = MaterialTheme.colorScheme.onBackground
-                ),
-                border = SuggestionChipDefaults.suggestionChipBorder(
-                    borderColor = textColor
-                ),
             )
         }
     }
@@ -166,7 +159,6 @@ fun MangaGenreTags(
 fun TranslatedLanguageTags(
     modifier: Modifier = Modifier,
     tags: ImmutableList<String>,
-    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     onLanguageClick: (language: String) -> Unit = {}
 ) {
     val space = LocalSpacing.current
@@ -189,19 +181,12 @@ fun TranslatedLanguageTags(
                 }
             }
 
-            SuggestionChip(
+            ElevatedSuggestionChip(
                 onClick = {
                     showLang = !showLang
                     onLanguageClick(language)
                 },
-                colors = SuggestionChipDefaults.suggestionChipColors(
-                    labelColor = textColor,
-                    disabledLabelColor = textColor,
-                ),
-                border = SuggestionChipDefaults.suggestionChipBorder(
-                    borderColor = textColor
-                ),
-                label = { Text(text, color = textColor) },
+                label = { Text(text) },
                 modifier = Modifier.padding(horizontal = space.small)
             )
         }

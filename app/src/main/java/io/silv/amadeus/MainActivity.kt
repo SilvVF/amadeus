@@ -2,6 +2,7 @@
 
 package io.silv.amadeus
 
+import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,8 +19,8 @@ import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.navigator.Navigator
 import io.silv.amadeus.crash.CrashActivity
 import io.silv.amadeus.crash.GlobalExceptionHandler
+import io.silv.domain.NetworkConnectivity
 import io.silv.ui.LocalAppState
-import io.silv.ui.NetworkConnectivity
 import io.silv.ui.rememberAppState
 import io.silv.ui.theme.AmadeusTheme
 import org.koin.android.ext.android.inject
@@ -36,6 +37,14 @@ class MainActivity : ComponentActivity() {
         GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
 
         enableEdgeToEdge()
+
+        requestPermissions(
+            arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ),
+            0
+        )
 
         setContent {
 

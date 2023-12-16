@@ -25,10 +25,10 @@ interface SourceMangaDao {
     suspend fun delete(manga: SourceMangaResource)
 
     @Query("SELECT * FROM SourceMangaResource WHERE id = :id LIMIT 1")
-    suspend fun selectById(id: String): SourceMangaResource?
+    suspend fun getById(id: String): SourceMangaResource?
 
     @Query("SELECT * FROM SourceMangaResource WHERE id in (:ids)")
-    suspend fun selectByIds(ids: List<String>): List<SourceMangaResource>
+    suspend fun getByIds(ids: List<String>): List<SourceMangaResource>
 
     @Query("SELECT * FROM SourceMangaResource WHERE id in (:ids)")
     fun observeByIds(ids: List<String>): Flow<List<SourceMangaResource>>
@@ -37,7 +37,7 @@ interface SourceMangaDao {
     fun observeById(id: String): Flow<SourceMangaResource?>
 
     @Query("SELECT * FROM SourceMangaResource")
-    suspend fun selectAll(): List<SourceMangaResource>
+    suspend fun getAll(): List<SourceMangaResource>
 
     @Query("SELECT * FROM SourceMangaResource")
     fun observeAll(): Flow<List<SourceMangaResource>>

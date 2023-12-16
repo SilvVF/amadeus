@@ -28,7 +28,6 @@ data class ChapterEntity(
     val pages: Int,
     val bookmarked: Boolean,
     val chapterNumber: Long = -1L,
-    val chapterImages: List<String> = emptyList(),
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
     val readableAt: LocalDateTime,
@@ -44,7 +43,4 @@ data class ChapterEntity(
 
     val read: Boolean
         get() = progressState == ProgressState.Finished
-
-    val downloaded: Boolean
-        get() = chapterImages.isNotEmpty()
 }

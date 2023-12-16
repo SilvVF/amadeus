@@ -31,7 +31,7 @@ import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
         MangaUpdateEntity::class,
         RecentSearchEntity::class
     ],
-    version = 1,
+    version = 2,
 )
 @TypeConverters(Converters::class)
 abstract class AmadeusDatabase: RoomDatabase() {

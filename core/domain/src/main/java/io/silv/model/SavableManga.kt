@@ -16,7 +16,7 @@ import kotlinx.datetime.LocalDateTime
 @Stable
 data class SavableManga(
     val id: String,
-    val bookmarked: Boolean,
+    val inLibrary: Boolean,
     val description: String,
     val progressState: ProgressState = ProgressState.NotStarted,
     val readingStatus: ReadingStatus,
@@ -46,10 +46,10 @@ data class SavableManga(
 
     constructor(savedManga: SavedMangaEntity) : this(
         id = savedManga.id,
-        bookmarked = true,
+        inLibrary = true,
         description = savedManga.description,
         progressState = savedManga.progressState,
-        coverArt = savedManga.coverArt.ifEmpty { savedManga.originalCoverArtUrl },
+        coverArt = savedManga.coverArt,
         titleEnglish = savedManga.titleEnglish,
         alternateTitles = savedManga.alternateTitles,
         originalLanguage = savedManga.originalLanguage,
@@ -70,12 +70,12 @@ data class SavableManga(
         artists = savedManga.artists,
         authors = savedManga.authors
     )
-    constructor(mangaResource: SourceMangaResource, savedManga: SavedMangaEntity?) : this(
+    constructor(mangaResource: SourceMangaResource) : this(
         id = mangaResource.id,
-        bookmarked = savedManga != null,
+        inLibrary = false,
         description = mangaResource.description,
-        progressState = savedManga?.progressState ?: ProgressState.NotStarted,
-        coverArt = savedManga?.coverArt?.ifEmpty { null } ?: mangaResource.coverArt,
+        progressState = mangaResource.progressState,
+        coverArt =  mangaResource.coverArt,
         titleEnglish = mangaResource.titleEnglish,
         alternateTitles = mangaResource.alternateTitles,
         originalLanguage = mangaResource.originalLanguage,
@@ -89,9 +89,9 @@ data class SavableManga(
         createdAt = mangaResource.createdAt,
         updatedAt = mangaResource.updatedAt,
         savedLocalAtEpochSeconds = mangaResource.savedAtLocal,
-        volumeToCoverArtUrl = savedManga?.volumeToCoverArt ?: emptyMap(),
+        volumeToCoverArtUrl =  mangaResource.volumeToCoverArt,
         publicationDemographic = mangaResource.publicationDemographic,
-        readingStatus = savedManga?.readingStatus ?: ReadingStatus.None,
+        readingStatus = mangaResource.readingStatus,
         year = mangaResource.year,
         artists = mangaResource.artists,
         authors = mangaResource.authors

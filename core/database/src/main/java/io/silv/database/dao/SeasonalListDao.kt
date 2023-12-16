@@ -19,7 +19,7 @@ interface SeasonalListDao {
     suspend fun upsertSeasonalList(seasonalListEntity: SeasonalListEntity)
 
     @Query("SELECT * FROM SeasonalListEntity")
-    fun getSeasonalLists(): Flow<List<SeasonalListEntity>>
+    fun observeSeasonalLists(): Flow<List<SeasonalListEntity>>
 
 
     @Query("DELETE FROM SeasonalListEntity")

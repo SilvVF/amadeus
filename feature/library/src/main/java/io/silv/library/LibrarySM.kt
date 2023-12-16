@@ -1,42 +1,25 @@
 package io.silv.library
 
-import androidx.work.ExistingWorkPolicy
-import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.ProgressState
 import io.silv.common.model.UpdateType
-import io.silv.data.chapter.ChapterEntityRepository
+import io.silv.data.chapter.ChapterRepository
 import io.silv.data.manga.MangaUpdateRepository
-import io.silv.domain.GetSavedMangaWithChaptersList
+import io.silv.domain.manga.GetSavedMangaWithChaptersList
 import io.silv.model.SavableChapter
 import io.silv.model.SavableManga
-import io.silv.sync.anyRunning
 import io.silv.ui.EventScreenModel
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class LibrarySM(
-    private val chapterEntityRepository: ChapterEntityRepository,
+    private val chapterEntityRepository: ChapterRepository,
     getSavedMangaWithChaptersList: GetSavedMangaWithChaptersList,
-    private val mangaUpdateRepository: MangaUpdateRepository,
-    private val workManager: WorkManager,
+    mangaUpdateRepository: MangaUpdateRepository,
 ): EventScreenModel<LibraryEvent>() {
 
-    val downloadingOrDeleting = combine(
-        workManager.getWorkInfosByTagFlow(io.silv.data.workers.chapters.ChapterDownloadWorkerTag)
-            .map { it.anyRunning() },
-        workManager.getWorkInfosByTagFlow(io.silv.data.workers.chapters.ChapterDeletionWorkerTag)
-            .map { it.anyRunning() },
-        io.silv.data.workers.chapters.ChapterDownloadWorker.downloadingIdToProgress
-    ) { downloading, deleting, idsToProgress ->
-        if (downloading || deleting) {
-            idsToProgress
-        } else {
-            emptyList()
-        }
-    }
-        .stateInUi(emptyList())
+    val downloadingOrDeleting = flowOf(emptyList<Pair<String, Float>>())
 
     val bookmarkedChapters = chapterEntityRepository.getAllChapters()
         .map { entities ->
@@ -47,7 +30,7 @@ class LibrarySM(
         }
         .stateInUi(emptyList())
 
-    val mangaWithDownloadedChapters = getSavedMangaWithChaptersList()
+    val mangaWithDownloadedChapters = getSavedMangaWithChaptersList.subscribe()
         .map { list ->
             list.map { (manga, chapters) ->
                 LibraryManga(
@@ -73,20 +56,11 @@ class LibrarySM(
         .stateInUi(emptyList())
 
     fun deleteChapterImages(chapterIds: List<String>) = screenModelScope.launch {
-        workManager.enqueue(
-            io.silv.data.workers.chapters.ChapterDeletionWorker.deletionWorkRequest(chapterIds)
-        )
+
     }
 
     fun downloadChapterImages(chapterIds: List<String>, mangaId: String) = screenModelScope.launch {
-        workManager.enqueueUniqueWork(
-            chapterIds.toString(),
-            ExistingWorkPolicy.KEEP,
-            io.silv.data.workers.chapters.ChapterDownloadWorker.downloadWorkRequest(
-                chapterIds,
-                mangaId
-            )
-        )
+
     }
 
     fun changeChapterBookmarked(id: String) = screenModelScope.launch {

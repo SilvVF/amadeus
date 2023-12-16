@@ -3,7 +3,9 @@ package io.silv.database.entity.manga
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import io.silv.common.model.ContentRating
+import io.silv.common.model.ProgressState
 import io.silv.common.model.PublicationDemographic
+import io.silv.common.model.ReadingStatus
 import io.silv.common.model.Status
 import io.silv.common.time.localDateTimeNow
 import io.silv.database.entity.AmadeusEntity
@@ -34,4 +36,6 @@ data class SourceMangaResource(
     override val latestUploadedChapter: String?,
     override val authors: List<String>,
     override val artists: List<String>,
+    override val progressState: ProgressState,
+    override val readingStatus: ReadingStatus,
 ): MangaResource, AmadeusEntity<String>

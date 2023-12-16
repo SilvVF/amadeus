@@ -9,7 +9,7 @@ class ImageSourceFactory(
     private val json: Json
 ) {
 
-    suspend fun getSource(url: String): ImageSource {
+    fun getSource(url: String): ImageSource {
         return when {
             "mangaplus.shueisha" in url -> MangaPlusHandler(client, json)
             "azuki.co" in url -> AzukiHandler(client)

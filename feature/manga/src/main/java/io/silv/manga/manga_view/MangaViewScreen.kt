@@ -1,16 +1,10 @@
 package io.silv.manga.manga_view
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,7 +14,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.exclude
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,45 +25,32 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.StarRate
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -82,15 +62,13 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
-import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import io.silv.datastore.model.Filters
-import io.silv.manga.composables.MainPoster
-import io.silv.manga.composables.MangaContent
+import io.silv.manga.composables.MangaDescriptionWithActions
+import io.silv.manga.composables.MangaImageWithTitle
 import io.silv.manga.composables.WebViewOverlay
 import io.silv.manga.composables.chapterListItems
 import io.silv.manga.composables.volumePosterItems
@@ -101,7 +79,6 @@ import io.silv.ui.collectEvents
 import io.silv.ui.isScrollingUp
 import io.silv.ui.layout.ScrollbarLazyColumn
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.persistentListOf
 import org.koin.core.parameter.parametersOf
 
 
@@ -202,7 +179,7 @@ class MangaViewScreen(
                 delete = screenModel::deleteChapterImages
             ),
             mangaActions = MangaActions(
-                addToLibrary = screenModel::addMangaToLibrary
+                addToLibrary = screenModel::toggleLibraryManga
             )
         )
 
@@ -262,9 +239,7 @@ fun MangaViewSuccessScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true,)
     var currentBottomSheet by rememberSaveable { mutableStateOf<Int?>(null) }
 
-    var showSourceTitle by rememberSaveable {
-        mutableStateOf(true)
-    }
+    var showSourceTitle by rememberSaveable { mutableStateOf(true) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -280,6 +255,16 @@ fun MangaViewSuccessScreen(
                         navigator.pop()
                     }) {
                         Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = null)
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { currentBottomSheet = FILTER_BOTTOM_SHEET },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.FilterList,
+                            contentDescription = "filter"
+                        )
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -330,24 +315,22 @@ fun MangaViewSuccessScreen(
             )
         ) {
             item(key = "manga-poster") {
-              MainPoster(
+              MangaImageWithTitle(
                   manga = state.manga,
                   modifier = Modifier.fillMaxWidth(),
                   padding = paddingValues
               )
             }
             item("manga-info") {
-                Column(
-                    Modifier.padding(horizontal = 12.dp)
-                ) {
+                Column {
                     MangaStats(
                         modifier = Modifier.fillMaxWidth(),
                         state = state.statsUiState
                     )
-                    MangaContent(
+                    MangaDescriptionWithActions(
                         manga = state.manga,
-                        bookmarked = state.manga.bookmarked,
-                        onBookmarkClicked = mangaActions.addToLibrary,
+                        inLibrary = state.manga.inLibrary,
+                        addToLibraryClicked = mangaActions.addToLibrary,
                         onTagSelected = { tag ->
                             state.manga.tagToId[tag]?.let { id ->
                                 navigator.push(SharedScreen.MangaFilter(tag, id))
@@ -360,17 +343,33 @@ fun MangaViewSuccessScreen(
                             currentBottomSheet = VOLUME_ART_BOTTOM_SHEET
                         }
                     )
-                    FilterIcon(
-                        modifier = Modifier.align(Alignment.End),
-                        onClick = {
-                            currentBottomSheet = FILTER_BOTTOM_SHEET
-                        }
+                    Spacer(modifier = Modifier.height(22.dp))
+
+                    val maxChapterNum = remember(state.chapters) {
+                        state.chapters.maxOf { it.chapter }
+                    }
+
+                    val missingChapters = remember(state.chapters) {
+                        var prevChapter: Long? = null
+                        state.chapters
+                            .distinctBy { it.chapter }
+                            .filter { it.chapter != -1L }
+                            .sortedBy { it.chapter }
+                            .count { c ->
+                                (c.chapter - 1 != prevChapter && prevChapter != null)
+                                    .also { prevChapter = c.chapter }
+                            }
+                    }
+
+                    Text(
+                        text = "$maxChapterNum chapters - missing $missingChapters",
+                        modifier = Modifier.padding(start = 12.dp)
                     )
                 }
             }
             chapterListItems(
                 mangaViewState = state,
-                downloadingIds = persistentListOf(),
+                downloadingIds = state.downloadingIds,
                 onDownloadClicked = chapterActions.download,
                 onDeleteClicked = chapterActions.delete,
                 onReadClicked = {
@@ -422,7 +421,7 @@ fun MangaViewSuccessScreen(
 }
 
 @Composable
-fun MangaStats(
+private fun MangaStats(
     modifier: Modifier = Modifier,
     ratingItem: @Composable RowScope.(rating: Double) -> Unit = { rating ->
         Row(
@@ -485,220 +484,8 @@ fun MangaStats(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class,)
-@Composable
-fun FilterBottomSheet(
-    visible: Boolean,
-    filters: Filters,
-    sheetState: SheetState,
-    onSetAsDefaultClick: () -> Unit,
-    filterDownloaded: () -> Unit,
-    filterUnread: () -> Unit,
-    filterBookmarked: () -> Unit,
-    filterBySource: () -> Unit,
-    filterByChapterNumber: () -> Unit,
-    filterByUploadDate: () -> Unit,
-    showSourceTitle: () -> Unit,
-    hideSourceTitle: () -> Unit,
-    showingSourceTitle: Boolean,
-    onDismiss: () -> Unit,
-) {
-    val space = LocalSpacing.current
-    var selectedTabIdx by rememberSaveable {
-        mutableIntStateOf(0)
-    }
-    var dropdownVisible by rememberSaveable {
-        mutableStateOf(false)
-    }
 
-    if (visible) {
-        ModalBottomSheet(
-            onDismissRequest = onDismiss,
-            sheetState = sheetState,
-            dragHandle = {}
-        ) {
-            TabRow(
-                selectedTabIndex = selectedTabIdx,
-                modifier = Modifier
-                    .padding(space.small)
-                    .fillMaxWidth(),
-            ) {
-                Tab(
-                    selected = selectedTabIdx == 0,
-                    onClick = { selectedTabIdx = 0 },
-                    text = { Text("Filter") }
-                )
-                Tab(
-                    selected = selectedTabIdx == 1,
-                    onClick = { selectedTabIdx = 1 },
-                    text = {
-                        Text("Sort")
-                    }
-                )
-                Tab(
-                    selected = selectedTabIdx == 2,
-                    onClick = { selectedTabIdx = 2 },
-                    text = {
-                        Text("Display")
-                    }
-                )
-                Box {
-                    IconButton(onClick = { dropdownVisible = !dropdownVisible }) {
-                        Icon(
-                            imageVector = Icons.Filled.MoreVert,
-                            contentDescription = null
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = dropdownVisible,
-                        onDismissRequest = { dropdownVisible = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Set as default") },
-                            onClick = onSetAsDefaultClick
-                        )
-                    }
-                }
-            }
-            AnimatedContent(
-                targetState = selectedTabIdx,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.25f),
-                transitionSpec = {
-                       if (initialState < targetState) {
-                           slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
-                       } else {
-                           slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
-                       }
-                },
-                label = "filter"
-            ) { idx ->
-                when (idx) {
-                    0 -> {
-                        val items by remember(filters) {
-                            derivedStateOf {
-                                listOf(
-                                    Triple("Downloaded", filters.downloaded, filterDownloaded),
-                                    Triple( "Unread", filters.unread, filterUnread),
-                                    Triple("Bookmarked", filters.bookmarked, filterBookmarked)
-                                )
-                            }
-                        }
-                        Column(Modifier.fillMaxWidth()) {
-                            items.fastForEach { (text, checked, action) ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { action() }
-                                ) {
-                                    Checkbox(
-                                        checked = checked,
-                                        onCheckedChange = { action() },
-                                        enabled = true,
-                                        colors = CheckboxDefaults.colors(
-                                            checkedColor = MaterialTheme.colorScheme.primary,
-                                            uncheckedColor = MaterialTheme.colorScheme.onBackground
-                                        )
-                                    )
-                                    Text(text)
-                                }
-                            }
-                        }
-                    }
-                    1 -> {
-                        val items by remember(filters) {
-                            derivedStateOf {
-                                listOf(
-                                    Triple("By source", filters.bySourceAsc, filterBySource),
-                                    Triple("By chapter number", filters.byChapterAsc, filterByChapterNumber),
-                                    Triple("By upload date", filters.byUploadDateAsc, filterByUploadDate)
-                                )
-                            }
-                        }
-                        Column(Modifier.fillMaxWidth()) {
-                          items.fastForEach { (text, ascending, action) ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { action() }
-                                ) {
-                                    CenterBox(Modifier.size(42.dp)) {
-                                        if (ascending != null) {
-                                            IconButton(onClick = action) {
-                                                Icon(
-                                                    imageVector = if (ascending)
-                                                        Icons.Filled.ArrowUpward
-                                                    else Icons.Filled.ArrowDownward,
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                        }
-                                    }
-                                    Text(text)
-                                }
-                            }
-                        }
-                    }
-                    2 -> {
-                        val items by remember(showingSourceTitle) {
-                            derivedStateOf {
-                                listOf(
-                                    Triple("Source Title", showingSourceTitle, showSourceTitle),
-                                    Triple("Chapter number",!showingSourceTitle, hideSourceTitle)
-                                )
-                            }
-                        }
-                        Column(Modifier.fillMaxWidth()) {
-                           items.fastForEach { (text, selected, action) ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { action() }
-                                ) {
-                                    RadioButton(
-                                        selected = selected,
-                                        onClick = action
-                                    )
-                                    Text(text)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
-@Composable
-private fun FilterIcon(
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    val space = LocalSpacing.current
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.CenterEnd
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(space.small)) {
-            Text("filter")
-            IconButton(
-                onClick = onClick,
-                Modifier
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.FilterList,
-                    contentDescription = null
-                )
-            }
-        }
-    }
-}
 
 
 

@@ -30,7 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.util.fastFirstOrNull
+import androidx.compose.ui.util.fastAny
 import io.silv.manga.manga_view.MangaViewState
 import io.silv.model.SavableChapter
 import io.silv.ui.CenterBox
@@ -42,7 +42,7 @@ import me.saket.swipe.SwipeableActionsBox
 fun LazyListScope.chapterListItems(
     mangaViewState: MangaViewState.Success,
     showFullTitle: Boolean,
-    downloadingIds: ImmutableList<Pair<String, Float>>,
+    downloadingIds: ImmutableList<String>,
     onMarkAsRead: (id: String) -> Unit,
     onBookmark: (id: String) -> Unit,
     onDownloadClicked: (id: String) -> Unit,
@@ -93,7 +93,7 @@ fun LazyListScope.chapterListItems(
                         horizontal = space.large
                     ),
                 chapter = chapter,
-                downloadProgress = downloadingIds.fastFirstOrNull { it.first == chapter.id }?.second,
+                downloading = downloadingIds.fastAny { it == chapter.id },
                 showFullTitle = showFullTitle,
                 onDownloadClicked = { onDownloadClicked(chapter.id) },
                 onDeleteClicked = {
@@ -105,11 +105,11 @@ fun LazyListScope.chapterListItems(
 }
 
 @Composable
-fun ChapterListItem(
+private fun ChapterListItem(
     modifier: Modifier = Modifier,
     showFullTitle: Boolean,
     chapter: SavableChapter,
-    downloadProgress: Float?,
+    downloading: Boolean,
     onDownloadClicked: () -> Unit,
     onDeleteClicked: () -> Unit,
 ) {
@@ -166,7 +166,7 @@ fun ChapterListItem(
             )
         }
         when {
-            downloadProgress != null -> CenterBox {
+            downloading -> CenterBox {
                 Icon(
                     imageVector = Icons.Default.ArrowDownward,
                     contentDescription = null

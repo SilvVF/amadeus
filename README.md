@@ -20,35 +20,35 @@ Features are based on [Tachiyomi]("https://tachiyomi.org/") and [Neko]("https://
  [kotlin serialization]("https://kotlinlang.org/docs/serialization.html")
 
 # modules
-## core
+## core 
 The core module contains the business logic for the app. It is split into modules that contain diffrent parts of the business logic.
-### datastore
-This module contains all of the logic for storing data withing Preferences datastore and only depends on the core:common module.
-### common 
-This module contains common logic and models needed by all of the other modules within core. It depends on no outside modules
-### data 
-This module contains the apps repositories and logic for fetching and downloading manga. This also contains the logic for accessing files on the device. The data module can depend on all other modules inside of the core module excepte for the core:domain module.
-### domain
-The domain module is responsible for providing @Stable types and contains the compose runtime dependecy to do this. it also contains logic for accessing the data layer logic from feature modules.
-### database
-The database module contains the Room DB Daos and Entities.
-### network
-The network module contains the logic for making requests to Mangadex api.
-### navigation
-Provides SharedScreen types to be registered in the application for multi module navigation using Voyager.
-### ui
-Conatains shared ui components and types.
+- datastore
+  - This module contains all of the logic for storing data withing Preferences datastore and only depends on the core:common module.
+- common
+  -This module contains common logic and models needed by all of the other modules within core. It depends on no outside modules
+- data
+ - This module contains the apps repositories and logic for fetching and downloading manga. This also contains the logic for accessing files on the device. The data module can depend on all other modules inside of the core module excepte for the core:domain module.
+- domain
+  - The domain module is responsible for providing @Stable types and contains the compose runtime dependecy to do this. it also contains logic for accessing the data layer logic from feature modules.
+- database
+  - The database module contains the Room DB Daos and Entities.
+- network
+    - The network module contains the logic for making requests to Mangadex api.
+- navigation
+  -Provides SharedScreen types to be registered in the application for multi module navigation using Voyager.
+- ui
+  - Conatains shared ui components and types.
 
 ## feature
 module for containing the diffrent app feature submodules.
-### explore
-contains the screen for browsing manga.
-### manga
-contains the screens for viewing specific manga and for viewing categories of manga.
-### reader
-contains the manga reader implementation.
-### library
-contains the library browsing screens.
+- explore
+  -contains the screen for browsing manga.
+- manga
+  -contains the screens for viewing specific manga and for viewing categories of manga.
+- reader
+  - contains the manga reader implementation.
+- library
+  -contains the library browsing screens.
 
 
 

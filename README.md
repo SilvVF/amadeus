@@ -20,6 +20,7 @@ Features are based on [Tachiyomi]("https://tachiyomi.org/") and [Neko]("https://
  [kotlin serialization]("https://kotlinlang.org/docs/serialization.html")
 
 # modules
+
 ## core 
 The core module contains the business logic for the app. It is split into modules that contain diffrent parts of the business logic.
 - datastore
@@ -40,6 +41,9 @@ The core module contains the business logic for the app. It is split into module
 - ui
   - Conatains shared ui components and types.
 
+## sync
+contains the logic for updating saved manga and chapters. Also responsible for updating tags and seasonal manga lists.
+
 ## feature
 module for containing the diffrent app feature submodules.
 - explore
@@ -50,8 +54,6 @@ module for containing the diffrent app feature submodules.
   - contains the manga reader implementation.
 - library
   - contains the library browsing screens.
-## sync
-contains the logic for updating saved manga and chapters. Also responsible for updating tags and seasonal manga lists.
 
 
 

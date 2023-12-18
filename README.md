@@ -1,23 +1,23 @@
 # amadeus
 Amadeus is a Manga dex manga reader that supports offline reading and browsing of manga.
-Features are based on [Tachiyomi]("https://tachiyomi.org/") and [Neko]("https://tachiyomi.org/forks/Neko/"). 
+Features are based on [Tachiyomi](https://tachiyomi.org/) and [Neko](https://tachiyomi.org/forks/Neko/). 
 
 # tech stack
-[Koin]("https://insert-koin.io/")
-[Room]("https://developer.android.com/jetpack/androidx/releases/room")
-[Voyager]("https://voyager.adriel.cafe/")
-[Datastore]("https://developer.android.com/jetpack/androidx/releases/datastore")
-[Sandwich]("https://github.com/skydoves/sandwich")
-[Ktor Client]("https://ktor.io/")
-[OkHttp]("https://square.github.io/okhttp/")
-[Okio]("https://square.github.io/okio/")
-[Compose]("https://developer.android.com/jetpack/compose")
-[WorkManager]("https://developer.android.com/topic/libraries/architecture/workmanager")
-[Tachiyomi Image Decoder]("https://github.com/tachiyomiorg/image-decoder")
-[Coil]("https://coil-kt.github.io/coil/")
-[Coroutines / Flow]("https://kotlinlang.org/docs/coroutines-overview.html")
-[Paging 3]("https://developer.android.com/topic/libraries/architecture/paging/v3-overview")
-[kotlin serialization]("https://kotlinlang.org/docs/serialization.html")
+- [Koin](https://insert-koin.io/)
+- [Room](https://developer.android.com/jetpack/androidx/releases/room)
+- [Voyager](https://voyager.adriel.cafe/)
+- [Datastore](https://developer.android.com/jetpack/androidx/releases/datastore)
+- [Sandwich](https://github.com/skydoves/sandwich)
+- [Ktor Client](https://ktor.io/)
+- [OkHttp](https://square.github.io/okhttp/)
+- [Okio](https://square.github.io/okio/)
+- [Compose](https://developer.android.com/jetpack/compose)
+- [WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager)
+- [Tachiyomi Image Decoder](https://github.com/tachiyomiorg/image-decoder)
+- [Coil](https://coil-kt.github.io/coil/)
+- [Coroutines / Flow](https://kotlinlang.org/docs/coroutines-overview.html)
+- [Paging 3](https://developer.android.com/topic/libraries/architecture/paging/v3-overview)
+- [kotlin serialization](https://kotlinlang.org/docs/serialization.html)
 
 # modules
 

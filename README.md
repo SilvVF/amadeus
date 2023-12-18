@@ -50,6 +50,8 @@ module for containing the diffrent app feature submodules.
   - contains the manga reader implementation.
 - library
   - contains the library browsing screens.
+## sync
+contains the logic for updating saved manga and chapters. Also responsible for updating tags and seasonal manga lists.
 
 
 

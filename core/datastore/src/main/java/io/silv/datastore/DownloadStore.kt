@@ -31,12 +31,14 @@ private data class DownloadObject(val mangaId: String, val chapterId: String, va
  * This class is used to persist active downloads across application restarts.
  */
 class DownloadStore(
-    context: Context
+    context: Context,
 ) {
-
-    private val Context.store: DataStore<Preferences> by preferencesDataStore(name = "download_store")
+    private val Context.store: DataStore<Preferences> by preferencesDataStore(
+        name = "download_store"
+    )
 
     private val datastore = context.store
+
     /**
      * Counter used to keep the queue order.
      */
@@ -47,7 +49,7 @@ class DownloadStore(
      *
      * @param downloads the list of downloads to add.
      */
-    suspend fun addAll(downloads: List<Download>)  {
+    suspend fun addAll(downloads: List<Download>) {
         Log.d("DownloadStore", "serializing")
         datastore.edit { prefs ->
             downloads.forEach {
@@ -61,7 +63,7 @@ class DownloadStore(
      *
      * @param download the download to remove.
      */
-    suspend fun remove(download: Download)  {
+    suspend fun remove(download: Download) {
         datastore.edit {
             it.remove(getKey(download))
         }
@@ -83,7 +85,7 @@ class DownloadStore(
     /**
      * Removes all the downloads from the store.
      */
-    suspend fun clear()  {
+    suspend fun clear() {
         datastore.edit {
             it.clear()
         }
@@ -98,26 +100,25 @@ class DownloadStore(
         return stringPreferencesKey(download.chapter.id)
     }
 
-
     /**
      * Returns the list of downloads to restore. It should be called in a background thread.
      */
     suspend fun restore(
         getManga: suspend (id: String) -> MangaResource?,
-        getChapter: suspend (id: String) -> ChapterResource?
+        getChapter: suspend (id: String) -> ChapterResource?,
     ): List<Download> {
-        val objs = datastore.data.first().asMap()
-            .mapNotNull { it.value as? String }
-            .mapNotNull { deserialize(it) }
-            .sortedBy { it.order }
+        val objs =
+            datastore.data.first().asMap()
+                .mapNotNull { it.value as? String }
+                .mapNotNull { deserialize(it) }
+                .sortedBy { it.order }
 
         val downloads = mutableListOf<Download>()
         if (objs.isNotEmpty()) {
             val cachedManga = mutableMapOf<String, MangaResource?>()
             for ((mangaId, chapterId) in objs) {
-
                 val manga = cachedManga.getOrPut(mangaId) { getManga(mangaId) } ?: continue
-                val chapter =  getChapter(chapterId) ?: continue
+                val chapter = getChapter(chapterId) ?: continue
 
                 downloads.add(Download(manga, chapter))
             }

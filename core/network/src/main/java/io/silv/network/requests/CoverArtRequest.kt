@@ -22,7 +22,7 @@ data class CoverArtRequest(
     val uploaders: List<String>? = null,
     val locales: List<String>? = null,
     val order: Map<Order, OrderBy>? = null,
-): QueryParams {
+) : QueryParams {
     override fun createQueryParams(): List<QueryParam> {
         return listOf(
             Pair("limit", limit),

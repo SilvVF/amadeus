@@ -34,9 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun CombinedCircularProgressIndicator(
-    progress: Float,
-) {
+fun CombinedCircularProgressIndicator(progress: Float) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
@@ -56,7 +54,8 @@ fun CombinedCircularProgressIndicator(
             val rotation by infiniteTransition.animateFloat(
                 initialValue = 0f,
                 targetValue = 360f,
-                animationSpec = infiniteRepeatable(
+                animationSpec =
+                infiniteRepeatable(
                     animation = tween(2000, easing = LinearEasing),
                     repeatMode = RepeatMode.Restart,
                 ),
@@ -80,14 +79,15 @@ private fun CombinedCircularProgressIndicatorPreview() {
                 Button(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        progress = when (progress) {
-                            0f -> 0.15f
-                            0.15f -> 0.25f
-                            0.25f -> 0.5f
-                            0.5f -> 0.75f
-                            0.75f -> 0.95f
-                            else -> 0f
-                        }
+                        progress =
+                            when (progress) {
+                                0f -> 0.15f
+                                0.15f -> 0.25f
+                                0.25f -> 0.5f
+                                0.5f -> 0.75f
+                                0.75f -> 0.95f
+                                else -> 0f
+                            }
                     },
                 ) {
                     Text("change")
@@ -96,7 +96,8 @@ private fun CombinedCircularProgressIndicatorPreview() {
         ) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier
+                modifier =
+                Modifier
                     .fillMaxSize()
                     .padding(it),
             ) {

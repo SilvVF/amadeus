@@ -6,7 +6,7 @@ import androidx.compose.runtime.Stable
 data class MangaStats(
     val follows: Int = 0,
     val rating: Double = 0.0,
-    val comments: Int = 0
+    val comments: Int = 0,
 ) {
     val validRating: Boolean
         get() = rating != -1.0

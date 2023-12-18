@@ -16,10 +16,15 @@ fun SavableManga.asMangaCover(): MangaCover {
     )
 }
 
-fun SavableManga.hasCustomCover(): Boolean { return false }
+fun SavableManga.hasCustomCover(): Boolean {
+    return false
+}
 
 class MangaKeyer : Keyer<SavableManga> {
-    override fun key(data: SavableManga, options: Options): String {
+    override fun key(
+        data: SavableManga,
+        options: Options,
+    ): String {
         return if (data.hasCustomCover()) {
             "${data.id};${data.savedLocalAtEpochSeconds}"
         } else {
@@ -28,11 +33,13 @@ class MangaKeyer : Keyer<SavableManga> {
     }
 }
 
-
 class MangaCoverKeyer(
     private val coverCache: CoverCache,
 ) : Keyer<MangaCover> {
-    override fun key(data: MangaCover, options: Options): String {
+    override fun key(
+        data: MangaCover,
+        options: Options,
+    ): String {
         return if (coverCache.getCustomCoverFile(data.mangaId).exists()) {
             "${data.mangaId};${data.lastModified}"
         } else {

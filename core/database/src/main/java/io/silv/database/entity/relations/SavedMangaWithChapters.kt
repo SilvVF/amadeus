@@ -6,13 +6,10 @@ import io.silv.database.entity.chapter.ChapterEntity
 import io.silv.database.entity.manga.SavedMangaEntity
 
 data class SavedMangaWithChapters(
-
     @Embedded val manga: SavedMangaEntity,
-
     @Relation(
         parentColumn = "id",
-        entityColumn = "manga_id"
+        entityColumn = "manga_id",
     )
-    val chapters: List<ChapterEntity>
+    val chapters: List<ChapterEntity>,
 )
-

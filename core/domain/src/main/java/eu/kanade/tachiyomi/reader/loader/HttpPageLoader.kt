@@ -9,7 +9,9 @@ import io.silv.data.download.ChapterCache
 import io.silv.data.download.await
 import io.silv.model.toResource
 import io.silv.network.MangaDexApi
-import io.silv.network.image_sources.ImageSourceFactory
+import io.silv.network.sources.ImageSourceFactory
+import java.util.concurrent.PriorityBlockingQueue
+import kotlin.math.min
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,8 +27,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import java.util.concurrent.PriorityBlockingQueue
-import kotlin.math.min
 
 /**
  * Loader used to load chapters from an online source.
@@ -34,7 +34,6 @@ import kotlin.math.min
 internal class HttpPageLoader(
     private val chapter: ReaderChapter,
 ) : PageLoader(), KoinComponent {
-
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val chapterCache by inject<ChapterCache>()
     private val imageSourceFactory by inject<ImageSourceFactory>()
@@ -62,7 +61,10 @@ internal class HttpPageLoader(
 
     override var isLocal: Boolean = false
 
-    private suspend fun getImages(url: String, chapterId: String): List<Page> {
+    private suspend fun getImages(
+        url: String,
+        chapterId: String,
+    ): List<Page> {
         return withContext(Dispatchers.IO) {
             when {
                 url.isBlank() -> {
@@ -71,37 +73,40 @@ internal class HttpPageLoader(
                         Page(
                             index = i,
                             url = chapter.chapter.url,
-                            imageUrl = "${response.baseUrl}/data/${response.chapter.hash}/$data"
+                            imageUrl = "${response.baseUrl}/data/${response.chapter.hash}/$data",
                         )
                     }
                 }
 
-                else -> imageSourceFactory.getSource(url).fetchImageUrls(url)
-                    .mapIndexed { i, data ->
-                        Page(
-                            index = i,
-                            url = chapter.chapter.url,
-                            imageUrl = data,
-                        )
-                    }
+                else ->
+                    imageSourceFactory.getSource(url).fetchImageUrls(url)
+                        .mapIndexed { i, data ->
+                            Page(
+                                index = i,
+                                url = chapter.chapter.url,
+                                imageUrl = data,
+                            )
+                        }
             }
         }
     }
+
     /**
      * Returns the page list for a chapter. It tries to return the page list from the local cache,
      * otherwise fallbacks to network.
      */
     override suspend fun getPages(): List<ReaderPage> {
-        val pages = try {
-            chapterCache.getPageListFromCache(chapter.chapter.toResource())
-        } catch (e: Throwable) {
-            if (e is CancellationException) {
-                throw e
-            }
-            val externalUrl = chapter.chapter.url.replace("\\", "")
+        val pages =
+            try {
+                chapterCache.getPageListFromCache(chapter.chapter.toResource())
+            } catch (e: Throwable) {
+                if (e is CancellationException) {
+                    throw e
+                }
+                val externalUrl = chapter.chapter.url.replace("\\", "")
 
-            getImages(externalUrl, chapter.chapter.id)
-        }
+                getImages(externalUrl, chapter.chapter.id)
+            }
         return pages.mapIndexed { index, page ->
             // Don't trust sources and use our own indexing
             ReaderPage(index, page.url, page.imageUrl)
@@ -111,38 +116,40 @@ internal class HttpPageLoader(
     /**
      * Loads a page through the queue. Handles re-enqueueing pages if they were evicted from the cache.
      */
-    override suspend fun loadPage(page: ReaderPage) = withContext(Dispatchers.IO) {
-        val imageUrl = page.imageUrl
+    override suspend fun loadPage(page: ReaderPage) =
+        withContext(Dispatchers.IO) {
+            val imageUrl = page.imageUrl
 
-        // Check if the image has been deleted
-        if (page.status == Page.State.READY && imageUrl != null && !chapterCache.isImageInCache(
-                imageUrl
-            )
-        ) {
-            page.status = Page.State.QUEUE
-        }
+            // Check if the image has been deleted
+            if (page.status == Page.State.READY && imageUrl != null &&
+                !chapterCache.isImageInCache(
+                        imageUrl,
+                    )
+            ) {
+                page.status = Page.State.QUEUE
+            }
 
-        // Automatically retry failed pages when subscribed to this page
-        if (page.status == Page.State.ERROR) {
-            page.status = Page.State.QUEUE
-        }
+            // Automatically retry failed pages when subscribed to this page
+            if (page.status == Page.State.ERROR) {
+                page.status = Page.State.QUEUE
+            }
 
-        val queuedPages = mutableListOf<PriorityPage>()
-        if (page.status == Page.State.QUEUE) {
-            queuedPages += PriorityPage(page, 1).also { queue.offer(it) }
-        }
-        queuedPages += preloadNextPages(page, preloadSize)
+            val queuedPages = mutableListOf<PriorityPage>()
+            if (page.status == Page.State.QUEUE) {
+                queuedPages += PriorityPage(page, 1).also { queue.offer(it) }
+            }
+            queuedPages += preloadNextPages(page, preloadSize)
 
-        suspendCancellableCoroutine<Nothing> { continuation ->
-            continuation.invokeOnCancellation {
-                queuedPages.forEach {
-                    if (it.page.status == Page.State.QUEUE) {
-                        queue.remove(it)
+            suspendCancellableCoroutine<Nothing> { continuation ->
+                continuation.invokeOnCancellation {
+                    queuedPages.forEach {
+                        if (it.page.status == Page.State.QUEUE) {
+                            queue.remove(it)
+                        }
                     }
                 }
             }
         }
-    }
 
     /**
      * Retries a page. This method is only called from user interaction on the viewer.
@@ -180,7 +187,10 @@ internal class HttpPageLoader(
      *
      * @return a list of [PriorityPage] that were added to the [queue]
      */
-    private fun preloadNextPages(currentPage: ReaderPage, amount: Int): List<PriorityPage> {
+    private fun preloadNextPages(
+        currentPage: ReaderPage,
+        amount: Int,
+    ): List<PriorityPage> {
         val pageIndex = currentPage.index
         val pages = currentPage.chapter.pages ?: return emptyList()
         if (pageIndex == pages.lastIndex) return emptyList()
@@ -212,9 +222,10 @@ internal class HttpPageLoader(
 
             if (!chapterCache.isImageInCache(imageUrl)) {
                 page.status = Page.State.DOWNLOAD_IMAGE
-                val imageResponse = httpSource
-                    .newCall(Request.Builder().url(imageUrl).build())
-                    .await()
+                val imageResponse =
+                    httpSource
+                        .newCall(Request.Builder().url(imageUrl).build())
+                        .await()
                 chapterCache.putImageToCache(imageUrl, imageResponse)
             }
 

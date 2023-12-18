@@ -25,51 +25,49 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
 
-abstract class EventStateScreenModel<EVENT, STATE>(initialState: STATE): StateScreenModel<STATE>(initialState) {
-
+abstract class EventStateScreenModel<EVENT, STATE>(initialState: STATE) : StateScreenModel<STATE>(
+    initialState
+) {
     protected val mutableEvents = Channel<EVENT>()
 
     val events = mutableEvents.receiveAsFlow()
 
-    protected fun <T> Flow<T>.stateInUi(
-        initialValue: T
-    ) = this.stateIn(
-        screenModelScope,
-        SharingStarted.WhileSubscribed(5_000L),
-        initialValue
-    )
+    protected fun <T> Flow<T>.stateInUi(initialValue: T) =
+        this.stateIn(
+            screenModelScope,
+            SharingStarted.WhileSubscribed(5_000L),
+            initialValue,
+        )
 }
 
 val ScreenModel.ioCoroutineScope: CoroutineScope
-    get() = ScreenModelStore.getOrPutDependency(
-        this,
-        name = "ScreenModelIoCoroutineScope",
-        factory = { key ->
-            CoroutineScope(Dispatchers.IO + SupervisorJob()) + CoroutineName(key)
-        },
-        onDispose = { scope -> scope.cancel() }
-    )
+    get() =
+        ScreenModelStore.getOrPutDependency(
+            this,
+            name = "ScreenModelIoCoroutineScope",
+            factory = { key ->
+                CoroutineScope(Dispatchers.IO + SupervisorJob()) + CoroutineName(key)
+            },
+            onDispose = { scope -> scope.cancel() },
+        )
 
-abstract class EventScreenModel<EVENT>: ScreenModel {
-
+abstract class EventScreenModel<EVENT> : ScreenModel {
     protected val mutableEvents = Channel<EVENT>()
 
     val events = mutableEvents.receiveAsFlow()
 
-    protected fun <T> Flow<T>.stateInUi(
-        initialValue: T
-    ) = this.stateIn(
-        screenModelScope,
-        SharingStarted.WhileSubscribed(5_000L),
-        initialValue
-    )
+    protected fun <T> Flow<T>.stateInUi(initialValue: T) =
+        this.stateIn(
+            screenModelScope,
+            SharingStarted.WhileSubscribed(5_000L),
+            initialValue,
+        )
 }
 
 @Composable
 fun <STATE> StateScreenModel<STATE>.collectAsStateWithLifeCycle(): State<STATE> {
     return state.collectAsStateWithLifecycle()
 }
-
 
 /**
  * Observe [EventScreenModel.events] in a Compose [LaunchedEffect].
@@ -80,15 +78,13 @@ fun <STATE> StateScreenModel<STATE>.collectAsStateWithLifeCycle(): State<STATE> 
 @Composable
 fun <EVENT> EventScreenModel<EVENT>.collectEvents(
     lifecycleState: Lifecycle.State = Lifecycle.State.STARTED,
-    event: (suspend (event: EVENT) -> Unit)
+    event: (suspend (event: EVENT) -> Unit),
 ) {
     val sideEffectFlow = events
     val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(sideEffectFlow, lifecycleOwner) {
-
         lifecycleOwner.lifecycle.repeatOnLifecycle(lifecycleState) {
-
             withContext(Dispatchers.Main.immediate) {
                 sideEffectFlow.collect { event(it) }
             }
@@ -105,15 +101,13 @@ fun <EVENT> EventScreenModel<EVENT>.collectEvents(
 @Composable
 fun <EVENT> EventStateScreenModel<EVENT, *>.collectEvents(
     lifecycleState: Lifecycle.State = Lifecycle.State.STARTED,
-    event: (suspend (event: EVENT) -> Unit)
+    event: (suspend (event: EVENT) -> Unit),
 ) {
     val sideEffectFlow = events
     val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(sideEffectFlow, lifecycleOwner) {
-
         lifecycleOwner.lifecycle.repeatOnLifecycle(lifecycleState) {
-
             withContext(Dispatchers.Main.immediate) {
                 sideEffectFlow.collect { event(it) }
             }

@@ -8,12 +8,12 @@ data class Source(
     val isStub: Boolean,
     val isUsedLast: Boolean = false,
 ) {
-
     val visualName: String
-        get() = when {
-            lang.isEmpty() -> name
-            else -> "$name (${lang.uppercase()})"
-        }
+        get() =
+            when {
+                lang.isEmpty() -> name
+                else -> "$name (${lang.uppercase()})"
+            }
 
     val key: () -> String = {
         when {

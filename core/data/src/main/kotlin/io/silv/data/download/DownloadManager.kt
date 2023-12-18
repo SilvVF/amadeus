@@ -11,7 +11,6 @@ import io.silv.common.model.Page
 import io.silv.common.model.Source
 import io.silv.data.chapter.GetChapter
 import io.silv.data.manga.GetManga
-import io.silv.database.entity.chapter.ChapterEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -24,6 +23,8 @@ class DownloadManager internal constructor(
     private val getManga: GetManga,
     private val getChapter: GetChapter,
 ) {
+
+    val cacheChanges = downloadCache.changes
 
     val isRunning: Boolean
         get() = downloader.isRunning
@@ -40,12 +41,14 @@ class DownloadManager internal constructor(
      * Tells the downloader to begin downloads.
      */
     fun startDownloads() {
-        if (downloader.isRunning) return
+        applicationScope.launch {
+            if (downloader.isRunning) return@launch
 
-        if (DownloadWorker.isRunning(context)) {
-            downloader.start()
-        } else {
-            DownloadWorker.start(context)
+            if (DownloadWorker.isRunning(context)) {
+                downloader.start()
+            } else {
+                DownloadWorker.start(context)
+            }
         }
     }
 
@@ -152,13 +155,15 @@ class DownloadManager internal constructor(
      *
      * @param downloads the list of downloads to enqueue.
      */
-    suspend fun addDownloadsToStartOfQueue(downloads: List<Download>) {
-        if (downloads.isEmpty()) return
-        queueState.value.toMutableList().apply {
-            addAll(0, downloads)
-            reorderQueue(this)
+    fun addDownloadsToStartOfQueue(downloads: List<Download>) {
+        applicationScope.launch {
+            if (downloads.isEmpty()) return@launch
+            queueState.value.toMutableList().apply {
+                addAll(0, downloads)
+                reorderQueue(this)
+            }
+            if (!DownloadWorker.isRunning(context)) startDownloads()
         }
-        if (!DownloadWorker.isRunning(context)) startDownloads()
     }
 
 
@@ -238,8 +243,9 @@ class DownloadManager internal constructor(
             }
         }
     }
-    private fun getChaptersToDelete(chapters: List<ChapterResource>, manga: MangaResource): List<ChapterEntity> {
-        return emptyList()
+
+    private fun getChaptersToDelete(chapters: List<ChapterResource>, manga: MangaResource): List<ChapterResource> {
+        return chapters
     }
 
     /**
@@ -267,7 +273,9 @@ class DownloadManager internal constructor(
     }
 
     private suspend fun removeFromDownloadQueue(chapters: List<ChapterResource>) {
+
         val wasRunning = downloader.isRunning
+
         if (wasRunning) {
             downloader.pause()
         }

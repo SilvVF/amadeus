@@ -13,24 +13,21 @@ import io.silv.database.entity.manga.SourceMangaResource
             entity = SourceMangaResource::class,
             parentColumns = arrayOf("id"),
             childColumns = arrayOf("manga_id"),
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
         ),
         ForeignKey(
             entity = SeasonalListEntity::class,
             parentColumns = arrayOf("id"),
             childColumns = arrayOf("season_id"),
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
         ),
-    ]
+    ],
 )
 data class SeasonalRemoteKey(
-
     @ColumnInfo("manga_id", index = true)
     val mangaId: String,
-
     @ColumnInfo("season_id", index = true)
     val seasonId: String,
-
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
 )

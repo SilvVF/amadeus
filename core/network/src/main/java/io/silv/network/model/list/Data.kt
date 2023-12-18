@@ -1,6 +1,5 @@
 package io.silv.network.model.list
 
-
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -13,5 +12,5 @@ data class Data(
     @SerialName("relationships")
     val relationships: List<Relationship>,
     @SerialName("type")
-    val type: String
+    val type: String,
 )

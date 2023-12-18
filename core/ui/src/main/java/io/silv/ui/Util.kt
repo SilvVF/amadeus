@@ -43,7 +43,12 @@ fun Modifier.shadow(
             val paint = Paint()
             val frameworkPaint = paint.asFrameworkPaint()
             if (blurRadius != 0.dp) {
-                frameworkPaint.maskFilter = (BlurMaskFilter(blurRadius.toPx(), BlurMaskFilter.Blur.NORMAL))
+                frameworkPaint.maskFilter = (
+                    BlurMaskFilter(
+                        blurRadius.toPx(),
+                        BlurMaskFilter.Blur.NORMAL
+                    )
+                    )
             }
             frameworkPaint.color = color.toArgb()
 
@@ -60,12 +65,15 @@ fun Modifier.shadow(
                 paint = paint,
             )
         }
-    }
+    },
 )
 
 fun Color.isLight() = this.luminance() > 0.5
 
-fun Modifier.fillMaxAfterMesaure(context: BoxScope, @FloatRange(0.0, 1.0, true, true) size: Float) = with(context) {
+fun Modifier.fillMaxAfterMesaure(
+    context: BoxScope,
+    @FloatRange(0.0, 1.0, true, true) size: Float,
+) = with(context) {
     this@fillMaxAfterMesaure
         .matchParentSize()
         .layout { measurable, constraints ->
@@ -78,8 +86,10 @@ fun Modifier.fillMaxAfterMesaure(context: BoxScope, @FloatRange(0.0, 1.0, true, 
         }
 }
 
-
-fun Modifier.conditional(condition : Boolean, modifier : Modifier.() -> Modifier) : Modifier {
+fun Modifier.conditional(
+    condition: Boolean,
+    modifier: Modifier.() -> Modifier,
+): Modifier {
     return if (condition) {
         then(modifier(Modifier))
     } else {
@@ -87,11 +97,11 @@ fun Modifier.conditional(condition : Boolean, modifier : Modifier.() -> Modifier
     }
 }
 
-object StringStateListSaver: Saver<SnapshotStateList<String>, String> {
+object StringStateListSaver : Saver<SnapshotStateList<String>, String> {
     override fun restore(value: String): SnapshotStateList<String> {
         return mutableStateListOf<String>().also { list ->
             list.addAll(
-                value.split(",")
+                value.split(","),
             )
         }
     }
@@ -101,30 +111,29 @@ object StringStateListSaver: Saver<SnapshotStateList<String>, String> {
     }
 }
 
-inline fun Modifier.noRippleClickable(
-    crossinline onClick: () -> Unit
-): Modifier = composed {
-    clickable(
-        indication = null,
-        interactionSource = remember { MutableInteractionSource() }) {
-        onClick()
+inline fun Modifier.noRippleClickable(crossinline onClick: () -> Unit): Modifier =
+    composed {
+        clickable(
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() },
+        ) {
+            onClick()
+        }
     }
-}
 
 @Composable
 fun CenterBox(
     modifier: Modifier = Modifier,
     propagateMinConstraints: Boolean = false,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center,
         propagateMinConstraints = propagateMinConstraints,
-        content = content
+        content = content,
     )
 }
-
 
 @Composable
 fun LazyListState.isScrolledToStart(): Boolean {

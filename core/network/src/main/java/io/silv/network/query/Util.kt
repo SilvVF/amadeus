@@ -7,14 +7,18 @@ import android.util.Log
  * each value past the first in the list is added on as &name[]=value.
  * the & is appended after only if it is not the last element.
  */
-private fun StringBuilder.appendList(name: String, value: String) {
+private fun StringBuilder.appendList(
+    name: String,
+    value: String,
+) {
     val list = value.drop(1).dropLast(1).split(',', ignoreCase = true)
     list.forEachIndexed { i, it ->
         append(name)
         append("[]=")
         append(it.trimStart())
-        if (i != list.lastIndex)
+        if (i != list.lastIndex) {
             append('&')
+        }
     }
 }
 
@@ -24,10 +28,14 @@ private fun StringBuilder.appendList(name: String, value: String) {
  * the & is appended after only if it is not the last element.
  * - ex order[[createdAt]]=desc
  */
-private fun StringBuilder.appendObject(name: String, value: String) {
-    val list = value.drop(1).dropLast(1)
-        .split('=', ignoreCase = true)
-        .chunked(2)
+private fun StringBuilder.appendObject(
+    name: String,
+    value: String,
+) {
+    val list =
+        value.drop(1).dropLast(1)
+            .split('=', ignoreCase = true)
+            .chunked(2)
     list.forEachIndexed { i, (attribute, order) ->
         append(name)
         append('[')
@@ -60,30 +68,30 @@ private fun StringBuilder.appendObject(name: String, value: String) {
 fun List<QueryParam>.createQuery(base: String): String {
     val params = this
 
-
-    val urlString = StringBuilder().apply {
-        append(
-            base.removeSuffix("/")
-        )
-        if (params.isNotEmpty()) {
-            append('?')
-            params.forEachIndexed { index, (name, value) ->
-                when (value.firstOrNull()) {
-                    '{' ->  appendObject(name, value)
-                    '[' -> appendList(name, value)
-                    else -> {
-                        append(name)
-                        append('=')
-                        append(value)
+    val urlString =
+        StringBuilder().apply {
+            append(
+                base.removeSuffix("/"),
+            )
+            if (params.isNotEmpty()) {
+                append('?')
+                params.forEachIndexed { index, (name, value) ->
+                    when (value.firstOrNull()) {
+                        '{' -> appendObject(name, value)
+                        '[' -> appendList(name, value)
+                        else -> {
+                            append(name)
+                            append('=')
+                            append(value)
+                        }
                     }
-                }
-                if (index != params.lastIndex) {
-                    append('&')
+                    if (index != params.lastIndex) {
+                        append('&')
+                    }
                 }
             }
         }
-    }
-        .toString()
+            .toString()
 
     // use %20 for whitespace in queries
     var urlWithSpaces = ""

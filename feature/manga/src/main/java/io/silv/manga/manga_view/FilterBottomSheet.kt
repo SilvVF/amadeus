@@ -46,7 +46,7 @@ import io.silv.datastore.model.Filters
 import io.silv.ui.CenterBox
 import io.silv.ui.theme.LocalSpacing
 
-@OptIn(ExperimentalMaterial3Api::class,)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterBottomSheet(
     visible: Boolean,
@@ -76,54 +76,56 @@ fun FilterBottomSheet(
         ModalBottomSheet(
             onDismissRequest = onDismiss,
             sheetState = sheetState,
-            dragHandle = {}
+            dragHandle = {},
         ) {
             TabRow(
                 selectedTabIndex = selectedTabIdx,
-                modifier = Modifier
+                modifier =
+                Modifier
                     .padding(space.small)
                     .fillMaxWidth(),
             ) {
                 Tab(
                     selected = selectedTabIdx == 0,
                     onClick = { selectedTabIdx = 0 },
-                    text = { Text("Filter") }
+                    text = { Text("Filter") },
                 )
                 Tab(
                     selected = selectedTabIdx == 1,
                     onClick = { selectedTabIdx = 1 },
                     text = {
                         Text("Sort")
-                    }
+                    },
                 )
                 Tab(
                     selected = selectedTabIdx == 2,
                     onClick = { selectedTabIdx = 2 },
                     text = {
                         Text("Display")
-                    }
+                    },
                 )
                 Box {
                     IconButton(onClick = { dropdownVisible = !dropdownVisible }) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
-                            contentDescription = null
+                            contentDescription = null,
                         )
                     }
                     DropdownMenu(
                         expanded = dropdownVisible,
-                        onDismissRequest = { dropdownVisible = false }
+                        onDismissRequest = { dropdownVisible = false },
                     ) {
                         DropdownMenuItem(
                             text = { Text("Set as default") },
-                            onClick = onSetAsDefaultClick
+                            onClick = onSetAsDefaultClick,
                         )
                     }
                 }
             }
             AnimatedContent(
                 targetState = selectedTabIdx,
-                modifier = Modifier
+                modifier =
+                Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.25f),
                 transitionSpec = {
@@ -133,7 +135,7 @@ fun FilterBottomSheet(
                         slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
                     }
                 },
-                label = "filter"
+                label = "filter",
             ) { idx ->
                 when (idx) {
                     0 -> {
@@ -141,8 +143,8 @@ fun FilterBottomSheet(
                             derivedStateOf {
                                 listOf(
                                     Triple("Downloaded", filters.downloaded, filterDownloaded),
-                                    Triple( "Unread", filters.unread, filterUnread),
-                                    Triple("Bookmarked", filters.bookmarked, filterBookmarked)
+                                    Triple("Unread", filters.unread, filterUnread),
+                                    Triple("Bookmarked", filters.bookmarked, filterBookmarked),
                                 )
                             }
                         }
@@ -150,18 +152,20 @@ fun FilterBottomSheet(
                             items.fastForEach { (text, checked, action) ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
+                                    modifier =
+                                    Modifier
                                         .fillMaxWidth()
-                                        .clickable { action() }
+                                        .clickable { action() },
                                 ) {
                                     Checkbox(
                                         checked = checked,
                                         onCheckedChange = { action() },
                                         enabled = true,
-                                        colors = CheckboxDefaults.colors(
+                                        colors =
+                                        CheckboxDefaults.colors(
                                             checkedColor = MaterialTheme.colorScheme.primary,
-                                            uncheckedColor = MaterialTheme.colorScheme.onBackground
-                                        )
+                                            uncheckedColor = MaterialTheme.colorScheme.onBackground,
+                                        ),
                                     )
                                     Text(text)
                                 }
@@ -173,8 +177,16 @@ fun FilterBottomSheet(
                             derivedStateOf {
                                 listOf(
                                     Triple("By source", filters.bySourceAsc, filterBySource),
-                                    Triple("By chapter number", filters.byChapterAsc, filterByChapterNumber),
-                                    Triple("By upload date", filters.byUploadDateAsc, filterByUploadDate)
+                                    Triple(
+                                        "By chapter number",
+                                        filters.byChapterAsc,
+                                        filterByChapterNumber
+                                    ),
+                                    Triple(
+                                        "By upload date",
+                                        filters.byUploadDateAsc,
+                                        filterByUploadDate
+                                    ),
                                 )
                             }
                         }
@@ -182,19 +194,23 @@ fun FilterBottomSheet(
                             items.fastForEach { (text, ascending, action) ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
+                                    modifier =
+                                    Modifier
                                         .fillMaxWidth()
-                                        .clickable { action() }
+                                        .clickable { action() },
                                 ) {
                                     CenterBox(Modifier.size(42.dp)) {
                                         if (ascending != null) {
                                             IconButton(onClick = action) {
                                                 Icon(
-                                                    imageVector = if (ascending)
+                                                    imageVector =
+                                                    if (ascending) {
                                                         Icons.Filled.ArrowUpward
-                                                    else Icons.Filled.ArrowDownward,
+                                                    } else {
+                                                        Icons.Filled.ArrowDownward
+                                                    },
                                                     contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.primary
+                                                    tint = MaterialTheme.colorScheme.primary,
                                                 )
                                             }
                                         }
@@ -209,7 +225,7 @@ fun FilterBottomSheet(
                             derivedStateOf {
                                 listOf(
                                     Triple("Source Title", showingSourceTitle, showSourceTitle),
-                                    Triple("Chapter number",!showingSourceTitle, hideSourceTitle)
+                                    Triple("Chapter number", !showingSourceTitle, hideSourceTitle),
                                 )
                             }
                         }
@@ -217,13 +233,14 @@ fun FilterBottomSheet(
                             items.fastForEach { (text, selected, action) ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
+                                    modifier =
+                                    Modifier
                                         .fillMaxWidth()
-                                        .clickable { action() }
+                                        .clickable { action() },
                                 ) {
                                     RadioButton(
                                         selected = selected,
-                                        onClick = action
+                                        onClick = action,
                                     )
                                     Text(text)
                                 }

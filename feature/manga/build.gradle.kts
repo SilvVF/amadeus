@@ -21,7 +21,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -66,7 +66,6 @@ dependencies {
 
     implementation("com.google.accompanist:accompanist-webview:0.30.1")
 
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -100,10 +99,10 @@ dependencies {
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.common)
 
-    //Datastore
+    // Datastore
     implementation(libs.androidx.datastore.preferences)
 
-    //KOIN
+    // KOIN
     implementation(libs.koin.compose)
     implementation(libs.koin.android)
     implementation(libs.koin.core)
@@ -115,7 +114,7 @@ dependencies {
     implementation(libs.kotlin.serialization)
     implementation(libs.kotlin.collections.immutable)
 
-    //VOYAGER
+    // VOYAGER
     implementation(libs.voyager.androidx)
     implementation(libs.voyager.koin)
     implementation(libs.voyager.navigator)

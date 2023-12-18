@@ -25,9 +25,7 @@ import io.silv.ui.rememberAppState
 import io.silv.ui.theme.AmadeusTheme
 import org.koin.android.ext.android.inject
 
-
 class MainActivity : ComponentActivity() {
-
     private val connectivity by inject<NetworkConnectivity>()
 
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalVoyagerApi::class)
@@ -41,20 +39,20 @@ class MainActivity : ComponentActivity() {
         requestPermissions(
             arrayOf(
                 Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
             ),
-            0
+            0,
         )
 
         setContent {
-
             val windowSizeClass = calculateWindowSizeClass(this)
 
-            val appState = rememberAppState(
-                windowSizeClass = windowSizeClass,
-                bottomBarVisibilityChannel = NavHost.bottomBarVisibility,
-                networkConnectivity = connectivity
-            )
+            val appState =
+                rememberAppState(
+                    windowSizeClass = windowSizeClass,
+                    bottomBarVisibilityChannel = NavHost.bottomBarVisibility,
+                    networkConnectivity = connectivity,
+                )
 
             AmadeusTheme {
                 Surface(
@@ -62,7 +60,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background,
                 ) {
                     CompositionLocalProvider(
-                        LocalAppState provides appState
+                        LocalAppState provides appState,
                     ) {
                         Navigator(NavHost)
                     }
@@ -71,4 +69,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-

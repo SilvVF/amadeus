@@ -15,29 +15,28 @@ import io.silv.data.chapter.ChapterRepository
 import io.silv.data.manga.SavedMangaRepository
 import io.silv.data.workers.createForegroundInfo
 import io.silv.sync.MangaSyncWorkName
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 internal class MangaSyncWorker(
     appContext: Context,
     workerParams: WorkerParameters,
-): CoroutineWorker(appContext, workerParams), KoinComponent {
-
+) : CoroutineWorker(appContext, workerParams), KoinComponent {
     private val savedMangaRepository by inject<SavedMangaRepository>()
     private val chapterInfoRepository by inject<ChapterRepository>()
 
     override suspend fun doWork(): Result {
-
-        val allSynced = listOf(
-            savedMangaRepository,
-            chapterInfoRepository
-        )
-            .pmap { repository ->
-                repository.sync()
-            }
-            .all { successful -> successful }
+        val allSynced =
+            listOf(
+                savedMangaRepository,
+                chapterInfoRepository,
+            )
+                .pmap { repository ->
+                    repository.sync()
+                }
+                .all { successful -> successful }
 
         return if (allSynced) {
             Result.success()
@@ -50,13 +49,13 @@ internal class MangaSyncWorker(
         return applicationContext.createForegroundInfo(3, MangaSyncWorkName)
     }
 
-
     companion object {
         // All sync work needs an internet connectionS
         private val SyncConstraints
-            get() = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
+            get() =
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
 
         fun syncWorkRequest(): OneTimeWorkRequest {
             return OneTimeWorkRequestBuilder<MangaSyncWorker>()

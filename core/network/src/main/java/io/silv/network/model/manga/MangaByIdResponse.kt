@@ -7,5 +7,5 @@ import kotlinx.serialization.Serializable
 data class MangaByIdResponse(
     val result: Result,
     val response: String,
-    val data: Manga
+    val data: Manga,
 )

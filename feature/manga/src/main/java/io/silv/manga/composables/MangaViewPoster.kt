@@ -44,75 +44,85 @@ fun MangaImageWithTitle(
 
     Box(modifier = modifier) {
         BackgroundImageDarkened(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .fillMaxWidth()
                 .fillMaxAfterMesaure(this, 1f)
                 .align(TopStart),
-            manga = manga
+            manga = manga,
         )
         Row(
             Modifier
                 .fillMaxWidth()
                 .padding(padding)
-                .padding(space.med)
+                .padding(space.med),
         ) {
             AsyncImage(
                 model = manga,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier
+                modifier =
+                Modifier
                     .fillMaxWidth(0.35f)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(12.dp)),
             )
             MangaTitle(
-                modifier = Modifier
+                modifier =
+                Modifier
                     .weight(1f)
                     .padding(horizontal = space.med),
                 status = manga.status,
                 year = manga.year,
                 title = manga.titleEnglish,
                 altTitle = manga.alternateTitles["ja-ro"] ?: "",
-                authors = remember(manga) { (manga.authors + manga.artists).filterUnique { it }.joinToString() }
+                authors = remember(manga) { (manga.authors + manga.artists).filterUnique { it }.joinToString() },
             )
         }
     }
 }
+
 @Composable
 private fun PublicationStatusIndicator(
     modifier: Modifier = Modifier,
     status: Status,
-    year: Int?
+    year: Int?,
 ) {
     val space = LocalSpacing.current
-    Row(modifier, verticalAlignment = Alignment.CenterVertically,  horizontalArrangement = Arrangement.Start) {
+    Row(
+        modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
+    ) {
         Box(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .padding(space.small)
                 .size(8.dp)
                 .clip(CircleShape)
                 .drawWithCache {
                     onDrawBehind {
                         drawRect(
-                            color = when (status) {
+                            color =
+                            when (status) {
                                 Status.completed -> Color.Cyan
                                 Status.ongoing -> Color.Green
                                 Status.cancelled -> Color.Red
                                 Status.hiatus -> Color.Yellow
-                            }
+                            },
                         )
                     }
-                }
+                },
         )
         year?.let {
             Text(
                 text = "Pub: $year;",
                 modifier = Modifier.padding(horizontal = space.small),
-                style = MaterialTheme.typography.labelMedium
+                style = MaterialTheme.typography.labelMedium,
             )
         }
         Text(
             text = "Status, ${status.name}",
-            style = MaterialTheme.typography.labelMedium
+            style = MaterialTheme.typography.labelMedium,
         )
     }
 }
@@ -124,12 +134,13 @@ private fun MangaTitle(
     altTitle: String,
     authors: String,
     status: Status,
-    year: Int?
+    year: Int?,
 ) {
     val space = LocalSpacing.current
-    Column(modifier,
+    Column(
+        modifier,
         verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start
+        horizontalAlignment = Alignment.Start,
     ) {
         Text(
             text = title,
@@ -143,13 +154,13 @@ private fun MangaTitle(
                 .fillMaxWidth()
                 .padding(vertical = space.med),
             verticalArrangement = Arrangement.Bottom,
-            horizontalAlignment = Alignment.Start
+            horizontalAlignment = Alignment.Start,
         ) {
             Text(
                 text = altTitle,
                 textAlign = TextAlign.Start,
                 style = MaterialTheme.typography.titleSmall,
-                maxLines = 2
+                maxLines = 2,
             )
             Text(
                 text = authors,
@@ -160,7 +171,7 @@ private fun MangaTitle(
         PublicationStatusIndicator(
             modifier = Modifier.fillMaxWidth(),
             status = status,
-            year = year
+            year = year,
         )
     }
 }
@@ -169,29 +180,32 @@ private fun MangaTitle(
 private fun BackgroundImageDarkened(
     modifier: Modifier,
     manga: SavableManga,
-    background: Color = MaterialTheme.colorScheme.background
+    background: Color = MaterialTheme.colorScheme.background,
 ) {
     Box(
-        modifier = modifier
+        modifier =
+        modifier
             .drawWithCache {
                 onDrawWithContent {
                     drawContent()
                     drawRect(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
+                        brush =
+                        Brush.verticalGradient(
+                            colors =
+                            listOf(
                                 Color.DarkGray.copy(alpha = 0.6f),
-                                background
-                            )
-                        )
+                                background,
+                            ),
+                        ),
                     )
                 }
-            }
+            },
     ) {
         AsyncImage(
             model = manga,
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }

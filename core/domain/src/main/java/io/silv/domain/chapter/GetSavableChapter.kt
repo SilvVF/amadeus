@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.map
 class GetSavableChapter(
     private val chapterRepository: ChapterRepository,
 ) {
-
     suspend fun await(id: String): SavableChapter? {
         chapterRepository.getChapterById(id).first()
             .let { it?.let(::SavableChapter) }
@@ -19,5 +18,9 @@ class GetSavableChapter(
         return chapterRepository.refetchChapter(id)?.let(::SavableChapter)
     }
 
-    fun subscribe(id: String): Flow<SavableChapter?> = chapterRepository.getChapterById(id).map { it?.let(::SavableChapter) }
+    fun subscribe(id: String): Flow<SavableChapter?> = chapterRepository.getChapterById(id).map {
+        it?.let(
+            ::SavableChapter
+        )
+    }
 }

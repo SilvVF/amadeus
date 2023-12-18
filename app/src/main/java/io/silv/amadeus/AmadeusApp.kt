@@ -37,8 +37,7 @@ import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 
-class AmadeusApp: Application(), ImageLoaderFactory {
-
+class AmadeusApp : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
 
@@ -51,7 +50,6 @@ class AmadeusApp: Application(), ImageLoaderFactory {
             modules(appModule)
         }
 
-
         ScreenRegistry {
             register<SharedScreen.Explore> {
                 ExploreScreen()
@@ -62,7 +60,7 @@ class AmadeusApp: Application(), ImageLoaderFactory {
             register<SharedScreen.Reader> {
                 ReaderScreen(
                     mangaId = it.mangaId,
-                    chapterId = it.initialChapterId
+                    chapterId = it.initialChapterId,
                 )
             }
             register<SharedScreen.MangaFilter> {
@@ -73,7 +71,7 @@ class AmadeusApp: Application(), ImageLoaderFactory {
             }
         }
 
-       Sync.init(this)
+        Sync.init(this)
     }
 
     private fun isLowRamDevice(context: Context): Boolean {
@@ -83,11 +81,9 @@ class AmadeusApp: Application(), ImageLoaderFactory {
         return totalMemBytes < 3L * 1024 * 1024 * 1024
     }
 
-
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun newImageLoader(): ImageLoader {
         return ImageLoader.Builder(this).apply {
-
             val callFactoryInit = inject<OkHttpClient>()
             val diskCacheInit = { CoilDiskCache.get(this@AmadeusApp) }
 
@@ -106,11 +102,14 @@ class AmadeusApp: Application(), ImageLoaderFactory {
             callFactory { callFactoryInit.value }
             diskCache(diskCacheInit)
             crossfade(
-                (300 * Settings.Global.getFloat(
-                    this@AmadeusApp.contentResolver,
-                    Settings.Global.ANIMATOR_DURATION_SCALE,
-                    1f)
-                        ).toInt()
+                (
+                    300 *
+                        Settings.Global.getFloat(
+                            this@AmadeusApp.contentResolver,
+                            Settings.Global.ANIMATOR_DURATION_SCALE,
+                            1f,
+                        )
+                    ).toInt(),
             )
             allowRgb565(isLowRamDevice(this@AmadeusApp))
             logger(DebugLogger())
@@ -127,7 +126,6 @@ class AmadeusApp: Application(), ImageLoaderFactory {
  * Direct copy of Coil's internal SingletonDiskCache so that [MangaCoverFetcher] can access it.
  */
 private object CoilDiskCache {
-
     private const val FOLDER_NAME = "image_cache"
     private var instance: DiskCache? = null
 

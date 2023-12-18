@@ -1,18 +1,17 @@
 package io.silv.database
 
 import androidx.room.TypeConverter
+import java.util.TreeMap
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import java.util.TreeMap
 
 class Converters {
-
     @TypeConverter
     fun fromStrList(list: List<String>): String {
-        return list.joinToString(separator ="<divider>")
+        return list.joinToString(separator = "<divider>")
     }
 
     @TypeConverter
@@ -24,16 +23,14 @@ class Converters {
     }
 
     @TypeConverter
-    fun longToInstant(value: Long?): Instant? =
-        value?.let(Instant::fromEpochMilliseconds)
+    fun longToInstant(value: Long?): Instant? = value?.let(Instant::fromEpochMilliseconds)
 
     @TypeConverter
-    fun instantToLong(instant: Instant?): Long? =
-        instant?.toEpochMilliseconds()
+    fun instantToLong(instant: Instant?): Long? = instant?.toEpochMilliseconds()
 
     @TypeConverter
     fun fromIntList(list: List<Int>): String {
-        return list.joinToString(separator ="<divider>")
+        return list.joinToString(separator = "<divider>")
     }
 
     @TypeConverter
@@ -53,7 +50,6 @@ class Converters {
     @TypeConverter
     fun toStringIntMap(value: String): Map<String, Int> {
         return value.ifEmpty { return emptyMap() }.split("<divider>").run {
-
             val keys = getOrNull(0)?.split(",")
             val values = getOrNull(1)?.split(",")?.map { it.toIntOrNull() ?: 0 }
 
@@ -75,7 +71,6 @@ class Converters {
     @TypeConverter
     fun toIntMap(value: String): Map<Int, String> {
         return value.ifEmpty { return emptyMap() }.split("<divider>").run {
-
             val keys = getOrNull(0)?.split(",")?.map { it.toIntOrNull() ?: 0 }
             val values = getOrNull(1)?.split(",")?.map { it }
 
@@ -89,7 +84,9 @@ class Converters {
 
     @TypeConverter
     fun fromLongToLocalDateTime(epochSeconds: Long): LocalDateTime {
-        return Instant.fromEpochSeconds(epochSeconds).toLocalDateTime(TimeZone.currentSystemDefault())
+        return Instant.fromEpochSeconds(epochSeconds).toLocalDateTime(
+            TimeZone.currentSystemDefault()
+        )
     }
 
     @TypeConverter

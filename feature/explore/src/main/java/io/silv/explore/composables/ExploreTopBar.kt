@@ -71,18 +71,23 @@ fun ExploreTopAppBar(
 
     TopAppBarWithBottomContent(
         bottomContent = {
-            val filters = remember {
-                listOf(
-                    Triple("Trending", Icons.Filled.Whatshot, UiPagedType.Popular),
-                    Triple("Recent", Icons.Outlined.AutoAwesome, UiPagedType.Latest),
-                    Triple("Seasonal", Icons.Filled.CalendarMonth, UiPagedType.Seasonal),
-                    Triple("Filter", Icons.Filled.FilterList, UiPagedType.Query(UiQueryFilters()))
-                )
-            }
+            val filters =
+                remember {
+                    listOf(
+                        Triple("Trending", Icons.Filled.Whatshot, UiPagedType.Popular),
+                        Triple("Recent", Icons.Outlined.AutoAwesome, UiPagedType.Latest),
+                        Triple("Seasonal", Icons.Filled.CalendarMonth, UiPagedType.Seasonal),
+                        Triple(
+                            "Filter",
+                            Icons.Filled.FilterList,
+                            UiPagedType.Query(UiQueryFilters())
+                        ),
+                    )
+                }
             LazyRow {
                 filters.fastForEach { (tag, icon, type) ->
                     item(
-                        key = type.toString()
+                        key = type.toString(),
                     ) {
                         FilterChip(
                             modifier = Modifier.padding(space.xs),
@@ -96,12 +101,12 @@ fun ExploreTopAppBar(
                             leadingIcon = {
                                 Icon(
                                     imageVector = icon,
-                                    contentDescription = icon.name
+                                    contentDescription = icon.name,
                                 )
                             },
                             label = {
                                 Text(text = tag)
-                            }
+                            },
                         )
                     }
                 }
@@ -116,10 +121,10 @@ fun ExploreTopAppBar(
                     if (this.targetState) { // animate search text in from top out to top
                         fadeIn() + slideInVertically { -it } togetherWith fadeOut() + slideOutVertically { it }
                     } else { // animate title up from bottom out to bottom
-                        fadeIn() + slideInVertically { it } togetherWith fadeOut() +  slideOutVertically { -it }
+                        fadeIn() + slideInVertically { it } togetherWith fadeOut() + slideOutVertically { -it }
                     }
                 },
-                label = "search-anim"
+                label = "search-anim",
             ) { targetState ->
                 if (targetState) {
                     LaunchedEffect(Unit) {
@@ -145,10 +150,11 @@ fun ExploreTopAppBar(
         },
         navigationIcon = {},
         actions = {
-            val icon = when (searching) {
-                true -> Icons.Filled.SearchOff
-                false -> Icons.Filled.Search
-            }
+            val icon =
+                when (searching) {
+                    true -> Icons.Filled.SearchOff
+                    false -> Icons.Filled.Search
+                }
             IconButton(
                 onClick = {
                     alreadyRequestedFocus = false
@@ -157,21 +163,21 @@ fun ExploreTopAppBar(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null
+                    contentDescription = null,
                 )
             }
             IconButton(onClick = onDisplayOptionsClick) {
                 Icon(
                     imageVector = Icons.Filled.Tune,
-                    contentDescription = "Display Options"
+                    contentDescription = "Display Options",
                 )
             }
             IconButton(
-                onClick = onWebClick
+                onClick = onWebClick,
             ) {
                 Icon(imageVector = Icons.Filled.Web, contentDescription = null)
             }
-        }
+        },
     )
 }
 
@@ -184,36 +190,43 @@ private fun SearchTextField(
     onSearch: (query: String) -> Unit,
 ) {
     OutlinedTextField(
-        modifier = modifier
+        modifier =
+        modifier
             .focusRequester(focusRequester),
         value = searchText,
         textStyle = MaterialTheme.typography.titleMedium,
         placeholder = { Text("Search Manga...") },
         onValueChange = onValueChange,
-        colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                cursorColor = LocalContentColor.current,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-            ),
-            trailingIcon = {
-                AnimatedVisibility(visible = searchText.isNotBlank(), enter = fadeIn(), exit = fadeOut()) {
-                    IconButton(
-                        onClick = { onValueChange("") }
-                    ) {
-                        Icon(imageVector = Icons.Filled.Clear, contentDescription = null)
-                    }
+        colors =
+        TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent,
+            cursorColor = LocalContentColor.current,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+        ),
+        trailingIcon = {
+            AnimatedVisibility(
+                visible = searchText.isNotBlank(),
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                IconButton(
+                    onClick = { onValueChange("") },
+                ) {
+                    Icon(imageVector = Icons.Filled.Clear, contentDescription = null)
                 }
+            }
+        },
+        maxLines = 1,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
+        keyboardActions =
+        KeyboardActions(
+            onSearch = {
+                onSearch(searchText)
             },
-            maxLines = 1,
-            singleLine = true,
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(
-                onSearch = {
-                    onSearch(searchText)
-                },
-            ),
-        )
+        ),
+    )
 }

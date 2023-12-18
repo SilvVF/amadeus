@@ -1,13 +1,12 @@
 package io.silv.network.model.list
 
-
-//@Serializable
-//data class ListByIdResponse(
+// @Serializable
+// data class ListByIdResponse(
 //
 //    @SerialName("result")
 //    val result: Result,
 //    val data: CustomList
-//) {
+// ) {
 //
 //    @Serializable
 //    data class CustomList(
@@ -37,4 +36,4 @@ package io.silv.network.model.list
 //            )
 //        }
 //    }
-//}
+// }

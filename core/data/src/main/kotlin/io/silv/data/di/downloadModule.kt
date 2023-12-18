@@ -6,7 +6,7 @@ import io.silv.data.download.DownloadManager
 import io.silv.data.download.DownloadProvider
 import io.silv.data.download.Downloader
 import io.silv.data.download.StorageManager
-import io.silv.network.image_sources.ImageSourceFactory
+import io.silv.network.sources.ImageSourceFactory
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 

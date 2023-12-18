@@ -10,5 +10,5 @@ data class TagEntity(
     val group: String,
     val name: String,
     val version: Int,
-    val lastUpdatedEpochSeconds: Long
-): AmadeusEntity<String>
+    val lastUpdatedEpochSeconds: Long,
+) : AmadeusEntity<String>

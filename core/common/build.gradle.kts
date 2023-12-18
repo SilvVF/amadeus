@@ -2,7 +2,7 @@
 plugins {
     id("java-library")
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
-    kotlin("plugin.serialization")  version "1.9.20"
+    kotlin("plugin.serialization") version "1.9.20"
 }
 
 java {

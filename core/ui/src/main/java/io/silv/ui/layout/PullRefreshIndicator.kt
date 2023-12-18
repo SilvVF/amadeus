@@ -16,7 +16,6 @@ package io.silv.ui.layout
  * limitations under the License.
  */
 
-
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -64,20 +63,21 @@ import kotlin.math.pow
  * A modifier for translating the position and scaling the size of a pull-to-refresh indicator
  * based on the given [PullRefreshState].
  *
- * @sample androidx.compose.material.samples.PullRefreshIndicatorTransformSample
  *
  * @param state The [PullRefreshState] which determines the position of the indicator.
  * @param scale A boolean controlling whether the indicator's size scales with pull progress or not.
  */
-// TODO: Consider whether the state parameter should be replaced with lambdas.
 fun Modifier.pullRefreshIndicatorTransform(
     state: PullRefreshState,
     scale: Boolean = false,
-) = inspectable(inspectorInfo = debugInspectorInfo {
-    name = "pullRefreshIndicatorTransform"
-    properties["state"] = state
-    properties["scale"] = scale
-}) {
+) = inspectable(
+    inspectorInfo =
+    debugInspectorInfo {
+        name = "pullRefreshIndicatorTransform"
+        properties["state"] = state
+        properties["scale"] = scale
+    },
+) {
     Modifier
         // Essentially we only want to clip the at the top, so the indicator will not appear when
         // the position is 0. It is preferable to clip the indicator as opposed to the layout that
@@ -90,7 +90,7 @@ fun Modifier.pullRefreshIndicatorTransform(
                 top = 0f,
                 left = -Float.MAX_VALUE,
                 right = Float.MAX_VALUE,
-                bottom = Float.MAX_VALUE
+                bottom = Float.MAX_VALUE,
             ) {
                 this@drawWithContent.drawContent()
             }
@@ -99,9 +99,10 @@ fun Modifier.pullRefreshIndicatorTransform(
             translationY = state.position - size.height
 
             if (scale && !state.refreshing) {
-                val scaleFraction = LinearOutSlowInEasing
-                    .transform(state.position / state.threshold)
-                    .coerceIn(0f, 1f)
+                val scaleFraction =
+                    LinearOutSlowInEasing
+                        .transform(state.position / state.threshold)
+                        .coerceIn(0f, 1f)
                 scaleX = scaleFraction
                 scaleY = scaleFraction
             }
@@ -120,9 +121,9 @@ fun Modifier.pullRefreshIndicatorTransform(
  * @param contentColor The color of the indicator's arc and arrow.
  * @param scale A boolean controlling whether the indicator's size scales with pull progress or not.
  */
-@Composable
 // TODO(b/244423199): Consider whether the state parameter should be replaced with lambdas to
 //  enable people to use this indicator with custom pull-to-refresh components.
+@Composable
 fun PullRefreshIndicator(
     refreshing: Boolean,
     state: PullRefreshState,
@@ -136,7 +137,8 @@ fun PullRefreshIndicator(
     }
 
     Surface(
-        modifier = modifier
+        modifier =
+        modifier
             .size(IndicatorSize)
             .pullRefreshIndicatorTransform(state, scale),
         shape = SpinnerShape,
@@ -146,11 +148,11 @@ fun PullRefreshIndicator(
         Crossfade(
             targetState = refreshing,
             animationSpec = tween(durationMillis = CrossfadeDurationMs),
-            label = "pull-refresh"
+            label = "pull-refresh",
         ) { refreshing ->
             Box(
                 modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 val spinnerSize = (ArcRadius + StrokeWidth).times(2)
 
@@ -185,9 +187,12 @@ private fun CircularArrowIndicator(
         }
     }
 
-    val alphaState = animateFloatAsState(targetValue = targetAlpha, animationSpec = AlphaTween,
-        label = "pull-refresh-alpha-state"
-    )
+    val alphaState =
+        animateFloatAsState(
+            targetValue = targetAlpha,
+            animationSpec = AlphaTween,
+            label = "pull-refresh-alpha-state",
+        )
 
     // Empty semantics for tests
     Canvas(modifier.semantics {}) {
@@ -196,12 +201,13 @@ private fun CircularArrowIndicator(
 
         rotate(degrees = values.rotation) {
             val arcRadius = ArcRadius.toPx() + StrokeWidth.toPx() / 2f
-            val arcBounds = Rect(
-                size.center.x - arcRadius,
-                size.center.y - arcRadius,
-                size.center.x + arcRadius,
-                size.center.y + arcRadius
-            )
+            val arcBounds =
+                Rect(
+                    size.center.x - arcRadius,
+                    size.center.y - arcRadius,
+                    size.center.x + arcRadius,
+                    size.center.y + arcRadius,
+                )
             drawArc(
                 color = color,
                 alpha = alpha,
@@ -210,10 +216,11 @@ private fun CircularArrowIndicator(
                 useCenter = false,
                 topLeft = arcBounds.topLeft,
                 size = arcBounds.size,
-                style = Stroke(
+                style =
+                Stroke(
                     width = StrokeWidth.toPx(),
-                    cap = StrokeCap.Square
-                )
+                    cap = StrokeCap.Square,
+                ),
             )
             drawArrow(path, arcBounds, color, alpha, values)
         }
@@ -262,7 +269,7 @@ private fun DrawScope.drawArrow(
     // Line to tip of arrow
     arrow.lineTo(
         x = ArrowWidth.toPx() * values.scale / 2,
-        y = ArrowHeight.toPx() * values.scale
+        y = ArrowHeight.toPx() * values.scale,
     )
 
     val radius = min(bounds.width, bounds.height) / 2f
@@ -270,8 +277,8 @@ private fun DrawScope.drawArrow(
     arrow.translate(
         Offset(
             x = radius + bounds.center.x - inset,
-            y = bounds.center.y + StrokeWidth.toPx() / 2f
-        )
+            y = bounds.center.y + StrokeWidth.toPx() / 2f,
+        ),
     )
     arrow.close()
     rotate(degrees = values.endAngle) {

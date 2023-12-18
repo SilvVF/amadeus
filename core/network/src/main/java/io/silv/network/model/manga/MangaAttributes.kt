@@ -2,10 +2,10 @@ package io.silv.network.model.manga
 
 import android.os.Parcelable
 import io.silv.common.model.ContentRating
-import io.silv.network.model.LocalizedString
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.State
 import io.silv.common.model.Status
+import io.silv.network.model.LocalizedString
 import io.silv.network.model.common.Tag
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
@@ -32,5 +32,5 @@ data class MangaAttributes(
     val state: State,
     val version: Int,
     val createdAt: String,
-    val updatedAt: String
-): Parcelable
+    val updatedAt: String,
+) : Parcelable

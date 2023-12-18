@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.map
 class TagSyncManager(
     private val context: Context,
 ) : SyncManager {
-
     override val isSyncing: Flow<Boolean> =
         WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(TagSyncWorkName)
             .map(List<WorkInfo>::anyRunning)

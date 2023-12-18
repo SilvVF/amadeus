@@ -12,9 +12,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MangaUpdateDao {
-
     @Insert(
-        onConflict = OnConflictStrategy.REPLACE
+        onConflict = OnConflictStrategy.REPLACE,
     )
     suspend fun upsert(mangaUpdateEntity: MangaUpdateEntity)
 

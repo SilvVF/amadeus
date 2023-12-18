@@ -2,7 +2,7 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
-    kotlin("plugin.serialization")  version "1.9.20"
+    kotlin("plugin.serialization") version "1.9.20"
     id("kotlin-parcelize")
 }
 
@@ -22,7 +22,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -55,12 +55,10 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.6")
 
-
     implementation(libs.flow.combinetuple.kt)
     implementation(libs.tuples.kt)
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-
 
     // KOTLIN
     implementation(libs.kotlinx.datetime)

@@ -11,28 +11,30 @@ import kotlinx.coroutines.withContext
 
 class RecentSearchHandler(
     private val dispatchers: AmadeusDispatchers,
-    private val recentSearchRepository: RecentSearchRepository
+    private val recentSearchRepository: RecentSearchRepository,
 ) {
+    val recentSearchList =
+        recentSearchRepository.getRecentSearchQueries(limit = 10)
+            .map { list ->
+                Log.d("search-history", "new list $list")
+                list.map { it.toExternal() }.toImmutableList()
+            }
 
-    val recentSearchList = recentSearchRepository.getRecentSearchQueries(limit = 10)
-        .map { list ->
-            Log.d("search-history", "new list $list")
-            list.map { it.toExternal() } .toImmutableList()
+    suspend fun onSearchTriggered(query: String) =
+        withContext(dispatchers.io) {
+            recentSearchRepository.insertOrReplaceRecentSearch(searchQuery = query)
         }
 
-    suspend fun onSearchTriggered(query: String) = withContext(dispatchers.io) {
-        recentSearchRepository.insertOrReplaceRecentSearch(searchQuery = query)
-    }
-
-    suspend fun clearRecentSearches() = withContext(dispatchers.io) {
-        Log.d("search-history", "recentSearchRepository.clearRecentSearches")
-        recentSearchRepository.clearRecentSearches()
-    }
+    suspend fun clearRecentSearches() =
+        withContext(dispatchers.io) {
+            Log.d("search-history", "recentSearchRepository.clearRecentSearches")
+            recentSearchRepository.clearRecentSearches()
+        }
 
     private fun RecentSearchEntity.toExternal(): RecentSearch {
         return RecentSearch(
             query = query,
-            date = queriedDate
+            date = queriedDate,
         )
     }
 }

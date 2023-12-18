@@ -83,15 +83,20 @@ fun SearchTopAppBar(
                 ) {
                     Icon(
                         imageVector = navigationIcon,
-                        contentDescription = navigationIconLabel
+                        contentDescription = navigationIconLabel,
                     )
                 }
             }
         },
         actions = {
-            AnimatedVisibility(visible = showTextField, enter = fadeIn() + slideInVertically(), exit = fadeOut() + slideOutVertically()) {
+            AnimatedVisibility(
+                visible = showTextField,
+                enter = fadeIn() + slideInVertically(),
+                exit = fadeOut() + slideOutVertically()
+            ) {
                 OutlinedTextField(
-                    modifier = Modifier
+                    modifier =
+                    Modifier
                         .weight(1f)
                         .padding(top = space.small, bottom = space.small, start = space.xlarge)
                         .focusRequester(focusRequester),
@@ -100,7 +105,8 @@ fun SearchTopAppBar(
                     onValueChange = {
                         onSearchText(it)
                     },
-                    colors = TextFieldDefaults.colors(
+                    colors =
+                    TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         disabledContainerColor = Color.Transparent,
@@ -109,19 +115,23 @@ fun SearchTopAppBar(
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
                     trailingIcon = {
-                        AnimatedVisibility(visible = searchText.isNotBlank(), enter = fadeIn(), exit = fadeOut()) {
+                        AnimatedVisibility(
+                            visible = searchText.isNotBlank(),
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
                             IconButton(
-                                onClick = { onSearchText("") }
+                                onClick = { onSearchText("") },
                             ) {
                                 Icon(imageVector = Icons.Filled.Clear, contentDescription = null)
                             }
                         }
-
                     },
                     maxLines = 1,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(
+                    keyboardActions =
+                    KeyboardActions(
                         onSearch = {
                             onForceSearch()
                         },
@@ -137,10 +147,11 @@ fun SearchTopAppBar(
                     }
                 }
             }
-            val icon = when (showTextField) {
-                true -> Icons.Filled.SearchOff
-                false -> Icons.Filled.Search
-            }
+            val icon =
+                when (showTextField) {
+                    true -> Icons.Filled.SearchOff
+                    false -> Icons.Filled.Search
+                }
             IconButton(
                 onClick = {
                     alreadyRequestedFocus = false
@@ -149,41 +160,51 @@ fun SearchTopAppBar(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null
+                    contentDescription = null,
                 )
             }
             actions()
         },
-        colors = color?.let {
+        colors =
+        color?.let {
             TopAppBarDefaults.topAppBarColors(
                 containerColor = color,
-                scrolledContainerColor = animateColorAsState(
+                scrolledContainerColor =
+                animateColorAsState(
                     label = "search-bar-transparency",
-                    targetValue = if (makeTransparent) {
+                    targetValue =
+                    if (makeTransparent) {
                         Color.Transparent
-                    } else color
+                    } else {
+                        color
+                    },
                 )
                     .value,
             )
         } ?: TopAppBarDefaults.topAppBarColors(
-            scrolledContainerColor = animateColorAsState(
+            scrolledContainerColor =
+            animateColorAsState(
                 label = "search-bar-transparency",
-                targetValue = if (makeTransparent) {
+                targetValue =
+                if (makeTransparent) {
                     Color.Transparent
                 } else {
                     MaterialTheme.colorScheme.applyTonalElevation(
                         backgroundColor = MaterialTheme.colorScheme.surface,
-                        elevation = 3.0.dp
+                        elevation = 3.0.dp,
                     )
-                }
+                },
             )
-                .value
+                .value,
         ),
         scrollBehavior = scrollBehavior,
     )
 }
 
-private fun ColorScheme.applyTonalElevation(backgroundColor: Color, elevation: Dp): Color {
+private fun ColorScheme.applyTonalElevation(
+    backgroundColor: Color,
+    elevation: Dp,
+): Color {
     return if (backgroundColor == surface) {
         surfaceColorAtElevation(elevation)
     } else {

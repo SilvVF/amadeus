@@ -2,9 +2,9 @@ package io.silv.reader
 
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.silv.data.download.DownloadManager
 import eu.kanade.tachiyomi.reader.loader.ChapterLoader
 import eu.kanade.tachiyomi.reader.model.ReaderChapter
+import io.silv.data.download.DownloadManager
 import io.silv.domain.chapter.GetSavableChapter
 import io.silv.domain.manga.GetSavableManga
 import kotlinx.coroutines.Dispatchers
@@ -17,9 +17,8 @@ class ReaderScreenModel(
     private val getManga: GetSavableManga,
     private val mangaId: String,
     private val initialChapterId: String,
-    private val downloadManager: DownloadManager
-): StateScreenModel<ReaderState>(ReaderState.Loading) {
-
+    private val downloadManager: DownloadManager,
+) : StateScreenModel<ReaderState>(ReaderState.Loading) {
     init {
         screenModelScope.launch {
             init().onFailure { mutableState.value = ReaderState.Error(it.localizedMessage ?: "") }
@@ -35,26 +34,31 @@ class ReaderScreenModel(
      * Initializes this presenter with the given [mangaId] and [initialChapterId]. This method will
      * fetch the manga from the database and initialize the initial chapter.
      */
-    private suspend fun init(): Result<Unit> = runCatching {
-        val chapter = ReaderChapter(
-            getChapter.await(initialChapterId)!!
-        )
-        val manga = getManga.await(mangaId)!!
+    private suspend fun init(): Result<Unit> =
+        runCatching {
+            val chapter =
+                ReaderChapter(
+                    getChapter.await(initialChapterId)!!,
+                )
+            val manga = getManga.await(mangaId)!!
 
-        loader = ChapterLoader(downloadManager, manga)
+            loader = ChapterLoader(downloadManager, manga)
 
-        withContext(Dispatchers.IO) {
-            loader!!.loadChapter(chapter)
+            withContext(Dispatchers.IO) {
+                loader!!.loadChapter(chapter)
+            }
+
+            mutableState.value =
+                ReaderState.Success(
+                    chapter = chapter,
+                )
         }
-
-        mutableState.value = ReaderState.Success(
-            chapter = chapter
-        )
-    }
 }
 
 sealed interface ReaderState {
-    data object Loading: ReaderState
-    data class Error(val reason: String): ReaderState
-    data class Success(val chapter: ReaderChapter): ReaderState
+    data object Loading : ReaderState
+
+    data class Error(val reason: String) : ReaderState
+
+    data class Success(val chapter: ReaderChapter) : ReaderState
 }

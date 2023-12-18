@@ -1,6 +1,5 @@
 package io.silv.network.model.list
 
-
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -11,5 +10,5 @@ data class Attributes(
     @SerialName("version")
     val version: Int,
     @SerialName("visibility")
-    val visibility: String
+    val visibility: String,
 )

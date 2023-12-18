@@ -25,8 +25,8 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.model.SavableManga
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
-import io.silv.ui.composables.AnimatedBoxShimmer
 import io.silv.ui.CenterBox
+import io.silv.ui.composables.AnimatedBoxShimmer
 import io.silv.ui.composables.MangaListItem
 import io.silv.ui.composables.PullRefresh
 import io.silv.ui.header
@@ -36,39 +36,40 @@ fun SearchItemsPagingList(
     modifier: Modifier = Modifier,
     items: LazyPagingItems<SavableManga>,
     onMangaClick: (manga: SavableManga) -> Unit,
-    onBookmarkClick: (manga: SavableManga) -> Unit
+    onBookmarkClick: (manga: SavableManga) -> Unit,
 ) {
     val space = io.silv.ui.theme.LocalSpacing.current
     val navigator = LocalNavigator.current
     val context = LocalContext.current
 
     LaunchedEffect(key1 = items.loadState) {
-        if(items.loadState.refresh is LoadState.Error) {
+        if (items.loadState.refresh is LoadState.Error) {
             Toast.makeText(
                 context,
                 "Error: " + (items.loadState.refresh as LoadState.Error).error.message,
-                Toast.LENGTH_LONG
+                Toast.LENGTH_LONG,
             ).show()
         }
     }
 
     PullRefresh(
         refreshing = items.loadState.refresh is LoadState.Loading,
-        onRefresh = { items.refresh() }
+        onRefresh = { items.refresh() },
     ) {
         LazyVerticalGrid(
             modifier = modifier,
-            columns = GridCells.Fixed(2)
+            columns = GridCells.Fixed(2),
         ) {
             items(
                 count = items.itemCount,
                 key = items.itemKey(),
-                contentType = items.itemContentType()
+                contentType = items.itemContentType(),
             ) { i ->
                 items[i]?.let {
                     MangaListItem(
                         manga = it,
-                        modifier = Modifier
+                        modifier =
+                        Modifier
                             .padding(space.large)
                             .height((LocalConfiguration.current.screenHeightDp / 2.6f).dp)
                             .clickable {
@@ -80,20 +81,24 @@ fun SearchItemsPagingList(
                         onTagClick = { name ->
                             it.tagToId[name]?.let { id ->
                                 navigator?.push(
-                                    SharedScreen.MangaFilter(name, id)
+                                    SharedScreen.MangaFilter(name, id),
                                 )
                             }
-                        }
+                        },
                     )
                 }
             }
             if (items.loadState.refresh is LoadState.Loading) {
                 items(8, key = { it }) {
-                    AnimatedBoxShimmer(Modifier.padding(space.large).fillMaxWidth().height((LocalConfiguration.current.screenHeightDp / 2.6f).dp))
+                    AnimatedBoxShimmer(
+                        Modifier.padding(space.large).fillMaxWidth().height(
+                            (LocalConfiguration.current.screenHeightDp / 2.6f).dp
+                        ),
+                    )
                 }
             }
             header(
-                key = "loading-indicator"
+                key = "loading-indicator",
             ) {
                 if (items.loadState.append is LoadState.Loading) {
                     CenterBox(Modifier.size(200.dp)) {

@@ -52,9 +52,8 @@ import io.silv.model.SavableManga
 import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.noRippleClickable
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.persistentListOf
 import kotlin.math.roundToInt
-
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun ColumnScope.MangaDescriptionWithActions(
@@ -67,7 +66,8 @@ fun ColumnScope.MangaDescriptionWithActions(
 ) {
     val space = LocalSpacing.current
     MangaActions(
-        modifier = Modifier
+        modifier =
+        Modifier
             .padding(vertical = space.med)
             .fillMaxWidth(),
         inLibrary = inLibrary,
@@ -75,11 +75,11 @@ fun ColumnScope.MangaDescriptionWithActions(
             addToLibraryClicked(manga.id)
         },
         viewOnWebClicked = viewOnWebClicked,
-        showChapterArt = showChapterArt
+        showChapterArt = showChapterArt,
     )
     MangaInfo(
         manga = manga,
-        onTagSelected = onTagSelected
+        onTagSelected = onTagSelected,
     )
 }
 
@@ -103,19 +103,19 @@ private fun MangaActions(
     Row(
         modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
+        horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         val items by remember(inLibrary) {
             derivedStateOf {
                 persistentListOf(
-                   MangaActionItem(
-                       icon = if (inLibrary) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                       label =  if (inLibrary) "Added to library" else "Add to library",
-                       selected = inLibrary,
-                       action = addToLibraryClicked
-                   ),
+                    MangaActionItem(
+                        icon = if (inLibrary) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        label = if (inLibrary) "Added to library" else "Add to library",
+                        selected = inLibrary,
+                        action = addToLibraryClicked,
+                    ),
                     MangaActionItem(Icons.Filled.TravelExplore, "View on web", viewOnWebClicked),
-                    MangaActionItem(Icons.Filled.Image, "Cover art", showChapterArt)
+                    MangaActionItem(Icons.Filled.Image, "Cover art", showChapterArt),
                 )
             }
         }
@@ -123,26 +123,27 @@ private fun MangaActions(
         items.fastForEach { (icon, label, action, selected) ->
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
             ) {
-                val color = if (selected) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onBackground
-                }
+                val color =
+                    if (selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onBackground
+                    }
                 IconButton(
                     onClick = action,
-                    modifier = Modifier.padding(horizontal = space.large)
+                    modifier = Modifier.padding(horizontal = space.large),
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = icon.name,
-                        tint = color
+                        tint = color,
                     )
                 }
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelMedium.copy(color = color)
+                    style = MaterialTheme.typography.labelMedium.copy(color = color),
                 )
             }
         }
@@ -160,37 +161,36 @@ private fun TagsAndLanguages(
     Text(
         text = "Tags",
         style = MaterialTheme.typography.labelSmall,
-        modifier = Modifier.padding(space.med)
+        modifier = Modifier.padding(space.med),
     )
     Column(Modifier.animateContentSize()) {
         LazyRow {
             items(
                 tags,
-                key = { item -> item }
-            ) {tag ->
+                key = { item -> item },
+            ) { tag ->
                 ElevatedSuggestionChip(
                     onClick = { navigate(tag) },
                     label = { Text(tag) },
-                    modifier = Modifier.padding(horizontal = space.small)
+                    modifier = Modifier.padding(horizontal = space.small),
                 )
             }
         }
         Text(
-            text ="Translated Languages",
+            text = "Translated Languages",
             style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(space.med)
+            modifier = Modifier.padding(space.med),
         )
         TranslatedLanguageTags(tags = manga.availableTranslatedLanguages)
     }
 }
-
 
 private val whitespaceLineRegex = Regex("[\\r\\n]{2,}", setOf(RegexOption.MULTILINE))
 
 @Composable
 private fun MangaInfo(
     manga: SavableManga,
-    onTagSelected: (tag: String) -> Unit
+    onTagSelected: (tag: String) -> Unit,
 ) {
     var expanded by rememberSaveable {
         mutableStateOf(false)
@@ -198,26 +198,28 @@ private fun MangaInfo(
     val space = LocalSpacing.current
     TagsAndLanguages(
         manga = manga,
-        navigate = onTagSelected
+        navigate = onTagSelected,
     )
     Column(Modifier.fillMaxWidth()) {
         Text(
             text = "Description",
             style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(space.med)
+            modifier = Modifier.padding(space.med),
         )
         MangaSummary(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp)
                 .padding(horizontal = 16.dp)
                 .noRippleClickable { expanded = !expanded },
             expandedDescription = manga.description,
-            shrunkDescription =  remember(manga.description) {
+            shrunkDescription =
+            remember(manga.description) {
                 manga.description.replace(whitespaceLineRegex, "\n")
-                .trimEnd()
+                    .trimEnd()
             },
-            expanded = expanded
+            expanded = expanded,
         )
     }
 }
@@ -236,61 +238,75 @@ private fun MangaSummary(
     val scrimHeight = with(LocalDensity.current) { remember { 24.sp.roundToPx() } }
 
     SubcomposeLayout(modifier = modifier.clipToBounds()) { constraints ->
-        val shrunkPlaceable = subcompose("description-s") {
-            Text(
-                text = "\n\n", // Shows at least 3 lines
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }.map { it.measure(constraints) }
+        val shrunkPlaceable =
+            subcompose("description-s") {
+                Text(
+                    text = "\n\n", // Shows at least 3 lines
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }.map { it.measure(constraints) }
         shrunkHeight = shrunkPlaceable.maxByOrNull { it.height }?.height ?: 0
 
-        val expandedPlaceable = subcompose("description-l") {
-            Material3RichText(
-                modifier = Modifier.alpha(0.78f),
-            ) {
-                Markdown(content = expandedDescription)
-            }
-        }.map { it.measure(constraints) }
+        val expandedPlaceable =
+            subcompose("description-l") {
+                Material3RichText(
+                    modifier = Modifier.alpha(0.78f),
+                ) {
+                    Markdown(content = expandedDescription)
+                }
+            }.map { it.measure(constraints) }
 
-        expandedHeight = expandedPlaceable.maxByOrNull { it.height }?.height?.coerceAtLeast(shrunkHeight) ?: 0
+        expandedHeight = expandedPlaceable.maxByOrNull { it.height }?.height?.coerceAtLeast(
+            shrunkHeight
+        ) ?: 0
 
-        val actualPlaceable = subcompose("description") {
-            SelectionContainer {
-                if (expanded) {
-                    Material3RichText(
-                        modifier = Modifier.alpha(0.78f),
-                    ) {
-                        Markdown(content = expandedDescription)
+        val actualPlaceable =
+            subcompose("description") {
+                SelectionContainer {
+                    if (expanded) {
+                        Material3RichText(
+                            modifier = Modifier.alpha(0.78f),
+                        ) {
+                            Markdown(content = expandedDescription)
+                        }
+                    } else {
+                        Text(
+                            shrunkDescription,
+                            maxLines = Int.MAX_VALUE,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.alpha(0.78f),
+                        )
                     }
-                } else {
-                    Text(
-                        shrunkDescription,
-                        maxLines = Int.MAX_VALUE,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.alpha(0.78f),
+                }
+            }.map { it.measure(constraints) }
+
+        val scrimPlaceable =
+            subcompose("scrim") {
+                val colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background)
+                Box(
+                    modifier = Modifier.background(Brush.verticalGradient(colors = colors)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector =
+                        if (expanded) {
+                            Icons.Filled.KeyboardArrowUp
+                        } else {
+                            Icons.Filled.KeyboardArrowDown
+                        },
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.background(
+                            Brush.radialGradient(colors = colors.asReversed())
+                        ),
                     )
                 }
-            }
-        }.map { it.measure(constraints) }
-
-        val scrimPlaceable = subcompose("scrim") {
-            val colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background)
-            Box(
-                modifier = Modifier.background(Brush.verticalGradient(colors = colors)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = if(expanded)
-                        Icons.Filled.KeyboardArrowUp
-                    else
-                        Icons.Filled.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.background(Brush.radialGradient(colors = colors.asReversed())),
+            }.map {
+                it.measure(
+                    Constraints.fixed(width = constraints.maxWidth, height = scrimHeight)
                 )
             }
-        }.map { it.measure(Constraints.fixed(width = constraints.maxWidth, height = scrimHeight)) }
 
         val currentHeight = shrunkHeight + ((heightDelta + scrimHeight) * animProgress).roundToInt()
         layout(constraints.maxWidth, currentHeight) {

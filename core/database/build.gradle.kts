@@ -2,7 +2,7 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
-    kotlin("plugin.serialization")  version "1.9.20"
+    kotlin("plugin.serialization") version "1.9.20"
     id("com.google.devtools.ksp")
     id("kotlin-parcelize")
 }
@@ -22,7 +22,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -48,7 +48,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
 
-    //ROOM
+    // ROOM
     ksp(libs.room.ksp)
     implementation(libs.room.runtime)
     annotationProcessor(libs.room.compiler)

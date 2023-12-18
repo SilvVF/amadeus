@@ -14,34 +14,32 @@ import kotlinx.datetime.LocalDateTime
 
 @Entity
 data class SavedMangaEntity(
-
     @PrimaryKey override val id: String,
     val progressState: ProgressState = ProgressState.NotStarted,
-     val readingStatus: ReadingStatus,
+    val readingStatus: ReadingStatus,
     override val coverArt: String,
-     val description: String,
-     override val title: String,
-     val alternateTitles: Map<String, String>,
-     val originalLanguage: String,
-     val availableTranslatedLanguages: List<String>,
-     val status: Status,
-     val tagToId: Map<String, String>,
-     val contentRating: ContentRating,
-     val lastVolume: Int,
-     val lastChapter: Long,
+    val description: String,
+    override val title: String,
+    val alternateTitles: Map<String, String>,
+    val originalLanguage: String,
+    val availableTranslatedLanguages: List<String>,
+    val status: Status,
+    val tagToId: Map<String, String>,
+    val contentRating: ContentRating,
+    val lastVolume: Int,
+    val lastChapter: Long,
     override val version: Int,
-     val publicationDemographic: PublicationDemographic?,
+    val publicationDemographic: PublicationDemographic?,
     override val createdAt: LocalDateTime,
     override val updatedAt: LocalDateTime,
-     val volumeToCoverArt: Map<String, String>,
-     val savedAtLocal: LocalDateTime = localDateTimeNow(),
-     val year: Int,
-     val latestUploadedChapter: String?,
-     val authors: List<String>,
-     val artists: List<String>
-): AmadeusEntity<String>, MangaResource {
-
-    constructor(mangaResource: SourceMangaResource): this(
+    val volumeToCoverArt: Map<String, String>,
+    val savedAtLocal: LocalDateTime = localDateTimeNow(),
+    val year: Int,
+    val latestUploadedChapter: String?,
+    val authors: List<String>,
+    val artists: List<String>,
+) : AmadeusEntity<String>, MangaResource {
+    constructor(mangaResource: SourceMangaResource) : this(
         id = mangaResource.id,
         progressState = ProgressState.NotStarted,
         readingStatus = ReadingStatus.None,
@@ -64,6 +62,6 @@ data class SavedMangaEntity(
         year = mangaResource.year,
         latestUploadedChapter = mangaResource.latestUploadedChapter,
         authors = mangaResource.authors,
-        artists = mangaResource.artists
+        artists = mangaResource.artists,
     )
 }

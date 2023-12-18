@@ -16,7 +16,7 @@ import io.silv.data.util.DiskUtil
 import io.silv.data.util.ImageUtil
 import io.silv.datastore.DownloadStore
 import io.silv.network.MangaDexApi
-import io.silv.network.image_sources.ImageSourceFactory
+import io.silv.network.sources.ImageSourceFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

@@ -8,9 +8,9 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.PagedType
 import io.silv.common.model.Season
 import io.silv.data.manga.SavedMangaRepository
-import io.silv.domain.search.RecentSearchHandler
 import io.silv.domain.manga.SubscribeToPagingData
 import io.silv.domain.manga.SubscribeToSeasonalLists
+import io.silv.domain.search.RecentSearchHandler
 import io.silv.model.DomainSeasonalList
 import io.silv.model.RecentSearch
 import io.silv.model.SavableManga
@@ -35,8 +35,7 @@ class ExploreScreenModel(
     private val recentSearchHandler: RecentSearchHandler,
     private val savedMangaRepository: SavedMangaRepository,
     private val seasonalMangaSyncManager: SyncManager,
-): EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState()) {
-
+) : EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState()) {
     init {
         state.onEach { Log.d("ExploreState", "updated $it") }.launchIn(screenModelScope)
 
@@ -44,7 +43,7 @@ class ExploreScreenModel(
             .onEach { refreshing ->
                 mutableState.update { state ->
                     state.copy(
-                        refreshingSeasonal = refreshing
+                        refreshingSeasonal = refreshing,
                     )
                 }
             }
@@ -54,8 +53,9 @@ class ExploreScreenModel(
             .onEach { lists ->
                 mutableState.update { state ->
                     state.copy(
-                        seasonalLists = lists.map(::toUi)
-                            .toImmutableList()
+                        seasonalLists =
+                        lists.map(::toUi)
+                            .toImmutableList(),
                     )
                 }
             }
@@ -65,44 +65,50 @@ class ExploreScreenModel(
             .onEach { recentSearchResults ->
                 mutableState.update { state ->
                     state.copy(
-                        recentSearchUiState = RecentSearchUiState.Success(recentSearchResults)
+                        recentSearchUiState = RecentSearchUiState.Success(recentSearchResults),
                     )
                 }
             }
             .launchIn(screenModelScope)
     }
 
-    val mangaPagingFlow = subscribeToPagingData(
-        typeFlow =  state.map { it.pagedType }
-            .filterNot { pageType -> pageType is UiPagedType.Seasonal }
-            .map { pageType ->
-                when(pageType) {
-                    UiPagedType.Latest -> PagedType.Latest
-                    UiPagedType.Popular -> PagedType.Popular
-                    is UiPagedType.Query -> PagedType.Query(pageType.filters.toQueryFilters())
-                    else -> error("Page type could not be converted")
-                }
-            }
-            .distinctUntilChanged()
-            .onEach { pageType ->
-                if (pageType is PagedType.Query && !pageType.filters.title.isNullOrBlank()) {
-                    screenModelScope.launch {
-                        recentSearchHandler.onSearchTriggered(pageType.filters.title ?: return@launch)
+    val mangaPagingFlow =
+        subscribeToPagingData(
+            typeFlow =
+            state.map { it.pagedType }
+                .filterNot { pageType -> pageType is UiPagedType.Seasonal }
+                .map { pageType ->
+                    when (pageType) {
+                        UiPagedType.Latest -> PagedType.Latest
+                        UiPagedType.Popular -> PagedType.Popular
+                        is UiPagedType.Query -> PagedType.Query(
+                            pageType.filters.toQueryFilters()
+                        )
+                        else -> error("Page type could not be converted")
                     }
                 }
-        },
-        config = PagingConfig(
-            pageSize = 30,
-            prefetchDistance = 30,
-            initialLoadSize = 30,
-        ),
-        scope = ioCoroutineScope
-    )
-
+                .distinctUntilChanged()
+                .onEach { pageType ->
+                    if (pageType is PagedType.Query && !pageType.filters.title.isNullOrBlank()) {
+                        screenModelScope.launch {
+                            recentSearchHandler.onSearchTriggered(
+                                pageType.filters.title ?: return@launch
+                            )
+                        }
+                    }
+                },
+            config =
+            PagingConfig(
+                pageSize = 30,
+                prefetchDistance = 30,
+                initialLoadSize = 30,
+            ),
+            scope = ioCoroutineScope,
+        )
 
     fun changePagingType(type: UiPagedType) {
         screenModelScope.launch {
-            mutableState.update {state ->
+            mutableState.update { state ->
                 state.copy(pagedType = type)
             }
         }
@@ -111,10 +117,11 @@ class ExploreScreenModel(
     fun onSearch(query: String) {
         mutableState.update { state ->
             state.copy(
-                pagedType = (state.pagedType as? UiPagedType.Query)?.copy(
-                    filters = state.pagedType.filters.copy(title = query)
+                pagedType =
+                (state.pagedType as? UiPagedType.Query)?.copy(
+                    filters = state.pagedType.filters.copy(title = query),
                 )
-                    ?: UiPagedType.Query(UiQueryFilters(title = query))
+                    ?: UiPagedType.Query(UiQueryFilters(title = query)),
             )
         }
     }
@@ -125,7 +132,7 @@ class ExploreScreenModel(
         }
     }
 
-    fun refreshSeasonalManga(){
+    fun refreshSeasonalManga() {
         screenModelScope.launch {
             seasonalMangaSyncManager.requestSync()
         }
@@ -153,10 +160,13 @@ sealed interface RecentSearchUiState {
 
 @Stable
 sealed interface UiPagedType {
-    data object Popular: UiPagedType
-    data object Latest: UiPagedType
-    data object Seasonal: UiPagedType
-    data class Query(val filters: UiQueryFilters): UiPagedType
+    data object Popular : UiPagedType
+
+    data object Latest : UiPagedType
+
+    data object Seasonal : UiPagedType
+
+    data class Query(val filters: UiQueryFilters) : UiPagedType
 }
 
 @Immutable
@@ -165,7 +175,7 @@ data class UiSeasonalList(
     val id: String,
     val season: Season,
     val year: Int,
-    val mangas: ImmutableList<StateFlow<SavableManga>>
+    val mangas: ImmutableList<StateFlow<SavableManga>>,
 )
 
 @Immutable
@@ -174,9 +184,8 @@ data class ExploreState(
     val refreshingSeasonal: Boolean = false,
     val pagedType: UiPagedType = UiPagedType.Popular,
     val seasonalLists: ImmutableList<UiSeasonalList> = persistentListOf(),
-    val recentSearchUiState: RecentSearchUiState = RecentSearchUiState.Loading
+    val recentSearchUiState: RecentSearchUiState = RecentSearchUiState.Loading,
 ) {
-
     val filters
         get() = (this.pagedType as? UiPagedType.Query)?.filters
 }

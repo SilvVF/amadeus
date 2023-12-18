@@ -10,7 +10,6 @@ open class Page(
     val url: String = "",
     var imageUrl: String? = null,
 ) : ProgressListener {
-
     val number: Int
         get() = index + 1
 
@@ -37,12 +36,17 @@ open class Page(
             _progressFlow.value = value
         }
 
-    override fun update(bytesRead: Long, contentLength: Long, done: Boolean) {
-        progress = if (contentLength > 0) {
-            (100 * bytesRead / contentLength).toInt()
-        } else {
-            -1
-        }
+    override fun update(
+        bytesRead: Long,
+        contentLength: Long,
+        done: Boolean,
+    ) {
+        progress =
+            if (contentLength > 0) {
+                (100 * bytesRead / contentLength).toInt()
+            } else {
+                -1
+            }
     }
 
     enum class State {
@@ -55,5 +59,9 @@ open class Page(
 }
 
 interface ProgressListener {
-    fun update(bytesRead: Long, contentLength: Long, done: Boolean)
+    fun update(
+        bytesRead: Long,
+        contentLength: Long,
+        done: Boolean,
+    )
 }

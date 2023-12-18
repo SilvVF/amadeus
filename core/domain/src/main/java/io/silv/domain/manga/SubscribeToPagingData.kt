@@ -18,31 +18,28 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-
 class SubscribeToPagingData(
     private val pagingFactory: MangaPagingSourceFactory,
     private val savedMangaRepository: SavedMangaRepository,
 ) {
-
     operator fun invoke(
         config: PagingConfig,
         typeFlow: Flow<PagedType>,
-        scope: CoroutineScope
+        scope: CoroutineScope,
     ): StateFlow<Flow<PagingData<SavableManga>>> {
         return typeFlow.distinctUntilChanged()
             .map { type ->
                 combine(
                     pagingFactory.pager(config, type).flow.cachedIn(scope),
-                    savedMangaRepository.observeSavedMangaList()
+                    savedMangaRepository.observeSavedMangaList(),
                 ) { pagingData, saved ->
-                        pagingData.map { manga ->
-                           saved.find { it.id == manga.id }
-                               ?.let(::SavableManga)
-                               ?: SavableManga(manga)
-                        }
+                    pagingData.map { manga ->
+                        saved.find { it.id == manga.id }
+                            ?.let(::SavableManga)
+                            ?: SavableManga(manga)
                     }
+                }
                     .cachedIn(scope)
-
             }
             .stateIn(scope, SharingStarted.Lazily, emptyFlow())
     }

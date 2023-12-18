@@ -13,12 +13,12 @@ import androidx.compose.ui.unit.DpSize
 
 fun LazyGridScope.header(
     key: Any? = null,
-    content: @Composable LazyGridItemScope.() -> Unit
+    content: @Composable LazyGridItemScope.() -> Unit,
 ) {
     item(
         key = key,
         span = { GridItemSpan(this.maxLineSpan) },
-        content = content
+        content = content,
     )
 }
 
@@ -28,21 +28,22 @@ fun Modifier.vertical() =
         layout(placeable.height, placeable.width) {
             placeable.place(
                 x = -(placeable.width / 2 - placeable.height / 2),
-                y = -(placeable.height / 2 - placeable.width / 2)
+                y = -(placeable.height / 2 - placeable.width / 2),
             )
         }
     }
 
-fun Modifier.getSize(onChange: (DpSize) -> Unit) = composed {
-    val density = LocalDensity.current
-    onGloballyPositioned {
-        with(density) {
-            onChange(
-                DpSize(
-                    width = it.size.width.toDp(),
-                    height = it.size.height.toDp()
+fun Modifier.getSize(onChange: (DpSize) -> Unit) =
+    composed {
+        val density = LocalDensity.current
+        onGloballyPositioned {
+            with(density) {
+                onChange(
+                    DpSize(
+                        width = it.size.width.toDp(),
+                        height = it.size.height.toDp(),
+                    ),
                 )
-            )
+            }
         }
     }
-}

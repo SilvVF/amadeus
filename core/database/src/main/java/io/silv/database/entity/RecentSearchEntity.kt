@@ -6,9 +6,7 @@ import kotlinx.datetime.Instant
 
 @Entity
 data class RecentSearchEntity(
-
     @PrimaryKey
     val query: String,
-
     val queriedDate: Instant,
 )

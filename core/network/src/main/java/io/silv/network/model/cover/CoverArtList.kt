@@ -1,6 +1,5 @@
 package io.silv.network.model.cover
 
-
 import io.silv.network.model.common.Relationship
 import kotlinx.serialization.Serializable
 
@@ -15,18 +14,18 @@ data class CoverArtListResponse(
 )
 
 //
-//@Serializable
-//data class CoverResponse(
+// @Serializable
+// data class CoverResponse(
 //    val result: String = "",
 //    val response: String = "",
 //    val data: Cover
-//)
+// )
 
 @Serializable
 data class Cover(
     val id: String = "",
     val type: String = "",
-    val attributes: CoverAttributes
+    val attributes: CoverAttributes,
 )
 
 @Serializable
@@ -38,5 +37,5 @@ data class CoverAttributes(
     val version: Int = 0,
     val createdAt: String = "",
     val updatedAt: String = "",
-    val relationships: List<Relationship> = emptyList()
+    val relationships: List<Relationship> = emptyList(),
 )

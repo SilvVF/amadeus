@@ -84,24 +84,22 @@ class MangaFilterScreen(
     private val tag: String,
     private val tagId: String,
 ) : Screen {
-
     override val key: ScreenKey
         get() = super.key + tag + tagId
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
     @Composable
     override fun Content() {
-
         val sm = getScreenModel<MangaFilterScreenModel> { parametersOf(tagId) }
         val navigator = LocalNavigator.currentOrThrow
         val space = LocalSpacing.current
         val timePeriod by sm.timePeriod.collectAsStateWithLifecycle()
         val yearlyItemsState = sm.state.collectAsStateWithLifecycle().value
-        
 
-        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
-            state = rememberTopAppBarState()
-        )
+        val scrollBehavior =
+            TopAppBarDefaults.enterAlwaysScrollBehavior(
+                state = rememberTopAppBarState(),
+            )
         val timePeriodPager by sm.timePeriodFilteredPagingFlow.collectAsStateWithLifecycle()
         val timePeriodItems = timePeriodPager.collectAsLazyPagingItems()
 
@@ -113,47 +111,50 @@ class MangaFilterScreen(
                     navigationIcon = {
                         IconButton(
                             onClick = { navigator.pop() },
-                            modifier = Modifier.padding(space.small)
+                            modifier = Modifier.padding(space.small),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.ArrowBack,
-                                contentDescription = null
+                                contentDescription = null,
                             )
                         }
                     },
                     title = {
                         Text(tag)
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
+                    colors =
+                    TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
                         scrolledContainerColor = Color.Transparent,
-                    )
+                    ),
                 )
-            }
+            },
         ) { paddingValues ->
             LazyVerticalGrid(
                 modifier = Modifier.fillMaxSize(),
                 columns = GridCells.Fixed(2),
-                contentPadding = paddingValues
+                contentPadding = paddingValues,
             ) {
                 item(
                     key = "time-period-tags",
-                    span = { GridItemSpan(maxLineSpan) }
+                    span = { GridItemSpan(maxLineSpan) },
                 ) {
                     Column {
                         Text(
                             "$tag trending this year",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold
+                            style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
                             ),
-                            modifier = Modifier.padding(space.large)
+                            modifier = Modifier.padding(space.large),
                         )
                         when (yearlyItemsState) {
-                            YearlyFilteredUiState.Loading -> AnimatedBoxShimmer(
-                                Modifier
-                                    .height(240.dp)
-                                    .fillMaxWidth()
-                            )
+                            YearlyFilteredUiState.Loading ->
+                                AnimatedBoxShimmer(
+                                    Modifier
+                                        .height(240.dp)
+                                        .fillMaxWidth(),
+                                )
                             is YearlyFilteredUiState.Success -> {
                                 YearlyMangaPager(
                                     mangaList = yearlyItemsState.resources,
@@ -163,14 +164,14 @@ class MangaFilterScreen(
                                         if (id != tagId) {
                                             navigator.replace(SharedScreen.MangaFilter(name, id))
                                         }
-                                    }
+                                    },
                                 )
                             }
                         }
                         Text(
                             text = "Popularity",
                             style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.padding(space.med)
+                            modifier = Modifier.padding(space.med),
                         )
                         FlowRow {
                             listOf(
@@ -178,7 +179,7 @@ class MangaFilterScreen(
                                 "last 6 months" to TimePeriod.SixMonths,
                                 "last 3 months" to TimePeriod.ThreeMonths,
                                 "last month" to TimePeriod.LastMonth,
-                                "last week" to TimePeriod.OneWeek
+                                "last week" to TimePeriod.OneWeek,
                             ).forEach { (text, time) ->
                                 ElevatedFilterChip(
                                     selected = time == timePeriod,
@@ -186,7 +187,7 @@ class MangaFilterScreen(
                                     label = {
                                         Text(text = text)
                                     },
-                                    modifier = Modifier.padding(space.small)
+                                    modifier = Modifier.padding(space.small),
                                 )
                             }
                         }
@@ -202,7 +203,7 @@ class MangaFilterScreen(
                     items(
                         count = timePeriodItems.itemCount,
                         key = timePeriodItems.itemKey(),
-                        contentType = timePeriodItems.itemContentType()
+                        contentType = timePeriodItems.itemContentType(),
                     ) { i ->
 
                         val manga = timePeriodItems[i]
@@ -210,7 +211,8 @@ class MangaFilterScreen(
                         manga?.let {
                             MangaListItem(
                                 manga = manga,
-                                modifier = Modifier
+                                modifier =
+                                Modifier
                                     .padding(space.small)
                                     .aspectRatio(2f / 3f)
                                     .clickable {
@@ -223,14 +225,14 @@ class MangaFilterScreen(
                                 },
                                 onBookmarkClick = {
                                     sm.bookmarkManga(manga.id)
-                                }
+                                },
                             )
                         }
                     }
                     if (timePeriodItems.loadState.append == LoadState.Loading) {
                         item(
                             key = "append-loading",
-                            span = { GridItemSpan(maxLineSpan) }
+                            span = { GridItemSpan(maxLineSpan) },
                         ) {
                             CenterBox(Modifier.fillMaxWidth()) {
                                 CircularProgressIndicator()
@@ -239,13 +241,13 @@ class MangaFilterScreen(
                     }
                     if (timePeriodItems.loadState.append is LoadState.Error || timePeriodItems.loadState.refresh is LoadState.Error) {
                         item(
-                            key = "retry-loading"
+                            key = "retry-loading",
                         ) {
                             CenterBox(
-                                Modifier.fillMaxWidth()
+                                Modifier.fillMaxWidth(),
                             ) {
                                 Button(
-                                    onClick = { timePeriodItems.retry() }
+                                    onClick = { timePeriodItems.retry() },
                                 ) {
                                     Text("Retry loading items")
                                 }
@@ -268,33 +270,36 @@ fun YearlyMangaPager(
 ) {
     val space = LocalSpacing.current
 
-    val pagerState = rememberPagerState(
-        initialPage = 0,
-        initialPageOffsetFraction = 0f,
-        pageCount = {
-            mangaList.size
-        }
-    )
+    val pagerState =
+        rememberPagerState(
+            initialPage = 0,
+            initialPageOffsetFraction = 0f,
+            pageCount = {
+                mangaList.size
+            },
+        )
     val scope = rememberCoroutineScope()
 
     HorizontalPager(
         state = pagerState,
-        modifier = Modifier
+        modifier =
+        Modifier
             .height(240.dp)
-            .fillMaxWidth()
+            .fillMaxWidth(),
     ) { page ->
 
         val manga by mangaList[page].collectAsStateWithLifecycle()
 
         BlurImageBackground(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(0.9f)
                 .clip(RoundedCornerShape(12.dp))
                 .clickable {
                     onMangaClick(manga)
                 },
-            url = manga.coverArt
+            url = manga.coverArt,
         ) {
             Column {
                 Row(
@@ -303,35 +308,37 @@ fun YearlyMangaPager(
                         .height(230.dp)
                         .padding(space.med),
                     verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.Start
+                    horizontalArrangement = Arrangement.Start,
                 ) {
                     CenterBox(Modifier.height(230.dp)) {
                         AsyncImage(
                             model = manga,
                             contentDescription = null,
                             contentScale = ContentScale.Inside,
-                            modifier = Modifier
-                                .fillMaxWidth(0.4f)
+                            modifier =
+                            Modifier
+                                .fillMaxWidth(0.4f),
                         )
                     }
                     Spacer(modifier = Modifier.width(space.med))
                     Column(
                         Modifier.weight(1f),
                         verticalArrangement = Arrangement.Bottom,
-                        horizontalAlignment = Alignment.Start
+                        horizontalAlignment = Alignment.Start,
                     ) {
                         Text(
                             text = manga.titleEnglish,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                color = MaterialTheme.colorScheme.onBackground
+                            style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.onBackground,
                             ),
                             maxLines = 2,
                             fontSize = 20.sp,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                         TranslatedLanguageTags(
                             tags = manga.availableTranslatedLanguages,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                         MangaGenreTags(
                             tags = manga.tags,
@@ -340,47 +347,52 @@ fun YearlyMangaPager(
                                 manga.tagToId[name]?.let {
                                     onTagClick(name, it)
                                 }
-                            }
+                            },
                         )
                         Column(
                             Modifier.weight(1f),
                             verticalArrangement = Arrangement.Bottom,
-                            horizontalAlignment = Alignment.End
+                            horizontalAlignment = Alignment.End,
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Start,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
                             ) {
                                 IconButton(onClick = { onBookmarkClick(manga) }) {
                                     Icon(
-                                        imageVector = if (manga.inLibrary)
+                                        imageVector =
+                                        if (manga.inLibrary) {
                                             Icons.Filled.Favorite
-                                        else
-                                            Icons.Outlined.FavoriteBorder,
+                                        } else {
+                                            Icons.Outlined.FavoriteBorder
+                                        },
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onBackground
+                                        tint = MaterialTheme.colorScheme.onBackground,
                                     )
                                 }
                                 Text(
-                                    text = if (manga.inLibrary)
+                                    text =
+                                    if (manga.inLibrary) {
                                         "In library"
-                                    else
-                                        "Add to library",
-                                    color = MaterialTheme.colorScheme.onBackground
+                                    } else {
+                                        "Add to library"
+                                    },
+                                    color = MaterialTheme.colorScheme.onBackground,
                                 )
                             }
                             Row(
                                 Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.End
+                                horizontalArrangement = Arrangement.End,
                             ) {
                                 Text(
                                     text = "NO.${page + 1}",
-                                    style = MaterialTheme.typography.labelLarge.copy(
+                                    style =
+                                    MaterialTheme.typography.labelLarge.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onBackground
-                                    )
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                    ),
                                 )
                                 IconButton(
                                     onClick = {
@@ -392,7 +404,7 @@ fun YearlyMangaPager(
                                     Icon(
                                         imageVector = Icons.Filled.KeyboardArrowLeft,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onBackground
+                                        tint = MaterialTheme.colorScheme.onBackground,
                                     )
                                 }
                                 IconButton(
@@ -400,12 +412,12 @@ fun YearlyMangaPager(
                                         scope.launch {
                                             pagerState.animateScrollToPage(page + 1)
                                         }
-                                    }
+                                    },
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.KeyboardArrowRight,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onBackground
+                                        tint = MaterialTheme.colorScheme.onBackground,
                                     )
                                 }
                             }

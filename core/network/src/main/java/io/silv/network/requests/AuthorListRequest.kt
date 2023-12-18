@@ -8,9 +8,8 @@ data class AuthorListRequest(
     val offset: Int = 0,
     val ids: List<String>? = null,
     val name: String? = null,
-    val order: Map<String, String>? = null
-): QueryParams {
-
+    val order: Map<String, String>? = null,
+) : QueryParams {
     override fun createQueryParams(): List<QueryParam> {
         return listOf(
             Pair("limit", limit),

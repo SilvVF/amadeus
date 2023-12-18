@@ -77,12 +77,12 @@ import io.silv.ui.CenterBox
 import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.isLight
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.math.ceil
 import kotlin.math.roundToInt
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -96,13 +96,14 @@ fun SeasonalMangaPager(
     val scope = rememberCoroutineScope()
     val space = LocalSpacing.current
 
-    val pagerState = rememberPagerState(
-        initialPage = 0,
-        initialPageOffsetFraction = 0f,
-        pageCount = {
-            mangaList.size
-        }
-    )
+    val pagerState =
+        rememberPagerState(
+            initialPage = 0,
+            initialPageOffsetFraction = 0f,
+            pageCount = {
+                mangaList.size
+            },
+        )
 
     val onFirstPage by remember {
         derivedStateOf { pagerState.currentPage == 0 }
@@ -116,47 +117,48 @@ fun SeasonalMangaPager(
         scope.launch {
             pagerState.animateScrollToPage(
                 page,
-                animationSpec = tween(500, easing = LinearOutSlowInEasing)
+                animationSpec = tween(500, easing = LinearOutSlowInEasing),
             )
         }
     }
 
     Column {
         Row(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .wrapContentHeight()
                 .fillMaxWidth()
                 .padding(space.xs),
             horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(
                 enabled = !onFirstPage,
                 onClick = {
                     animateScrollToPage(0)
-                }
+                },
             ) {
                 Icon(
                     modifier = Modifier.size(18.dp),
                     imageVector = Icons.Filled.ArrowBackIosNew,
-                    contentDescription = "Arrow Back"
+                    contentDescription = "Arrow Back",
                 )
             }
             AnimatedPageNumber(
                 modifier = Modifier.weight(1f),
                 otherPager = pagerState,
-                onPageNumClick = ::animateScrollToPage
+                onPageNumClick = ::animateScrollToPage,
             )
             IconButton(
                 enabled = !onLastPage,
                 onClick = {
                     animateScrollToPage(pagerState.pageCount)
-                }
+                },
             ) {
                 Icon(
                     modifier = Modifier.size(18.dp),
                     imageVector = Icons.Filled.ArrowForwardIos,
-                    contentDescription = "Arrow Forward"
+                    contentDescription = "Arrow Forward",
                 )
             }
         }
@@ -165,7 +167,7 @@ fun SeasonalMangaPager(
             modifier = modifier,
             contentPadding = PaddingValues(space.small),
             pageSpacing = space.small,
-            beyondBoundsPageCount = 2
+            beyondBoundsPageCount = 2,
         ) { page ->
 
             val manga by mangaList[page].collectAsStateWithLifecycle()
@@ -184,7 +186,7 @@ fun SeasonalMangaPager(
                 },
                 onClick = {
                     onMangaClick(manga)
-                }
+                },
             )
         }
     }
@@ -197,13 +199,17 @@ fun AnimatedPageNumber(
     otherPager: PagerState,
     onPageNumClick: (Int) -> Unit,
 ) {
-    val state = rememberPagerState {
-        otherPager.pageCount
-    }
+    val state =
+        rememberPagerState {
+            otherPager.pageCount
+        }
 
     LaunchedEffect(Unit) {
         snapshotFlow { otherPager.currentPage }.collect {
-            state.animateScrollToPage(it, animationSpec = tween(500, easing = LinearOutSlowInEasing))
+            state.animateScrollToPage(
+                it,
+                animationSpec = tween(500, easing = LinearOutSlowInEasing)
+            )
         }
     }
 
@@ -211,15 +217,16 @@ fun AnimatedPageNumber(
     val offset = pageSize.pageSize / 2
 
     BoxWithConstraints(
-        modifier = modifier
+        modifier = modifier,
     ) {
         HorizontalPager(
             state = state,
             userScrollEnabled = false,
             pageSize = pageSize,
-            contentPadding = PaddingValues(
-                horizontal = (maxWidth / 2f) - offset
-            )
+            contentPadding =
+            PaddingValues(
+                horizontal = (maxWidth / 2f) - offset,
+            ),
         ) { page ->
             CenterBox(
                 Modifier
@@ -227,24 +234,28 @@ fun AnimatedPageNumber(
                     .clip(CircleShape)
                     .clickable { onPageNumClick(page) }
                     .graphicsLayer {
-                        val pageOffset = ((otherPager.currentPage - page) + otherPager
-                            .currentPageOffsetFraction
+                        val pageOffset =
+                            (
+                                (otherPager.currentPage - page) +
+                                    otherPager
+                                        .currentPageOffsetFraction
                                 ).absoluteValue
-                        val interpolation = lerp(
-                            start = 0.7f,
-                            stop = 1f,
-                            fraction = 1f - pageOffset.coerceIn(0f, 1f)
-                        )
+                        val interpolation =
+                            lerp(
+                                start = 0.7f,
+                                stop = 1f,
+                                fraction = 1f - pageOffset.coerceIn(0f, 1f),
+                            )
                         scaleX = interpolation
                         scaleY = interpolation
                         alpha = interpolation
-                    }
+                    },
             ) {
-                val num  = remember(page) { (page + 1).toString() }
+                val num = remember(page) { (page + 1).toString() }
 
                 Text(
                     text = num,
-                    style = MaterialTheme.typography.labelSmall
+                    style = MaterialTheme.typography.labelSmall,
                 )
             }
         }
@@ -272,23 +283,26 @@ fun SeasonalPagingCard(
 
     LaunchedEffect(Unit) {
         try {
-            val req = ImageRequest.Builder(context)
-                .data(manga)
-                .allowHardware(false) // Disable hardware bitmaps Palette cant get pixels
-                .build()
+            val req =
+                ImageRequest.Builder(context)
+                    .data(manga)
+                    .allowHardware(false) // Disable hardware bitmaps Palette cant get pixels
+                    .build()
 
             val result = (imageLoader.execute(req) as SuccessResult).drawable
             val bitmap = (result as BitmapDrawable).bitmap
             val palette = Palette.from(bitmap).generate()
 
-            val dominantColorInt = palette
-                .getDominantColor(dominantColor.toArgb())
+            val dominantColorInt =
+                palette
+                    .getDominantColor(dominantColor.toArgb())
 
-            val vibrantColorInt = if (!bg.isLight()) {
-                palette.getLightVibrantColor(vibrantColor.toArgb())
-            } else {
-                palette.getDarkVibrantColor(vibrantColor.toArgb())
-            }
+            val vibrantColorInt =
+                if (!bg.isLight()) {
+                    palette.getLightVibrantColor(vibrantColor.toArgb())
+                } else {
+                    palette.getDarkVibrantColor(vibrantColor.toArgb())
+                }
 
             dominantColor = Color(dominantColorInt)
             vibrantColor = Color(vibrantColorInt)
@@ -297,60 +311,70 @@ fun SeasonalPagingCard(
         }
     }
     Card(
-        modifier = Modifier
+        modifier =
+        Modifier
             .fillMaxSize()
             .graphicsLayer {
                 // Calculate the absolute offset for the current page from the
                 // scroll position. We use the absolute value which allows us to mirror
                 // any effects for both directions
-                val pageOffset = (
-                        (pagerState.currentPage - page) + pagerState
-                            .currentPageOffsetFraction
+                val pageOffset =
+                    (
+                        (pagerState.currentPage - page) +
+                            pagerState
+                                .currentPageOffsetFraction
                         ).absoluteValue
 
-                scaleX = lerp(
-                    start = 0.8f,
-                    stop = 1f,
-                    fraction = 1f - pageOffset.coerceIn(0f, 1f)
-                )
-                scaleY = lerp(
-                    start = 0.8f,
-                    stop = 1f,
-                    fraction = 1f - pageOffset.coerceIn(0f, 1f)
-                )
+                scaleX =
+                    lerp(
+                        start = 0.8f,
+                        stop = 1f,
+                        fraction = 1f - pageOffset.coerceIn(0f, 1f),
+                    )
+                scaleY =
+                    lerp(
+                        start = 0.8f,
+                        stop = 1f,
+                        fraction = 1f - pageOffset.coerceIn(0f, 1f),
+                    )
                 // We animate the alpha, between 50% and 100%
-                alpha = lerp(
-                    start = 0.5f,
-                    stop = 1f,
-                    fraction = 1f - pageOffset.coerceIn(0f, 1f)
-                )
+                alpha =
+                    lerp(
+                        start = 0.5f,
+                        stop = 1f,
+                        fraction = 1f - pageOffset.coerceIn(0f, 1f),
+                    )
             },
-        colors = CardDefaults.outlinedCardColors(
+        colors =
+        CardDefaults.outlinedCardColors(
             contentColor = vibrantColor,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
         ),
-        onClick = onClick
+        onClick = onClick,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
+            modifier =
+            Modifier
                 .fillMaxSize()
-                .padding(space.med)
+                .padding(space.med),
         ) {
             AsyncImage(
                 model = manga,
                 contentDescription = null,
                 contentScale = ContentScale.Inside,
-                modifier = Modifier
+                modifier =
+                Modifier
                     .fillMaxHeight(0.9f)
-                    .fillMaxWidth(0.4f)
+                    .fillMaxWidth(0.4f),
             )
             Spacer(modifier = Modifier.width(space.med))
             Column(
                 verticalArrangement = Arrangement.Top,
-                modifier = Modifier
+                modifier =
+                Modifier
                     .fillMaxHeight(0.9f)
-                    .weight(1f)
+                    .weight(1f),
             ) {
                 val textColor = vibrantColor
 
@@ -358,22 +382,25 @@ fun SeasonalPagingCard(
                     text = manga.titleEnglish,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        color = vibrantColor
-                    )
+                    style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        color = vibrantColor,
+                    ),
                 )
                 Text(
                     text = manga.alternateTitles.getOrDefault("ja-ro", ""),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = vibrantColor
-                    )
+                    style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        color = vibrantColor,
+                    ),
                 )
-                TranslatedLanguageTags(tags = manga.availableTranslatedLanguages,)
+                TranslatedLanguageTags(tags = manga.availableTranslatedLanguages)
                 Box(modifier = Modifier.weight(1f)) {
                     TagsGridWithBookMark(
-                        modifier = Modifier
+                        modifier =
+                        Modifier
                             .fillMaxWidth()
                             .align(Alignment.BottomCenter),
                         tags = remember(manga) { manga.tagToId.map { it.key } },
@@ -381,7 +408,7 @@ fun SeasonalPagingCard(
                         onBookmarkClick = onBookmarkClick,
                         onTagClick = onTagClick,
                         textColor = textColor,
-                        iconTint = textColor
+                        iconTint = textColor,
                     )
                 }
             }
@@ -398,25 +425,28 @@ fun TagsGridWithBookMark(
     onBookmarkClick: () -> Unit,
     onTagClick: (tag: String) -> Unit = {},
     iconTint: Color = LocalContentColor.current,
-    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
+    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     val space = LocalSpacing.current
 
     Row(
         modifier.horizontalScroll(rememberScrollState()),
-        verticalAlignment = Alignment.CenterVertically
-    ){
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         IconButton(onClick = onBookmarkClick) {
-            if (bookmarked) Icon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = null,
-                tint = iconTint
-            )
-            else Icon(
-                imageVector = Icons.Outlined.FavoriteBorder,
-                contentDescription = null,
-                tint = iconTint
-            )
+            if (bookmarked) {
+                Icon(
+                    imageVector = Icons.Filled.Favorite,
+                    contentDescription = null,
+                    tint = iconTint,
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Outlined.FavoriteBorder,
+                    contentDescription = null,
+                    tint = iconTint,
+                )
+            }
         }
         CenterBox(Modifier.fillMaxHeight()) {
             FlowRow(
@@ -427,20 +457,22 @@ fun TagsGridWithBookMark(
                     SuggestionChip(
                         onClick = { onTagClick(tag) },
                         label = { Text(tag) },
-                        colors = SuggestionChipDefaults.suggestionChipColors(
+                        colors =
+                        SuggestionChipDefaults.suggestionChipColors(
                             labelColor = textColor,
                             disabledLabelColor = textColor,
                         ),
-                        border = SuggestionChipDefaults.suggestionChipBorder(
-                            borderColor = textColor
+                        border =
+                        SuggestionChipDefaults.suggestionChipBorder(
+                            borderColor = textColor,
                         ),
-                        modifier = Modifier
+                        modifier =
+                        Modifier
                             .padding(horizontal = space.xs)
-                            .heightIn(0.dp, SuggestionChipDefaults.Height)
+                            .heightIn(0.dp, SuggestionChipDefaults.Height),
                     )
                 }
             }
         }
     }
 }
-

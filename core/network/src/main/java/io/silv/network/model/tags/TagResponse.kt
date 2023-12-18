@@ -1,6 +1,5 @@
 package io.silv.network.model.tags
 
-
 import io.silv.network.model.LocalizedString
 import kotlinx.serialization.Serializable
 
@@ -11,15 +10,14 @@ data class TagResponse(
     val data: List<Tag>,
     val limit: Int,
     val offset: Int,
-    val total: Int
+    val total: Int,
 ) {
-
     @Serializable
     data class Tag(
         val id: String,
         val type: String,
         val attributes: TagAttributes,
-        val relationships: List<Relationship>
+        val relationships: List<Relationship>,
     ) {
         @Serializable
         data class TagAttributes(

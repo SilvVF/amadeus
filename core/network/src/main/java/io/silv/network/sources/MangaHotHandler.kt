@@ -1,4 +1,4 @@
-package io.silv.network.image_sources
+package io.silv.network.sources
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -9,9 +9,8 @@ import okhttp3.Request
 import okhttp3.Response
 
 internal class MangaHotHandler(
-    private val client: OkHttpClient
-): ImageSource() {
-
+    private val client: OkHttpClient,
+) : ImageSource() {
     private val baseUrl = "https://mangahot.jp"
     private val apiUrl = "https://api.mangahot.jp"
 
@@ -25,16 +24,18 @@ internal class MangaHotHandler(
     }
 
     override suspend fun fetchImageUrls(externalUrl: String): List<String> {
-        val url = externalUrl.substringBefore("?").replace(baseUrl, apiUrl)
-            .replace("viewer", "v1/works/storyDetail")
+        val url =
+            externalUrl.substringBefore("?").replace(baseUrl, apiUrl)
+                .replace("viewer", "v1/works/storyDetail")
 
-        val request = Request.Builder()
-            .headers(headers)
-            .url(url)
-            .build()
+        val request =
+            Request.Builder()
+                .headers(headers)
+                .url(url)
+                .build()
 
         return pageListParse(
-            client.newCall(request).execute()
+            client.newCall(request).execute(),
         )
     }
 }

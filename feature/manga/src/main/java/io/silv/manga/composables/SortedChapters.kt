@@ -9,14 +9,13 @@ class SortedChapters(
     val sortBy: SortBy,
     private val onSortByChange: (SortBy) -> Unit,
 ) {
-
     enum class SortBy { Asc, Dsc }
 
     val sortedChapters by derivedStateOf {
         if (sortBy == SortBy.Asc) {
             chapters.sortedBy { it.chapter }
         } else {
-            chapters.sortedByDescending { it.chapter}
+            chapters.sortedByDescending { it.chapter }
         }
     }
 
@@ -31,7 +30,10 @@ class SortedChapters(
         } else {
             buildMap {
                 grouped.keys.sortedDescending().forEach {
-                    put(it, (grouped[it]?.sortedByDescending { it.chapter } ?: emptyList<SavableChapter>()))
+                    put(
+                        it,
+                        (grouped[it]?.sortedByDescending { it.chapter } ?: emptyList<SavableChapter>())
+                    )
                 }
             }
         }
@@ -42,8 +44,10 @@ class SortedChapters(
     }
 
     fun sortByOpposite() {
-        if (sortBy == SortBy.Asc) sortBy(SortBy.Dsc)
-        else sortBy(SortBy.Asc)
+        if (sortBy == SortBy.Asc) {
+            sortBy(SortBy.Dsc)
+        } else {
+            sortBy(SortBy.Asc)
+        }
     }
 }
-

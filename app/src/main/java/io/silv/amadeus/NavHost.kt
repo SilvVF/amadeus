@@ -38,20 +38,16 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-
-object NavHost: Screen {
-
+object NavHost : Screen {
     internal val bottomBarVisibility = Channel<Boolean>()
 
     @Composable
     override fun Content() {
-
         val appState = LocalAppState.current
 
         val visibilityChannel by produceState(initialValue = true) {
             bottomBarVisibility.receiveAsFlow().onEach { value = it }.collect()
         }
-
 
         TabNavigator(
             tab = ExploreTab,
@@ -63,13 +59,13 @@ object NavHost: Screen {
                     AnimatedVisibility(
                         visible = appState.shouldShowBottomBar && visibilityChannel,
                         enter = slideInVertically { it },
-                        exit = slideOutVertically { it }
+                        exit = slideOutVertically { it },
                     ) {
                         AmadeusBottomBar(
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
-                }
+                },
             ) { incoming ->
                 Row {
                     if (appState.shouldShowNavRail && visibilityChannel) {
@@ -78,7 +74,7 @@ object NavHost: Screen {
                     Box(
                         Modifier
                             .padding(incoming)
-                            .consumeWindowInsets(incoming)
+                            .consumeWindowInsets(incoming),
                     ) {
                         CurrentTab()
                     }
@@ -89,9 +85,7 @@ object NavHost: Screen {
 }
 
 @Composable
-fun AmadeusBottomBar(
-    modifier: Modifier = Modifier,
-) {
+fun AmadeusBottomBar(modifier: Modifier = Modifier) {
     BottomAppBar(modifier) {
         TabNavigationItem(ExploreTab)
         TabNavigationItem(LibraryTab)
@@ -101,7 +95,7 @@ fun AmadeusBottomBar(
 @Composable
 fun AmadeusNavRail(
     modifier: Modifier = Modifier,
-    visible: Boolean = true
+    visible: Boolean = true,
 ) {
     AnimatedVisibility(visible = visible) {
         NavigationRail(modifier) {
@@ -113,7 +107,6 @@ fun AmadeusNavRail(
 
 @Composable
 private fun TabNavigationItem(tab: ReselectTab) {
-
     val tabNavigator = LocalTabNavigator.current
     val selected = tabNavigator.current == tab
     val scope = rememberCoroutineScope()
@@ -136,8 +129,9 @@ private fun TabNavigationItem(tab: ReselectTab) {
         },
         icon = {
             Icon(
-            painter = tab.options.icon ?: return@NavigationRailItem,
-            contentDescription = tab.options.title)
-        }
+                painter = tab.options.icon ?: return@NavigationRailItem,
+                contentDescription = tab.options.title,
+            )
+        },
     )
 }

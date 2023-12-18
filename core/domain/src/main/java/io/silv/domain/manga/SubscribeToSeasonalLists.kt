@@ -12,28 +12,29 @@ import kotlinx.coroutines.flow.stateIn
 
 class SubscribeToSeasonalLists(
     private val seasonalRepository: SeasonalMangaRepository,
-    private val savedMangaRepository: SavedMangaRepository
+    private val savedMangaRepository: SavedMangaRepository,
 ) {
+    fun getLists(scope: CoroutineScope) =
+        seasonalRepository.getSeasonalLists().map { lists ->
+            lists.map { (list, mangas) ->
 
-    fun getLists(scope: CoroutineScope) = seasonalRepository.getSeasonalLists().map { lists ->
-        lists.map { (list, mangas) ->
-
-            DomainSeasonalList(
-                id = list.id,
-                season = list.season,
-                year = list.year,
-                mangas = mangas.map { sourceManga ->
-                    savedMangaRepository.observeSavedMangaById(sourceManga.id).map { saved ->
-                        saved?.let(::SavableManga) ?: SavableManga(sourceManga)
+                DomainSeasonalList(
+                    id = list.id,
+                    season = list.season,
+                    year = list.year,
+                    mangas =
+                    mangas.map { sourceManga ->
+                        savedMangaRepository.observeSavedMangaById(sourceManga.id).map { saved ->
+                            saved?.let(::SavableManga) ?: SavableManga(sourceManga)
+                        }
+                            .stateIn(
+                                scope,
+                                SharingStarted.Lazily,
+                                SavableManga(sourceManga),
+                            )
                     }
-                        .stateIn(
-                            scope,
-                            SharingStarted.Lazily,
-                            SavableManga(sourceManga)
-                        )
-                }
-                    .toImmutableList()
-            )
+                        .toImmutableList(),
+                )
+            }
         }
-    }
 }

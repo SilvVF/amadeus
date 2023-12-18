@@ -5,21 +5,19 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class StatisticsByMangaIdResponse(
     val result: String,
-    val statistics: Map<String?, Stats>
+    val statistics: Map<String?, Stats>,
 ) {
-
     @Serializable
     data class Stats(
         val comments: Comments? = Comments(),
         val rating: Rating,
         val follows: Int,
     ) {
-
         @Serializable
         data class Rating(
             val average: Double?,
             val bayesian: Double,
-            val distribution: Map<String, Int>
+            val distribution: Map<String, Int>,
         )
 
         @Serializable

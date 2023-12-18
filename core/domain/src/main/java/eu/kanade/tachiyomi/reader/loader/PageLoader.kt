@@ -8,7 +8,6 @@ import eu.kanade.tachiyomi.reader.model.ReaderPage
  * method [recycle] is called.
  */
 abstract class PageLoader {
-
     /**
      * Whether this loader has been already recycled.
      */

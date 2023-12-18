@@ -9,6 +9,5 @@ package io.silv.network.requests.query
  */
 data class QueryParam(
     val name: String,
-    val value: String
+    val value: String,
 )
-

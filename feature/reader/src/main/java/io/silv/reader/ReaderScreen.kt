@@ -18,21 +18,21 @@ import org.koin.core.parameter.parametersOf
 
 class ReaderScreen(
     val mangaId: String,
-    val chapterId: String
-): Screen {
-
+    val chapterId: String,
+) : Screen {
     @Composable
     override fun Content() {
-
         val screenModel = getScreenModel<ReaderScreenModel> { parametersOf(mangaId, chapterId) }
 
         when (val state = screenModel.state.collectAsStateWithLifecycle().value) {
-            is ReaderState.Error -> CenterBox {
-                Text(state.reason)
-            }
-            ReaderState.Loading -> CenterBox(Modifier.fillMaxSize()) {
-                CircularProgressIndicator()
-            }
+            is ReaderState.Error ->
+                CenterBox {
+                    Text(state.reason)
+                }
+            ReaderState.Loading ->
+                CenterBox(Modifier.fillMaxSize()) {
+                    CircularProgressIndicator()
+                }
             is ReaderState.Success -> {
                 Chapter(chapter = state.chapter)
             }
@@ -41,10 +41,7 @@ class ReaderScreen(
 }
 
 @Composable
-fun Chapter(
-    chapter: ReaderChapter
-) {
-
+fun Chapter(chapter: ReaderChapter) {
     when (val chapterState = chapter.stateFlow.collectAsState().value) {
         is ReaderChapter.State.Error -> {
             Text("err")
@@ -54,7 +51,7 @@ fun Chapter(
                 items(chapterState.pages) {
                     AsyncImage(
                         model = it.imageUrl,
-                        contentDescription = null
+                        contentDescription = null,
                     )
                 }
             }
@@ -63,7 +60,6 @@ fun Chapter(
             Text("Loading")
         }
         ReaderChapter.State.Wait -> {
-
             Text("wait")
         }
     }

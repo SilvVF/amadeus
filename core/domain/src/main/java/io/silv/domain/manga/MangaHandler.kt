@@ -7,8 +7,8 @@ class MangaHandler(
     private val savedRepository: SavedMangaRepository,
     private val sourceRepository: SourceMangaRepository,
 ) {
-
-    suspend fun addOrRemoveFromLibrary(id: String) = runCatching {
-        savedRepository.addOrRemoveFromLibrary(id)
-    }
+    suspend fun addOrRemoveFromLibrary(id: String) =
+        runCatching {
+            savedRepository.addOrRemoveFromLibrary(id)
+        }
 }

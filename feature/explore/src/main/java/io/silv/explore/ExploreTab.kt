@@ -19,8 +19,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 
-object ExploreTab: ReselectTab {
-
+object ExploreTab : ReselectTab {
     internal val reselectChannel = Channel<Unit>()
 
     override suspend fun onReselect(navigator: Navigator) {
@@ -44,7 +43,6 @@ object ExploreTab: ReselectTab {
     @OptIn(ExperimentalAnimationApi::class)
     @Composable
     override fun Content() {
-
         val appState = LocalAppState.current
 
         Navigator(ExploreScreen()) { navigator ->
@@ -64,6 +62,3 @@ object ExploreTab: ReselectTab {
         }
     }
 }
-
-
-

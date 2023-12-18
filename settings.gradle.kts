@@ -16,9 +16,10 @@ dependencyResolutionManagement {
     }
 }
 
+
+
 rootProject.name = ("amadeus")
 include(":app")
-include(":app:ktor-response-mapper")
 include(":core")
 include(":macrobenchmark")
 include(":core:network")

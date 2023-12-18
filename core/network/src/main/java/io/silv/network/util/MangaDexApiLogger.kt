@@ -6,9 +6,7 @@ import com.skydoves.sandwich.ktor.headers
 import com.skydoves.sandwich.ktor.statusCode
 import com.skydoves.sandwich.operators.ApiResponseSuspendOperator
 
-
-class MangaDexApiLogger<T>: ApiResponseSuspendOperator<T>() {
-
+class MangaDexApiLogger<T> : ApiResponseSuspendOperator<T>() {
     private val tag = "MangaDexApiLogger"
 
     override suspend fun onSuccess(apiResponse: ApiResponse.Success<T>) {
@@ -19,7 +17,7 @@ class MangaDexApiLogger<T>: ApiResponseSuspendOperator<T>() {
                 (apiResponse)
                 headers:${apiResponse.headers}, 
                 statusCode:${apiResponse.statusCode}
-                """
+                """,
         )
     }
 
@@ -28,6 +26,6 @@ class MangaDexApiLogger<T>: ApiResponseSuspendOperator<T>() {
     }
 
     override suspend fun onException(apiResponse: ApiResponse.Failure.Exception) {
-        Log.d(tag, "[onException](apiResponse=${apiResponse})")
+        Log.d(tag, "[onException](apiResponse=$apiResponse)")
     }
 }

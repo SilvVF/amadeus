@@ -1,6 +1,5 @@
 package io.silv.network.model.list
 
-
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -17,5 +16,5 @@ data class UserIdListResponse(
     @SerialName("result")
     val result: String,
     @SerialName("total")
-    val total: Int
+    val total: Int,
 )

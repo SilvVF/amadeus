@@ -14,29 +14,29 @@ import io.silv.manga.manga_view.MangaViewState
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 
-fun LazyListScope.volumePosterItems(
-    state: MangaViewState.Success
-) {
+fun LazyListScope.volumePosterItems(state: MangaViewState.Success) {
     items(
         items = state.volumeToArtList,
-        key = { item -> item.toString() }
+        key = { item -> item.toString() },
     ) { (_, url) ->
         val space = io.silv.ui.theme.LocalSpacing.current
-        val cover = remember(state.manga, url) {
-            MangaCover(
-                mangaId = state.manga.id,
-                url = url,
-                isMangaFavorite = state.manga.inLibrary,
-                lastModified = state.manga.updatedAt.toInstant(TimeZone.currentSystemDefault()).epochSeconds
-            )
-        }
+        val cover =
+            remember(state.manga, url) {
+                MangaCover(
+                    mangaId = state.manga.id,
+                    url = url,
+                    isMangaFavorite = state.manga.inLibrary,
+                    lastModified = state.manga.updatedAt.toInstant(TimeZone.currentSystemDefault()).epochSeconds,
+                )
+            }
         AsyncImage(
             model = cover,
             contentDescription = null,
-            modifier = Modifier
+            modifier =
+            Modifier
                 .height(300.dp)
                 .padding(space.med),
-            contentScale = ContentScale.Fit
+            contentScale = ContentScale.Fit,
         )
     }
 }

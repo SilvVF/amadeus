@@ -29,13 +29,12 @@ import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
         SeasonalListEntity::class,
         TagEntity::class,
         MangaUpdateEntity::class,
-        RecentSearchEntity::class
+        RecentSearchEntity::class,
     ],
     version = 3,
 )
 @TypeConverters(Converters::class)
-abstract class AmadeusDatabase: RoomDatabase() {
-
+abstract class AmadeusDatabase : RoomDatabase() {
     abstract fun chapterDao(): ChapterDao
 
     abstract fun savedMangaDao(): SavedMangaDao

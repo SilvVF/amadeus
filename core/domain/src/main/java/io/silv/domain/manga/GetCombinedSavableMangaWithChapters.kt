@@ -14,8 +14,8 @@ import kotlinx.coroutines.flow.conflate
 
 /**
  * Combines Saved manga with all resource repository's and transforms the manga received by id into a
- * flow of [SavableMangaWithChapters]. This contains all chapters with this mangaId as a foreign key.
- * If the manga is not found it will try to fetch it from the MangaDexApi and save it in memory.
+ * flow of [SavableMangaWithChapters]. also observes the chapter cache and
+ * refreshes on changes to download status.
  */
 class GetCombinedSavableMangaWithChapters(
     private val sourceMangaRepository: SourceMangaRepository,
@@ -23,19 +23,23 @@ class GetCombinedSavableMangaWithChapters(
     private val chapterInfoRepository: ChapterRepository,
     private val downloadManager: DownloadManager,
 ) {
-
     fun subscribe(id: String): Flow<SavableMangaWithChapters> {
         return combine(
             sourceMangaRepository.observeMangaById(id),
             savedMangaRepository.observeSavedMangaById(id),
             chapterInfoRepository.getChapters(id),
-            downloadManager.queueState
-        ) { source, saved, chapterInfo, queueState ->
+            downloadManager.cacheChanges,
+        ) { source, saved, chapterInfo, cacheChange ->
             SavableMangaWithChapters(
                 savableManga = saved?.let(::SavableManga) ?: source!!.let(::SavableManga),
-                chapters = chapterInfo.map(::SavableChapter).map {
+                chapters =
+                chapterInfo.map(::SavableChapter).map {
                     it.copy(
-                        downloaded = downloadManager.isChapterDownloaded(it.title, it.scanlator, saved?.title ?: source!!.title)
+                        downloaded = downloadManager.isChapterDownloaded(
+                            it.title,
+                            it.scanlator,
+                            saved?.title ?: source!!.title
+                        ),
                     )
                 }.toImmutableList(),
             )
@@ -43,9 +47,3 @@ class GetCombinedSavableMangaWithChapters(
             .conflate()
     }
 }
-
-
-
-
-
-

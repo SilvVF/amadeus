@@ -17,33 +17,43 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 
 @Composable
-fun BlurImageBackground(modifier: Modifier, url: String, content: @Composable () -> Unit = {}) {
+fun BlurImageBackground(
+    modifier: Modifier,
+    url: String,
+    content: @Composable () -> Unit = {},
+) {
     val context = LocalContext.current
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val screenHeight = LocalConfiguration.current.screenHeightDp
     Box(
-        modifier = modifier
+        modifier = modifier,
     ) {
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .blur(10.dp)
+        Box(
+            modifier =
+            Modifier
+                .fillMaxSize()
+                .blur(10.dp),
         ) {
             AsyncImage(
-                model = ImageRequest.Builder(context)
+                model =
+                ImageRequest.Builder(context)
                     .data(url)
                     .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
+                modifier =
+                Modifier
                     .width(screenWidth.dp)
-                    .height(screenHeight.dp)
+                    .height(screenHeight.dp),
             )
         }
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Color.Black.copy(alpha = 0.8f)
-            )
+        Box(
+            modifier =
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Color.Black.copy(alpha = 0.8f),
+                ),
         )
         content()
     }

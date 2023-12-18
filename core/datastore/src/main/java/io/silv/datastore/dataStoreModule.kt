@@ -6,13 +6,14 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 
-val dataStoreModule = module {
+val dataStoreModule =
+    module {
 
-    single { androidContext().dataStore }
+        single { androidContext().dataStore }
 
-    singleOf(::UserSettingsStoreImpl) withOptions {
-        bind<UserSettingsStore>()
+        singleOf(::UserSettingsStoreImpl) withOptions {
+            bind<UserSettingsStore>()
+        }
+
+        singleOf(::DownloadStore)
     }
-
-    singleOf(::DownloadStore)
-}

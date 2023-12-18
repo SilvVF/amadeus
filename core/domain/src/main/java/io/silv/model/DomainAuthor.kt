@@ -5,5 +5,5 @@ import androidx.compose.runtime.Stable
 @Stable
 data class DomainAuthor(
     val name: String,
-    val id: String
+    val id: String,
 )

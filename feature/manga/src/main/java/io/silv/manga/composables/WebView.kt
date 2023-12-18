@@ -13,17 +13,15 @@ import com.google.accompanist.web.rememberWebViewState
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun WebViewOverlay(
-    base: String,
-) {
-
+fun WebViewOverlay(base: String) {
     val webviewState = rememberWebViewState(url = base)
 
-
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .systemBarsPadding(),
-        contentAlignment = Alignment.Center
+    Box(
+        modifier =
+        Modifier
+            .fillMaxSize()
+            .systemBarsPadding(),
+        contentAlignment = Alignment.Center,
     ) {
         WebView(
             modifier = Modifier.fillMaxSize(),
@@ -35,7 +33,8 @@ fun WebViewOverlay(
                 webView.settings.blockNetworkLoads = false
                 webView.settings.loadsImagesAutomatically = true
                 webView.settings.userAgentString = "Mozilla"
-                webView.settings.domStorageEnabled = true },
+                webView.settings.domStorageEnabled = true
+            },
         )
         if (webviewState.isLoading) {
             CircularProgressIndicator()

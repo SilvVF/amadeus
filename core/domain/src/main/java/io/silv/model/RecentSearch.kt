@@ -6,5 +6,5 @@ import kotlinx.datetime.Instant
 @Stable
 data class RecentSearch(
     val query: String,
-    val date: Instant
+    val date: Instant,
 )

@@ -26,11 +26,14 @@ import io.silv.ui.layout.rememberPullRefreshState
 fun Modifier.pullRefresh(
     state: PullRefreshState,
     enabled: Boolean = true,
-) = inspectable(inspectorInfo = debugInspectorInfo {
-    name = "pullRefresh"
-    properties["state"] = state
-    properties["enabled"] = enabled
-}) {
+) = inspectable(
+    inspectorInfo =
+    debugInspectorInfo {
+        name = "pullRefresh"
+        properties["state"] = state
+        properties["enabled"] = enabled
+    },
+) {
     Modifier.pullRefresh(state::onPull, state::onRelease, enabled)
 }
 
@@ -38,14 +41,17 @@ fun Modifier.pullRefresh(
     onPull: (pullDelta: Float) -> Float,
     onRelease: suspend (flingVelocity: Float) -> Float,
     enabled: Boolean = true,
-) = inspectable(inspectorInfo = debugInspectorInfo {
-    name = "pullRefresh"
-    properties["onPull"] = onPull
-    properties["onRelease"] = onRelease
-    properties["enabled"] = enabled
-}) {
+) = inspectable(
+    inspectorInfo =
+    debugInspectorInfo {
+        name = "pullRefresh"
+        properties["onPull"] = onPull
+        properties["onRelease"] = onRelease
+        properties["enabled"] = enabled
+    },
+) {
     Modifier.nestedScroll(
-        PullRefreshNestedScrollConnection(onPull, onRelease, enabled)
+        PullRefreshNestedScrollConnection(onPull, onRelease, enabled),
     )
 }
 
@@ -54,25 +60,26 @@ private class PullRefreshNestedScrollConnection(
     private val onRelease: suspend (flingVelocity: Float) -> Float,
     private val enabled: Boolean,
 ) : NestedScrollConnection {
-
     override fun onPreScroll(
         available: Offset,
         source: NestedScrollSource,
-    ): Offset = when {
-        !enabled -> Offset.Zero
-        source == Drag && available.y < 0 -> Offset(0f, onPull(available.y)) // Swiping up
-        else -> Offset.Zero
-    }
+    ): Offset =
+        when {
+            !enabled -> Offset.Zero
+            source == Drag && available.y < 0 -> Offset(0f, onPull(available.y)) // Swiping up
+            else -> Offset.Zero
+        }
 
     override fun onPostScroll(
         consumed: Offset,
         available: Offset,
         source: NestedScrollSource,
-    ): Offset = when {
-        !enabled -> Offset.Zero
-        source == Drag && available.y > 0 -> Offset(0f, onPull(available.y)) // Pulling down
-        else -> Offset.Zero
-    }
+    ): Offset =
+        when {
+            !enabled -> Offset.Zero
+            source == Drag && available.y > 0 -> Offset(0f, onPull(available.y)) // Pulling down
+            else -> Offset.Zero
+        }
 
     override suspend fun onPreFling(available: Velocity): Velocity {
         return Velocity(0f, onRelease(available.y))
@@ -88,12 +95,12 @@ fun PullRefresh(
     contentColor: Color = MaterialTheme.colorScheme.onSecondary,
     content: @Composable () -> Unit,
 ) {
-    val state = rememberPullRefreshState(
-        refreshing = refreshing,
-        onRefresh = onRefresh,
-        refreshingOffset = 0.dp,
-    )
-
+    val state =
+        rememberPullRefreshState(
+            refreshing = refreshing,
+            onRefresh = onRefresh,
+            refreshingOffset = 0.dp,
+        )
 
     Box(Modifier.pullRefresh(state, !refreshing)) {
         content()
@@ -106,7 +113,8 @@ fun PullRefresh(
             PullRefreshIndicator(
                 refreshing = refreshing,
                 state = state,
-                modifier = Modifier
+                modifier =
+                Modifier
                     .padding(paddingValues.calculateTopPadding())
                     .align(Alignment.TopCenter),
                 backgroundColor = backgroundColor,
@@ -125,12 +133,12 @@ fun PullRefresh(
     contentColor: Color = MaterialTheme.colorScheme.onSecondary,
     content: @Composable () -> Unit,
 ) {
-    val state = rememberPullRefreshState(
-        refreshing = refreshing,
-        onRefresh = onRefresh,
-        refreshingOffset = indicatorOffset,
-    )
-
+    val state =
+        rememberPullRefreshState(
+            refreshing = refreshing,
+            onRefresh = onRefresh,
+            refreshingOffset = indicatorOffset,
+        )
 
     Box(Modifier.pullRefresh(state, !refreshing)) {
         content()
@@ -143,7 +151,8 @@ fun PullRefresh(
             PullRefreshIndicator(
                 refreshing = refreshing,
                 state = state,
-                modifier = Modifier
+                modifier =
+                Modifier
                     .align(Alignment.TopCenter),
                 backgroundColor = backgroundColor,
                 contentColor = contentColor,

@@ -7,11 +7,7 @@ import io.silv.database.entity.AmadeusEntity
 
 @Entity
 data class SeasonalListEntity(
-
     @PrimaryKey override val id: String,
-
     val year: Int,
-
     val season: Season,
-
-): AmadeusEntity<String>
+) : AmadeusEntity<String>

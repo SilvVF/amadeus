@@ -10,10 +10,9 @@ import io.silv.database.entity.chapter.ChapterEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface ChapterDao: SyncableDao<ChapterEntity> {
-
+interface ChapterDao : SyncableDao<ChapterEntity> {
     @Insert(
-        onConflict = OnConflictStrategy.REPLACE
+        onConflict = OnConflictStrategy.REPLACE,
     )
     suspend fun upsertChapter(chapterEntity: ChapterEntity)
 
@@ -23,16 +22,20 @@ interface ChapterDao: SyncableDao<ChapterEntity> {
     @Query("SELECT * FROM chapterentity WHERE id = :id LIMIT 1")
     fun getChapterById(id: String): ChapterEntity?
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM chapterentity 
         WHERE manga_id = :mangaId
-    """)
+    """,
+    )
     fun observeChaptersByMangaId(mangaId: String): Flow<List<ChapterEntity>>
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM chapterentity 
         WHERE manga_id = :mangaId
-    """)
+    """,
+    )
     fun getChaptersByMangaId(mangaId: String): List<ChapterEntity>
 
     @Query("SELECT * FROM chapterentity")

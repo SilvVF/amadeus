@@ -16,14 +16,14 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 
-
-private val implementedImageSources = listOf(
-    "mangaplus.shueisha",
-    "azuki.co",
-    "mangahot.jp",
-    "bilibilicomics.com",
-    "comikey.com"
-)
+private val implementedImageSources =
+    listOf(
+        "mangaplus.shueisha",
+        "azuki.co",
+        "mangahot.jp",
+        "bilibilicomics.com",
+        "comikey.com",
+    )
 
 @Stable
 @Parcelize
@@ -42,7 +42,7 @@ data class SavableChapter(
     val translatedLanguage: String,
     val uploader: String,
     val scanlationGroupToId: Pair<String, String>? = null,
-    val userToId: Pair<String,String>? = null,
+    val userToId: Pair<String, String>? = null,
     val version: Int,
     @Serializable(with = DateTimeAsLongSerializer::class)
     val createdAt: LocalDateTime,
@@ -51,12 +51,11 @@ data class SavableChapter(
     @Serializable(with = DateTimeAsLongSerializer::class)
     val readableAt: LocalDateTime,
     val ableToDownload: Boolean,
-): Parcelable {
-
+) : Parcelable {
     val scanlator = scanlationGroupToId?.first ?: ""
     val scanlatorid = scanlationGroupToId?.second ?: ""
 
-    constructor(entity: ChapterEntity, downloaded: Boolean = false): this(
+    constructor(entity: ChapterEntity, downloaded: Boolean = false) : this(
         id = entity.id,
         url = entity.url,
         bookmarked = entity.bookmarked,
@@ -74,20 +73,23 @@ data class SavableChapter(
         createdAt = entity.createdAt,
         updatedAt = entity.updatedAt,
         readableAt = entity.readableAt,
-        scanlationGroupToId = entity
+        scanlationGroupToId =
+        entity
             .scanlator.let { group ->
                 entity.scanlationGroupId?.let { id ->
                     group to id
                 }
             },
-        userToId = entity
+        userToId =
+        entity
             .user?.let { user ->
-                entity.userId?.let {id ->
+                entity.userId?.let { id ->
                     user to id
                 }
             },
         ableToDownload = implementedImageSources.any { it in (entity.url) } || entity.url.isBlank(),
     )
+
     private val daysSinceCreated: Long
         get() = (localDateTimeNow() - this.createdAt).inWholeDays
 
@@ -119,12 +121,15 @@ data class SavableChapter(
     val started: Boolean = progress == ProgressState.Reading
 
     companion object : kotlinx.parcelize.Parceler<SavableChapter> {
-        override fun SavableChapter.write(parcel: Parcel, flags: Int) {
+        override fun SavableChapter.write(
+            parcel: Parcel,
+            flags: Int,
+        ) {
             parcel.writeString(
                 Json.encodeToString(
                     serializer(),
-                    this
-                )
+                    this,
+                ),
             )
         }
 
@@ -134,7 +139,7 @@ data class SavableChapter(
     }
 }
 
-fun SavableChapter.toResource() : ChapterResource {
+fun SavableChapter.toResource(): ChapterResource {
     val c = this
     return object : ChapterResource {
         override val id: String

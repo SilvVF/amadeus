@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
-
 @Composable
 fun MenuPageSlider(
     visible: Boolean,
@@ -31,30 +30,32 @@ fun MenuPageSlider(
     lastPage: Int,
     onPrevClick: () -> Unit,
     onNextClick: () -> Unit,
-    onPageChange: (page: Int) -> Unit
+    onPageChange: (page: Int) -> Unit,
 ) {
     val space = io.silv.ui.theme.LocalSpacing.current
     AnimatedVisibility(visible = visible) {
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .height(70.dp)
-            .clip(RoundedCornerShape(100))
-            .background(Color.DarkGray.copy(alpha = 0.9f)),
+        Row(
+            modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(70.dp)
+                .clip(RoundedCornerShape(100))
+                .background(Color.DarkGray.copy(alpha = 0.9f)),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             IconButton(
                 onClick = onPrevClick,
-                modifier = Modifier.padding(space.small)
+                modifier = Modifier.padding(space.small),
             ) {
                 Icon(
                     imageVector = Icons.Filled.SkipPrevious,
-                    contentDescription = null
+                    contentDescription = null,
                 )
             }
             Text(
                 text = page.toString(),
-                modifier = Modifier.padding(space.small)
+                modifier = Modifier.padding(space.small),
             )
             Slider(
                 valueRange = 0f..lastPage.toFloat(),
@@ -62,22 +63,23 @@ fun MenuPageSlider(
                 onValueChange = {
                     onPageChange(it.roundToInt())
                 },
-                modifier = Modifier
+                modifier =
+                Modifier
                     .weight(1f)
                     .padding(space.small),
-                steps = lastPage
+                steps = lastPage,
             )
             Text(
                 text = lastPage.toString(),
-                modifier = Modifier.padding(space.small)
+                modifier = Modifier.padding(space.small),
             )
             IconButton(
                 onClick = onNextClick,
-                modifier = Modifier.padding(space.small)
+                modifier = Modifier.padding(space.small),
             ) {
                 Icon(
                     imageVector = Icons.Filled.SkipNext,
-                    contentDescription = null
+                    contentDescription = null,
                 )
             }
         }

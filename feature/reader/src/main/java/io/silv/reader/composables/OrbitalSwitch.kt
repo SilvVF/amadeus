@@ -43,49 +43,60 @@ fun <T> OrbitalSwitch(
     onModeChange: (T) -> Unit,
 ) {
     val space = io.silv.ui.theme.LocalSpacing.current
-    val transformationSpec = SpringSpec<IntOffset>(
-        dampingRatio = Spring.DampingRatioLowBouncy,
-        stiffness = 4000f
-    )
-    val transformed = remember(mode) { mode != itemLeft}
+    val transformationSpec =
+        SpringSpec<IntOffset>(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = 4000f,
+        )
+    val transformed = remember(mode) { mode != itemLeft }
 
-    val switch = rememberContentWithOrbitalScope {
-        io.silv.ui.CenterBox(
-            Modifier.animateMovement(
-                this@rememberContentWithOrbitalScope,
-                transformationSpec
-            )
-        ) {
+    val switch =
+        rememberContentWithOrbitalScope {
             io.silv.ui.CenterBox(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .size(22.dp)
-                    .background(MaterialTheme.colorScheme.primary),
+                Modifier.animateMovement(
+                    this@rememberContentWithOrbitalScope,
+                    transformationSpec,
+                ),
             ) {
-                icon?.invoke()
+                io.silv.ui.CenterBox(
+                    modifier =
+                    Modifier
+                        .clip(CircleShape)
+                        .size(22.dp)
+                        .background(MaterialTheme.colorScheme.primary),
+                ) {
+                    icon?.invoke()
+                }
             }
         }
-    }
-    Column(modifier,
+    Column(
+        modifier,
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(title, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             Text(
                 text = labelLeft,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    color = if (transformed) {
+                style =
+                MaterialTheme.typography.labelLarge.copy(
+                    color =
+                    if (transformed) {
                         Color.Unspecified
-                    } else  MaterialTheme.colorScheme.primary,
-                    fontWeight = if (transformed) {
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    fontWeight =
+                    if (transformed) {
                         FontWeight.Normal
-                    } else  FontWeight.Bold
+                    } else {
+                        FontWeight.Bold
+                    },
                 ),
-                modifier = Modifier.padding(horizontal = space.med)
+                modifier = Modifier.padding(horizontal = space.med),
             )
             Orbital(
                 Modifier
@@ -94,7 +105,7 @@ fun <T> OrbitalSwitch(
                     .clip(RoundedCornerShape(100))
                     .clickable {
                         onModeChange(mode)
-                    }
+                    },
             ) {
                 if (!transformed) {
                     Row(
@@ -105,11 +116,11 @@ fun <T> OrbitalSwitch(
                             .border(
                                 3.dp,
                                 MaterialTheme.colorScheme.primary,
-                                RoundedCornerShape(100)
+                                RoundedCornerShape(100),
                             )
                             .padding(space.small),
                         horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         switch()
                     }
@@ -122,11 +133,11 @@ fun <T> OrbitalSwitch(
                             .border(
                                 3.dp,
                                 MaterialTheme.colorScheme.primary,
-                                RoundedCornerShape(100)
+                                RoundedCornerShape(100),
                             )
                             .padding(space.small),
                         horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         switch()
                     }
@@ -134,15 +145,22 @@ fun <T> OrbitalSwitch(
             }
             Text(
                 text = labelRight,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    color = if (!transformed) {
+                style =
+                MaterialTheme.typography.labelLarge.copy(
+                    color =
+                    if (!transformed) {
                         Color.Unspecified
-                    } else  MaterialTheme.colorScheme.primary,
-                    fontWeight = if (!transformed) {
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    fontWeight =
+                    if (!transformed) {
                         FontWeight.Normal
-                    } else  FontWeight.Bold
+                    } else {
+                        FontWeight.Bold
+                    },
                 ),
-                modifier =  Modifier.padding(horizontal = space.med)
+                modifier = Modifier.padding(horizontal = space.med),
             )
         }
     }

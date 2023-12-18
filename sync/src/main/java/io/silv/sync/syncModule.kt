@@ -13,34 +13,35 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 
-val syncModule = module {
+val syncModule =
+    module {
 
-    includes(dataModule)
-    includes(workersModule)
+        includes(dataModule)
+        includes(workersModule)
 
-    singleOf(::TagSyncManager) withOptions {
-        named(TagSyncWorkName)
-        bind<SyncManager>()
-    }
+        singleOf(::TagSyncManager) withOptions {
+            named(TagSyncWorkName)
+            bind<SyncManager>()
+        }
 
-    singleOf(::SavedMangaSyncManager) {
-        named(MangaSyncWorkName)
-        bind<SyncManager>()
-    }
-    singleOf(::SeasonalMangaSyncManager) {
-        named(SeasonalMangaSyncWorkName)
-        bind<SyncManager>()
-    }
+        singleOf(::SavedMangaSyncManager) {
+            named(MangaSyncWorkName)
+            bind<SyncManager>()
+        }
+        singleOf(::SeasonalMangaSyncManager) {
+            named(SeasonalMangaSyncWorkName)
+            bind<SyncManager>()
+        }
 
-    worker {
-        SeasonalMangaSyncWorker(androidContext(), get())
-    }
+        worker {
+            SeasonalMangaSyncWorker(androidContext(), get())
+        }
 
-    worker {
-        TagSyncWorker(androidContext(), get())
-    }
+        worker {
+            TagSyncWorker(androidContext(), get())
+        }
 
-    worker {
-        MangaSyncWorker(androidContext(), get())
+        worker {
+            MangaSyncWorker(androidContext(), get())
+        }
     }
-}

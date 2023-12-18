@@ -1,14 +1,12 @@
-package io.silv.network.image_sources
+package io.silv.network.sources
 
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 
-
 class ImageSourceFactory(
     private val client: OkHttpClient,
-    private val json: Json
+    private val json: Json,
 ) {
-
     fun getSource(url: String): ImageSource {
         return when {
             "mangaplus.shueisha" in url -> MangaPlusHandler(client, json)

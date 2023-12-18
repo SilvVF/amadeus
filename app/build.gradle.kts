@@ -25,16 +25,17 @@ android {
     }
 
     buildTypes {
-        val release = getByName("release") {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            // In real app, this would use its own release keystore
-            signingConfig = signingConfigs.getByName("debug")
-        }
+        val release =
+            getByName("release") {
+                isMinifyEnabled = true
+                isShrinkResources = true
+                proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro",
+                )
+                // In real app, this would use its own release keystore
+                signingConfig = signingConfigs.getByName("debug")
+            }
 
         create("benchmark") {
             initWith(release)
@@ -74,7 +75,6 @@ dependencies {
 
     implementation(libs.image.decoder)
 
-
     implementation(project(":core:common"))
     implementation(project(":core:navigation"))
     implementation(project(":core:data"))
@@ -95,7 +95,6 @@ dependencies {
 
     implementation(libs.flow.combinetuple.kt)
     implementation(libs.tuples.kt)
-
 
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
@@ -125,30 +124,29 @@ dependencies {
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.animation:animation-graphics")
 
-    //Datastore
+    // Datastore
     implementation(libs.androidx.datastore.preferences)
-
 
     implementation(libs.androidx.navigation.compose)
 
     implementation(libs.disklrucache)
     implementation(libs.okio)
 
-    //ROOM
+    // ROOM
     ksp(libs.room.ksp)
     implementation(libs.room.runtime)
     annotationProcessor(libs.room.compiler)
     implementation(libs.room.coroutines)
     testImplementation(libs.room.test)
 
-    //VOYAGER
+    // VOYAGER
     implementation(libs.voyager.androidx)
     implementation(libs.voyager.koin)
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)
     implementation(libs.voyager.tabNavigator)
 
-    //KOIN
+    // KOIN
     implementation(libs.koin.compose)
     implementation(libs.koin.android)
     implementation(libs.koin.core)
@@ -162,5 +160,4 @@ dependencies {
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
-
 }

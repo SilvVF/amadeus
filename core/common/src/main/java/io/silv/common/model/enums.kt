@@ -3,21 +3,29 @@
 package io.silv.common.model
 
 enum class Result {
-    ok, error
+    ok,
+    error,
 }
 
 enum class State {
-    draft, submitted, published, rejected
+    draft,
+    submitted,
+    published,
+    rejected,
 }
 
 enum class Group {
-    content, format, genre, theme
+    content,
+    format,
+    genre,
+    theme,
 }
 
 enum class TagsMode(
-    val string: String
+    val string: String,
 ) {
-    OR("OR"), AND("AND")
+    OR("OR"),
+    AND("AND"),
 }
 
 enum class Order {
@@ -30,45 +38,82 @@ enum class Order {
 }
 
 enum class OrderBy {
-    asc,  desc
+    asc,
+    desc,
 }
 
 enum class ContentRating {
-    safe, suggestive, erotica, pornographic
+    safe,
+    suggestive,
+    erotica,
+    pornographic,
 }
 
 enum class Status {
-    completed, ongoing, cancelled, hiatus
+    completed,
+    ongoing,
+    cancelled,
+    hiatus,
 }
 
 enum class Related {
-    monochrome, main_story, adapted_from, based_on, prequel, side_story, doujinshi, same_franchise, shared_universe, sequel, spin_off, alternate_story, alternate_version, preserialization, colored, serialization
+    monochrome,
+    main_story,
+    adapted_from,
+    based_on,
+    prequel,
+    side_story,
+    doujinshi,
+    same_franchise,
+    shared_universe,
+    sequel,
+    spin_off,
+    alternate_story,
+    alternate_version,
+    preserialization,
+    colored,
+    serialization,
 }
 
 enum class PublicationDemographic {
-    shounen, shoujo, josei, seinen
+    shounen,
+    shoujo,
+    josei,
+    seinen,
 }
 
 enum class CoverIncludesFilter {
-    manga, user
+    manga,
+    user,
 }
 
 enum class UpdateType {
-    Chapter, Volume, Other
+    Chapter,
+    Volume,
+    Other,
 }
 
-enum class Season{
-    Winter, Spring, Summer, Fall
+enum class Season {
+    Winter,
+    Spring,
+    Summer,
+    Fall,
 }
 
 enum class TimePeriod {
-    SixMonths, ThreeMonths, LastMonth, OneWeek, AllTime
+    SixMonths,
+    ThreeMonths,
+    LastMonth,
+    OneWeek,
+    AllTime,
 }
 
 enum class ReaderOrientation {
-    Vertical, Horizontal
+    Vertical,
+    Horizontal,
 }
 
 enum class ReaderDirection {
-    Ltr, Rtl
+    Ltr,
+    Rtl,
 }

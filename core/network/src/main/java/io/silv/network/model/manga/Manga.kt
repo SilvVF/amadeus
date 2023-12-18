@@ -11,5 +11,5 @@ data class Manga(
     val id: String,
     val type: String,
     val attributes: MangaAttributes,
-    val relationships: List<Relationship> = emptyList()
-): Parcelable
+    val relationships: List<Relationship> = emptyList(),
+) : Parcelable

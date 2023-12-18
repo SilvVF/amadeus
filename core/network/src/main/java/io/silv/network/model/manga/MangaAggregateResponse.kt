@@ -1,12 +1,10 @@
 package io.silv.network.model.manga
 
-import kotlinx.serialization.Serializable
-
-//@Serializable
-//data class MangaAggregateResponse(
+// @Serializable
+// data class MangaAggregateResponse(
 //    val result: String,
 //    val volumes: Map<String, Volume>
-//) {
+// ) {
 //
 //    @Serializable
 //    data class Volume(
@@ -23,4 +21,4 @@ import kotlinx.serialization.Serializable
 //            val count: Int = 0
 //        )
 //    }
-//}
+// }

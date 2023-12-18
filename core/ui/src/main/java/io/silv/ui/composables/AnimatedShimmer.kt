@@ -29,69 +29,79 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AnimatedBoxShimmer(
-    modifier: Modifier = Modifier
-) {
-    val shimmerColors = listOf(
-        Color.LightGray.copy(alpha = 0.6f),
-        Color.LightGray.copy(alpha = 0.2f),
-        Color.LightGray.copy(alpha = 0.6f),
-    )
+fun AnimatedBoxShimmer(modifier: Modifier = Modifier) {
+    val shimmerColors =
+        listOf(
+            Color.LightGray.copy(alpha = 0.6f),
+            Color.LightGray.copy(alpha = 0.2f),
+            Color.LightGray.copy(alpha = 0.6f),
+        )
 
     val transition = rememberInfiniteTransition(label = "")
-    val translateAnim = transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1000,
-                easing = FastOutSlowInEasing
+    val translateAnim =
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1000f,
+            animationSpec =
+            infiniteRepeatable(
+                animation =
+                tween(
+                    durationMillis = 1000,
+                    easing = FastOutSlowInEasing,
+                ),
+                repeatMode = RepeatMode.Reverse,
             ),
-            repeatMode = RepeatMode.Reverse
-        ), label = ""
-    )
+            label = "",
+        )
 
-    val brush = Brush.linearGradient(
-        colors = shimmerColors,
-        start = Offset.Zero,
-        end = Offset(x = translateAnim.value, y = translateAnim.value)
-    )
+    val brush =
+        Brush.linearGradient(
+            colors = shimmerColors,
+            start = Offset.Zero,
+            end = Offset(x = translateAnim.value, y = translateAnim.value),
+        )
 
     Box(
-        modifier = modifier
+        modifier =
+        modifier
             .padding(all = 10.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(brush),
-
     )
 }
 
 @Composable
 fun AnimatedShimmer() {
-    val shimmerColors = listOf(
-        Color.LightGray.copy(alpha = 0.6f),
-        Color.LightGray.copy(alpha = 0.2f),
-        Color.LightGray.copy(alpha = 0.6f),
-    )
+    val shimmerColors =
+        listOf(
+            Color.LightGray.copy(alpha = 0.6f),
+            Color.LightGray.copy(alpha = 0.2f),
+            Color.LightGray.copy(alpha = 0.6f),
+        )
 
     val transition = rememberInfiniteTransition(label = "")
-    val translateAnim = transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1000,
-                easing = FastOutSlowInEasing
+    val translateAnim =
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1000f,
+            animationSpec =
+            infiniteRepeatable(
+                animation =
+                tween(
+                    durationMillis = 1000,
+                    easing = FastOutSlowInEasing,
+                ),
+                repeatMode = RepeatMode.Reverse,
             ),
-            repeatMode = RepeatMode.Reverse
-        ), label = ""
-    )
+            label = "",
+        )
 
-    val brush = Brush.linearGradient(
-        colors = shimmerColors,
-        start = Offset.Zero,
-        end = Offset(x = translateAnim.value, y = translateAnim.value)
-    )
+    val brush =
+        Brush.linearGradient(
+            colors = shimmerColors,
+            start = Offset.Zero,
+            end = Offset(x = translateAnim.value, y = translateAnim.value),
+        )
 
     ShimmerGridItem(brush = brush)
 }
@@ -99,27 +109,30 @@ fun AnimatedShimmer() {
 @Composable
 fun ShimmerGridItem(brush: Brush) {
     Row(
-        modifier = Modifier
+        modifier =
+        Modifier
             .fillMaxWidth()
             .padding(all = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(modifier = Modifier.width(10.dp))
         Column(verticalArrangement = Arrangement.Center) {
             Spacer(
-                modifier = Modifier
+                modifier =
+                Modifier
                     .height(20.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .fillMaxWidth(fraction = 0.7f)
-                    .background(brush)
+                    .background(brush),
             )
             Spacer(modifier = Modifier.padding(5.dp))
             Spacer(
-                modifier = Modifier
+                modifier =
+                Modifier
                     .height(20.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .fillMaxWidth(fraction = 0.9f)
-                    .background(brush)
+                    .background(brush),
             )
         }
     }
@@ -129,13 +142,14 @@ fun ShimmerGridItem(brush: Brush) {
 @Preview(showBackground = true)
 fun ShimmerGridItemPreview() {
     ShimmerGridItem(
-        brush = Brush.linearGradient(
+        brush =
+        Brush.linearGradient(
             listOf(
                 Color.LightGray.copy(alpha = 0.6f),
                 Color.LightGray.copy(alpha = 0.2f),
                 Color.LightGray.copy(alpha = 0.6f),
-            )
-        )
+            ),
+        ),
     )
 }
 
@@ -143,12 +157,13 @@ fun ShimmerGridItemPreview() {
 @Preview(showBackground = true, uiMode = UI_MODE_NIGHT_YES)
 fun ShimmerGridItemDarkPreview() {
     ShimmerGridItem(
-        brush = Brush.linearGradient(
+        brush =
+        Brush.linearGradient(
             listOf(
                 Color.LightGray.copy(alpha = 0.6f),
                 Color.LightGray.copy(alpha = 0.2f),
                 Color.LightGray.copy(alpha = 0.6f),
-            )
-        )
+            ),
+        ),
     )
 }

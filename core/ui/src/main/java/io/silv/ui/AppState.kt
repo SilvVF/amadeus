@@ -27,7 +27,7 @@ fun rememberAppState(
         windowSizeClass = windowSizeClass,
         bottomBarVisibilityChannel = bottomBarVisibilityChannel,
         connectivity = networkConnectivity,
-        scope = coroutineScope
+        scope = coroutineScope,
     )
 }
 
@@ -44,12 +44,12 @@ class AppState(
     val shouldShowNavRail: Boolean
         get() = !shouldShowBottomBar
 
-
-    val isOffline = connectivity.online
-        .map(Boolean::not)
-        .stateIn(
-            scope = scope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = false,
-        )
+    val isOffline =
+        connectivity.online
+            .map(Boolean::not)
+            .stateIn(
+                scope = scope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = false,
+            )
 }

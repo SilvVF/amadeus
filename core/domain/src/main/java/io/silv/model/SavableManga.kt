@@ -13,7 +13,6 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.LocalDateTime
 
-
 @Stable
 data class SavableManga(
     val id: String,
@@ -41,7 +40,6 @@ data class SavableManga(
     val artists: List<String>,
     val year: Int,
 ) {
-
     val tags = tagToId.keys.toImmutableList()
     val tagIds = tagToId.values.toImmutableList()
 
@@ -69,14 +67,14 @@ data class SavableManga(
         readingStatus = savedManga.readingStatus,
         year = savedManga.year,
         artists = savedManga.artists,
-        authors = savedManga.authors
+        authors = savedManga.authors,
     )
     constructor(mangaResource: SourceMangaResource) : this(
         id = mangaResource.id,
         inLibrary = false,
         description = mangaResource.description,
         progressState = mangaResource.progressState,
-        coverArt =  mangaResource.coverArt,
+        coverArt = mangaResource.coverArt,
         titleEnglish = mangaResource.title,
         alternateTitles = mangaResource.alternateTitles,
         originalLanguage = mangaResource.originalLanguage,
@@ -90,12 +88,12 @@ data class SavableManga(
         createdAt = mangaResource.createdAt,
         updatedAt = mangaResource.updatedAt,
         savedLocalAtEpochSeconds = mangaResource.savedAtLocal,
-        volumeToCoverArtUrl =  mangaResource.volumeToCoverArt,
+        volumeToCoverArtUrl = mangaResource.volumeToCoverArt,
         publicationDemographic = mangaResource.publicationDemographic,
         readingStatus = mangaResource.readingStatus,
         year = mangaResource.year,
         artists = mangaResource.artists,
-        authors = mangaResource.authors
+        authors = mangaResource.authors,
     )
 }
 
@@ -107,6 +105,6 @@ fun SavableManga.toResource(): MangaResource {
         override val title: String = m.titleEnglish
         override val version: Int = m.version
         override val createdAt: LocalDateTime = m.createdAt
-        override val updatedAt: LocalDateTime= m.updatedAt
+        override val updatedAt: LocalDateTime = m.updatedAt
     }
 }

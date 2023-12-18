@@ -6,6 +6,7 @@ import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.skydoves.sandwich.ApiResponse
 import com.skydoves.sandwich.message
+import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
 import io.silv.datastore.UserSettingsStore
 import io.silv.datastore.model.Filters
@@ -34,7 +35,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-
 class MangaViewScreenModel(
     getCombinedSavableMangaWithChapters: GetCombinedSavableMangaWithChapters,
     getMangaStatisticsById: GetMangaStatisticsById,
@@ -43,8 +43,7 @@ class MangaViewScreenModel(
     private val chapterHandler: ChapterHandler,
     private val downloadManager: DownloadManager,
     mangaId: String,
-): EventStateScreenModel<MangaViewEvent, MangaViewState>(MangaViewState.Loading) {
-
+) : EventStateScreenModel<MangaViewEvent, MangaViewState>(MangaViewState.Loading) {
     private fun updateSuccess(block: (state: MangaViewState.Success) -> MangaViewState) {
         mutableState.update { state ->
             (state as? MangaViewState.Success)?.let(block) ?: state
@@ -59,7 +58,7 @@ class MangaViewScreenModel(
                 mutableState.update {
                     (it.success ?: MangaViewState.Success(manga)).copy(
                         manga = manga,
-                        chapters = chapters
+                        chapters = chapters,
                     )
                 }
             }
@@ -69,9 +68,12 @@ class MangaViewScreenModel(
             .launchIn(screenModelScope)
 
         downloadManager.queueState.onEach { downloads ->
-            updateSuccess {
-                it.copy(
-                    downloadingIds = downloads.map { it.chapter.id }.toImmutableList()
+            updateSuccess { state ->
+                state.copy(
+                    downloads = downloads.filter {
+                        it.chapter.id in state.chapters.map { c -> c.id }
+                    }
+                        .toImmutableList(),
                 )
             }
         }
@@ -80,16 +82,15 @@ class MangaViewScreenModel(
         state.map { it.success?.chapters }
             .filterNotNull()
             .combine(
-                state.map { it.success?.filters }.filterNotNull()
+                state.map { it.success?.filters }.filterNotNull(),
             ) { chapters, filters ->
                 updateSuccess { state ->
                     state.copy(
-                        filteredChapters = chapters.applyFilters(filters)
+                        filteredChapters = chapters.applyFilters(filters),
                     )
                 }
             }
             .launchIn(screenModelScope)
-
 
         mutableFilters.onEach {
             updateSuccess { state -> state.copy(filters = it) }
@@ -99,18 +100,18 @@ class MangaViewScreenModel(
         state.map { it.success?.manga?.id }.filterNotNull()
             .onEach { id ->
                 val response = getMangaStatisticsById.await(id)
-                updateSuccess {state ->
+                updateSuccess { state ->
                     state.copy(
-                        statsUiState =  when(response) {
+                        statsUiState =
+                        when (response) {
                             is ApiResponse.Success -> StatsUiState.Success(response.data)
                             is ApiResponse.Failure -> StatsUiState.Error(response.message())
-                        }
+                        },
                     )
                 }
             }
             .launchIn(screenModelScope)
     }
-
 
     fun toggleLibraryManga(id: String) {
         screenModelScope.launch {
@@ -123,7 +124,7 @@ class MangaViewScreenModel(
             chapterHandler.toggleChapterBookmarked(id)
                 .onSuccess {
                     mutableEvents.send(
-                        MangaViewEvent.BookmarkStatusChanged(id, it.bookmarked)
+                        MangaViewEvent.BookmarkStatusChanged(id, it.bookmarked),
                     )
                 }
         }
@@ -134,17 +135,16 @@ class MangaViewScreenModel(
             chapterHandler.toggleReadOrUnread(id)
                 .onSuccess {
                     mutableEvents.send(
-                        MangaViewEvent.ReadStatusChanged(id, it.read)
+                        MangaViewEvent.ReadStatusChanged(id, it.read),
                     )
                 }
         }
     }
 
-
     fun filterDownloaded() {
         mutableFilters.update {
             it.copy(
-                downloaded = !it.downloaded
+                downloaded = !it.downloaded,
             )
         }
     }
@@ -153,13 +153,13 @@ class MangaViewScreenModel(
         mutableFilters.update {
             if (it.byUploadDateAsc != null) {
                 it.copy(
-                    byUploadDateAsc = !it.byUploadDateAsc!!
+                    byUploadDateAsc = !it.byUploadDateAsc!!,
                 )
             } else {
                 it.copy(
                     bySourceAsc = null,
                     byChapterAsc = null,
-                    byUploadDateAsc = true
+                    byUploadDateAsc = true,
                 )
             }
         }
@@ -169,13 +169,13 @@ class MangaViewScreenModel(
         mutableFilters.update {
             if (it.byChapterAsc != null) {
                 it.copy(
-                    byChapterAsc = !it.byChapterAsc!!
+                    byChapterAsc = !it.byChapterAsc!!,
                 )
             } else {
                 it.copy(
                     bySourceAsc = null,
                     byChapterAsc = true,
-                    byUploadDateAsc = null
+                    byUploadDateAsc = null,
                 )
             }
         }
@@ -185,13 +185,13 @@ class MangaViewScreenModel(
         mutableFilters.update {
             if (it.bySourceAsc != null) {
                 it.copy(
-                    bySourceAsc = !it.bySourceAsc!!
+                    bySourceAsc = !it.bySourceAsc!!,
                 )
             } else {
                 it.copy(
                     bySourceAsc = true,
                     byChapterAsc = null,
-                    byUploadDateAsc = null
+                    byUploadDateAsc = null,
                 )
             }
         }
@@ -200,7 +200,7 @@ class MangaViewScreenModel(
     fun filterBookmarked() {
         mutableFilters.update {
             it.copy(
-                bookmarked = !it.bookmarked
+                bookmarked = !it.bookmarked,
             )
         }
     }
@@ -208,7 +208,7 @@ class MangaViewScreenModel(
     fun filterUnread() {
         mutableFilters.update {
             it.copy(
-                unread = !it.unread
+                unread = !it.unread,
             )
         }
     }
@@ -216,7 +216,12 @@ class MangaViewScreenModel(
     fun deleteChapterImages(chapterId: String) {
         state.value.success?.let {
             screenModelScope.launch {
-                downloadManager.deleteChapters(listOf(it.chapters.firstOrNull { it.id == chapterId }?.toResource() ?: return@launch), it.manga.toResource())
+                downloadManager.deleteChapters(
+                    listOf(
+                        it.chapters.firstOrNull { it.id == chapterId }?.toResource() ?: return@launch
+                    ),
+                    it.manga.toResource(),
+                )
             }
         }
     }
@@ -227,6 +232,24 @@ class MangaViewScreenModel(
         }
     }
 
+    fun pauseDownload(download: Download) {
+        screenModelScope.launch {
+            downloadManager.pauseDownloads()
+        }
+    }
+
+    fun resumeDownloads() {
+        screenModelScope.launch {
+            downloadManager.startDownloads()
+        }
+    }
+
+    fun cancelDownload(download: Download) {
+        screenModelScope.launch {
+            downloadManager.cancelQueuedDownloads(listOf(download))
+        }
+    }
+
     fun downloadChapterImages(chapterId: String) {
         state.value.success?.let {
             ioCoroutineScope.launch {
@@ -234,25 +257,28 @@ class MangaViewScreenModel(
                 downloadManager.downloadChapters(
                     it.manga.toResource(),
                     listOf(
-                        it.chapters.firstOrNull { it.id == chapterId }?.toResource()!!
-                    )
+                        it.chapters.firstOrNull { it.id == chapterId }?.toResource()!!,
+                    ),
                 )
             }
         }
     }
 
     private fun List<SavableChapter>.applyFilters(filters: Filters): ImmutableList<SavableChapter> {
-        val sortedChapters: List<SavableChapter> = when  {
-            filters.byChapterAsc == true -> sortedBy { it.chapter }
-            filters.byChapterAsc == false -> sortedByDescending { it.chapter }
-            filters.bySourceAsc == true -> groupBy { it.scanlationGroupToId }
-                .mapValues { (_, value) -> value.sortedBy { it.chapter } }.values.flatten()
-            filters.bySourceAsc == false -> groupBy { it.scanlationGroupToId }
-                .mapValues { (_, value) -> value.sortedByDescending { it.chapter } }.values.flatten()
-            filters.byUploadDateAsc == true -> sortedBy { it.createdAt }
-            filters.byUploadDateAsc == false -> sortedByDescending { it.createdAt }
-            else -> this
-        }
+        val sortedChapters: List<SavableChapter> =
+            when {
+                filters.byChapterAsc == true -> sortedBy { it.chapter }
+                filters.byChapterAsc == false -> sortedByDescending { it.chapter }
+                filters.bySourceAsc == true ->
+                    groupBy { it.scanlationGroupToId }
+                        .mapValues { (_, value) -> value.sortedBy { it.chapter } }.values.flatten()
+                filters.bySourceAsc == false ->
+                    groupBy { it.scanlationGroupToId }
+                        .mapValues { (_, value) -> value.sortedByDescending { it.chapter } }.values.flatten()
+                filters.byUploadDateAsc == true -> sortedBy { it.createdAt }
+                filters.byUploadDateAsc == false -> sortedByDescending { it.createdAt }
+                else -> this
+            }
         return sortedChapters
             .asSequence()
             .filter { if (filters.bookmarked) it.bookmarked else true }
@@ -282,6 +308,12 @@ data class ChapterActions(
 )
 
 @Stable
+data class DownloadActions(
+    val pause: (download: Download) -> Unit,
+    val cancel: (download: Download) -> Unit,
+)
+
+@Stable
 data class MangaActions(
     val addToLibrary: (id: String) -> Unit,
 )
@@ -293,19 +325,18 @@ sealed interface MangaViewState {
 
     data class Success(
         val manga: SavableManga,
-        val downloadingIds: ImmutableList<String> = persistentListOf(),
+        val downloads: ImmutableList<Download> = persistentListOf(),
         val loadingArt: Boolean = false,
         val volumeToArt: ImmutableMap<Int, String> = persistentMapOf(),
         val statsUiState: StatsUiState = StatsUiState.Loading,
         val chapters: ImmutableList<SavableChapter> = persistentListOf(),
         val filteredChapters: ImmutableList<SavableChapter> = persistentListOf(),
-        val filters: Filters = Filters()
+        val filters: Filters = Filters(),
     ) : MangaViewState {
-
         val volumeToArtList = this.volumeToArt.toList().toImmutableList()
     }
 
-    data class Error(val message: String): MangaViewState
+    data class Error(val message: String) : MangaViewState
 
     val success: Success?
         get() = this as? Success
@@ -314,13 +345,18 @@ sealed interface MangaViewState {
 @Stable
 sealed interface StatsUiState {
     data object Loading : StatsUiState
+
     data class Error(val message: String) : StatsUiState
+
     data class Success(val stats: MangaStats) : StatsUiState
 }
 
 sealed interface MangaViewEvent {
-    data class FailedToLoadVolumeArt(val message: String): MangaViewEvent
-    data class FailedToLoadChapterList(val message: String): MangaViewEvent
-    data class BookmarkStatusChanged(val id: String, val bookmarked: Boolean): MangaViewEvent
-    data class ReadStatusChanged(val id: String, val read: Boolean): MangaViewEvent
+    data class FailedToLoadVolumeArt(val message: String) : MangaViewEvent
+
+    data class FailedToLoadChapterList(val message: String) : MangaViewEvent
+
+    data class BookmarkStatusChanged(val id: String, val bookmarked: Boolean) : MangaViewEvent
+
+    data class ReadStatusChanged(val id: String, val read: Boolean) : MangaViewEvent
 }

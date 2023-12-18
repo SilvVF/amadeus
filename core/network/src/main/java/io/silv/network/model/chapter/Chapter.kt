@@ -8,5 +8,5 @@ data class Chapter(
     val id: String,
     val type: String,
     val attributes: ChapterAttributes,
-    val relationships: List<Relationship> = emptyList()
+    val relationships: List<Relationship> = emptyList(),
 )

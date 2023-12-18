@@ -18,7 +18,6 @@ internal class DownloadPageLoader(
     private val manga: SavableManga,
     private val downloadManager: DownloadManager,
 ) : PageLoader(), KoinComponent {
-
     private val source = MangaDexSource
     private val context by inject<Context>()
 
@@ -28,9 +27,12 @@ internal class DownloadPageLoader(
         return getPagesFromDirectory()
     }
 
-
     private fun getPagesFromDirectory(): List<ReaderPage> {
-        val pages = downloadManager.buildPageList(source, manga.toResource(), chapter.chapter.toResource())
+        val pages = downloadManager.buildPageList(
+            source,
+            manga.toResource(),
+            chapter.chapter.toResource()
+        )
         return pages.map { page ->
             ReaderPage(page.index, page.url, page.imageUrl) {
                 context.contentResolver.openInputStream(page.imageUrl?.toUri() ?: Uri.EMPTY)!!

@@ -6,7 +6,6 @@ import io.silv.model.SavableManga
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-
 /**
  * Loader used to retrieve the [PageLoader] for a given chapter.
  */
@@ -14,7 +13,6 @@ class ChapterLoader(
     private val downloadManager: DownloadManager,
     private val manga: SavableManga,
 ) {
-
     /**
      * Assigns the chapter's page loader and loads the its pages. Returns immediately if the chapter
      * is already loaded.
@@ -26,13 +24,14 @@ class ChapterLoader(
 
         chapter.state = ReaderChapter.State.Loading
         withContext(Dispatchers.IO) {
-            //logcat { "Loading pages for ${chapter.chapter.name}" }
+            // logcat { "Loading pages for ${chapter.chapter.name}" }
             try {
                 val loader = getPageLoader(chapter)
                 chapter.pageLoader = loader
 
-                val pages = loader.getPages()
-                    .onEach { it.chapter = chapter }
+                val pages =
+                    loader.getPages()
+                        .onEach { it.chapter = chapter }
 
                 if (pages.isEmpty()) {
                     throw Exception("empty page list")
@@ -67,7 +66,7 @@ class ChapterLoader(
             downloadManager.isChapterDownloaded(
                 chapter.chapter.title,
                 chapter.chapter.scanlator,
-                manga.titleEnglish
+                manga.titleEnglish,
             ) -> DownloadPageLoader(chapter, manga, downloadManager)
             else -> HttpPageLoader(chapter)
         }

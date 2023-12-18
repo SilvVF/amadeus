@@ -14,13 +14,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SeasonalListDao {
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertSeasonalList(seasonalListEntity: SeasonalListEntity)
 
     @Query("SELECT * FROM SeasonalListEntity")
     fun observeSeasonalLists(): Flow<List<SeasonalListEntity>>
-
 
     @Query("DELETE FROM SeasonalListEntity")
     suspend fun clear()
@@ -34,25 +32,22 @@ interface SeasonalListDao {
 }
 
 class SeasonalListAndKeyAndManga(
-
     @Embedded
     val list: SeasonalListEntity,
-
     @Relation(
         parentColumn = "id",
         entityColumn = "season_id",
-        entity = SeasonalRemoteKey::class
+        entity = SeasonalRemoteKey::class,
     )
-    val manga: List<SeasonalKeyWithSourceManga> = emptyList()
+    val manga: List<SeasonalKeyWithSourceManga> = emptyList(),
 )
-data class SeasonalKeyWithSourceManga(
 
+data class SeasonalKeyWithSourceManga(
     @Embedded
     val key: SeasonalRemoteKey,
-
     @Relation(
         parentColumn = "manga_id",
-        entityColumn = "id"
+        entityColumn = "id",
     )
     val manga: SourceMangaResource,
 )

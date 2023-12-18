@@ -15,9 +15,10 @@ fun FiltersBottomSheet(
     onSaveQuery: (UiQueryFilters) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
-    )
+    val sheetState =
+        rememberModalBottomSheetState(
+            skipPartiallyExpanded = true,
+        )
 
     val scope = rememberCoroutineScope()
 
@@ -32,13 +33,13 @@ fun FiltersBottomSheet(
         FilterBottomSheetContent(
             hide = onDismissRequest,
             onSaveQueryClick = {
-               scope.launch {
-                   sheetState.hide()
-                   onDismissRequest()
-               }
-               onSaveQuery(it)
+                scope.launch {
+                    sheetState.hide()
+                    onDismissRequest()
+                }
+                onSaveQuery(it)
             },
-            onQueryFilterChange = {}
+            onQueryFilterChange = {},
         )
     }
 }

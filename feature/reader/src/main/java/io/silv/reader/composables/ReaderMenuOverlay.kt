@@ -47,11 +47,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import io.silv.ui.getSize
 import io.silv.common.model.ReaderDirection
 import io.silv.common.model.ReaderOrientation
 import io.silv.datastore.model.ReaderSettings
 import io.silv.model.SavableChapter
+import io.silv.ui.getSize
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,44 +73,61 @@ fun ReaderMenuOverlay(
     onNextClick: () -> Unit,
     onChapterBookmarked: (id: String) -> Unit,
     goToChapter: (id: String) -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     var visible by rememberSaveable {
         mutableStateOf(false)
     }
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            confirmValueChange = { it != SheetValue.Hidden }
+    val scaffoldState =
+        rememberBottomSheetScaffoldState(
+            bottomSheetState =
+            rememberStandardBottomSheetState(
+                confirmValueChange = { it != SheetValue.Hidden },
+            ),
         )
-    )
 
     var maxX by remember { mutableStateOf(0.dp) }
 
     Box(
-        modifier = modifier
+        modifier =
+        modifier
             .getSize { size -> maxX = size.width }
             .pointerInput(Unit) {
                 detectTapGestures {
                     val third = maxX.div(3f)
                     when (it.x.toDp()) {
-                        in 0.dp..third ->  {
+                        in 0.dp..third -> {
                             Log.d("Reader", "Back gesture $readerSettings")
                             when (readerSettings.orientation) {
-                                ReaderOrientation.Vertical -> handleBackGesture(readerSettings.orientation)
-                                ReaderOrientation.Horizontal ->  when(readerSettings.direction) {
-                                    ReaderDirection.Ltr -> handleBackGesture(readerSettings.orientation)
-                                    ReaderDirection.Rtl -> handleForwardGesture(readerSettings.orientation)
-                                }
+                                ReaderOrientation.Vertical -> handleBackGesture(
+                                    readerSettings.orientation
+                                )
+                                ReaderOrientation.Horizontal ->
+                                    when (readerSettings.direction) {
+                                        ReaderDirection.Ltr -> handleBackGesture(
+                                            readerSettings.orientation
+                                        )
+                                        ReaderDirection.Rtl -> handleForwardGesture(
+                                            readerSettings.orientation
+                                        )
+                                    }
                             }
                         }
                         in (third * 2)..maxX -> {
                             Log.d("Reader", "Forward gesture $readerSettings")
                             when (readerSettings.orientation) {
-                                ReaderOrientation.Vertical -> handleForwardGesture(readerSettings.orientation)
-                                ReaderOrientation.Horizontal ->  when(readerSettings.direction) {
-                                    ReaderDirection.Ltr -> handleForwardGesture(readerSettings.orientation)
-                                    ReaderDirection.Rtl -> handleBackGesture(readerSettings.orientation)
-                                }
+                                ReaderOrientation.Vertical -> handleForwardGesture(
+                                    readerSettings.orientation
+                                )
+                                ReaderOrientation.Horizontal ->
+                                    when (readerSettings.direction) {
+                                        ReaderDirection.Ltr -> handleForwardGesture(
+                                            readerSettings.orientation
+                                        )
+                                        ReaderDirection.Rtl -> handleBackGesture(
+                                            readerSettings.orientation
+                                        )
+                                    }
                             }
                         }
                         else -> {
@@ -118,7 +135,7 @@ fun ReaderMenuOverlay(
                         }
                     }
                 }
-            }
+            },
     ) {
         content()
         if (visible) {
@@ -130,7 +147,7 @@ fun ReaderMenuOverlay(
                     MangaChapterInfoTopBar(
                         mangaTitle = mangaTitle,
                         chapterTitle = chapter.title,
-                        onNavigationIconClick = onNavigationIconClick
+                        onNavigationIconClick = onNavigationIconClick,
                     )
                 },
                 viewing = chapter,
@@ -141,7 +158,7 @@ fun ReaderMenuOverlay(
                 onNextClick = onNextClick,
                 onPageChange = onPageChange,
                 onChapterBookmarked = onChapterBookmarked,
-                goToChapter = goToChapter
+                goToChapter = goToChapter,
             )
         }
     }
@@ -152,10 +169,11 @@ fun ReaderMenuOverlay(
 fun MangaChapterInfoTopBar(
     mangaTitle: String,
     chapterTitle: String,
-    onNavigationIconClick: () -> Unit
+    onNavigationIconClick: () -> Unit,
 ) {
     CenterAlignedTopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(
+        colors =
+        TopAppBarDefaults.topAppBarColors(
             containerColor = Color.DarkGray.copy(alpha = 0.5f),
             scrolledContainerColor = Color.DarkGray.copy(alpha = 0.5f),
         ),
@@ -163,17 +181,19 @@ fun MangaChapterInfoTopBar(
             Column(
                 Modifier.fillMaxWidth(0.8f),
                 verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(mangaTitle, 
+                Text(
+                    mangaTitle,
                     textAlign = TextAlign.Center,
-                    maxLines = 1, 
-                    overflow = TextOverflow.Ellipsis
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                Text(chapterTitle, 
+                Text(
+                    chapterTitle,
                     color = Color.LightGray,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         },
@@ -181,14 +201,12 @@ fun MangaChapterInfoTopBar(
             IconButton(onClick = onNavigationIconClick) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
-                    contentDescription = null
+                    contentDescription = null,
                 )
             }
-        }
+        },
     )
 }
-
-
 
 @Composable
 fun MenuSelections(
@@ -199,27 +217,26 @@ fun MenuSelections(
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(
-            onClick = onListIconClick
+            onClick = onListIconClick,
         ) {
             Icon(
                 imageVector = Icons.Filled.FormatListNumbered,
-                contentDescription = null
+                contentDescription = null,
             )
         }
         IconButton(
-            onClick = onTuneIconClick
+            onClick = onTuneIconClick,
         ) {
             Icon(
                 imageVector = Icons.Filled.Tune,
-                contentDescription = null
+                contentDescription = null,
             )
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
@@ -236,16 +253,17 @@ fun ScaffoldOverlay(
     onNextClick: () -> Unit,
     onPageChange: (page: Int) -> Unit,
     onChapterBookmarked: (id: String) -> Unit,
-    goToChapter: (id: String) -> Unit
+    goToChapter: (id: String) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val backgroundColor by animateColorAsState(
-        targetValue = if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
+        targetValue =
+        if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
             MaterialTheme.colorScheme.background.copy(alpha = 0.9f)
         } else {
             Color.DarkGray.copy(alpha = 0.9f)
         },
-        label = "background-color-for-sheet"
+        label = "background-color-for-sheet",
     )
 
     fun updateBottomSheetState() {
@@ -268,23 +286,24 @@ fun ScaffoldOverlay(
         sheetDragHandle = {},
         sheetContent = {
             Column {
-               MenuPageSlider(
-                   visible = scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded,
-                   page = page,
-                   lastPage = lastPage,
-                   onPrevClick = onPrevClick,
-                   onNextClick = onNextClick,
-                   onPageChange = onPageChange
-               )
+                MenuPageSlider(
+                    visible = scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded,
+                    page = page,
+                    lastPage = lastPage,
+                    onPrevClick = onPrevClick,
+                    onNextClick = onNextClick,
+                    onPageChange = onPageChange,
+                )
                 Spacer(Modifier.height(20.dp))
                 Column(
-                    modifier = Modifier
+                    modifier =
+                    Modifier
                         .fillMaxHeight(0.4f)
                         .fillMaxWidth()
                         .clip(
-                            RoundedCornerShape(12.dp)
+                            RoundedCornerShape(12.dp),
                         )
-                        .background(backgroundColor)
+                        .background(backgroundColor),
                 ) {
                     var showingList by rememberSaveable {
                         mutableStateOf(true)
@@ -305,28 +324,26 @@ fun ScaffoldOverlay(
                             } else {
                                 showingList = false
                             }
-                        }
+                        },
                     )
-                    AnimatedContent(targetState = showingList, label = "menu_selections") {
-                        if (showingList) {
+                    AnimatedContent(targetState = showingList, label = "menu_selections") { showing ->
+                        if (showing) {
                             ChaptersList(
                                 modifier = Modifier.fillMaxSize(),
                                 chapters = chapterList,
                                 selected = viewing,
                                 onBookmarkClick = onChapterBookmarked,
-                                onChapterClicked = goToChapter
+                                onChapterClicked = goToChapter,
                             )
-                        } else { 
+                        } else {
                             ReaderSettingsMenu(
                                 settings = readerSettings,
-                                onSettingsChanged = onSettingsChanged
+                                onSettingsChanged = onSettingsChanged,
                             )
                         }
                     }
                 }
             }
-        }
-    ){}
+        },
+    ) {}
 }
-
-

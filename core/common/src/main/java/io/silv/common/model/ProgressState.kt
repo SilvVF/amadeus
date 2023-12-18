@@ -3,9 +3,8 @@ package io.silv.common.model
 enum class ProgressState {
     Finished,
     NotStarted,
-    Reading
+    Reading,
 }
-
 
 enum class ReadingStatus {
     None,
@@ -14,15 +13,16 @@ enum class ReadingStatus {
     Dropped,
     PlanToRead,
     Completed,
-    ReReading
+    ReReading,
 }
 
-fun ReadingStatus.string() = when(this) {
-    ReadingStatus.None -> "None"
-    ReadingStatus.Reading -> "Reading"
-    ReadingStatus.OnHold -> "On Hold"
-    ReadingStatus.Dropped -> "Dropped"
-    ReadingStatus.PlanToRead -> "Plan To Read"
-    ReadingStatus.Completed -> "Completed"
-    ReadingStatus.ReReading -> "Re-Reading"
-}
+fun ReadingStatus.string() =
+    when (this) {
+        ReadingStatus.None -> "None"
+        ReadingStatus.Reading -> "Reading"
+        ReadingStatus.OnHold -> "On Hold"
+        ReadingStatus.Dropped -> "Dropped"
+        ReadingStatus.PlanToRead -> "Plan To Read"
+        ReadingStatus.Completed -> "Completed"
+        ReadingStatus.ReReading -> "Re-Reading"
+    }

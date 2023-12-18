@@ -12,27 +12,28 @@ import org.koin.core.module.dsl.factoryOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-val screenModule = module {
+val screenModule =
+    module {
 
-    factoryOf(::LibrarySM)
+        factoryOf(::LibrarySM)
 
-    factory {(mangaId: String, initialChapterId: String) ->
-        ReaderScreenModel(get(),get(), mangaId, initialChapterId, get())
+        factory { (mangaId: String, initialChapterId: String) ->
+            ReaderScreenModel(get(), get(), mangaId, initialChapterId, get())
+        }
+
+        factoryOf(::MangaViewScreenModel)
+
+        factoryOf(::MangaFilterScreenModel)
+
+        viewModelOf(::FilterScreenViewModel)
+
+        factory {
+            ExploreScreenModel(
+                subscribeToPagingData = get(),
+                savedMangaRepository = get(),
+                subscribeToSeasonalLists = get(),
+                recentSearchHandler = get(),
+                seasonalMangaSyncManager = get(qualifier = named(SeasonalMangaSyncWorkName)),
+            )
+        }
     }
-
-    factoryOf(::MangaViewScreenModel)
-
-    factoryOf(::MangaFilterScreenModel)
-
-    viewModelOf(::FilterScreenViewModel)
-
-    factory {
-        ExploreScreenModel(
-            subscribeToPagingData = get(),
-            savedMangaRepository = get(),
-            subscribeToSeasonalLists = get(),
-            recentSearchHandler = get(),
-            seasonalMangaSyncManager = get(qualifier = named(SeasonalMangaSyncWorkName)),
-        )
-    }
-}

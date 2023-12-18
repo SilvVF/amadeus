@@ -7,9 +7,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 @Stable
 data class ReaderChapter(
-    val chapter: SavableChapter
+    val chapter: SavableChapter,
 ) {
-
     val stateFlow = MutableStateFlow<State>(State.Wait)
     var state: State
         get() = stateFlow.value
@@ -41,8 +40,11 @@ data class ReaderChapter(
 
     sealed interface State {
         data object Wait : State
+
         data object Loading : State
+
         data class Error(val error: Throwable) : State
+
         data class Loaded(val pages: List<ReaderPage>) : State
     }
 }

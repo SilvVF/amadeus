@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import io.silv.amadeus.MainActivity
 
 class CrashActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

@@ -9,10 +9,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.map
 
-class SavedMangaSyncManager (
+class SavedMangaSyncManager(
     private val context: Context,
 ) : SyncManager {
-
     override val isSyncing: Flow<Boolean> =
         WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(MangaSyncWorkName)
             .map(List<WorkInfo>::anyRunning)

@@ -21,7 +21,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -50,7 +50,6 @@ dependencies {
     implementation(project(":core:datastore"))
     implementation(project(":sync"))
 
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)
@@ -77,17 +76,16 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-
     implementation("androidx.palette:palette:1.0.0")
     // Paging 3
     implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.common)
 
-    //Datastore
+    // Datastore
     implementation(libs.androidx.datastore.preferences)
 
-    //KOIN
+    // KOIN
     implementation(libs.koin.compose)
     implementation(libs.koin.android)
     implementation(libs.koin.core)
@@ -99,7 +97,7 @@ dependencies {
     implementation(libs.kotlin.serialization)
     implementation(libs.kotlin.collections.immutable)
 
-    //VOYAGER
+    // VOYAGER
     implementation(libs.voyager.androidx)
     implementation(libs.voyager.koin)
     implementation(libs.voyager.navigator)

@@ -12,8 +12,7 @@ import io.silv.database.entity.relations.SavedMangaWithChapters
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface SavedMangaDao: SyncableDao<SavedMangaEntity> {
-
+interface SavedMangaDao : SyncableDao<SavedMangaEntity> {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertSavedManga(mangaEntity: SavedMangaEntity)
 
@@ -23,10 +22,8 @@ interface SavedMangaDao: SyncableDao<SavedMangaEntity> {
     @Query("SELECT * FROM savedmangaentity")
     fun getSavedManga(): Flow<List<SavedMangaEntity>>
 
-
     @Query("SELECT * FROM savedmangaentity WHERE id = :id")
-    fun getSavedMangaById(id: String):  Flow<SavedMangaEntity?>
-
+    fun getSavedMangaById(id: String): Flow<SavedMangaEntity?>
 
     @Transaction
     @Query("SELECT * FROM savedmangaentity WHERE id = :id")
@@ -35,7 +32,6 @@ interface SavedMangaDao: SyncableDao<SavedMangaEntity> {
     @Transaction
     @Query("SELECT * FROM savedmangaentity")
     fun getSavedMangaWithChapters(): Flow<List<SavedMangaWithChapters>>
-
 
     @Delete
     suspend fun deleteSavedManga(mangaEntity: SavedMangaEntity)

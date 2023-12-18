@@ -15,28 +15,28 @@ import org.koin.androidx.workmanager.dsl.workerOf
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
-val domainModule = module {
+val domainModule =
+    module {
 
+        factoryOf(::GetCombinedSavableMangaWithChapters)
 
-    factoryOf(::GetCombinedSavableMangaWithChapters)
+        factoryOf(::GetSavedMangaWithChaptersList)
 
-    factoryOf(::GetSavedMangaWithChaptersList)
+        factoryOf(::GetMangaStatisticsById)
 
-    factoryOf(::GetMangaStatisticsById)
+        factoryOf(::SubscribeToPagingData)
 
-    factoryOf(::SubscribeToPagingData)
+        factoryOf(::SubscribeToSeasonalLists)
 
-    factoryOf(::SubscribeToSeasonalLists)
+        factoryOf(::RecentSearchHandler)
 
-    factoryOf(::RecentSearchHandler)
+        workerOf(::DownloadWorker)
 
-    workerOf(::DownloadWorker)
+        factoryOf(::GetSavableManga)
 
-    factoryOf(::GetSavableManga)
+        factoryOf(::GetSavableChapter)
 
-    factoryOf(::GetSavableChapter)
+        factoryOf(::MangaHandler)
 
-    factoryOf(::MangaHandler)
-
-    factoryOf(::ChapterHandler)
-}
+        factoryOf(::ChapterHandler)
+    }

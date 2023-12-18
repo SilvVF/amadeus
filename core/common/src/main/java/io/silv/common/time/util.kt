@@ -1,12 +1,12 @@
 package io.silv.common.time
 
+import java.time.Duration
+import kotlin.time.toKotlinDuration
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import java.time.Duration
-import kotlin.time.toKotlinDuration
 
 fun localDateTimeNow() = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
@@ -19,7 +19,7 @@ fun timeNow() = Clock.System.now().toLocalDateTime(timeZone())
 fun timeStringMinus(duration: kotlin.time.Duration): String {
     return Clock.System.now()
         .minus(
-            duration
+            duration,
         )
         .toString()
         .replace(":", "%3A")
@@ -31,7 +31,7 @@ fun timeStringMinus(duration: kotlin.time.Duration): String {
 fun timeStringMinus(duration: Duration): String {
     return Clock.System.now()
         .minus(
-            duration.toKotlinDuration()
+            duration.toKotlinDuration(),
         )
         .toString()
         .replace(":", "%3A")
@@ -39,6 +39,7 @@ fun timeStringMinus(duration: Duration): String {
             it != '.'
         }
 }
+
 fun LocalDateTime.toMangaDexTimeString(): String {
     return this
         .toString()
@@ -57,6 +58,6 @@ fun String.parseMangaDexTimeToDateTime(): LocalDateTime {
 operator fun LocalDateTime.minus(localDateTime: LocalDateTime): kotlin.time.Duration {
     return this.toInstant(timeZone())
         .minus(
-            localDateTime.toInstant(timeZone())
+            localDateTime.toInstant(timeZone()),
         )
 }

@@ -128,16 +128,17 @@ fun FilterScreen(
     selectedTranslatedLanguages: List<io.silv.ui.Language>,
     onTranslatedLanguageSelected: (io.silv.ui.Language) -> Unit,
     selectedDemographics: List<PublicationDemographic>,
-    onDemographicSelected: (PublicationDemographic) -> Unit
+    onDemographicSelected: (PublicationDemographic) -> Unit,
 ) {
     BackHandler {
         hide()
     }
 
     val space = LocalSpacing.current
-    val groupedTags = remember(tagsUiState) {
-        tagsUiState.groupBy { it.group }
-    }
+    val groupedTags =
+        remember(tagsUiState) {
+            tagsUiState.groupBy { it.group }
+        }
     var included by rememberSaveable {
         mutableStateOf(true)
     }
@@ -148,7 +149,7 @@ fun FilterScreen(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            .systemBarsPadding()
+            .systemBarsPadding(),
     ) {
         FilterTopBar {
             hide()
@@ -157,12 +158,13 @@ fun FilterScreen(
             Modifier
                 .fillMaxSize()
                 .padding(bottom = space.large)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState()),
         ) {
             Column {
                 Row(Modifier.fillMaxWidth()) {
                     AuthorSearchBar(
-                        modifier = Modifier
+                        modifier =
+                        Modifier
                             .padding(space.small)
                             .weight(1f),
                         label = "Authors",
@@ -170,10 +172,11 @@ fun FilterScreen(
                         onQueryChange = onAuthorQueryChange,
                         result = authorListState,
                         onAuthorSelected = onAuthorSelected,
-                        selectedAuthors = selectedAuthors
+                        selectedAuthors = selectedAuthors,
                     )
                     AuthorSearchBar(
-                        modifier = Modifier
+                        modifier =
+                        Modifier
                             .padding(space.small)
                             .weight(1f),
                         label = "Artists",
@@ -182,7 +185,7 @@ fun FilterScreen(
                         onQueryChange = onArtistQueryChange,
                         result = artistListState,
                         onAuthorSelected = onArtistSelected,
-                        selectedAuthors = selectedArtists
+                        selectedAuthors = selectedArtists,
                     )
                 }
                 Spacer(Modifier.height(space.med))
@@ -190,18 +193,19 @@ fun FilterScreen(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = space.med)
+                    .padding(horizontal = space.med),
             ) {
                 Text("Publication Status")
                 FlowRow {
                     statusList.forEach { status ->
                         FilterChip(
-                            selected = remember(status, selectedStatus) {
+                            selected =
+                            remember(status, selectedStatus) {
                                 selectedStatus.contains(status)
                             },
                             onClick = { onStatusSelected(status) },
                             label = { Text(status.name) },
-                            modifier = Modifier.padding(horizontal = space.xs)
+                            modifier = Modifier.padding(horizontal = space.xs),
                         )
                     }
                 }
@@ -210,21 +214,23 @@ fun FilterScreen(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = space.med)
+                    .padding(horizontal = space.med),
             ) {
-                val demographics = remember {
-                    PublicationDemographic.values().toList()
-                }
+                val demographics =
+                    remember {
+                        PublicationDemographic.values().toList()
+                    }
                 Text("Magazine Demographic")
                 FlowRow {
                     demographics.forEach { demographic ->
                         FilterChip(
-                            selected = remember(demographic, selectedDemographics) {
+                            selected =
+                            remember(demographic, selectedDemographics) {
                                 selectedDemographics.contains(demographic)
                             },
                             onClick = { onDemographicSelected(demographic) },
                             label = { Text(demographic.name) },
-                            modifier = Modifier.padding(horizontal = space.xs)
+                            modifier = Modifier.padding(horizontal = space.xs),
                         )
                     }
                 }
@@ -254,7 +260,7 @@ fun FilterScreen(
                 tagsVisible = tagsVisible,
                 tagsVisibleChange = { tagsVisible = it },
                 includedChange = { included = it },
-                included = included
+                included = included,
             )
             TagsList(
                 tagsVisible = tagsVisible,
@@ -263,7 +269,7 @@ fun FilterScreen(
                 includedIds = includedIds,
                 includedSelected = includedSelected,
                 excludedIds = excludedIds,
-                excludedSelected = excludedSelected
+                excludedSelected = excludedSelected,
             )
         }
     }
@@ -280,22 +286,27 @@ private fun LanguageSelection(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-    val maxHeight = remember(screenHeightDp) {
-        screenHeightDp / 3f
-    }
+    val maxHeight =
+        remember(screenHeightDp) {
+            screenHeightDp / 3f
+        }
     val space = LocalSpacing.current
 
     Box(
-        modifier = modifier
-            .wrapContentSize(Alignment.BottomStart)
+        modifier =
+        modifier
+            .wrapContentSize(Alignment.BottomStart),
     ) {
         Column(horizontalAlignment = Alignment.Start) {
             label?.invoke()
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Start) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
                 IconButton(onClick = { expanded = true }) {
                     Icon(
                         Icons.Default.MoreVert,
-                        contentDescription = null
+                        contentDescription = null,
                     )
                 }
                 if (selected.isEmpty()) {
@@ -305,25 +316,25 @@ private fun LanguageSelection(
                         in 1..2 -> {
                             selected.forEach {
                                 FilterChip(
-                                    selected = true ,
+                                    selected = true,
                                     onClick = { onLanguageSelected(it) },
                                     label = { Text(it.string) },
-                                    modifier = Modifier.padding(horizontal = space.xs)
+                                    modifier = Modifier.padding(horizontal = space.xs),
                                 )
                             }
                         }
                         else -> {
                             FilterChip(
-                                selected = true ,
+                                selected = true,
                                 onClick = { onLanguageSelected(selected.first()) },
                                 label = { Text(selected.first().string) },
-                                modifier = Modifier.padding(horizontal = space.xs)
+                                modifier = Modifier.padding(horizontal = space.xs),
                             )
                             AssistChip(
                                 onClick = { expanded = !expanded },
                                 enabled = true,
                                 label = { Text("+${selected.size - 1} more") },
-                                modifier = Modifier.padding(horizontal = space.xs)
+                                modifier = Modifier.padding(horizontal = space.xs),
                             )
                         }
                     }
@@ -344,19 +355,20 @@ private fun LanguageSelection(
                             painter = painterResource(id = language.resId),
                             contentDescription = "flag",
                             modifier = Modifier.size(50.dp),
-                            contentScale = ContentScale.Fit
+                            contentScale = ContentScale.Fit,
                         )
                     },
                     trailingIcon = {
                         Checkbox(
-                            checked = remember(language, selected) {
+                            checked =
+                            remember(language, selected) {
                                 derivedStateOf { language in selected }.value
                             },
                             onCheckedChange = {
                                 onLanguageSelected(language)
-                            }
+                            },
                         )
-                    }
+                    },
                 )
             }
         }
@@ -364,22 +376,20 @@ private fun LanguageSelection(
 }
 
 @Composable
-private fun FilterTopBar(
-    onCloseIconClick: () -> Unit
-) {
+private fun FilterTopBar(onCloseIconClick: () -> Unit) {
     val space = LocalSpacing.current
     Row(
         Modifier
             .fillMaxWidth()
             .padding(space.med),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(text = "Filters", style = MaterialTheme.typography.titleLarge)
         IconButton(onClick = onCloseIconClick) {
             Icon(
                 imageVector = Icons.Filled.Close,
-                contentDescription = null
+                contentDescription = null,
             )
         }
     }
@@ -394,19 +404,19 @@ private fun TagsList(
     includedIds: List<String>,
     includedSelected: (String) -> Unit,
     excludedIds: List<String>,
-    excludedSelected: (String) -> Unit
+    excludedSelected: (String) -> Unit,
 ) {
     val space = LocalSpacing.current
     Column(Modifier.padding(horizontal = space.med)) {
         AnimatedVisibility(
-            visible = tagsVisible
+            visible = tagsVisible,
         ) {
             Column {
                 if (included) {
                     groupedTags.forEach { (group, tags) ->
                         Text(
                             text = group,
-                            style = MaterialTheme.typography.labelLarge
+                            style = MaterialTheme.typography.labelLarge,
                         )
                         FlowRow {
                             tags.forEach {
@@ -414,7 +424,7 @@ private fun TagsList(
                                     selected = it.id in includedIds,
                                     onClick = { includedSelected(it.id) },
                                     label = { Text(it.name) },
-                                    modifier = Modifier.padding(horizontal = space.xs)
+                                    modifier = Modifier.padding(horizontal = space.xs),
                                 )
                             }
                         }
@@ -423,7 +433,7 @@ private fun TagsList(
                     groupedTags.forEach { (group, tags) ->
                         Text(
                             text = group,
-                            style = MaterialTheme.typography.labelLarge
+                            style = MaterialTheme.typography.labelLarge,
                         )
                         FlowRow {
                             tags.forEach {
@@ -431,7 +441,7 @@ private fun TagsList(
                                     selected = it.id in excludedIds,
                                     onClick = { excludedSelected(it.id) },
                                     label = { Text(it.name) },
-                                    modifier = Modifier.padding(horizontal = space.xs)
+                                    modifier = Modifier.padding(horizontal = space.xs),
                                 )
                             }
                         }
@@ -458,7 +468,7 @@ private fun TagsFilterHeader(
         Column {
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 TagModeSwitch(
                     title = "Tag inclusion mode",
@@ -466,7 +476,7 @@ private fun TagsFilterHeader(
                     onModeChange = {
                         includedTagsModeChanged(it)
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
                 TagModeSwitch(
                     title = "Tag exclusion mode",
@@ -474,7 +484,7 @@ private fun TagsFilterHeader(
                     onModeChange = {
                         excludedTagsModeChanged(it)
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -482,26 +492,29 @@ private fun TagsFilterHeader(
                     checked = tagsVisible,
                     onCheckedChange = {
                         tagsVisibleChange(it)
-                    }
+                    },
                 )
                 Text("show tags")
                 IconButton(onClick = { tagsVisibleChange(!tagsVisible) }) {
                     Icon(
-                        imageVector = if (tagsVisible) {
+                        imageVector =
+                        if (tagsVisible) {
                             Icons.Filled.KeyboardArrowUp
-                        } else
-                            Icons.Filled.KeyboardArrowDown,
-                        contentDescription = null
+                        } else {
+                            Icons.Filled.KeyboardArrowDown
+                        },
+                        contentDescription = null,
                     )
                 }
             }
             TagSelectRow(
-                modifier = Modifier
+                modifier =
+                Modifier
                     .padding(vertical = space.med)
                     .fillMaxWidth()
                     .height(40.dp),
                 included = included,
-                onIncludedChange = includedChange
+                onIncludedChange = includedChange,
             )
         }
     }
@@ -512,7 +525,7 @@ private fun AuthorTextField(
     modifier: Modifier = Modifier,
     value: String,
     labelString: String,
-    onValueChanged: (String) -> Unit
+    onValueChanged: (String) -> Unit,
 ) {
     OutlinedTextField(
         value = value,
@@ -523,7 +536,7 @@ private fun AuthorTextField(
             Text(
                 text = labelString,
                 style = MaterialTheme.typography.bodyMedium,
-                fontSize = 12.sp
+                fontSize = 12.sp,
             )
         },
         singleLine = true,
@@ -535,13 +548,12 @@ private fun AuthorTextField(
                 IconButton(onClick = { onValueChanged("") }) {
                     Icon(
                         imageVector = Icons.Outlined.Clear,
-                        contentDescription = null
+                        contentDescription = null,
                     )
                 }
             }
-        }
+        },
     )
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
@@ -554,7 +566,7 @@ private fun AuthorSearchBar(
     result: QueryResult<List<DomainAuthor>>,
     selectedAuthors: List<DomainAuthor>,
     addCords: Boolean = false,
-    onAuthorSelected: (author: DomainAuthor) -> Unit
+    onAuthorSelected: (author: DomainAuthor) -> Unit,
 ) {
     val focusRequester = remember { FocusRequester() }
     var focused by remember { mutableStateOf(false) }
@@ -563,27 +575,28 @@ private fun AuthorSearchBar(
     var currentCoordinates: IntOffset by remember { mutableStateOf(IntOffset(0, 0)) }
     var sizeOffset: IntSize by remember { mutableStateOf(IntSize(0, 0)) }
 
-    val popupPositionProvider = object : PopupPositionProvider {
-        override fun calculatePosition(
-            anchorBounds: IntRect,
-            windowSize: IntSize,
-            layoutDirection: LayoutDirection,
-            popupContentSize: IntSize
-        ): IntOffset {
-            return currentCoordinates.copy(
-                x = currentCoordinates.x + if (addCords) sizeOffset.width else 0,
-                y = currentCoordinates.y + sizeOffset.height
-            )
+    val popupPositionProvider =
+        object : PopupPositionProvider {
+            override fun calculatePosition(
+                anchorBounds: IntRect,
+                windowSize: IntSize,
+                layoutDirection: LayoutDirection,
+                popupContentSize: IntSize,
+            ): IntOffset {
+                return currentCoordinates.copy(
+                    x = currentCoordinates.x + if (addCords) sizeOffset.width else 0,
+                    y = currentCoordinates.y + sizeOffset.height,
+                )
+            }
         }
-    }
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Bottom
+        verticalArrangement = Arrangement.Bottom,
     ) {
         LaunchedEffect(Unit) {
             snapshotFlow { currentCoordinates.y }.collect {
-                if((it > (0 + sizeOffset.height)) && focused) {
+                if ((it > (0 + sizeOffset.height)) && focused) {
                     focusManager.clearFocus(true)
                 }
             }
@@ -593,22 +606,25 @@ private fun AuthorSearchBar(
             value = query,
             labelString = label,
             onValueChanged = onQueryChange,
-            modifier = Modifier
+            modifier =
+            Modifier
                 .onGloballyPositioned { layoutCoordinates ->
-                    val (x: Int, y: Int) = when {
-                        layoutCoordinates.isAttached -> with(layoutCoordinates.positionInRoot()) {
-                            x.toInt() to y.toInt()
-                        }
+                    val (x: Int, y: Int) =
+                        when {
+                            layoutCoordinates.isAttached ->
+                                with(layoutCoordinates.positionInRoot()) {
+                                    x.toInt() to y.toInt()
+                                }
 
-                        else -> 0 to 0
-                    }
+                            else -> 0 to 0
+                        }
                     currentCoordinates = IntOffset(x, y)
                     sizeOffset = layoutCoordinates.size
                 }
                 .focusRequester(focusRequester)
                 .onFocusChanged {
                     focused = it.isFocused
-                }
+                },
         )
         LazyRow {
             items(selectedAuthors) {
@@ -616,7 +632,7 @@ private fun AuthorSearchBar(
                     selected = true,
                     onClick = { onAuthorSelected(it) },
                     label = { Text(it.name) },
-                    modifier = Modifier.padding(horizontal = space.xs)
+                    modifier = Modifier.padding(horizontal = space.xs),
                 )
             }
         }
@@ -626,13 +642,13 @@ private fun AuthorSearchBar(
         ) {
             Popup(
                 popupPositionProvider = popupPositionProvider,
-                properties = PopupProperties()
+                properties = PopupProperties(),
             ) {
                 LazyColumn(
                     Modifier
                         .fillMaxWidth(0.5f)
                         .heightIn(0.dp, screenHeightDp / 3)
-                        .background(MaterialTheme.colorScheme.surface)
+                        .background(MaterialTheme.colorScheme.surface),
                 ) {
                     when (result) {
                         is QueryResult.Done -> {
@@ -648,21 +664,21 @@ private fun AuthorSearchBar(
                                         if (it in selectedAuthors) {
                                             Icon(
                                                 imageVector = Icons.Filled.Check,
-                                                contentDescription = null
+                                                contentDescription = null,
                                             )
                                         }
                                     },
-                                    onClick = { onAuthorSelected(it) }
+                                    onClick = { onAuthorSelected(it) },
                                 )
                                 Divider()
                             }
                         }
-                        QueryResult.Loading ->  {
+                        QueryResult.Loading -> {
                             item {
                                 CenterBox(
                                     Modifier
                                         .fillMaxWidth()
-                                        .padding(space.med)
+                                        .padding(space.med),
                                 ) {
                                     CircularProgressIndicator()
                                 }
@@ -685,26 +701,34 @@ private fun TagModeSwitch(
 ) {
     val space = LocalSpacing.current
     val transformed = remember(mode) { mode == TagsMode.OR }
-    Column(modifier,
+    Column(
+        modifier,
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(title, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             Text(
                 text = "AND",
-                style = MaterialTheme.typography.labelLarge.copy(
-                    color = if (transformed) {
+                style =
+                MaterialTheme.typography.labelLarge.copy(
+                    color =
+                    if (transformed) {
                         Color.Unspecified
-                    } else  MaterialTheme.colorScheme.primary,
-                    fontWeight = if (transformed) {
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    fontWeight =
+                    if (transformed) {
                         FontWeight.Normal
-                    } else  FontWeight.Bold
+                    } else {
+                        FontWeight.Bold
+                    },
                 ),
-                modifier = Modifier.padding(horizontal = space.med)
+                modifier = Modifier.padding(horizontal = space.med),
             )
             if (!transformed) {
                 Row(
@@ -715,15 +739,16 @@ private fun TagModeSwitch(
                         .border(
                             3.dp,
                             MaterialTheme.colorScheme.primary,
-                            RoundedCornerShape(100)
+                            RoundedCornerShape(100),
                         )
                         .padding(space.small),
                     horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     CenterBox {
                         CenterBox(
-                            modifier = Modifier
+                            modifier =
+                            Modifier
                                 .clip(CircleShape)
                                 .size(22.dp)
                                 .background(MaterialTheme.colorScheme.primary),
@@ -741,15 +766,16 @@ private fun TagModeSwitch(
                         .border(
                             3.dp,
                             MaterialTheme.colorScheme.primary,
-                            RoundedCornerShape(100)
+                            RoundedCornerShape(100),
                         )
                         .padding(space.small),
                     horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     CenterBox {
                         CenterBox(
-                            modifier = Modifier
+                            modifier =
+                            Modifier
                                 .clip(CircleShape)
                                 .size(22.dp)
                                 .background(MaterialTheme.colorScheme.primary),
@@ -761,15 +787,22 @@ private fun TagModeSwitch(
             }
             Text(
                 text = "OR",
-                style = MaterialTheme.typography.labelLarge.copy(
-                    color = if (!transformed) {
+                style =
+                MaterialTheme.typography.labelLarge.copy(
+                    color =
+                    if (!transformed) {
                         Color.Unspecified
-                    } else  MaterialTheme.colorScheme.primary,
-                    fontWeight = if (!transformed) {
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    fontWeight =
+                    if (!transformed) {
                         FontWeight.Normal
-                    } else  FontWeight.Bold
+                    } else {
+                        FontWeight.Bold
+                    },
                 ),
-                modifier =  Modifier.padding(horizontal = space.med)
+                modifier = Modifier.padding(horizontal = space.med),
             )
         }
     }
@@ -779,32 +812,33 @@ private fun TagModeSwitch(
 private fun TagSelectRow(
     modifier: Modifier = Modifier,
     included: Boolean,
-    onIncludedChange: (Boolean) -> Unit
+    onIncludedChange: (Boolean) -> Unit,
 ) {
-
     Column(modifier.noRippleClickable { onIncludedChange(!included) }.fillMaxWidth()) {
         if (included) {
             Box(
                 Modifier
                     .fillMaxSize(),
-                contentAlignment = Alignment.CenterStart
+                contentAlignment = Alignment.CenterStart,
             ) {
                 Box(
-                    modifier = Modifier
+                    modifier =
+                    Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
                 )
                 TextItems()
             }
         } else {
             Box(
                 modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.CenterEnd
+                contentAlignment = Alignment.CenterEnd,
             ) {
                 Box(
-                    modifier = Modifier
+                    modifier =
+                    Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
                 )
                 TextItems()
             }
@@ -814,18 +848,20 @@ private fun TagSelectRow(
 
 @Composable
 private fun TextItems() {
-    Row(Modifier
-        .fillMaxWidth(),
+    Row(
+        Modifier
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         listOf("Included", "Excluded").forEach {
             Text(
                 text = it,
-                modifier = Modifier
+                modifier =
+                Modifier
                     .weight(1f),
                 textAlign = TextAlign.Center,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
             )
         }
     }

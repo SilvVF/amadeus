@@ -10,5 +10,5 @@ data class DomainSeasonalList(
     val id: String,
     val season: Season,
     val year: Int,
-    val mangas: ImmutableList<StateFlow<SavableManga>>
+    val mangas: ImmutableList<StateFlow<SavableManga>>,
 )

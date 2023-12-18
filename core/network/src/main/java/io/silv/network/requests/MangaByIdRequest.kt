@@ -1,4 +1,4 @@
-@file: Suppress("unused")
+@file:Suppress("unused")
 
 package io.silv.network.requests
 
@@ -7,7 +7,7 @@ import io.silv.network.requests.query.QueryParams
 
 data class MangaByIdRequest(
     val includes: List<String>? = null,
-): QueryParams {
+) : QueryParams {
     override fun createQueryParams(): List<QueryParam> {
         return buildList {
             if (includes != null) {

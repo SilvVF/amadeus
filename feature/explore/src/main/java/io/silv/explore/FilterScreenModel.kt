@@ -29,9 +29,8 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 
 class FilterScreenViewModel(
-    tagRepository: TagRepository
+    tagRepository: TagRepository,
 ) : ViewModel() {
-
     private val mutableState = MutableStateFlow(FilterState())
     val state = mutableState.asStateFlow()
 
@@ -39,12 +38,13 @@ class FilterScreenViewModel(
         tagRepository.allTags().onEach { tags ->
             mutableState.update { state ->
                 state.copy(
-                    categoryToTags = tags
+                    categoryToTags =
+                    tags
                         .groupBy { tag -> tag.group }
                         .mapValues { (_, tags) ->
                             tags.map { DomainTag(it) }.toImmutableList()
                         }
-                        .toImmutableMap()
+                        .toImmutableMap(),
                 )
             }
         }
@@ -54,21 +54,21 @@ class FilterScreenViewModel(
     private fun <T> List<T>.toggleItem(item: T): ImmutableList<T> {
         return (
             if (contains(item)) this - item else this + item
-        )
+            )
             .toImmutableList()
     }
 
     private fun <T> List<T>.toggleItems(items: List<T>): ImmutableList<T> {
         return (
-                if (containsAll(items)) this - items.toSet() else this + items
-                )
+            if (containsAll(items)) this - items.toSet() else this + items
+            )
             .toImmutableList()
     }
 
     private fun updateFilters(block: (filters: UiQueryFilters) -> UiQueryFilters) {
         mutableState.update {
             it.copy(
-                queryFilters = block(it.queryFilters)
+                queryFilters = block(it.queryFilters),
             )
         }
     }
@@ -82,131 +82,180 @@ class FilterScreenViewModel(
     fun updateFilter(action: FilterAction) {
         Log.d("Filter", "Updating $action")
         viewModelScope.launch {
-            when(action) {
-                is FilterAction.ChangeArtist -> updateFilters {
-                    it.copy(
-                        artists = it.artists.toggleItem(action.artist)
-                    )
-                }
-                is FilterAction.ChangeAuthor -> updateFilters {
-                    it.copy(
-                        artists = it.authors.toggleItem(action.author)
-                    )
-                }
-                is FilterAction.ChangeContentRating -> updateFilters {
-                    it.copy(
-                        contentRating = it.contentRating.toggleItem(action.rating)
-                    )
-                }
-                is FilterAction.ChangeCreatedAt -> updateFilters {
-                    it.copy(
-                        createdAtSince = action.time
-                    )
-                }
-                is FilterAction.ChangeGroup -> updateFilters {
-                    it.copy(
-                        group = action.group
-                    )
-                }
-                is FilterAction.ChangeIds -> updateFilters {
-                    it.copy(
-                        ids = it.ids.toggleItem(action.id)
-                    )
-                }
-                is FilterAction.ChangeIncludes -> updateFilters {
-                    it.copy(
-                        includes = it.includes.toggleItem(action.includes)
-                    )
-                }
-                is FilterAction.ChangeOrder -> updateFilters {
-                    it.copy(
-                        order = action.order
-                    )
-                }
-                is FilterAction.ChangeOrderBy -> updateFilters {
-                    it.copy(
-                        orderBy = action.order
-                    )
-                }
-                is FilterAction.ChangePublicationDemographic -> updateFilters {
-                    it.copy(
-                        publicationDemographic = it.publicationDemographic.toggleItem(action.demographic)
-                    )
-                }
-                is FilterAction.ChangeStatus -> updateFilters {
-                    it.copy(
-                        status = it.status.toggleItem(action.status)
-                    )
-                }
-                is FilterAction.ChangeTranslatedLanguage -> updateFilters {
-                    it.copy(
-                        availableTranslatedLanguage = it.availableTranslatedLanguage.toggleItem(action.language)
-                    )
-                }
-                is FilterAction.ChangeUpdatedAt -> updateFilters {
-                    it.copy(updatedAtSince = it.updatedAtSince)
-                }
-                is FilterAction.ChangeYear -> updateFilters {
-                    it.copy(year = it.year)
-                }
-                is FilterAction.ExcludeTag -> updateFilters {
-                    it.copy(excludedTags = it.excludedTags.toggleItem(action.tag))
-                }
-                is FilterAction.IncludeTag -> updateFilters {
-                    it.copy(includedTags = it.includedTags.toggleItem(action.tag))
-                }
-                FilterAction.ToggleExcludeTagMode -> updateFilters {
-                    it.copy(excludedTagsMode = when(it.excludedTagsMode) {
-                        TagsMode.OR -> TagsMode.AND
-                        TagsMode.AND -> TagsMode.OR
-                    })
-                }
-                FilterAction.ToggleHasAvailableChapters -> updateFilters {
-                    it.copy(hasAvailableChapters = !it.hasAvailableChapters)
-                }
-                FilterAction.ToggleIncludeTagMode ->  updateFilters {
-                    it.copy(includedTagsMode = when(it.includedTagsMode) {
-                        TagsMode.OR -> TagsMode.AND
-                        TagsMode.AND -> TagsMode.OR
-                    })
-                }
-                is FilterAction.MangaType -> updateFilters {
-                    it.copy(
-                        originalLanguage = it.originalLanguage.toggleItems(action.languages),
-                    )
-                }
+            when (action) {
+                is FilterAction.ChangeArtist ->
+                    updateFilters {
+                        it.copy(
+                            artists = it.artists.toggleItem(action.artist),
+                        )
+                    }
+                is FilterAction.ChangeAuthor ->
+                    updateFilters {
+                        it.copy(
+                            artists = it.authors.toggleItem(action.author),
+                        )
+                    }
+                is FilterAction.ChangeContentRating ->
+                    updateFilters {
+                        it.copy(
+                            contentRating = it.contentRating.toggleItem(action.rating),
+                        )
+                    }
+                is FilterAction.ChangeCreatedAt ->
+                    updateFilters {
+                        it.copy(
+                            createdAtSince = action.time,
+                        )
+                    }
+                is FilterAction.ChangeGroup ->
+                    updateFilters {
+                        it.copy(
+                            group = action.group,
+                        )
+                    }
+                is FilterAction.ChangeIds ->
+                    updateFilters {
+                        it.copy(
+                            ids = it.ids.toggleItem(action.id),
+                        )
+                    }
+                is FilterAction.ChangeIncludes ->
+                    updateFilters {
+                        it.copy(
+                            includes = it.includes.toggleItem(action.includes),
+                        )
+                    }
+                is FilterAction.ChangeOrder ->
+                    updateFilters {
+                        it.copy(
+                            order = action.order,
+                        )
+                    }
+                is FilterAction.ChangeOrderBy ->
+                    updateFilters {
+                        it.copy(
+                            orderBy = action.order,
+                        )
+                    }
+                is FilterAction.ChangePublicationDemographic ->
+                    updateFilters {
+                        it.copy(
+                            publicationDemographic = it.publicationDemographic.toggleItem(
+                                action.demographic
+                            ),
+                        )
+                    }
+                is FilterAction.ChangeStatus ->
+                    updateFilters {
+                        it.copy(
+                            status = it.status.toggleItem(action.status),
+                        )
+                    }
+                is FilterAction.ChangeTranslatedLanguage ->
+                    updateFilters {
+                        it.copy(
+                            availableTranslatedLanguage = it.availableTranslatedLanguage.toggleItem(
+                                action.language
+                            ),
+                        )
+                    }
+                is FilterAction.ChangeUpdatedAt ->
+                    updateFilters {
+                        it.copy(updatedAtSince = it.updatedAtSince)
+                    }
+                is FilterAction.ChangeYear ->
+                    updateFilters {
+                        it.copy(year = it.year)
+                    }
+                is FilterAction.ExcludeTag ->
+                    updateFilters {
+                        it.copy(excludedTags = it.excludedTags.toggleItem(action.tag))
+                    }
+                is FilterAction.IncludeTag ->
+                    updateFilters {
+                        it.copy(includedTags = it.includedTags.toggleItem(action.tag))
+                    }
+                FilterAction.ToggleExcludeTagMode ->
+                    updateFilters {
+                        it.copy(
+                            excludedTagsMode =
+                            when (it.excludedTagsMode) {
+                                TagsMode.OR -> TagsMode.AND
+                                TagsMode.AND -> TagsMode.OR
+                            },
+                        )
+                    }
+                FilterAction.ToggleHasAvailableChapters ->
+                    updateFilters {
+                        it.copy(hasAvailableChapters = !it.hasAvailableChapters)
+                    }
+                FilterAction.ToggleIncludeTagMode ->
+                    updateFilters {
+                        it.copy(
+                            includedTagsMode =
+                            when (it.includedTagsMode) {
+                                TagsMode.OR -> TagsMode.AND
+                                TagsMode.AND -> TagsMode.OR
+                            },
+                        )
+                    }
+                is FilterAction.MangaType ->
+                    updateFilters {
+                        it.copy(
+                            originalLanguage = it.originalLanguage.toggleItems(action.languages),
+                        )
+                    }
             }
         }
     }
 }
 
 sealed interface FilterAction {
-    data object ToggleHasAvailableChapters: FilterAction
-    data class ChangeAuthor(val author: String): FilterAction
-    data class ChangeArtist(val artist: String): FilterAction
-    data class ChangeYear(val year: String): FilterAction
-    data class IncludeTag(val tag: String): FilterAction
-    data class ExcludeTag(val tag: String): FilterAction
-    data object ToggleIncludeTagMode: FilterAction
-    data object ToggleExcludeTagMode: FilterAction
-    data class ChangeStatus(val status: Status): FilterAction
-    data class MangaType(val languages: List<Language>): FilterAction
-    data class ChangeTranslatedLanguage(val language: Language): FilterAction
-    data class ChangePublicationDemographic(val demographic: PublicationDemographic): FilterAction
-    data class ChangeIds(val id: String): FilterAction
-    data class ChangeContentRating(val rating: ContentRating): FilterAction
-    data class ChangeCreatedAt(val time: LocalDateTime?): FilterAction
-    data class ChangeUpdatedAt(val time: LocalDateTime?): FilterAction
-    data class ChangeOrder(val order: Order?): FilterAction
-    data class ChangeOrderBy(val order: OrderBy): FilterAction
-    data class ChangeIncludes(val includes: String): FilterAction
-    data class ChangeGroup(val group: String): FilterAction
+    data object ToggleHasAvailableChapters : FilterAction
+
+    data class ChangeAuthor(val author: String) : FilterAction
+
+    data class ChangeArtist(val artist: String) : FilterAction
+
+    data class ChangeYear(val year: String) : FilterAction
+
+    data class IncludeTag(val tag: String) : FilterAction
+
+    data class ExcludeTag(val tag: String) : FilterAction
+
+    data object ToggleIncludeTagMode : FilterAction
+
+    data object ToggleExcludeTagMode : FilterAction
+
+    data class ChangeStatus(val status: Status) : FilterAction
+
+    data class MangaType(val languages: List<Language>) : FilterAction
+
+    data class ChangeTranslatedLanguage(val language: Language) : FilterAction
+
+    data class ChangePublicationDemographic(val demographic: PublicationDemographic) : FilterAction
+
+    data class ChangeIds(val id: String) : FilterAction
+
+    data class ChangeContentRating(val rating: ContentRating) : FilterAction
+
+    data class ChangeCreatedAt(val time: LocalDateTime?) : FilterAction
+
+    data class ChangeUpdatedAt(val time: LocalDateTime?) : FilterAction
+
+    data class ChangeOrder(val order: Order?) : FilterAction
+
+    data class ChangeOrderBy(val order: OrderBy) : FilterAction
+
+    data class ChangeIncludes(val includes: String) : FilterAction
+
+    data class ChangeGroup(val group: String) : FilterAction
 }
 
 @Stable
 data class FilterState(
     val categoryToTags: ImmutableMap<String, ImmutableList<DomainTag>> = persistentMapOf(),
-    val queryFilters: UiQueryFilters = UiQueryFilters()
+    val queryFilters: UiQueryFilters = UiQueryFilters(),
 )
 
 @Stable
@@ -223,15 +272,18 @@ data class UiQueryFilters(
     val originalLanguage: ImmutableList<Language> = persistentListOf(),
     val availableTranslatedLanguage: ImmutableList<Language> = persistentListOf(),
     val publicationDemographic: ImmutableList<PublicationDemographic> = persistentListOf(),
-    val ids: ImmutableList<String>  = persistentListOf(),
-    val contentRating: ImmutableList<ContentRating> = persistentListOf(ContentRating.safe, ContentRating.suggestive),
+    val ids: ImmutableList<String> = persistentListOf(),
+    val contentRating: ImmutableList<ContentRating> = persistentListOf(
+        ContentRating.safe,
+        ContentRating.suggestive
+    ),
     var createdAtSince: LocalDateTime? = null,
-    val updatedAtSince: LocalDateTime?  = null,
+    val updatedAtSince: LocalDateTime? = null,
     val order: Order? = null,
     val orderBy: OrderBy? = null,
     val includes: ImmutableList<String> = persistentListOf(),
     val hasAvailableChapters: Boolean = true,
-    val group: String = ""
+    val group: String = "",
 )
 
 fun UiQueryFilters.toQueryFilters(): QueryFilters {
@@ -253,9 +305,13 @@ fun UiQueryFilters.toQueryFilters(): QueryFilters {
         contentRating = contentRating.map { it.toString() }.ifEmpty { null },
         createdAtSince = createdAtSince,
         updatedAtSince = updatedAtSince,
-        order = takeIf { orderBy != null && order != null }?.let { mapOf(order.toString() to orderBy.toString()) },
+        order = takeIf { orderBy != null && order != null }?.let {
+            mapOf(
+                order.toString() to orderBy.toString()
+            )
+        },
         includes = includes.ifEmpty { null },
         hasAvailableChapters = hasAvailableChapters,
-        group = group.ifBlank { null }
+        group = group.ifBlank { null },
     )
 }

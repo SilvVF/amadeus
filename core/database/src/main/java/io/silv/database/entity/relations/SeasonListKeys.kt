@@ -6,15 +6,10 @@ import io.silv.database.entity.list.SeasonalListEntity
 import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
 
 data class SeasonListKeys(
-
     @Embedded val list: SeasonalListEntity,
-
     @Relation(
         parentColumn = "id",
         entityColumn = "season_id",
     )
-    val keys: List<SeasonalRemoteKey>
+    val keys: List<SeasonalRemoteKey>,
 )
-
-
-

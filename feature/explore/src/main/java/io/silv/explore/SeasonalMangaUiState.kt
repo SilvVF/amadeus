@@ -8,15 +8,14 @@ import io.silv.model.SavableManga
 @Stable
 @Immutable
 data class SeasonalMangaUiState(
-    val seasonalLists: List<SeasonalList> = emptyList()
+    val seasonalLists: List<SeasonalList> = emptyList(),
 ) {
-
     @Stable
     @Immutable
     data class SeasonalList(
         val id: String,
         val year: Int,
         val season: Season,
-        val mangas: List<SavableManga>
+        val mangas: List<SavableManga>,
     )
 }

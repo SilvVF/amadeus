@@ -93,19 +93,18 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-
-class ExploreScreen: Screen {
-
+class ExploreScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-
         val screenModel = getScreenModel<ExploreScreenModel>()
 
         val pagingFlowFlow by screenModel.mangaPagingFlow.collectAsStateWithLifecycle()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
-        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = rememberTopAppBarState())
+        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
+            state = rememberTopAppBarState()
+        )
 
         val expandableState = rememberExpandableState(startProgress = SheetValue.Hidden)
         val navigator = LocalNavigator.currentOrThrow
@@ -126,20 +125,22 @@ class ExploreScreen: Screen {
         }
         val changePageType = screenModel::changePagingType
         when {
-            showDisplayOptionsBottomSheet -> DisplayOptionsBottomSheet(
-                optionsTitle = {
-                    Text("Explore display options",)
-                },
-                onDismissRequest = { showDisplayOptionsBottomSheet = false },
-                clearSearchHistory = screenModel::clearSearchHistory
-            )
-            showFiltersBottomSheet -> FiltersBottomSheet(
-                onSaveQuery = {
-                   changePageType(UiPagedType.Query(it))
+            showDisplayOptionsBottomSheet ->
+                DisplayOptionsBottomSheet(
+                    optionsTitle = {
+                        Text("Explore display options")
+                    },
+                    onDismissRequest = { showDisplayOptionsBottomSheet = false },
+                    clearSearchHistory = screenModel::clearSearchHistory,
+                )
+            showFiltersBottomSheet ->
+                FiltersBottomSheet(
+                    onSaveQuery = {
+                        changePageType(UiPagedType.Query(it))
+                    },
+                ) {
+                    showFiltersBottomSheet = !showFiltersBottomSheet
                 }
-            ) {
-                showFiltersBottomSheet = !showFiltersBottomSheet
-            }
         }
 
         Scaffold(
@@ -149,13 +150,14 @@ class ExploreScreen: Screen {
                 ExploreTopAppBar(
                     selected = state.pagedType,
                     scrollBehavior = scrollBehavior,
-                    onWebClick = {  },
+                    onWebClick = { },
                     onDisplayOptionsClick = {
                         scope.launch {
-                            if (expandableState.isExpanded)
+                            if (expandableState.isExpanded) {
                                 expandableState.hide()
-                            else
+                            } else {
                                 expandableState.expand()
+                            }
                         }
                     },
                     onSearch = screenModel::onSearch,
@@ -165,7 +167,7 @@ class ExploreScreen: Screen {
                     },
                 )
             },
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         ) { paddingValues ->
 
             val pagingItems = pagingFlowFlow.collectAsLazyPagingItems()
@@ -174,10 +176,11 @@ class ExploreScreen: Screen {
                 PullRefresh(
                     paddingValues = paddingValues,
                     refreshing = false, // refresh indicator handled by BrowseMangaContent
-                    onRefresh = when (state.pagedType) {
+                    onRefresh =
+                    when (state.pagedType) {
                         UiPagedType.Seasonal -> screenModel::refreshSeasonalManga
                         else -> pagingItems::refresh
-                    }
+                    },
                 ) {
                     BrowseMangaContent(
                         modifier = Modifier.fillMaxSize(),
@@ -188,12 +191,12 @@ class ExploreScreen: Screen {
                         onBookmarkClick = screenModel::bookmarkManga,
                         onMangaClick = {
                             navigator.push(
-                                SharedScreen.MangaView(it.id)
+                                SharedScreen.MangaView(it.id),
                             )
                         },
                         onTagClick = { name, id ->
                             navigator.push(
-                                SharedScreen.MangaFilter(name, id)
+                                SharedScreen.MangaFilter(name, id),
                             )
                         },
                         pagedType = state.pagedType,
@@ -207,12 +210,13 @@ class ExploreScreen: Screen {
                             modifier = Modifier.fillMaxWidth(),
                             recentSearchUiState = state.recentSearchUiState,
                             query = state.filters?.title,
-                            onRecentSearchClick = screenModel::onSearch
+                            onRecentSearchClick = screenModel::onSearch,
                         )
-                    }
+                    },
                 ) {
                     ExpandableInfoLayoutContent(
-                        modifier = Modifier
+                        modifier =
+                        Modifier
                             .fillMaxWidth()
                             .wrapContentHeight(),
                         showGroupingOptions = {
@@ -220,7 +224,7 @@ class ExploreScreen: Screen {
                         },
                         showDisplayOptions = {
                             showDisplayOptionsBottomSheet = !showDisplayOptionsBottomSheet
-                        }
+                        },
                     )
                 }
             }
@@ -245,49 +249,53 @@ fun RecentSearchesPeekContent(
                         Modifier
                             .height(SuggestionChipDefaults.Height + 8.dp)
                             .weight(1f)
-                            .padding(horizontal = space.small)
+                            .padding(horizontal = space.small),
                     )
                 }
             }
         }
         is RecentSearchUiState.Success -> {
             LazyRow(
-                modifier = modifier
+                modifier = modifier,
             ) {
                 item(
-                    key = "padding-start"
+                    key = "padding-start",
                 ) {
                     Spacer(modifier = Modifier.padding(space.small))
                 }
                 if (recentSearchUiState.recentQueries.isEmpty()) {
                     items(
-                        items = persistentListOf(
-                            "Oshi no ko", "Steins Gate", "Dr Stone", "Bleach"
+                        items =
+                        persistentListOf(
+                            "Oshi no ko",
+                            "Steins Gate",
+                            "Dr Stone",
+                            "Bleach",
                         ),
-                        key = { item -> item }
+                        key = { item -> item },
                     ) { suggestedSearch ->
                         ElevatedFilterChip(
                             selected = suggestedSearch == query,
                             modifier = Modifier.padding(space.small),
                             onClick = { onRecentSearchClick(suggestedSearch) },
-                            label = { Text(text = suggestedSearch) }
+                            label = { Text(text = suggestedSearch) },
                         )
                     }
                 } else {
                     items(
                         recentSearchUiState.recentQueries,
-                        key = { item -> item.query }
+                        key = { item -> item.query },
                     ) { recentSearch ->
                         ElevatedFilterChip(
                             selected = recentSearch.query == query,
                             modifier = Modifier.padding(space.small),
                             onClick = { onRecentSearchClick(recentSearch.query) },
-                            label = { Text(text = recentSearch.query) }
+                            label = { Text(text = recentSearch.query) },
                         )
                     }
                 }
                 item(
-                    key = "padding-end"
+                    key = "padding-end",
                 ) {
                     Spacer(modifier = Modifier.padding(space.small))
                 }
@@ -301,10 +309,12 @@ fun RecentSearchesPeekContent(
 fun ExpandableInfoLayoutContent(
     modifier: Modifier = Modifier,
     showGroupingOptions: () -> Unit,
-    showDisplayOptions: () -> Unit
+    showDisplayOptions: () -> Unit,
 ) {
     val space = LocalSpacing.current
-    val surfaceColor =  MaterialTheme.colorScheme.surfaceColorAtElevation(BottomSheetDefaults.Elevation)
+    val surfaceColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
+        BottomSheetDefaults.Elevation
+    )
 
     Column(
         modifier
@@ -312,19 +322,19 @@ fun ExpandableInfoLayoutContent(
             .drawBehind {
                 drawRect(color = surfaceColor)
             }
-            .padding(space.small)
+            .padding(space.small),
     ) {
         Row(
             Modifier
                 .fillMaxWidth()
                 .clickable { showGroupingOptions() }
                 .padding(space.med),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = Icons.Outlined.More,
                 contentDescription = "Filter",
-                modifier = Modifier.graphicsLayer { rotationX = 180f }
+                modifier = Modifier.graphicsLayer { rotationX = 180f },
             )
             Spacer(modifier = Modifier.width(space.med))
             Text(text = "Filter manga by...")
@@ -334,7 +344,7 @@ fun ExpandableInfoLayoutContent(
                 .fillMaxWidth()
                 .clickable { showDisplayOptions() }
                 .padding(space.med),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = Icons.Default.Tune,
@@ -345,7 +355,6 @@ fun ExpandableInfoLayoutContent(
         }
     }
 }
-
 
 @Composable
 fun BrowseMangaContent(
@@ -358,25 +367,28 @@ fun BrowseMangaContent(
     mangaList: LazyPagingItems<SavableManga>,
     onMangaClick: (manga: SavableManga) -> Unit,
     onTagClick: (name: String, id: String) -> Unit,
-    onBookmarkClick: (mangaId: String) -> Unit
+    onBookmarkClick: (mangaId: String) -> Unit,
 ) {
     val navigator = LocalNavigator.current
 
     val gridCells by ExplorePrefs.gridCellsPrefKey.asState(ExplorePrefs.gridCellsDefault)
-    val showSeasonalLists by ExplorePrefs.showSeasonalListPrefKey.asState(ExplorePrefs.showSeasonalDefault)
+    val showSeasonalLists by ExplorePrefs.showSeasonalListPrefKey.asState(
+        ExplorePrefs.showSeasonalDefault
+    )
     val cardType by ExplorePrefs.cardTypePrefKey.asState(
         defaultValue = CardType.Compact,
         store = { it.toString() },
-        convert = { CardType.valueOf(it) }
+        convert = { CardType.valueOf(it) },
     )
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
     val refreshing = pagedType is UiPagedType.Seasonal && refreshingSeasonal || mangaList.loadState.refresh is LoadState.Loading
 
     when {
-        refreshing -> CenterBox(Modifier.fillMaxSize()) {
-            CircularProgressIndicator()
-        }
+        refreshing ->
+            CenterBox(Modifier.fillMaxSize()) {
+                CircularProgressIndicator()
+            }
         mangaList.loadState.refresh is LoadState.Error -> {
             CenterBox(Modifier.fillMaxSize()) {
                 Button(onClick = { mangaList.retry() }) {
@@ -389,7 +401,7 @@ fun BrowseMangaContent(
                 modifier = modifier.fillMaxSize(),
                 state = gridState,
                 columns = GridCells.Fixed(gridCells),
-                contentPadding = contentPaddingValues
+                contentPadding = contentPaddingValues,
             ) {
                 if (showSeasonalLists && pagedType !is UiPagedType.Seasonal) {
                     seasonalMangaPagerGridItem(
@@ -400,13 +412,13 @@ fun BrowseMangaContent(
                         onTagClick = onTagClick,
                         onBookmarkClick = {
                             onBookmarkClick(it.id)
-                        }
+                        },
                     )
                 }
                 if (pagedType is UiPagedType.Seasonal) {
                     item(
                         key = "seasonal-tags",
-                        span = { GridItemSpan(gridCells) }
+                        span = { GridItemSpan(gridCells) },
                     ) {
                         SeasonalListTags(
                             seasonalLists = seasonalLists,
@@ -414,7 +426,7 @@ fun BrowseMangaContent(
                             selectedIndex = selectedIndex,
                             onIndexSelected = {
                                 selectedIndex = it
-                            }
+                            },
                         )
                     }
                     seasonalMangaGrid(
@@ -424,7 +436,7 @@ fun BrowseMangaContent(
                         onBookmarkClick = {
                             onBookmarkClick(it.id)
                         },
-                        onTagClick = onTagClick
+                        onTagClick = onTagClick,
                     )
                 } else {
                     mangaGrid(
@@ -436,13 +448,13 @@ fun BrowseMangaContent(
                         onTagClick = { manga, name ->
                             manga.tagToId[name]?.let { id ->
                                 navigator?.push(
-                                    SharedScreen.MangaFilter(name, id)
+                                    SharedScreen.MangaFilter(name, id),
                                 )
                             }
                         },
                         onMangaClick = { manga ->
                             navigator?.push(
-                                SharedScreen.MangaView(manga.id)
+                                SharedScreen.MangaView(manga.id),
                             )
                         },
                     )
@@ -462,7 +474,7 @@ private fun LazyGridScope.seasonalMangaGrid(
     seasonalList?.let {
         items(
             items = seasonalList.mangas,
-            key = { v -> v.value.id }
+            key = { v -> v.value.id },
         ) { item ->
 
             val space = LocalSpacing.current
@@ -471,7 +483,8 @@ private fun LazyGridScope.seasonalMangaGrid(
             MangaListItem(
                 manga = manga,
                 cardType = cardType,
-                modifier = Modifier
+                modifier =
+                Modifier
                     .padding(space.small)
                     .aspectRatio(2f / 3f)
                     .clickable {
@@ -482,12 +495,11 @@ private fun LazyGridScope.seasonalMangaGrid(
                 },
                 onBookmarkClick = {
                     onBookmarkClick(manga)
-                }
+                },
             )
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 private fun LazyGridScope.seasonalMangaPagerGridItem(
@@ -500,7 +512,7 @@ private fun LazyGridScope.seasonalMangaPagerGridItem(
 ) {
     item(
         key = "seasonal-tag",
-        span = { GridItemSpan(gridCells) }
+        span = { GridItemSpan(gridCells) },
     ) {
         var selectedIndex by rememberSaveable {
             mutableIntStateOf(0)
@@ -511,27 +523,28 @@ private fun LazyGridScope.seasonalMangaPagerGridItem(
             selectedIndex = selectedIndex,
             onIndexSelected = {
                 selectedIndex = it
-            }
+            },
         )
         if (refreshing) {
             AnimatedBoxShimmer(
                 Modifier
                     .fillMaxWidth()
-                    .height(240.dp))
+                    .height(240.dp),
+            )
         } else {
             SeasonalMangaPager(
-                modifier = Modifier
+                modifier =
+                Modifier
                     .fillMaxWidth()
                     .height(240.dp),
                 mangaList = seasonalLists.getOrNull(selectedIndex)?.mangas ?: persistentListOf(),
                 onMangaClick = onMangaClick,
                 onBookmarkClick = onBookmarkClick,
-                onTagClick = onTagClick
+                onTagClick = onTagClick,
             )
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -540,14 +553,14 @@ fun SeasonalListTags(
     seasonalLists: ImmutableList<UiSeasonalList>,
     refreshing: Boolean,
     selectedIndex: Int,
-    onIndexSelected: (Int) -> Unit
+    onIndexSelected: (Int) -> Unit,
 ) {
     val space = LocalSpacing.current
     Column(modifier) {
         Text(
             text = "seasonal lists",
             style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(space.small)
+            modifier = Modifier.padding(space.small),
         )
         LazyRow {
             if (refreshing) {
@@ -556,39 +569,38 @@ fun SeasonalListTags(
                         AnimatedBoxShimmer(
                             Modifier
                                 .width(90.dp)
-                                .height(FilterChipDefaults.Height)
+                                .height(FilterChipDefaults.Height),
                         )
                     }
                 }
             } else {
                 itemsIndexed(
                     items = seasonalLists,
-                    key = { _, list -> list.id }
+                    key = { _, list -> list.id },
                 ) { index, seasonalList ->
                     FilterChip(
                         selected = index == selectedIndex,
                         onClick = { onIndexSelected(index) },
                         label = {
-                            val text = remember(seasonalList) {
-                                "${seasonalList.season.name}  ${
+                            val text =
+                                remember(seasonalList) {
+                                    "${seasonalList.season.name}  ${
                                     seasonalList.year.toString().takeLast(2)
-                                }"
-                            }
+                                    }"
+                                }
                             Text(
                                 text = text,
                                 style = MaterialTheme.typography.labelMedium,
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
                             )
                         },
-                        modifier = Modifier
+                        modifier =
+                        Modifier
                             .weight(1f)
-                            .padding(space.xs)
+                            .padding(space.xs),
                     )
                 }
             }
         }
     }
 }
-
-
-

@@ -1,5 +1,6 @@
-package io.silv.network.image_sources
+package io.silv.network.sources
 
+import java.util.UUID
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -10,25 +11,24 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
-import java.util.UUID
 
 class MangaPlusHandler(
     client: OkHttpClient,
-    private val json: Json
-): ImageSource() {
-
+    private val json: Json,
+) : ImageSource() {
     private val baseUrl = "https://jumpg-webapi.tokyo-cdn.com/api"
 
-    private val client = client.newBuilder()
-        .addInterceptor { imageIntercept(it) }
-        .build()
+    private val client =
+        client.newBuilder()
+            .addInterceptor { imageIntercept(it) }
+            .build()
 
-    override val headers = Headers.Builder()
-        .add("Origin", WEB_URL)
-        .add("Referer", WEB_URL)
-        .add("User-Agent", USER_AGENT)
-        .add("SESSION-TOKEN", UUID.randomUUID().toString()).build()
-
+    override val headers =
+        Headers.Builder()
+            .add("Origin", WEB_URL)
+            .add("Referer", WEB_URL)
+            .add("User-Agent", USER_AGENT)
+            .add("SESSION-TOKEN", UUID.randomUUID().toString()).build()
 
 //    override suspend fun fetchImageUrls(
 //        externalUrl: String
@@ -60,27 +60,34 @@ class MangaPlusHandler(
 //    }
 
     override suspend fun fetchImageUrls(externalUrl: String): List<String> {
-        val response = client.newCall(
-            pageListRequest(externalUrl.substringAfterLast("/"))
-        ).execute()
+        val response =
+            client.newCall(
+                pageListRequest(externalUrl.substringAfterLast("/")),
+            ).execute()
         return pageListParse(response)
     }
 
     private fun pageListRequest(chapterId: String): Request {
         return Request.Builder()
-            .url("$baseUrl/manga_viewer?chapter_id=$chapterId&split=yes&img_quality=high&format=json")
+            .url(
+                "$baseUrl/manga_viewer?chapter_id=$chapterId&split=yes&img_quality=high&format=json"
+            )
             .headers(headers)
             .build()
     }
 
-    private fun Response.asMangaPlusResponse(): MangaPlusResponse = use {
-        json.decodeFromString(body!!.string())
-    }
+    private fun Response.asMangaPlusResponse(): MangaPlusResponse =
+        use {
+            json.decodeFromString(body!!.string())
+        }
 
     private fun pageListParse(response: Response): List<String> {
         val result = response.asMangaPlusResponse()
 
-        checkNotNull(result.success) { result.error!!.popups.firstOrNull { it.language == Language.ENGLISH } ?: "Error with MangaPlus" }
+        checkNotNull(result.success) {
+            result.error!!.popups
+                .firstOrNull { it.language == Language.ENGLISH } ?: "Error with MangaPlus"
+        }
 
         return result.success.mangaViewer!!.pages
             .mapNotNull { it.mangaPage }
@@ -112,15 +119,20 @@ class MangaPlusHandler(
         return response.newBuilder().body(body).build()
     }
 
-    private fun decodeImage(encryptionKey: String, image: ByteArray): ByteArray {
-        val keyStream = HEX_GROUP
-            .findAll(encryptionKey)
-            .map { it.groupValues[1].toInt(16) }
-            .toList()
+    private fun decodeImage(
+        encryptionKey: String,
+        image: ByteArray,
+    ): ByteArray {
+        val keyStream =
+            HEX_GROUP
+                .findAll(encryptionKey)
+                .map { it.groupValues[1].toInt(16) }
+                .toList()
 
-        val content = image
-            .map { it.toInt() }
-            .toMutableList()
+        val content =
+            image
+                .map { it.toInt() }
+                .toMutableList()
 
         val blockSizeInBytes = keyStream.size
 
@@ -130,7 +142,6 @@ class MangaPlusHandler(
 
         return ByteArray(content.size) { pos -> content[pos].toByte() }
     }
-
 
     companion object {
         private const val WEB_URL = "https://mangaplus.shueisha.co.jp"

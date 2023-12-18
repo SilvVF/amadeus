@@ -21,7 +21,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -32,7 +32,7 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-    buildFeatures{
+    buildFeatures {
         compose = true
     }
     composeOptions {
@@ -53,7 +53,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
 
-    //Datastore
+    // Datastore
     implementation(libs.androidx.datastore.preferences)
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")

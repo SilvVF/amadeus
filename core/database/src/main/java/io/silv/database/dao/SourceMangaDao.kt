@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SourceMangaDao {
-
     @Update
     suspend fun update(manga: SourceMangaResource)
 

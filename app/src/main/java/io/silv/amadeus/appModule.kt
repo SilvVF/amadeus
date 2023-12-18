@@ -13,32 +13,32 @@ import io.silv.sync.syncModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
-val appModule = module {
+val appModule =
+    module {
 
-    single {
-        AmadeusDispatchers.default
-    }
+        single {
+            AmadeusDispatchers.default
+        }
 
-    single {
-        CoverCache(androidContext())
-    }
+        single {
+            CoverCache(androidContext())
+        }
 
-    single {
-        ApplicationScope()
-    }
+        single {
+            ApplicationScope()
+        }
 
-    single<NetworkConnectivity> {
-        NetworkConnectivityImpl(androidContext())
-    }
+        single<NetworkConnectivity> {
+            NetworkConnectivityImpl(androidContext())
+        }
 
-
-    includes(
-        listOf(
-            dataStoreModule,
-            domainModule,
-            syncModule,
-            dataModule,
-            screenModule
+        includes(
+            listOf(
+                dataStoreModule,
+                domainModule,
+                syncModule,
+                dataModule,
+                screenModule,
+            ),
         )
-    )
-}
+    }

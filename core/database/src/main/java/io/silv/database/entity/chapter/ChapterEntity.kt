@@ -11,10 +11,8 @@ import kotlinx.datetime.LocalDateTime
 
 @Entity
 data class ChapterEntity(
-
     @PrimaryKey
     override val id: String,
-
     @ColumnInfo("manga_id")
     override val mangaId: String,
     val progressState: ProgressState = ProgressState.NotStarted,
@@ -35,12 +33,10 @@ data class ChapterEntity(
     val uploader: String?,
     override val url: String = "",
     val version: Int,
-    val savedLocalAt: LocalDateTime = localDateTimeNow()
-): ChapterResource, AmadeusEntity<Any> {
-
+    val savedLocalAt: LocalDateTime = localDateTimeNow(),
+) : ChapterResource, AmadeusEntity<Any> {
     val isRecognizedNumber: Boolean
         get() = chapterNumber >= 0f
-
 
     val read: Boolean
         get() = progressState == ProgressState.Finished

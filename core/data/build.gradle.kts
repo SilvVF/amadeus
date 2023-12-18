@@ -2,7 +2,7 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
-    kotlin("plugin.serialization")  version "1.9.20"
+    kotlin("plugin.serialization") version "1.9.20"
 }
 
 android {
@@ -21,7 +21,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -60,7 +60,7 @@ dependencies {
     implementation(libs.kotlin.serialization)
     implementation(libs.kotlinx.serialization.json.okio)
 
-    //KOIN
+    // KOIN
     implementation(libs.koin.android)
     implementation(libs.koin.core)
     implementation(libs.koin.workmanager)
@@ -69,14 +69,13 @@ dependencies {
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.common)
 
-
-    //ROOM
+    // ROOM
     implementation(libs.room.runtime)
     annotationProcessor(libs.room.compiler)
     implementation(libs.room.coroutines)
     testImplementation(libs.room.test)
 
-    //WorkManager
+    // WorkManager
     androidTestImplementation(libs.androidx.work.testing)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.work.multiprocess)

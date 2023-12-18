@@ -48,9 +48,10 @@ fun DisplayOptionsBottomSheet(
     clearSearchHistory: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
-    )
+    val sheetState =
+        rememberModalBottomSheetState(
+            skipPartiallyExpanded = true,
+        )
 
     val scope = rememberCoroutineScope()
 
@@ -58,12 +59,15 @@ fun DisplayOptionsBottomSheet(
         defaultValue = CardType.Compact,
         convert = { CardType.valueOf(it) },
         store = { it.toString() },
-        scope = scope
+        scope = scope,
     )
 
     var gridCells by ExplorePrefs.gridCellsPrefKey.asState(ExplorePrefs.gridCellsDefault, scope)
 
-    var showSeasonalLists by ExplorePrefs.showSeasonalListPrefKey.asState(ExplorePrefs.showSeasonalDefault, scope)
+    var showSeasonalLists by ExplorePrefs.showSeasonalListPrefKey.asState(
+        ExplorePrefs.showSeasonalDefault,
+        scope
+    )
 
     LaunchedEffect(Unit) {
         sheetState.show()
@@ -73,10 +77,10 @@ fun DisplayOptionsBottomSheet(
 
     ModalBottomSheet(
         sheetState = sheetState,
-        onDismissRequest = onDismissRequest
+        onDismissRequest = onDismissRequest,
     ) {
         Column(
-            Modifier.verticalScroll(rememberScrollState())
+            Modifier.verticalScroll(rememberScrollState()),
         ) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 optionsTitle()
@@ -85,35 +89,37 @@ fun DisplayOptionsBottomSheet(
                 cardType = cardType,
                 onCardTypeSelected = {
                     cardType = it
-                }
+                },
             )
             GridSizeSelector(
                 Modifier.fillMaxWidth(),
                 onSizeSelected = {
                     gridCells = it
                 },
-                size = gridCells
+                size = gridCells,
             )
             Text(
                 text = "Clear search history",
-                style = MaterialTheme.typography.labelLarge.copy(
+                style =
+                MaterialTheme.typography.labelLarge.copy(
                     color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 ),
-                modifier = Modifier
+                modifier =
+                Modifier
                     .fillMaxWidth()
                     .padding(space.med)
-                    .clickable { clearSearchHistory() }
+                    .clickable { clearSearchHistory() },
             )
             ShowSeasonalLists(
                 checked = showSeasonalLists,
                 onCheckChanged = {
                     showSeasonalLists = it
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
             Spacer(
-                Modifier.windowInsetsPadding(WindowInsets.systemBars)
+                Modifier.windowInsetsPadding(WindowInsets.systemBars),
             )
         }
     }
@@ -123,22 +129,22 @@ fun DisplayOptionsBottomSheet(
 fun ShowSeasonalLists(
     checked: Boolean,
     onCheckChanged: (Boolean) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = Arrangement.Start,
     ) {
         Checkbox(
             checked = checked,
             onCheckedChange = onCheckChanged,
-            enabled = true
+            enabled = true,
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
             text = "Show seasonal lists",
-            style = MaterialTheme.typography.titleSmall
+            style = MaterialTheme.typography.titleSmall,
         )
     }
 }
@@ -146,7 +152,7 @@ fun ShowSeasonalLists(
 @Composable
 fun SelectCardType(
     cardType: CardType,
-    onCardTypeSelected: (CardType) -> Unit
+    onCardTypeSelected: (CardType) -> Unit,
 ) {
     val types = remember { CardType.values().toList() }
 
@@ -161,18 +167,18 @@ fun SelectCardType(
                     onCardTypeSelected(type)
                 },
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = Arrangement.Start,
         ) {
             RadioButton(
                 selected = cardType == type,
                 onClick = {
                     onCardTypeSelected(type)
-                }
+                },
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = type.string,
-                style = MaterialTheme.typography.titleSmall
+                style = MaterialTheme.typography.titleSmall,
             )
         }
     }
@@ -182,30 +188,31 @@ fun SelectCardType(
 fun GridSizeSelector(
     modifier: Modifier = Modifier,
     onSizeSelected: (Int) -> Unit,
-    size: Int
+    size: Int,
 ) {
     val space = LocalSpacing.current
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
+        horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         Column(
             Modifier.padding(horizontal = space.med),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Start
+            horizontalAlignment = Alignment.Start,
         ) {
             Text(
                 text = "Grid size",
                 fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "$size per row",
-                style = MaterialTheme.typography.labelMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                )
+                style =
+                MaterialTheme.typography.labelMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                ),
             )
         }
         Slider(
@@ -216,30 +223,33 @@ fun GridSizeSelector(
                     when (value.roundToInt()) {
                         0 -> 1
                         in 0..25 -> 2
-                        in 0 ..50 -> 3
+                        in 0..50 -> 3
                         in 0..75 -> 4
                         else -> 5
-                    }
+                    },
                 )
             },
             steps = 3,
-            value = when (size) {
+            value =
+            when (size) {
                 1 -> 0f
                 2 -> 25f
                 3 -> 50f
                 4 -> 75f
                 else -> 100f
-            }
+            },
         )
         Text(
             text = "Reset",
-            style = MaterialTheme.typography.labelLarge.copy(
+            style =
+            MaterialTheme.typography.labelLarge.copy(
                 color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             ),
-            modifier = Modifier
+            modifier =
+            Modifier
                 .padding(horizontal = 12.dp)
-                .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) }
+                .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
         )
     }
 }

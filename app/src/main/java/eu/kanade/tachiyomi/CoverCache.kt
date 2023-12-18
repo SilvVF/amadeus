@@ -16,7 +16,6 @@ import java.io.InputStream
  * @constructor creates an instance of the cover cache.
  */
 class CoverCache(private val context: Context) {
-
     companion object {
         private const val COVERS_DIR = "covers"
         private const val CUSTOM_COVERS_DIR = "covers/custom"
@@ -59,7 +58,10 @@ class CoverCache(private val context: Context) {
      * @throws IOException if there's any error.
      */
     @Throws(IOException::class)
-    fun setCustomCoverToCache(manga: SavedMangaEntity, inputStream: InputStream) {
+    fun setCustomCoverToCache(
+        manga: SavedMangaEntity,
+        inputStream: InputStream,
+    ) {
         getCustomCoverFile(manga.id).outputStream().use {
             inputStream.copyTo(it)
         }
@@ -72,7 +74,10 @@ class CoverCache(private val context: Context) {
      * @param deleteCustomCover whether the custom cover should be deleted.
      * @return number of files that were deleted.
      */
-    fun deleteFromCache(manga: SavedMangaEntity, deleteCustomCover: Boolean = false): Int {
+    fun deleteFromCache(
+        manga: SavedMangaEntity,
+        deleteCustomCover: Boolean = false,
+    ): Int {
         var deleted = 0
 
         getCoverFile(manga.coverArt)?.let {

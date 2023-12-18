@@ -30,8 +30,8 @@ data class MangaFeedRequest(
     val includes: List<String>? = null,
     val includeEmptyPages: Int? = null,
     val includeFuturePublishAt: Int? = null,
-    val includeExternalUrl: Int? = null
-): QueryParams {
+    val includeExternalUrl: Int? = null,
+) : QueryParams {
     override fun createQueryParams(): List<QueryParam> {
         return listOf(
             Pair("limit", limit),

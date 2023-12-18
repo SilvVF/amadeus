@@ -112,7 +112,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import org.koin.androidx.compose.koinViewModel
 
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FilterBottomSheetContent(
@@ -121,47 +120,47 @@ fun FilterBottomSheetContent(
     onSaveQueryClick: (UiQueryFilters) -> Unit,
     contentRatingFilters: @Composable ColumnScope.(
         selected: ImmutableList<ContentRating>,
-        updateFilter: (FilterAction.ChangeContentRating) -> Unit
+        updateFilter: (FilterAction.ChangeContentRating) -> Unit,
     ) -> Unit = { selected, update ->
         DefaultContentRatingsFilter(
             selectedItems = selected,
-            updateFilter = update
+            updateFilter = update,
         )
     },
     publicationDemographicFilters: @Composable ColumnScope.(
-       updateFilter: (FilterAction.ChangePublicationDemographic) -> Unit,
-       selected: ImmutableList<PublicationDemographic>
-    ) -> Unit = {updateFilter, selected ->
+        updateFilter: (FilterAction.ChangePublicationDemographic) -> Unit,
+        selected: ImmutableList<PublicationDemographic>,
+    ) -> Unit = { updateFilter, selected ->
         DefaultPublicationDemographicFilter(
             updateFilter = updateFilter,
-            selectedDemographics = selected
+            selectedDemographics = selected,
         )
     },
     statusFilters: @Composable ColumnScope.(
-      selected: ImmutableList<Status>,
-      updateFilter: (FilterAction.ChangeStatus) -> Unit
+        selected: ImmutableList<Status>,
+        updateFilter: (FilterAction.ChangeStatus) -> Unit,
     ) -> Unit = { selected, updateFilter ->
         DefaultStatusFilter(
             selectedItems = selected,
-            updateFilter = updateFilter
+            updateFilter = updateFilter,
         )
     },
     languagesFilter: @Composable ColumnScope.(
         translatedLanguage: ImmutableList<Language>,
-        updateFilter: (FilterAction) -> Unit
+        updateFilter: (FilterAction) -> Unit,
     ) -> Unit = { translatedLanguage, updateFilter ->
         DefaultLanguageFilter(
             translatedLanguage = translatedLanguage,
-            updateFilter = updateFilter
+            updateFilter = updateFilter,
         )
     },
     mangaTypeFilter: @Composable ColumnScope.(
         updateFilter: (FilterAction.MangaType) -> Unit,
-        originalLanguages: ImmutableList<Language>
+        originalLanguages: ImmutableList<Language>,
     ) -> Unit = { updateFilter, originalLanguages ->
         DefaultMangaTypeFilter(
-            updateFilter = updateFilter ,
-            selectedLanguages = originalLanguages
+            updateFilter = updateFilter,
+            selectedLanguages = originalLanguages,
         )
     },
     tagsFilter: @Composable ColumnScope.(
@@ -171,36 +170,37 @@ fun FilterBottomSheetContent(
         excludeTagsMode: TagsMode,
         includeTagsMode: TagsMode,
         updateFilter: (FilterAction) -> Unit,
-    ) -> Unit  = {  includedTags, excludedTags, categoryToTag, includeMode, excludeMode, updateFilter ->
+    ) -> Unit = { includedTags, excludedTags, categoryToTag, includeMode, excludeMode, updateFilter ->
         DefaultTagsFilter(
             includedTags = includedTags,
             excludedTags = excludedTags,
             categoryToTag = categoryToTag,
             includeTagsMode = includeMode,
             excludeTagsMode = excludeMode,
-            updateFilter = updateFilter
+            updateFilter = updateFilter,
         )
     },
     hasAvailableChaptersFilter: @Composable ColumnScope.(
-       hasAvailableChapters: Boolean,
-       updateFilter: (FilterAction.ToggleHasAvailableChapters) -> Unit
-    ) -> Unit = {hasAvailableChapters, updateFilter ->
+        hasAvailableChapters: Boolean,
+        updateFilter: (FilterAction.ToggleHasAvailableChapters) -> Unit,
+    ) -> Unit = { hasAvailableChapters, updateFilter ->
         Row(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .clickable { updateFilter(FilterAction.ToggleHasAvailableChapters) }
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = Arrangement.Start,
         ) {
             Checkbox(
                 checked = hasAvailableChapters,
                 onCheckedChange = {
                     updateFilter(FilterAction.ToggleHasAvailableChapters)
-                }
+                },
             )
             Text("Has available chapters")
         }
-    }
+    },
 ) {
     val viewModel = koinViewModel<FilterScreenViewModel>()
 
@@ -225,7 +225,7 @@ fun FilterBottomSheetContent(
             containerColor = MaterialTheme.colorScheme.primary,
             icon = { Icon(imageVector = Icons.Filled.Save, contentDescription = null) },
             onClick = { onSaveQueryClick(state.queryFilters) },
-            expanded =  true
+            expanded = true,
         )
     }
 
@@ -235,13 +235,13 @@ fun FilterBottomSheetContent(
                 .weight(1f)
                 .padding(space.med),
             verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start
+            horizontalAlignment = Alignment.Start,
         ) {
             item(key = "content-rating-filters") {
                 Column(Modifier.animateItemPlacement()) {
                     contentRatingFilters(
                         state.queryFilters.contentRating,
-                        viewModel::updateFilter
+                        viewModel::updateFilter,
                     )
                     Divider()
                 }
@@ -250,7 +250,7 @@ fun FilterBottomSheetContent(
                 Column(Modifier.animateItemPlacement()) {
                     statusFilters(
                         state.queryFilters.status,
-                        viewModel::updateFilter
+                        viewModel::updateFilter,
                     )
                     Divider()
                 }
@@ -259,7 +259,7 @@ fun FilterBottomSheetContent(
                 Column(Modifier.animateItemPlacement()) {
                     mangaTypeFilter(
                         viewModel::updateFilter,
-                        state.queryFilters.originalLanguage
+                        state.queryFilters.originalLanguage,
                     )
                     Divider()
                 }
@@ -268,7 +268,7 @@ fun FilterBottomSheetContent(
                 Column(Modifier.animateItemPlacement()) {
                     publicationDemographicFilters(
                         viewModel::updateFilter,
-                        state.queryFilters.publicationDemographic
+                        state.queryFilters.publicationDemographic,
                     )
                     Divider()
                 }
@@ -277,7 +277,7 @@ fun FilterBottomSheetContent(
                 Column(Modifier.animateItemPlacement()) {
                     languagesFilter(
                         state.queryFilters.availableTranslatedLanguage,
-                        viewModel::updateFilter
+                        viewModel::updateFilter,
                     )
                     Divider()
                 }
@@ -290,7 +290,7 @@ fun FilterBottomSheetContent(
                         state.categoryToTags,
                         state.queryFilters.includedTagsMode,
                         state.queryFilters.excludedTagsMode,
-                        viewModel::updateFilter
+                        viewModel::updateFilter,
                     )
                     Divider()
                 }
@@ -298,17 +298,18 @@ fun FilterBottomSheetContent(
             item(key = "available-chapters") {
                 hasAvailableChaptersFilter(
                     state.queryFilters.hasAvailableChapters,
-                    viewModel::updateFilter
+                    viewModel::updateFilter,
                 )
                 Divider()
             }
         }
         Row(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .fillMaxWidth()
                 .padding(space.med),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.End,
         ) {
             ExtendedFloatingActionButton(
                 text = { Text(text = "Reset") },
@@ -316,11 +317,11 @@ fun FilterBottomSheetContent(
                 icon = {
                     Icon(
                         imageVector = Icons.Filled.Refresh,
-                        contentDescription = null
+                        contentDescription = null,
                     )
                 },
                 onClick = viewModel::resetFilter,
-                expanded =  true
+                expanded = true,
             )
             Spacer(modifier = Modifier.width(space.med))
             applyButton()
@@ -331,13 +332,13 @@ fun FilterBottomSheetContent(
 @Composable
 fun DefaultTagsModeFilter(
     tagsMode: TagsMode,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
 ) {
     val space = LocalSpacing.current
     Row(
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(space.med)
+        modifier = Modifier.padding(space.med),
     ) {
         Text("Tags mode")
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -345,7 +346,7 @@ fun DefaultTagsModeFilter(
                 checked = tagsMode == TagsMode.AND,
                 onCheckedChange = {
                     onToggle()
-                }
+                },
             )
             Text("AND")
         }
@@ -355,7 +356,7 @@ fun DefaultTagsModeFilter(
                 checked = tagsMode == TagsMode.OR,
                 onCheckedChange = {
                     onToggle()
-                }
+                },
             )
             Text("OR")
         }
@@ -365,15 +366,15 @@ fun DefaultTagsModeFilter(
 @Composable
 fun DefaultLanguageFilter(
     translatedLanguage: ImmutableList<Language>,
-    updateFilter: (FilterAction) -> Unit
+    updateFilter: (FilterAction) -> Unit,
 ) {
     LanguageSelection(
         selectedLanguages = translatedLanguage,
         onLanguageClick = {
             updateFilter(
-                FilterAction.ChangeTranslatedLanguage(it)
+                FilterAction.ChangeTranslatedLanguage(it),
             )
-        }
+        },
     )
 }
 
@@ -391,48 +392,53 @@ fun DefaultTagsFilter(
     Row(
         Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
+        horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         StateFilterChip(
             state = included,
             hideIcons = !included,
             toggleState = { included = !included },
-            name = "included tags"
+            name = "included tags",
         )
         StateFilterChip(
             state = !included,
             hideIcons = included,
             toggleState = { included = !included },
-            name ="excluded tags"
+            name = "excluded tags",
         )
     }
     DefaultTagsModeFilter(
-        tagsMode = if (included)
+        tagsMode =
+        if (included) {
             includeTagsMode
-        else
-            excludeTagsMode,
+        } else {
+            excludeTagsMode
+        },
         onToggle = {
             updateFilter(
                 if (included) {
                     FilterAction.ToggleIncludeTagMode
                 } else {
                     FilterAction.ToggleExcludeTagMode
-                }
+                },
             )
-        }
+        },
     )
     TagsList(
         categoryToTags = categoryToTag,
-        selectedTags = if (included) {
+        selectedTags =
+        if (included) {
             includedTags
-        } else excludedTags,
+        } else {
+            excludedTags
+        },
         onTagSelected = {
             if (included) {
                 updateFilter(FilterAction.IncludeTag(it))
             } else {
                 updateFilter(FilterAction.ExcludeTag(it))
             }
-        }
+        },
     )
 }
 
@@ -461,24 +467,25 @@ fun DefaultStatusFilter(
 
         TriStateFilterChip(
             state = toggleableState,
-            toggleState =  {
+            toggleState = {
                 toggleStateIfAble(false, toggleableState) {
                     when (it) {
-                        ToggleableState.Off, ToggleableState.On -> updateFilter(FilterAction.ChangeStatus(contentRating))
+                        ToggleableState.Off, ToggleableState.On -> updateFilter(
+                            FilterAction.ChangeStatus(contentRating)
+                        )
                         else -> Unit
                     }
                     toggleableState = it
                 }
             },
             modifier = Modifier.padding(space.small),
-            name = contentRating.toString()
+            name = contentRating.toString(),
         )
-    }
+    },
 ) {
     Column {
         Text(text = "Status")
         FlowRow {
-
             val statuses = remember { Status.values().toList().toImmutableList() }
 
             statuses.fastForEach { status ->
@@ -513,24 +520,25 @@ fun DefaultContentRatingsFilter(
 
         TriStateFilterChip(
             state = toggleableState,
-            toggleState =  {
+            toggleState = {
                 toggleStateIfAble(false, toggleableState) {
                     when (it) {
-                        ToggleableState.Off, ToggleableState.On -> updateFilter(FilterAction.ChangeContentRating(contentRating))
+                        ToggleableState.Off, ToggleableState.On -> updateFilter(
+                            FilterAction.ChangeContentRating(contentRating)
+                        )
                         else -> Unit
                     }
                     toggleableState = it
                 }
             },
             modifier = Modifier.padding(space.small),
-            name = contentRating.toString()
+            name = contentRating.toString(),
         )
-    }
+    },
 ) {
     Column {
         Text(text = "Content Ratings")
         FlowRow {
-
             val contentRatings = remember { ContentRating.values().toList().toImmutableList() }
 
             contentRatings.fastForEach { contentRating ->
@@ -548,7 +556,9 @@ fun StateFilterChip(
     name: String,
     modifier: Modifier = Modifier,
     hideIcons: Boolean = false,
-    labelTextStyle: TextStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
+    labelTextStyle: TextStyle = MaterialTheme.typography.labelLarge.copy(
+        fontWeight = FontWeight.Medium
+    ),
 ) {
     FilterChip(
         modifier = modifier,
@@ -558,20 +568,22 @@ fun StateFilterChip(
             if (!hideIcons) {
                 if (state) {
                     Icon(imageVector = Icons.Default.Check, contentDescription = null)
-                } else  {
+                } else {
                     Icon(imageVector = Icons.Default.Clear, contentDescription = null)
                 }
             }
         },
         shape = RoundedCornerShape(100),
         label = { Text(text = name, style = labelTextStyle) },
-        colors = FilterChipDefaults.filterChipColors(
+        colors =
+        FilterChipDefaults.filterChipColors(
             containerColor = MaterialTheme.colorScheme.surface,
             selectedContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(8.dp),
             selectedLabelColor = MaterialTheme.colorScheme.primary,
             selectedLeadingIconColor = MaterialTheme.colorScheme.primary,
         ),
-        border = FilterChipDefaults.filterChipBorder(
+        border =
+        FilterChipDefaults.filterChipBorder(
             borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             selectedBorderColor = MaterialTheme.colorScheme.surfaceColorAtElevation(8.dp),
         ),
@@ -603,12 +615,12 @@ private fun LanguageSelection(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
-            modifier = Modifier.onSizeChanged { rowHeightPx = it.height }
+            modifier = Modifier.onSizeChanged { rowHeightPx = it.height },
         ) {
             IconButton(onClick = { expanded = true }) {
                 Icon(
                     Icons.Default.MoreVert,
-                    contentDescription = null
+                    contentDescription = null,
                 )
             }
             if (selectedLanguages.isEmpty()) {
@@ -617,10 +629,10 @@ private fun LanguageSelection(
                 LazyRow {
                     items(selectedLanguages) {
                         FilterChip(
-                            selected = true ,
+                            selected = true,
                             onClick = { onLanguageClick(it) },
                             label = { Text(it.string) },
-                            modifier = Modifier.padding(horizontal = space.xs)
+                            modifier = Modifier.padding(horizontal = space.xs),
                         )
                     }
                 }
@@ -628,7 +640,7 @@ private fun LanguageSelection(
         }
         Box(
             modifier = Modifier,
-            contentAlignment = Alignment.BottomStart
+            contentAlignment = Alignment.BottomStart,
         ) {
             DropdownMenu(
                 expanded = expanded,
@@ -650,7 +662,7 @@ private fun LanguageSelection(
                                 painter = painterResource(id = language.resId),
                                 contentDescription = "flag",
                                 modifier = Modifier.size(50.dp),
-                                contentScale = ContentScale.Fit
+                                contentScale = ContentScale.Fit,
                             )
                         },
                         trailingIcon = {
@@ -658,16 +670,15 @@ private fun LanguageSelection(
                                 checked = selected,
                                 onCheckedChange = {
                                     onLanguageClick(language)
-                                }
+                                },
                             )
-                        }
+                        },
                     )
                 }
             }
         }
     }
 }
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -677,45 +688,48 @@ fun DefaultMangaTypeFilter(
 ) {
     val space = LocalSpacing.current
 
-    val mangaTypes = remember {
-        persistentListOf(
-            "Japanese (Manga)" to listOf(Language.Japanese),
-            "Chinese (Manhua)" to listOf(Language.ChineseTrad, Language.ChineseSimp),
-            "Korean (Manhwa)" to listOf(Language.Korean)
-        )
-    }
+    val mangaTypes =
+        remember {
+            persistentListOf(
+                "Japanese (Manga)" to listOf(Language.Japanese),
+                "Chinese (Manhua)" to listOf(Language.ChineseTrad, Language.ChineseSimp),
+                "Korean (Manhwa)" to listOf(Language.Korean),
+            )
+        }
 
     var expanded by rememberSaveable { mutableStateOf(false) }
     Row(
-        modifier = Modifier
+        modifier =
+        Modifier
             .fillMaxWidth()
             .clickable { expanded = !expanded }
             .padding(space.med),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = "Original language",
-            style = MaterialTheme.typography.labelLarge
+            style = MaterialTheme.typography.labelLarge,
         )
         IconButton(
             modifier = Modifier.padding(horizontal = space.small),
-            onClick = { expanded = !expanded }
+            onClick = { expanded = !expanded },
         ) {
             Icon(
-                imageVector = if (!expanded) {
+                imageVector =
+                if (!expanded) {
                     Icons.Filled.ArrowDropDown
                 } else {
                     Icons.Filled.ArrowDropUp
                 },
-                contentDescription = null
+                contentDescription = null,
             )
         }
     }
     AnimatedVisibility(
         visible = expanded,
         enter = fadeIn(),
-        exit = fadeOut()
+        exit = fadeOut(),
     ) {
         Column {
             mangaTypes.fastForEach { (title, languageList) ->
@@ -723,19 +737,20 @@ fun DefaultMangaTypeFilter(
                     derivedStateOf { selectedLanguages.containsAll(languageList) }
                 }
                 Row(
-                    modifier = Modifier
+                    modifier =
+                    Modifier
                         .clickable {
                             updateFilter(FilterAction.MangaType(languageList))
                         }
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start
+                    horizontalArrangement = Arrangement.Start,
                 ) {
                     Checkbox(
                         checked = selected,
                         onCheckedChange = {
                             updateFilter(FilterAction.MangaType(languageList))
-                        }
+                        },
                     )
                     Text(title)
                 }
@@ -752,41 +767,44 @@ fun DefaultPublicationDemographicFilter(
 ) {
     val space = LocalSpacing.current
 
-    val demographics = remember {
-        PublicationDemographic.values().toList().toImmutableList()
-    }
+    val demographics =
+        remember {
+            PublicationDemographic.values().toList().toImmutableList()
+        }
 
     var expanded by rememberSaveable { mutableStateOf(false) }
     Row(
-        modifier = Modifier
+        modifier =
+        Modifier
             .fillMaxWidth()
             .clickable { expanded = !expanded }
             .padding(space.med),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = "Publication demographic",
-            style = MaterialTheme.typography.labelLarge
+            style = MaterialTheme.typography.labelLarge,
         )
         IconButton(
             modifier = Modifier.padding(horizontal = space.small),
-            onClick = { expanded = !expanded }
+            onClick = { expanded = !expanded },
         ) {
             Icon(
-                imageVector = if (!expanded) {
+                imageVector =
+                if (!expanded) {
                     Icons.Filled.ArrowDropDown
                 } else {
                     Icons.Filled.ArrowDropUp
                 },
-                contentDescription = null
+                contentDescription = null,
             )
         }
     }
     AnimatedVisibility(
         visible = expanded,
         enter = fadeIn(),
-        exit = fadeOut()
+        exit = fadeOut(),
     ) {
         Column {
             demographics.fastForEach { demographic ->
@@ -794,25 +812,27 @@ fun DefaultPublicationDemographicFilter(
                     derivedStateOf { selectedDemographics.contains(demographic) }
                 }
                 Row(
-                    modifier = Modifier
+                    modifier =
+                    Modifier
                         .clickable {
                             updateFilter(FilterAction.ChangePublicationDemographic(demographic))
                         }
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start
+                    horizontalArrangement = Arrangement.Start,
                 ) {
                     Checkbox(
                         checked = selected,
                         onCheckedChange = {
                             updateFilter(FilterAction.ChangePublicationDemographic(demographic))
-                        }
+                        },
                     )
                     Text(
-                        text = remember(demographic) {
+                        text =
+                        remember(demographic) {
                             demographic.toString()
                                 .replaceFirstChar { it.uppercaseChar() }
-                        }
+                        },
                     )
                 }
             }
@@ -825,52 +845,53 @@ fun DefaultPublicationDemographicFilter(
 private fun TagsList(
     categoryToTags: ImmutableMap<String, ImmutableList<DomainTag>>,
     selectedTags: ImmutableList<String>,
-    onTagSelected: (id: String) -> Unit
+    onTagSelected: (id: String) -> Unit,
 ) {
-
     val space = LocalSpacing.current
 
     Column(
         Modifier
             .fillMaxWidth()
-            .wrapContentHeight()
+            .wrapContentHeight(),
     ) {
-        for((group, tags) in categoryToTags) {
-
+        for ((group, tags) in categoryToTags) {
             var expanded by rememberSaveable { mutableStateOf(false) }
 
             Row(
-                modifier = Modifier
+                modifier =
+                Modifier
                     .fillMaxWidth()
                     .clickable { expanded = !expanded }
                     .padding(space.med),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = remember(group) {
+                    text =
+                    remember(group) {
                         group.replaceFirst(group[0], group[0].uppercaseChar())
                     },
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelLarge,
                 )
                 IconButton(
                     modifier = Modifier.padding(horizontal = space.small),
-                    onClick = { expanded = !expanded }
+                    onClick = { expanded = !expanded },
                 ) {
                     Icon(
-                        imageVector = if (!expanded) {
+                        imageVector =
+                        if (!expanded) {
                             Icons.Filled.ArrowDropDown
                         } else {
                             Icons.Filled.ArrowDropUp
                         },
-                        contentDescription = null
+                        contentDescription = null,
                     )
                 }
             }
             AnimatedVisibility(
                 visible = expanded,
                 enter = fadeIn(),
-                exit = fadeOut()
+                exit = fadeOut(),
             ) {
                 FlowRow(Modifier.padding(space.med)) {
                     tags.fastForEach { tag ->
@@ -878,7 +899,7 @@ private fun TagsList(
                             selected = tag.id in selectedTags,
                             onClick = { onTagSelected(tag.id) },
                             label = { Text(tag.name) },
-                            modifier = Modifier.padding(horizontal = space.xs)
+                            modifier = Modifier.padding(horizontal = space.xs),
                         )
                     }
                 }
@@ -887,13 +908,12 @@ private fun TagsList(
     }
 }
 
-
 @Composable
 private fun AuthorTextField(
     modifier: Modifier = Modifier,
     value: String,
     labelString: String,
-    onValueChanged: (String) -> Unit
+    onValueChanged: (String) -> Unit,
 ) {
     OutlinedTextField(
         value = value,
@@ -904,7 +924,7 @@ private fun AuthorTextField(
             Text(
                 text = labelString,
                 style = MaterialTheme.typography.bodyMedium,
-                fontSize = 12.sp
+                fontSize = 12.sp,
             )
         },
         singleLine = true,
@@ -916,13 +936,12 @@ private fun AuthorTextField(
                 IconButton(onClick = { onValueChanged("") }) {
                     Icon(
                         imageVector = Icons.Outlined.Clear,
-                        contentDescription = null
+                        contentDescription = null,
                     )
                 }
             }
-        }
+        },
     )
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
@@ -935,7 +954,7 @@ private fun AuthorSearchBar(
     result: QueryResult<List<DomainAuthor>>,
     selectedAuthors: List<DomainAuthor>,
     addCords: Boolean = false,
-    onAuthorSelected: (author: DomainAuthor) -> Unit
+    onAuthorSelected: (author: DomainAuthor) -> Unit,
 ) {
     val focusRequester = remember { FocusRequester() }
     var focused by remember { mutableStateOf(false) }
@@ -944,27 +963,28 @@ private fun AuthorSearchBar(
     var currentCoordinates: IntOffset by remember { mutableStateOf(IntOffset(0, 0)) }
     var sizeOffset: IntSize by remember { mutableStateOf(IntSize(0, 0)) }
 
-    val popupPositionProvider = object : PopupPositionProvider {
-        override fun calculatePosition(
-            anchorBounds: IntRect,
-            windowSize: IntSize,
-            layoutDirection: LayoutDirection,
-            popupContentSize: IntSize
-        ): IntOffset {
-            return currentCoordinates.copy(
-                x = currentCoordinates.x + if (addCords) sizeOffset.width else 0,
-                y = currentCoordinates.y + sizeOffset.height
-            )
+    val popupPositionProvider =
+        object : PopupPositionProvider {
+            override fun calculatePosition(
+                anchorBounds: IntRect,
+                windowSize: IntSize,
+                layoutDirection: LayoutDirection,
+                popupContentSize: IntSize,
+            ): IntOffset {
+                return currentCoordinates.copy(
+                    x = currentCoordinates.x + if (addCords) sizeOffset.width else 0,
+                    y = currentCoordinates.y + sizeOffset.height,
+                )
+            }
         }
-    }
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Bottom
+        verticalArrangement = Arrangement.Bottom,
     ) {
         LaunchedEffect(Unit) {
             snapshotFlow { currentCoordinates.y }.collect {
-                if((it > (0 + sizeOffset.height)) && focused) {
+                if ((it > (0 + sizeOffset.height)) && focused) {
                     focusManager.clearFocus(true)
                 }
             }
@@ -974,22 +994,25 @@ private fun AuthorSearchBar(
             value = query,
             labelString = label,
             onValueChanged = onQueryChange,
-            modifier = Modifier
+            modifier =
+            Modifier
                 .onGloballyPositioned { layoutCoordinates ->
-                    val (x: Int, y: Int) = when {
-                        layoutCoordinates.isAttached -> with(layoutCoordinates.positionInRoot()) {
-                            x.toInt() to y.toInt()
-                        }
+                    val (x: Int, y: Int) =
+                        when {
+                            layoutCoordinates.isAttached ->
+                                with(layoutCoordinates.positionInRoot()) {
+                                    x.toInt() to y.toInt()
+                                }
 
-                        else -> 0 to 0
-                    }
+                            else -> 0 to 0
+                        }
                     currentCoordinates = IntOffset(x, y)
                     sizeOffset = layoutCoordinates.size
                 }
                 .focusRequester(focusRequester)
                 .onFocusChanged {
                     focused = it.isFocused
-                }
+                },
         )
         LazyRow {
             items(selectedAuthors) {
@@ -997,7 +1020,7 @@ private fun AuthorSearchBar(
                     selected = true,
                     onClick = { onAuthorSelected(it) },
                     label = { Text(it.name) },
-                    modifier = Modifier.padding(horizontal = space.xs)
+                    modifier = Modifier.padding(horizontal = space.xs),
                 )
             }
         }
@@ -1007,13 +1030,13 @@ private fun AuthorSearchBar(
         ) {
             Popup(
                 popupPositionProvider = popupPositionProvider,
-                properties = PopupProperties()
+                properties = PopupProperties(),
             ) {
                 LazyColumn(
                     Modifier
                         .fillMaxWidth(0.5f)
                         .heightIn(0.dp, screenHeightDp / 3)
-                        .background(MaterialTheme.colorScheme.surface)
+                        .background(MaterialTheme.colorScheme.surface),
                 ) {
                     when (result) {
                         is QueryResult.Done -> {
@@ -1029,21 +1052,21 @@ private fun AuthorSearchBar(
                                         if (it in selectedAuthors) {
                                             Icon(
                                                 imageVector = Icons.Filled.Check,
-                                                contentDescription = null
+                                                contentDescription = null,
                                             )
                                         }
                                     },
-                                    onClick = { onAuthorSelected(it) }
+                                    onClick = { onAuthorSelected(it) },
                                 )
                                 Divider()
                             }
                         }
-                        QueryResult.Loading ->  {
+                        QueryResult.Loading -> {
                             item {
                                 CenterBox(
                                     Modifier
                                         .fillMaxWidth()
-                                        .padding(space.med)
+                                        .padding(space.med),
                                 ) {
                                     CircularProgressIndicator()
                                 }
@@ -1056,7 +1079,6 @@ private fun AuthorSearchBar(
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TriStateFilterChip(
@@ -1065,7 +1087,9 @@ fun TriStateFilterChip(
     name: String,
     modifier: Modifier = Modifier,
     hideIcons: Boolean = false,
-    labelTextStyle: TextStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
+    labelTextStyle: TextStyle = MaterialTheme.typography.labelLarge.copy(
+        fontWeight = FontWeight.Medium
+    ),
 ) {
     FilterChip(
         modifier = modifier,
@@ -1082,26 +1106,33 @@ fun TriStateFilterChip(
         },
         shape = RoundedCornerShape(100),
         label = { Text(text = name, style = labelTextStyle) },
-        colors = FilterChipDefaults.filterChipColors(
+        colors =
+        FilterChipDefaults.filterChipColors(
             containerColor = MaterialTheme.colorScheme.surface,
             selectedContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(8.dp),
             selectedLabelColor = MaterialTheme.colorScheme.primary,
             selectedLeadingIconColor = MaterialTheme.colorScheme.primary,
         ),
-        border = FilterChipDefaults.filterChipBorder(
+        border =
+        FilterChipDefaults.filterChipBorder(
             borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             selectedBorderColor = MaterialTheme.colorScheme.surfaceColorAtElevation(8.dp),
         ),
     )
 }
 
-private fun toggleStateIfAble(disabled: Boolean, state: ToggleableState, toggleState: (ToggleableState) -> Unit) {
+private fun toggleStateIfAble(
+    disabled: Boolean,
+    state: ToggleableState,
+    toggleState: (ToggleableState) -> Unit,
+) {
     if (!disabled) {
-        val newState = when (state) {
-            ToggleableState.On -> ToggleableState.Indeterminate
-            ToggleableState.Indeterminate -> ToggleableState.Off
-            ToggleableState.Off -> ToggleableState.On
-        }
+        val newState =
+            when (state) {
+                ToggleableState.On -> ToggleableState.Indeterminate
+                ToggleableState.Indeterminate -> ToggleableState.Off
+                ToggleableState.Off -> ToggleableState.On
+            }
         toggleState(newState)
     }
 }

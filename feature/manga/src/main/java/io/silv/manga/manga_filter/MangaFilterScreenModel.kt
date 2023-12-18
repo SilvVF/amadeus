@@ -24,10 +24,8 @@ class MangaFilterScreenModel(
     getManga: GetSavableManga,
     subscribeToPagingData: SubscribeToPagingData,
     private val savedMangaRepository: SavedMangaRepository,
-    tagId: String
-): EventStateScreenModel<MangaFilterEvent, YearlyFilteredUiState>(YearlyFilteredUiState.Loading) {
-
-
+    tagId: String,
+) : EventStateScreenModel<MangaFilterEvent, YearlyFilteredUiState>(YearlyFilteredUiState.Loading) {
     private val mutableTimePeriod = MutableStateFlow(TimePeriod.AllTime)
     val timePeriod = mutableTimePeriod.asStateFlow()
 
@@ -38,13 +36,12 @@ class MangaFilterScreenModel(
         }
     }
 
-
-    val timePeriodFilteredPagingFlow = subscribeToPagingData(
-        config = PagingConfig(30, 30),
-        typeFlow = timePeriod.map { time -> PagedType.TimePeriod(tagId, time) },
-        scope = ioCoroutineScope
-    )
-
+    val timePeriodFilteredPagingFlow =
+        subscribeToPagingData(
+            config = PagingConfig(30, 30),
+            typeFlow = timePeriod.map { time -> PagedType.TimePeriod(tagId, time) },
+            scope = ioCoroutineScope,
+        )
 
     fun changeTimePeriod(timePeriod: TimePeriod) {
         screenModelScope.launch {
@@ -60,9 +57,9 @@ class MangaFilterScreenModel(
 }
 
 sealed interface YearlyFilteredUiState {
-    data object Loading: YearlyFilteredUiState
-    data class Success(
-        val resources: ImmutableList<StateFlow<SavableManga>>
-    ): YearlyFilteredUiState
-}
+    data object Loading : YearlyFilteredUiState
 
+    data class Success(
+        val resources: ImmutableList<StateFlow<SavableManga>>,
+    ) : YearlyFilteredUiState
+}

@@ -11,9 +11,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TagDao {
-
     @Insert(
-        onConflict = OnConflictStrategy.REPLACE
+        onConflict = OnConflictStrategy.REPLACE,
     )
     suspend fun upsertTag(tag: TagEntity)
 

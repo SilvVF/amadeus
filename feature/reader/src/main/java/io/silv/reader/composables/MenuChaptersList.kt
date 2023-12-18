@@ -21,8 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import io.silv.ui.theme.LocalSpacing
 import io.silv.model.SavableChapter
+import io.silv.ui.theme.LocalSpacing
 
 @Composable
 fun ChaptersList(
@@ -30,21 +30,23 @@ fun ChaptersList(
     selected: SavableChapter,
     chapters: List<SavableChapter>,
     onChapterClicked: (id: String) -> Unit,
-    onBookmarkClick: (chapterId: String) -> Unit
+    onBookmarkClick: (chapterId: String) -> Unit,
 ) {
     val space = io.silv.ui.theme.LocalSpacing.current
     LazyColumn(modifier = modifier) {
         items(
             items = chapters,
-            key = { chapter -> chapter.id }
+            key = { chapter -> chapter.id },
         ) { chapter ->
-            val volumeAndChapter = remember(chapter) {
-                "Vol.${chapter.volume} Ch.${chapter.chapter} - ${chapter.title}"
-            }
-            val chapterInfoText = remember(chapter) {
-                "${chapter.createdAt.month.name} ${chapter.createdAt.dayOfMonth}, " +
+            val volumeAndChapter =
+                remember(chapter) {
+                    "Vol.${chapter.volume} Ch.${chapter.chapter} - ${chapter.title}"
+                }
+            val chapterInfoText =
+                remember(chapter) {
+                    "${chapter.createdAt.month.name} ${chapter.createdAt.dayOfMonth}, " +
                         "${chapter.createdAt.year} * ${chapter.scanlationGroupToId?.first}"
-            }
+                }
             Column {
                 Row(
                     Modifier
@@ -52,7 +54,7 @@ fun ChaptersList(
                         .clickable { onChapterClicked(chapter.id) }
                         .padding(space.med),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     val textColor = if (chapter.id == selected.id) MaterialTheme.colorScheme.primary else Color.Unspecified
                     Column {
@@ -63,11 +65,13 @@ fun ChaptersList(
                         onBookmarkClick(chapter.id)
                     }) {
                         Icon(
-                            imageVector = if(chapter.bookmarked)
+                            imageVector =
+                            if (chapter.bookmarked) {
                                 Icons.Filled.Bookmark
-                            else
-                                Icons.Filled.BookmarkBorder,
-                            contentDescription = null
+                            } else {
+                                Icons.Filled.BookmarkBorder
+                            },
+                            contentDescription = null,
                         )
                     }
                 }

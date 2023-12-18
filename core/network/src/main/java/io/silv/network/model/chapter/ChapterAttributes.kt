@@ -19,5 +19,5 @@ data class ChapterAttributes(
     val createdAt: String,
     val updatedAt: String,
     val readableAt: String,
-    val relationships: List<Relationship> = emptyList()
+    val relationships: List<Relationship> = emptyList(),
 )

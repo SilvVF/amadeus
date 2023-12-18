@@ -18,17 +18,19 @@ fun rememberGestureHandler(
     imageListSize: Int,
     verticalReaderState: LazyListState,
     horizontalReaderState: PagerState,
-    scope: CoroutineScope = rememberCoroutineScope()
+    scope: CoroutineScope = rememberCoroutineScope(),
 ) = remember {
     GestureHandler(
         scope = scope,
         imageListSize = imageListSize,
         verticalReaderState = verticalReaderState,
-        horizontalReaderState = horizontalReaderState
+        horizontalReaderState = horizontalReaderState,
     )
 }
 
-class GestureHandler @OptIn(ExperimentalFoundationApi::class) constructor(
+class GestureHandler
+@OptIn(ExperimentalFoundationApi::class)
+constructor(
     private val scope: CoroutineScope,
     private val imageListSize: Int,
     private val horizontalReaderState: PagerState,
@@ -36,11 +38,10 @@ class GestureHandler @OptIn(ExperimentalFoundationApi::class) constructor(
 ) {
     val firstVisibleInVertical by derivedStateOf { verticalReaderState.firstVisibleItemIndex }
 
-
     @OptIn(ExperimentalFoundationApi::class)
     fun handleBackGesture(orientation: ReaderOrientation) {
         scope.launch {
-            when (orientation){
+            when (orientation) {
                 ReaderOrientation.Vertical -> {
                     (firstVisibleInVertical - 1)
                         .takeIf { it >= 0 }
@@ -48,7 +49,7 @@ class GestureHandler @OptIn(ExperimentalFoundationApi::class) constructor(
                 }
                 ReaderOrientation.Horizontal -> {
                     horizontalReaderState.animateScrollToPage(
-                        horizontalReaderState.currentPage - 1
+                        horizontalReaderState.currentPage - 1,
                     )
                 }
             }
@@ -58,7 +59,7 @@ class GestureHandler @OptIn(ExperimentalFoundationApi::class) constructor(
     @OptIn(ExperimentalFoundationApi::class)
     fun handleForwardGesture(orientation: ReaderOrientation) {
         scope.launch {
-            when (orientation){
+            when (orientation) {
                 ReaderOrientation.Vertical -> {
                     (firstVisibleInVertical + verticalReaderState.layoutInfo.visibleItemsInfo.size)
                         .takeIf { it in 0 until imageListSize }
@@ -66,7 +67,7 @@ class GestureHandler @OptIn(ExperimentalFoundationApi::class) constructor(
                 }
                 ReaderOrientation.Horizontal -> {
                     horizontalReaderState.animateScrollToPage(
-                        horizontalReaderState.currentPage + 1
+                        horizontalReaderState.currentPage + 1,
                     )
                 }
             }

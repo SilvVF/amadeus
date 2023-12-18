@@ -17,77 +17,84 @@ class LibrarySM(
     private val chapterEntityRepository: ChapterRepository,
     getSavedMangaWithChaptersList: GetSavedMangaWithChaptersList,
     mangaUpdateRepository: MangaUpdateRepository,
-): EventScreenModel<LibraryEvent>() {
-
+) : EventScreenModel<LibraryEvent>() {
     val downloadingOrDeleting = flowOf(emptyList<Pair<String, Float>>())
 
-    val bookmarkedChapters = chapterEntityRepository.getAllChapters()
-        .map { entities ->
-            entities.filter { chapter -> chapter.bookmarked }
-                .map {
-                    SavableChapter(it)
-                }
-        }
-        .stateInUi(emptyList())
+    val bookmarkedChapters =
+        chapterEntityRepository.getAllChapters()
+            .map { entities ->
+                entities.filter { chapter -> chapter.bookmarked }
+                    .map {
+                        SavableChapter(it)
+                    }
+            }
+            .stateInUi(emptyList())
 
-    val mangaWithDownloadedChapters = getSavedMangaWithChaptersList.subscribe()
-        .map { list ->
-            list.map { (manga, chapters) ->
-                LibraryManga(
-                    chapters = chapters,
-                    savableManga = manga
-                )
+    val mangaWithDownloadedChapters =
+        getSavedMangaWithChaptersList.subscribe()
+            .map { list ->
+                list.map { (manga, chapters) ->
+                    LibraryManga(
+                        chapters = chapters,
+                        savableManga = manga,
+                    )
+                }
+            }
+            .stateInUi(emptyList())
+
+    val updates =
+        mangaUpdateRepository.observeAllUpdates().map { updates ->
+            updates.mapNotNull { updateWithManga ->
+                val (update, manga) = updateWithManga
+                when (update.updateType) {
+                    UpdateType.Volume, UpdateType.Chapter ->
+                        Update.Chapter(
+                            chapterId = manga.latestUploadedChapter ?: return@mapNotNull null,
+                            SavableManga(manga),
+                        )
+                    UpdateType.Other -> null
+                }
             }
         }
-        .stateInUi(emptyList())
+            .stateInUi(emptyList())
 
-    val updates = mangaUpdateRepository.observeAllUpdates().map { updates ->
-        updates.mapNotNull { updateWithManga ->
-           val (update, manga) = updateWithManga
-            when (update.updateType) {
-                UpdateType.Volume, UpdateType.Chapter -> Update.Chapter(
-                    chapterId = manga.latestUploadedChapter ?: return@mapNotNull null,
-                    SavableManga(manga)
+    fun deleteChapterImages(chapterIds: List<String>) =
+        screenModelScope.launch {
+        }
+
+    fun downloadChapterImages(
+        chapterIds: List<String>,
+        mangaId: String,
+    ) = screenModelScope.launch {
+    }
+
+    fun changeChapterBookmarked(id: String) =
+        screenModelScope.launch {
+            var new = false
+            chapterEntityRepository.updateChapter(id) { entity ->
+                entity.copy(
+                    bookmarked = !entity.bookmarked.also { new = it },
                 )
-                UpdateType.Other -> null
             }
-        }
-    }
-        .stateInUi(emptyList())
-
-    fun deleteChapterImages(chapterIds: List<String>) = screenModelScope.launch {
-
-    }
-
-    fun downloadChapterImages(chapterIds: List<String>, mangaId: String) = screenModelScope.launch {
-
-    }
-
-    fun changeChapterBookmarked(id: String) = screenModelScope.launch {
-        var new = false
-        chapterEntityRepository.updateChapter(id) { entity ->
-            entity.copy(
-                bookmarked = !entity.bookmarked.also { new = it }
+            mutableEvents.send(
+                LibraryEvent.BookmarkStatusChanged(id, new),
             )
         }
-        mutableEvents.send(
-            LibraryEvent.BookmarkStatusChanged(id, new)
-        )
-    }
 
-    fun changeChapterReadStatus(id: String) = screenModelScope.launch {
-        var new = false
-        chapterEntityRepository.updateChapter(id) { entity ->
-            entity.copy(
-                progressState = when(entity.progressState) {
-                    ProgressState.Finished -> ProgressState.NotStarted.also { new = false }
-                    ProgressState.NotStarted, ProgressState.Reading -> ProgressState.Finished.also { new = true }
-                }
+    fun changeChapterReadStatus(id: String) =
+        screenModelScope.launch {
+            var new = false
+            chapterEntityRepository.updateChapter(id) { entity ->
+                entity.copy(
+                    progressState =
+                    when (entity.progressState) {
+                        ProgressState.Finished -> ProgressState.NotStarted.also { new = false }
+                        ProgressState.NotStarted, ProgressState.Reading -> ProgressState.Finished.also { new = true }
+                    },
+                )
+            }
+            mutableEvents.send(
+                LibraryEvent.ReadStatusChanged(id, new),
             )
         }
-        mutableEvents.send(
-            LibraryEvent.ReadStatusChanged(id, new)
-        )
-    }
 }
-

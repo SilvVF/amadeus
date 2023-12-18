@@ -81,15 +81,12 @@ import io.silv.ui.layout.ScrollbarLazyColumn
 import io.silv.ui.theme.LocalSpacing
 import org.koin.core.parameter.parametersOf
 
-
 class MangaViewScreen(
     private val mangaId: String,
-): Screen {
-
+) : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-
         val screenModel = getScreenModel<MangaViewScreenModel> { parametersOf(mangaId) }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
@@ -101,41 +98,51 @@ class MangaViewScreen(
                 snackbarHostState.showSnackbar(
                     message = message,
                     withDismissAction = true,
-                    duration = SnackbarDuration.Short
+                    duration = SnackbarDuration.Short,
                 )
             }
             when (event) {
                 is MangaViewEvent.FailedToLoadChapterList -> showSnackBar(event.message)
                 is MangaViewEvent.FailedToLoadVolumeArt -> showSnackBar(event.message)
                 is MangaViewEvent.BookmarkStatusChanged -> {
-                    val result = snackbarHostState.showSnackbar(
-                        message = if (event.bookmarked)
-                            "Bookmarked"
-                        else
-                            "Removed Bookmark",
-                        withDismissAction = true,
-                        actionLabel = "Undo",
-                        duration = SnackbarDuration.Short
-                    )
+                    val result =
+                        snackbarHostState.showSnackbar(
+                            message =
+                            if (event.bookmarked) {
+                                "Bookmarked"
+                            } else {
+                                "Removed Bookmark"
+                            },
+                            withDismissAction = true,
+                            actionLabel = "Undo",
+                            duration = SnackbarDuration.Short,
+                        )
                     when (result) {
                         SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed -> screenModel.changeChapterBookmarked(event.id)
+                        SnackbarResult.ActionPerformed -> screenModel.changeChapterBookmarked(
+                            event.id
+                        )
                     }
                 }
 
                 is MangaViewEvent.ReadStatusChanged -> {
-                    val result = snackbarHostState.showSnackbar(
-                        message = if (event.read)
-                            "Marked as read"
-                        else
-                            "Marked as unread",
-                        withDismissAction = true,
-                        actionLabel = "Undo",
-                        duration = SnackbarDuration.Short
-                    )
+                    val result =
+                        snackbarHostState.showSnackbar(
+                            message =
+                            if (event.read) {
+                                "Marked as read"
+                            } else {
+                                "Marked as unread"
+                            },
+                            withDismissAction = true,
+                            actionLabel = "Undo",
+                            duration = SnackbarDuration.Short,
+                        )
                     when (result) {
                         SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed -> screenModel.changeChapterReadStatus(event.id)
+                        SnackbarResult.ActionPerformed -> screenModel.changeChapterReadStatus(
+                            event.id
+                        )
                     }
                 }
             }
@@ -144,7 +151,7 @@ class MangaViewScreen(
         var webUrl by rememberSaveable { mutableStateOf<String?>(null) }
 
         BackHandler(
-            enabled = webUrl != null
+            enabled = webUrl != null,
         ) {
             webUrl = null
         }
@@ -152,40 +159,44 @@ class MangaViewScreen(
         if (webUrl != null) {
             webUrl?.let {
                 WebViewOverlay(
-                    base = it
+                    base = it,
                 )
             }
             return
         }
 
-
         MangaViewScreenContent(
             state = state,
             snackbarHostState = snackbarHostState,
             viewOnWeb = { url -> webUrl = url },
-            filterActions = FilterActions(
+            filterActions =
+            FilterActions(
                 downloaded = screenModel::filterDownloaded,
                 uploadDate = screenModel::filterByUploadDate,
                 chapterNumber = screenModel::filterByChapterNumber,
                 source = screenModel::filterBySource,
                 bookmarked = screenModel::filterBookmarked,
                 unread = screenModel::filterUnread,
-                setAsDefault = screenModel::setFilterAsDefault
+                setAsDefault = screenModel::setFilterAsDefault,
             ),
-            chapterActions = ChapterActions(
+            chapterActions =
+            ChapterActions(
                 bookmark = screenModel::changeChapterBookmarked,
                 read = screenModel::changeChapterReadStatus,
                 download = screenModel::downloadChapterImages,
-                delete = screenModel::deleteChapterImages
+                delete = screenModel::deleteChapterImages,
             ),
-            mangaActions = MangaActions(
-                addToLibrary = screenModel::toggleLibraryManga
+            mangaActions =
+            MangaActions(
+                addToLibrary = screenModel::toggleLibraryManga,
+            ),
+            downloadActions = DownloadActions(
+                pause = screenModel::pauseDownload,
+                cancel = screenModel::cancelDownload
             )
         )
-
     }
 }
-
 
 @Composable
 fun MangaViewScreenContent(
@@ -195,28 +206,33 @@ fun MangaViewScreenContent(
     filterActions: FilterActions,
     chapterActions: ChapterActions,
     mangaActions: MangaActions,
+    downloadActions: DownloadActions,
 ) {
     val navigator = LocalNavigator.currentOrThrow
     when (state) {
-        is MangaViewState.Error -> CenterBox(Modifier.fillMaxSize()) {
-            Column {
-                Text(state.message)
-                Button(onClick = { navigator.pop() }) {
-                    Text(text = "Go back")
+        is MangaViewState.Error ->
+            CenterBox(Modifier.fillMaxSize()) {
+                Column {
+                    Text(state.message)
+                    Button(onClick = { navigator.pop() }) {
+                        Text(text = "Go back")
+                    }
                 }
             }
-        }
-        MangaViewState.Loading -> CenterBox(Modifier.fillMaxSize()) {
-            CircularProgressIndicator()
-        }
-        is MangaViewState.Success -> MangaViewSuccessScreen(
-            state = state,
-            snackbarHostState = snackbarHostState,
-            viewOnWeb = viewOnWeb,
-            filterActions = filterActions,
-            chapterActions = chapterActions,
-            mangaActions = mangaActions
-        )
+        MangaViewState.Loading ->
+            CenterBox(Modifier.fillMaxSize()) {
+                CircularProgressIndicator()
+            }
+        is MangaViewState.Success ->
+            MangaViewSuccessScreen(
+                state = state,
+                snackbarHostState = snackbarHostState,
+                viewOnWeb = viewOnWeb,
+                filterActions = filterActions,
+                chapterActions = chapterActions,
+                mangaActions = mangaActions,
+                downloadActions = downloadActions
+            )
     }
 }
 
@@ -231,12 +247,15 @@ fun MangaViewSuccessScreen(
     viewOnWeb: (url: String) -> Unit,
     filterActions: FilterActions,
     chapterActions: ChapterActions,
-    mangaActions: MangaActions
+    mangaActions: MangaActions,
+    downloadActions: DownloadActions
 ) {
     val navigator = LocalNavigator.currentOrThrow
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(state = rememberTopAppBarState())
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+        state = rememberTopAppBarState()
+    )
     val listState = rememberLazyListState()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true,)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var currentBottomSheet by rememberSaveable { mutableStateOf<Int?>(null) }
 
     var showSourceTitle by rememberSaveable { mutableStateOf(true) }
@@ -245,9 +264,10 @@ fun MangaViewSuccessScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
+                colors =
+                TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
+                    scrolledContainerColor = Color.Transparent,
                 ),
                 title = {},
                 navigationIcon = {
@@ -263,7 +283,7 @@ fun MangaViewSuccessScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.FilterList,
-                            contentDescription = "filter"
+                            contentDescription = "filter",
                         )
                     }
                 },
@@ -282,9 +302,10 @@ fun MangaViewSuccessScreen(
                 val space = LocalSpacing.current
                 ExtendedFloatingActionButton(
                     text = {
-                        val text = remember(state.chapters) {
-                            if (state.chapters.fastAny { it.started || it.read }) "Resume" else "Start"
-                        }
+                        val text =
+                            remember(state.chapters) {
+                                if (state.chapters.fastAny { it.started || it.read }) "Resume" else "Start"
+                            }
                         Text(text = text)
                     },
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -292,11 +313,12 @@ fun MangaViewSuccessScreen(
                         Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
                     },
                     onClick = {
-                        val lastUnread = state.chapters
-                            .sortedBy { chapter -> chapter.chapter.takeIf { it >= 0 } ?: Long.MAX_VALUE }
-                            .fastFirstOrNull { !it.read }
-                            ?: state.success?.chapters?.minByOrNull { it.chapter }
-                            ?: return@ExtendedFloatingActionButton
+                        val lastUnread =
+                            state.chapters
+                                .sortedBy { chapter -> chapter.chapter.takeIf { it >= 0 } ?: Long.MAX_VALUE }
+                                .fastFirstOrNull { !it.read }
+                                ?: state.success?.chapters?.minByOrNull { it.chapter }
+                                ?: return@ExtendedFloatingActionButton
 
                         navigator.push(SharedScreen.Reader(lastUnread.mangaId, lastUnread.id))
                     },
@@ -304,28 +326,29 @@ fun MangaViewSuccessScreen(
                     expanded = listState.isScrollingUp(),
                 )
             }
-        }
+        },
     ) { paddingValues ->
         ScrollbarLazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
+            contentPadding =
+            PaddingValues(
                 start = paddingValues.calculateStartPadding(LocalLayoutDirection.current),
                 end = paddingValues.calculateEndPadding(LocalLayoutDirection.current),
-            )
+            ),
         ) {
             item(key = "manga-poster") {
-              MangaImageWithTitle(
-                  manga = state.manga,
-                  modifier = Modifier.fillMaxWidth(),
-                  padding = paddingValues
-              )
+                MangaImageWithTitle(
+                    manga = state.manga,
+                    modifier = Modifier.fillMaxWidth(),
+                    padding = paddingValues,
+                )
             }
             item("manga-info") {
                 Column {
                     MangaStats(
                         modifier = Modifier.fillMaxWidth(),
-                        state = state.statsUiState
+                        state = state.statsUiState,
                     )
                     MangaDescriptionWithActions(
                         manga = state.manga,
@@ -341,35 +364,37 @@ fun MangaViewSuccessScreen(
                         },
                         showChapterArt = {
                             currentBottomSheet = VOLUME_ART_BOTTOM_SHEET
-                        }
+                        },
                     )
                     Spacer(modifier = Modifier.height(22.dp))
 
-                    val maxChapterNum = remember(state.chapters) {
-                        state.chapters.maxOf { it.chapter }
-                    }
+                    val maxChapterNum =
+                        remember(state.chapters) {
+                            state.chapters.maxOf { it.chapter }
+                        }
 
-                    val missingChapters = remember(state.chapters) {
-                        var prevChapter: Long? = null
-                        state.chapters
-                            .distinctBy { it.chapter }
-                            .filter { it.chapter != -1L }
-                            .sortedBy { it.chapter }
-                            .count { c ->
-                                (c.chapter - 1 != prevChapter && prevChapter != null)
-                                    .also { prevChapter = c.chapter }
-                            }
-                    }
+                    val missingChapters =
+                        remember(state.chapters) {
+                            var prevChapter: Long? = null
+                            state.chapters
+                                .distinctBy { it.chapter }
+                                .filter { it.chapter != -1L }
+                                .sortedBy { it.chapter }
+                                .count { c ->
+                                    (c.chapter - 1 != prevChapter && prevChapter != null)
+                                        .also { prevChapter = c.chapter }
+                                }
+                        }
 
                     Text(
                         text = "$maxChapterNum chapters - missing $missingChapters",
-                        modifier = Modifier.padding(start = 12.dp)
+                        modifier = Modifier.padding(start = 12.dp),
                     )
                 }
             }
             chapterListItems(
                 mangaViewState = state,
-                downloadingIds = state.downloadingIds,
+                downloads = state.downloads,
                 onDownloadClicked = chapterActions.download,
                 onDeleteClicked = chapterActions.delete,
                 onReadClicked = {
@@ -378,91 +403,106 @@ fun MangaViewSuccessScreen(
                 onBookmark = chapterActions.bookmark,
                 onMarkAsRead = chapterActions.read,
                 showFullTitle = showSourceTitle,
+                downloadActions = downloadActions,
             )
             item(key = "padding-bottom") {
                 // apply both top and bottom padding to raise chapter list above the FAB
                 // top padding is ignored for manga cover art.
                 Spacer(
                     Modifier.height(
-                        paddingValues.calculateBottomPadding() + paddingValues.calculateTopPadding()
-                    )
+                        paddingValues.calculateBottomPadding() + paddingValues.calculateTopPadding(),
+                    ),
                 )
             }
         }
     }
 
-
-    when(currentBottomSheet) {
-        FILTER_BOTTOM_SHEET -> FilterBottomSheet(
-            visible = true,
-            filters = state.filters,
-            sheetState = sheetState,
-            onDismiss = { currentBottomSheet = null },
-            onSetAsDefaultClick = filterActions.setAsDefault,
-            filterDownloaded = filterActions.downloaded,
-            filterUnread = filterActions.unread,
-            filterBookmarked = filterActions.bookmarked,
-            filterBySource = filterActions.source,
-            filterByChapterNumber = filterActions.chapterNumber,
-            filterByUploadDate = filterActions.uploadDate,
-            showingSourceTitle = showSourceTitle,
-            hideSourceTitle = { showSourceTitle = false },
-            showSourceTitle = { showSourceTitle = true }
-        )
-        VOLUME_ART_BOTTOM_SHEET ->  ModalBottomSheet(
-            onDismissRequest = { currentBottomSheet = null },
-            sheetState = sheetState
-        ) {
-            LazyColumn {
-                volumePosterItems(state)
+    when (currentBottomSheet) {
+        FILTER_BOTTOM_SHEET ->
+            FilterBottomSheet(
+                visible = true,
+                filters = state.filters,
+                sheetState = sheetState,
+                onDismiss = { currentBottomSheet = null },
+                onSetAsDefaultClick = filterActions.setAsDefault,
+                filterDownloaded = filterActions.downloaded,
+                filterUnread = filterActions.unread,
+                filterBookmarked = filterActions.bookmarked,
+                filterBySource = filterActions.source,
+                filterByChapterNumber = filterActions.chapterNumber,
+                filterByUploadDate = filterActions.uploadDate,
+                showingSourceTitle = showSourceTitle,
+                hideSourceTitle = { showSourceTitle = false },
+                showSourceTitle = { showSourceTitle = true },
+            )
+        VOLUME_ART_BOTTOM_SHEET ->
+            ModalBottomSheet(
+                onDismissRequest = { currentBottomSheet = null },
+                sheetState = sheetState,
+            ) {
+                LazyColumn {
+                    volumePosterItems(state)
+                }
             }
-        }
     }
 }
 
 @Composable
 private fun MangaStats(
+    state: StatsUiState,
     modifier: Modifier = Modifier,
     ratingItem: @Composable RowScope.(rating: Double) -> Unit = { rating ->
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             val space = LocalSpacing.current
-            val text = remember(rating) {
-               "%.2f / 10".format(rating)
-            }
-            Icon(imageVector = Icons.Filled.StarRate, contentDescription = "rating", Modifier.size(22.dp))
+            val text =
+                remember(rating) {
+                    "%.2f / 10".format(rating)
+                }
+            Icon(
+                imageVector = Icons.Filled.StarRate,
+                contentDescription = "rating",
+                Modifier.size(22.dp)
+            )
             Spacer(modifier = Modifier.width(space.med))
             Text(text, style = MaterialTheme.typography.titleSmall)
         }
     },
     commentsItem: @Composable RowScope.(comments: Int) -> Unit = { comments ->
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             val space = LocalSpacing.current
-            Icon(imageVector = Icons.Filled.Comment, contentDescription = "comments", Modifier.size(22.dp))
+            Icon(
+                imageVector = Icons.Filled.Comment,
+                contentDescription = "comments",
+                Modifier.size(22.dp)
+            )
             Spacer(modifier = Modifier.width(space.med))
             Text(remember(comments) { "$comments" }, style = MaterialTheme.typography.titleSmall)
         }
     },
     followsItem: @Composable RowScope.(follows: Int) -> Unit = { follows ->
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             val space = LocalSpacing.current
-            Icon(imageVector = Icons.Filled.Favorite, contentDescription = "follows", Modifier.size(22.dp))
+            Icon(
+                imageVector = Icons.Filled.Favorite,
+                contentDescription = "follows",
+                Modifier.size(22.dp)
+            )
             Spacer(modifier = Modifier.width(space.med))
-            Text(remember(follows){ "$follows" }, style = MaterialTheme.typography.titleSmall)
+            Text(remember(follows) { "$follows" }, style = MaterialTheme.typography.titleSmall)
         }
     },
-    state: StatsUiState,
 ) {
     val space = LocalSpacing.current
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
+        horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         when (state) {
             is StatsUiState.Error -> {}
@@ -483,9 +523,3 @@ private fun MangaStats(
         }
     }
 }
-
-
-
-
-
-

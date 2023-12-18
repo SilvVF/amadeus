@@ -13,16 +13,15 @@ import androidx.work.WorkerParameters
 import io.silv.data.tags.TagRepository
 import io.silv.data.workers.createForegroundInfo
 import io.silv.sync.TagSyncWorkName
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 internal class TagSyncWorker(
     appContext: Context,
     workerParams: WorkerParameters,
-): CoroutineWorker(appContext, workerParams), KoinComponent {
-
+) : CoroutineWorker(appContext, workerParams), KoinComponent {
     private val tagRepository by inject<TagRepository>()
 
     override suspend fun doWork(): Result {
@@ -40,9 +39,10 @@ internal class TagSyncWorker(
     companion object {
         // All sync work needs an internet connectionS
         private val SyncConstraints
-            get() = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
+            get() =
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
 
         fun syncWorkRequest(): OneTimeWorkRequest {
             return OneTimeWorkRequestBuilder<TagSyncWorker>()

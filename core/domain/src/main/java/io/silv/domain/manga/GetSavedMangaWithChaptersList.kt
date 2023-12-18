@@ -16,11 +16,11 @@ class GetSavedMangaWithChaptersList(
     private val savedMangaRepository: SavedMangaRepository,
 ) {
     fun subscribe(): Flow<List<SavableMangaWithChapters>> {
-        return  savedMangaRepository.observeSavedMangaListWithChapters().map { savedWithChapters ->
+        return savedMangaRepository.observeSavedMangaListWithChapters().map { savedWithChapters ->
             savedWithChapters.map {
                 SavableMangaWithChapters(
                     savableManga = SavableManga(it.manga),
-                    chapters = it.chapters.map(::SavableChapter).toImmutableList()
+                    chapters = it.chapters.map(::SavableChapter).toImmutableList(),
                 )
             }
         }

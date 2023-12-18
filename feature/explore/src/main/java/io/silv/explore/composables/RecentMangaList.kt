@@ -27,8 +27,8 @@ fun LazyGridScope.mangaGrid(
     items(
         count = manga.itemCount,
         contentType = manga.itemContentType(),
-        key = manga.itemKey()
-    ) {i ->
+        key = manga.itemKey(),
+    ) { i ->
 
         val item = manga[i]
         val space = LocalSpacing.current
@@ -37,7 +37,8 @@ fun LazyGridScope.mangaGrid(
             MangaListItem(
                 manga = item,
                 cardType = cardType,
-                modifier = Modifier
+                modifier =
+                Modifier
                     .padding(space.small)
                     .aspectRatio(2f / 3f)
                     .clickable {
@@ -48,13 +49,13 @@ fun LazyGridScope.mangaGrid(
                 },
                 onBookmarkClick = {
                     onBookmarkClick(manga)
-                }
+                },
             )
         }
     }
     if (manga.loadState.append is LoadState.Loading) {
         item(
-            key = "load-state-append-manga"
+            key = "load-state-append-manga",
         ) {
             CenterBox(Modifier.fillMaxWidth()) {
                 CircularProgressIndicator()

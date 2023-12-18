@@ -12,7 +12,7 @@ import io.silv.datastore.model.ReaderSettings
 @Composable
 fun ReaderSettingsMenu(
     settings: ReaderSettings,
-    onSettingsChanged: (ReaderSettings) -> Unit
+    onSettingsChanged: (ReaderSettings) -> Unit,
 ) {
     val space = io.silv.ui.theme.LocalSpacing.current
     Column {
@@ -22,15 +22,17 @@ fun ReaderSettingsMenu(
             labelLeft = "Ltr",
             labelRight = "Rtl",
             itemLeft = ReaderDirection.Ltr,
-            itemRight = ReaderDirection.Rtl
+            itemRight = ReaderDirection.Rtl,
         ) {
             onSettingsChanged(
                 settings.copy(
-                    direction = if (it == ReaderDirection.Ltr)
+                    direction =
+                    if (it == ReaderDirection.Ltr) {
                         ReaderDirection.Rtl
-                    else
+                    } else {
                         ReaderDirection.Ltr
-                )
+                    },
+                ),
             )
         }
         Spacer(modifier = Modifier.height(space.large))
@@ -40,16 +42,17 @@ fun ReaderSettingsMenu(
             labelLeft = "vertical",
             labelRight = "horizontal",
             itemLeft = ReaderOrientation.Vertical,
-            itemRight = ReaderOrientation.Horizontal
+            itemRight = ReaderOrientation.Horizontal,
         ) { enum ->
             onSettingsChanged(
                 settings.copy(
-                    orientation = if (enum == ReaderOrientation.Vertical) {
+                    orientation =
+                    if (enum == ReaderOrientation.Vertical) {
                         ReaderOrientation.Horizontal
                     } else {
                         ReaderOrientation.Vertical
-                    }
-                )
+                    },
+                ),
             )
         }
     }

@@ -10,6 +10,7 @@ const val SeasonalMangaSyncWorkName = "SeasonalMangaSyncWorkName"
 
 interface SyncManager {
     val isSyncing: Flow<Boolean>
+
     fun requestSync()
 }
 

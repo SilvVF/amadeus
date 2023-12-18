@@ -1,10 +1,10 @@
 package io.silv.network.model.test
 
 object MangaDexTestJson {
+    const val cover_art_list = "{\"result\":\"ok\",\"response\":\"collection\",\"data\":[{\"id\":\"cfe35c40-3cc7-4bc8-83da-4fc7728d28b5\",\"type\":\"cover_art\",\"attributes\":{\"description\":\"\",\"volume\":\"1\",\"fileName\":\"d8584732-4d54-461d-8874-5d481cee22c6.jpg\",\"locale\":\"ja\",\"createdAt\":\"2023-06-18T14:29:03+00:00\",\"updatedAt\":\"2023-06-18T14:29:03+00:00\",\"version\":1},\"relationships\":[{\"id\":\"a93959d7-4a4a-4f80-88f7-921af3ca9ade\",\"type\":\"manga\"},{\"id\":\"27bde0e8-71b0-4bf2-8e25-2902a7b2dd4b\",\"type\":\"user\"}]},{\"id\":\"600e1cde-6097-4c78-84fe-96c953d2485a\",\"type\":\"cover_art\",\"attributes\":{\"description\":\"\",\"volume\":\"3\",\"fileName\":\"4d069697-b74a-4f28-8bd5-fe480543d7cc.jpg\",\"locale\":\"ja\",\"createdAt\":\"2023-06-02T21:57:25+00:00\",\"updatedAt\":\"2023-06-02T21:57:25+00:00\",\"version\":1},\"relationships\":[{\"id\":\"a93959d7-4a4a-4f80-88f7-921af3ca9ade\",\"type\":\"manga\"},{\"id\":\"1b660eb2-c434-47c9-8ff6-7ce657b30386\",\"type\":\"user\"}]},{\"id\":\"13351f47-b99a-4558-b86a-d7ec7b208b9f\",\"type\":\"cover_art\",\"attributes\":{\"description\":\"\",\"volume\":\"2\",\"fileName\":\"42f5c8b6-f24d-48d1-8bd4-cf814a594f2d.jpg\",\"locale\":\"ja\",\"createdAt\":\"2022-08-18T03:40:29+00:00\",\"updatedAt\":\"2022-08-18T03:40:29+00:00\",\"version\":1},\"relationships\":[{\"id\":\"a93959d7-4a4a-4f80-88f7-921af3ca9ade\",\"type\":\"manga\"},{\"id\":\"1532c0a9-4620-45d3-8951-0a59802e8392\",\"type\":\"user\"}]}],\"limit\":10,\"offset\":0,\"total\":3}"
 
-    const val cover_art_list= "{\"result\":\"ok\",\"response\":\"collection\",\"data\":[{\"id\":\"cfe35c40-3cc7-4bc8-83da-4fc7728d28b5\",\"type\":\"cover_art\",\"attributes\":{\"description\":\"\",\"volume\":\"1\",\"fileName\":\"d8584732-4d54-461d-8874-5d481cee22c6.jpg\",\"locale\":\"ja\",\"createdAt\":\"2023-06-18T14:29:03+00:00\",\"updatedAt\":\"2023-06-18T14:29:03+00:00\",\"version\":1},\"relationships\":[{\"id\":\"a93959d7-4a4a-4f80-88f7-921af3ca9ade\",\"type\":\"manga\"},{\"id\":\"27bde0e8-71b0-4bf2-8e25-2902a7b2dd4b\",\"type\":\"user\"}]},{\"id\":\"600e1cde-6097-4c78-84fe-96c953d2485a\",\"type\":\"cover_art\",\"attributes\":{\"description\":\"\",\"volume\":\"3\",\"fileName\":\"4d069697-b74a-4f28-8bd5-fe480543d7cc.jpg\",\"locale\":\"ja\",\"createdAt\":\"2023-06-02T21:57:25+00:00\",\"updatedAt\":\"2023-06-02T21:57:25+00:00\",\"version\":1},\"relationships\":[{\"id\":\"a93959d7-4a4a-4f80-88f7-921af3ca9ade\",\"type\":\"manga\"},{\"id\":\"1b660eb2-c434-47c9-8ff6-7ce657b30386\",\"type\":\"user\"}]},{\"id\":\"13351f47-b99a-4558-b86a-d7ec7b208b9f\",\"type\":\"cover_art\",\"attributes\":{\"description\":\"\",\"volume\":\"2\",\"fileName\":\"42f5c8b6-f24d-48d1-8bd4-cf814a594f2d.jpg\",\"locale\":\"ja\",\"createdAt\":\"2022-08-18T03:40:29+00:00\",\"updatedAt\":\"2022-08-18T03:40:29+00:00\",\"version\":1},\"relationships\":[{\"id\":\"a93959d7-4a4a-4f80-88f7-921af3ca9ade\",\"type\":\"manga\"},{\"id\":\"1532c0a9-4620-45d3-8951-0a59802e8392\",\"type\":\"user\"}]}],\"limit\":10,\"offset\":0,\"total\":3}"
-
-    const val chapter = "{\n" +
+    const val chapter =
+        "{\n" +
             "  \"result\": \"ok\",\n" +
             "  \"response\": \"collection\",\n" +
             "  \"data\": [\n" +
@@ -40,7 +40,8 @@ object MangaDexTestJson {
             "  \"total\": 0\n" +
             "}"
 
-    const val chapter_id = "{\n" +
+    const val chapter_id =
+        "{\n" +
             "  \"result\": \"ok\",\n" +
             "  \"response\": \"entity\",\n" +
             "  \"data\": {\n" +
@@ -71,7 +72,8 @@ object MangaDexTestJson {
             "  }\n" +
             "}"
 
-    const val manga_id_aggregate = "{\n" +
+    const val manga_id_aggregate =
+        "{\n" +
             "  \"result\": \"ok\",\n" +
             "  \"volumes\": {\n" +
             "    \"additionalProp1\": {\n" +
@@ -167,7 +169,8 @@ object MangaDexTestJson {
             "  }\n" +
             "}"
 
-    const val manga = "{\n" +
+    const val manga =
+        "{\n" +
             "  \"result\": \"ok\",\n" +
             "  \"response\": \"collection\",\n" +
             "  \"data\": [\n" +

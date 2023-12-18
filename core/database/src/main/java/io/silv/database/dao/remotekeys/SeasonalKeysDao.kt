@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SeasonalKeysDao {
-
     @Delete
     suspend fun delete(key: SeasonalRemoteKey)
 
@@ -26,22 +25,28 @@ interface SeasonalKeysDao {
     suspend fun clear()
 
     @Transaction
-    @Query("""
+    @Query(
+        """
       SELECT * FROM SeasonalRemoteKey
       WHERE season_id = :id
-    """)
+    """,
+    )
     fun observeBySeasonId(id: String): Flow<List<SeasonalKeyWithSourceManga>>
 
     @Transaction
-    @Query("""
+    @Query(
+        """
       SELECT * FROM SeasonalRemoteKey
       WHERE season_id = :id
-    """)
+    """,
+    )
     fun selectBySeasonId(id: String): List<SeasonalKeyWithSourceManga>
 
-
     @Query(
-        "DELETE FROM SeasonalRemoteKey WHERE manga_id = :mangaId AND season_id = :seasonId"
+        "DELETE FROM SeasonalRemoteKey WHERE manga_id = :mangaId AND season_id = :seasonId",
     )
-    suspend fun delete(mangaId: String, seasonId: String)
+    suspend fun delete(
+        mangaId: String,
+        seasonId: String,
+    )
 }

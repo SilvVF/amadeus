@@ -2,7 +2,7 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    kotlin("plugin.serialization")  version "1.9.20"
+    kotlin("plugin.serialization") version "1.9.20"
     id("kotlin-parcelize")
 }
 android {
@@ -20,7 +20,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -32,7 +32,6 @@ android {
         jvmTarget = "17"
     }
 }
-
 
 dependencies {
     api(project(":core:common"))
@@ -46,7 +45,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json.okio)
 
     implementation(libs.jsoup)
-    //KTOR
+    // KTOR
     implementation(libs.ktor.core)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.serialization.json)

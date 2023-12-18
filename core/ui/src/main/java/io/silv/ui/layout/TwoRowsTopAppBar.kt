@@ -93,7 +93,7 @@ fun TopAppBarWithBottomContent(
     bottomContent: @Composable () -> Unit,
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors = TopAppBarDefaults.mediumTopAppBarColors(),
-    scrollBehavior: TopAppBarScrollBehavior? = null
+    scrollBehavior: TopAppBarScrollBehavior? = null,
 ) {
     SingleRowTopAppBarCopy(
         modifier = modifier,
@@ -105,7 +105,7 @@ fun TopAppBarWithBottomContent(
         windowInsets = windowInsets,
         bottomContent = bottomContent,
         centeredTitle = false,
-        scrollBehavior = scrollBehavior
+        scrollBehavior = scrollBehavior,
     )
 }
 
@@ -128,7 +128,7 @@ private fun SingleRowTopAppBarCopy(
     bottomContent: @Composable () -> Unit,
     windowInsets: WindowInsets,
     colors: TopAppBarColors,
-    scrollBehavior: TopAppBarScrollBehavior?
+    scrollBehavior: TopAppBarScrollBehavior?,
 ) {
     // Sets the app bar's height offset to collapse the entire bar's height when content is
     // scrolled.
@@ -148,7 +148,8 @@ private fun SingleRowTopAppBarCopy(
     val fraction = if (colorTransitionFraction > 0.01f) 1f else 0f
     val appBarContainerColor by animateColorAsState(
         targetValue = containerColor(fraction),
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow), label = ""
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "",
     )
 
     // Wrap the given actions in a Row.
@@ -156,40 +157,44 @@ private fun SingleRowTopAppBarCopy(
         Row(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
-            content = actions
+            content = actions,
         )
     }
 
     // Set up support for resizing the top app bar when vertically dragging the bar itself.
-    val appBarDragModifier = if (scrollBehavior != null && !scrollBehavior.isPinned) {
-        Modifier.draggable(
-            orientation = Orientation.Vertical,
-            state = rememberDraggableState { delta ->
-                scrollBehavior.state.heightOffset = scrollBehavior.state.heightOffset + delta
-            },
-            onDragStopped = { velocity ->
-                settleAppBar(
-                    scrollBehavior.state,
-                    velocity,
-                    scrollBehavior.flingAnimationSpec,
-                    scrollBehavior.snapAnimationSpec
-                )
-            }
-        )
-    } else {
-        Modifier
-    }
+    val appBarDragModifier =
+        if (scrollBehavior != null && !scrollBehavior.isPinned) {
+            Modifier.draggable(
+                orientation = Orientation.Vertical,
+                state =
+                rememberDraggableState { delta ->
+                    scrollBehavior.state.heightOffset = scrollBehavior.state.heightOffset + delta
+                },
+                onDragStopped = { velocity ->
+                    settleAppBar(
+                        scrollBehavior.state,
+                        velocity,
+                        scrollBehavior.flingAnimationSpec,
+                        scrollBehavior.snapAnimationSpec,
+                    )
+                },
+            )
+        } else {
+            Modifier
+        }
 
     // Compose a Surface with a TopAppBarLayout content.
     // The surface's background color is animated as specified above.
     // The height of the app bar is determined by subtracting the bar's height offset from the
     // app bar's defined constant height value (i.e. the ContainerHeight token).
     Surface(modifier = modifier.then(appBarDragModifier), color = appBarContainerColor) {
-        val height = LocalDensity.current.run {
-            112.0.dp.toPx() + (scrollBehavior?.state?.heightOffset ?: 0f)
-        }
+        val height =
+            LocalDensity.current.run {
+                112.0.dp.toPx() + (scrollBehavior?.state?.heightOffset ?: 0f)
+            }
         TopAppBarLayoutCopy(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .windowInsetsPadding(windowInsets)
                 // clip after padding so we don't show the title over the inset area
                 .clipToBounds(),
@@ -206,7 +211,7 @@ private fun SingleRowTopAppBarCopy(
             navigationIcon = navigationIcon,
             actions = actionsRow,
             bottomContent = bottomContent,
-            heightOffset = scrollBehavior?.state?.heightOffset ?: 0f
+            heightOffset = scrollBehavior?.state?.heightOffset ?: 0f,
         )
     }
 }
@@ -226,18 +231,18 @@ private fun TopAppBarLayoutCopy(
     hideTitleSemantics: Boolean,
     navigationIcon: @Composable () -> Unit,
     actions: @Composable () -> Unit,
-    bottomContent: @Composable () -> Unit
+    bottomContent: @Composable () -> Unit,
 ) {
     Layout(
         {
             Box(
                 Modifier
                     .layoutId("navigationIcon")
-                    .padding(start = TopAppBarHorizontalPadding)
+                    .padding(start = TopAppBarHorizontalPadding),
             ) {
                 CompositionLocalProvider(
                     LocalContentColor provides navigationIconContentColor,
-                    content = navigationIcon
+                    content = navigationIcon,
                 )
             }
             Box(
@@ -245,37 +250,37 @@ private fun TopAppBarLayoutCopy(
                     .layoutId("title")
                     .padding(horizontal = TopAppBarHorizontalPadding)
                     .then(if (hideTitleSemantics) Modifier.clearAndSetSemantics { } else Modifier)
-                    .graphicsLayer(alpha = titleAlpha)
+                    .graphicsLayer(alpha = titleAlpha),
             ) {
                 ProvideTextStyle(value = titleTextStyle) {
                     CompositionLocalProvider(
                         LocalContentColor provides titleContentColor,
-                        content = title
+                        content = title,
                     )
                 }
             }
             Box(
                 Modifier
                     .layoutId("actionIcons")
-                    .padding(end = TopAppBarHorizontalPadding)
+                    .padding(end = TopAppBarHorizontalPadding),
             ) {
                 CompositionLocalProvider(
                     LocalContentColor provides actionIconContentColor,
-                    content = actions
+                    content = actions,
                 )
             }
             Box(
                 Modifier
                     .layoutId("bottomContent")
-                    .padding(horizontal = TopAppBarHorizontalPadding)
+                    .padding(horizontal = TopAppBarHorizontalPadding),
             ) {
                 CompositionLocalProvider(
                     LocalContentColor provides actionIconContentColor,
-                    content = bottomContent
+                    content = bottomContent,
                 )
             }
         },
-        modifier = modifier
+        modifier = modifier,
     ) { measurables, constraints ->
         val navigationIconPlaceable =
             measurables.first { it.layoutId == "navigationIcon" }
@@ -284,12 +289,13 @@ private fun TopAppBarLayoutCopy(
             measurables.first { it.layoutId == "actionIcons" }
                 .measure(constraints.copy(minWidth = 0))
 
-        val maxTitleWidth = if (constraints.maxWidth == Constraints.Infinity) {
-            constraints.maxWidth
-        } else {
-            (constraints.maxWidth - navigationIconPlaceable.width - actionIconsPlaceable.width)
-                .coerceAtLeast(0)
-        }
+        val maxTitleWidth =
+            if (constraints.maxWidth == Constraints.Infinity) {
+                constraints.maxWidth
+            } else {
+                (constraints.maxWidth - navigationIconPlaceable.width - actionIconsPlaceable.width)
+                    .coerceAtLeast(0)
+            }
         val titlePlaceable =
             measurables.first { it.layoutId == "title" }
                 .measure(constraints.copy(minWidth = 0, maxWidth = maxTitleWidth))
@@ -312,12 +318,13 @@ private fun TopAppBarLayoutCopy(
             // Navigation icon
             navigationIconPlaceable.placeRelative(
                 x = 0,
-                y = (layoutHeight / 2 - navigationIconPlaceable.height) / 2 + offset
+                y = (layoutHeight / 2 - navigationIconPlaceable.height) / 2 + offset,
             )
 
             // Title
             titlePlaceable.placeRelative(
-                x = when (titleHorizontalArrangement) {
+                x =
+                when (titleHorizontalArrangement) {
                     Arrangement.Center -> (constraints.maxWidth - titlePlaceable.width) / 2
                     Arrangement.End ->
                         constraints.maxWidth - titlePlaceable.width - actionIconsPlaceable.width
@@ -326,18 +333,18 @@ private fun TopAppBarLayoutCopy(
                     // navigation icon is missing.
                     else -> max(TopAppBarTitleInset.roundToPx(), navigationIconPlaceable.width)
                 },
-                y = (layoutHeight / 2 - titlePlaceable.height) / 2 + offset
+                y = (layoutHeight / 2 - titlePlaceable.height) / 2 + offset,
             )
 
             // Action icons
             actionIconsPlaceable.placeRelative(
                 x = constraints.maxWidth - actionIconsPlaceable.width,
-                y = (layoutHeight / 2 - actionIconsPlaceable.height) / 2 + offset
+                y = (layoutHeight / 2 - actionIconsPlaceable.height) / 2 + offset,
             )
 
             bottomContentPlaceable.placeRelative(
-                x =  0,
-                y = (layoutHeight - bottomContentPlaceable.height)
+                x = 0,
+                y = (layoutHeight - bottomContentPlaceable.height),
             )
         }
     }
@@ -352,7 +359,7 @@ private suspend fun settleAppBar(
     state: TopAppBarState,
     velocity: Float,
     flingAnimationSpec: DecayAnimationSpec<Float>?,
-    snapAnimationSpec: AnimationSpec<Float>?
+    snapAnimationSpec: AnimationSpec<Float>?,
 ): Velocity {
     // Check if the app bar is completely collapsed/expanded. If so, no need to settle the app bar,
     // and just return Zero Velocity.
@@ -392,7 +399,7 @@ private suspend fun settleAppBar(
                 } else {
                     state.heightOffsetLimit
                 },
-                animationSpec = snapAnimationSpec
+                animationSpec = snapAnimationSpec,
             ) { state.heightOffset = value }
         }
     }
@@ -406,20 +413,22 @@ private fun containerColor(colorTransitionFraction: Float): Color {
         MaterialTheme.colorScheme.surface,
         MaterialTheme.colorScheme.applyTonalElevation(
             backgroundColor = MaterialTheme.colorScheme.surface,
-            elevation = 3.0.dp
+            elevation = 3.0.dp,
         ),
-        FastOutLinearInEasing.transform(colorTransitionFraction)
+        FastOutLinearInEasing.transform(colorTransitionFraction),
     )
 }
 
-private fun ColorScheme.applyTonalElevation(backgroundColor: Color, elevation: Dp): Color {
+private fun ColorScheme.applyTonalElevation(
+    backgroundColor: Color,
+    elevation: Dp,
+): Color {
     return if (backgroundColor == surface) {
         surfaceColorAtElevation(elevation)
     } else {
         backgroundColor
     }
 }
-
 
 private val TopAppBarHorizontalPadding = 4.dp
 

@@ -49,9 +49,8 @@ enum class CardType(val string: String) {
     List("List"),
     SemiCompact("Semi-Compact Card"),
     Compact("Compact Card"),
-    ExtraCompact("Extra-Compact Card")
+    ExtraCompact("Extra-Compact Card"),
 }
-
 
 @Composable
 fun MangaListItem(
@@ -59,31 +58,31 @@ fun MangaListItem(
     manga: SavableManga,
     onTagClick: (tag: String) -> Unit,
     onBookmarkClick: () -> Unit,
-    cardType: CardType = CardType.Compact
+    cardType: CardType = CardType.Compact,
 ) {
-
     val space = LocalSpacing.current
 
     Column(
-        modifier = modifier
+        modifier =
+        modifier
             .heightIn(
                 min = 90.dp,
-                max = (LocalConfiguration.current.screenHeightDp / 2).dp
-            )
+                max = (LocalConfiguration.current.screenHeightDp / 2).dp,
+            ),
     ) {
         Box(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
                 .clip(
-                    RoundedCornerShape(8.dp)
-                )
+                    RoundedCornerShape(8.dp),
+                ),
         ) {
             AsyncImage(
                 model = manga,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
             )
             if (cardType != CardType.ExtraCompact) {
                 Text(
@@ -93,18 +92,21 @@ fun MangaListItem(
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.labelMedium,
                     color = Color(0xFFEDE0DD),
-                    modifier = Modifier
+                    modifier =
+                    Modifier
                         .fillMaxWidth()
                         .drawWithCache {
                             onDrawBehind {
                                 drawRect(
-                                    brush = Brush.verticalGradient(
-                                        colors = persistentListOf(
+                                    brush =
+                                    Brush.verticalGradient(
+                                        colors =
+                                        persistentListOf(
                                             Color.Transparent,
                                             Color.Black.copy(alpha = 0.7f),
-                                            Color.Black.copy(alpha = 0.9f)
-                                        )
-                                    )
+                                            Color.Black.copy(alpha = 0.9f),
+                                        ),
+                                    ),
                                 )
                             }
                         }
@@ -112,9 +114,9 @@ fun MangaListItem(
                             top = space.large,
                             bottom = space.med,
                             start = space.small,
-                            end = space.small
+                            end = space.small,
                         )
-                        .align(Alignment.BottomCenter)
+                        .align(Alignment.BottomCenter),
                 )
             }
         }
@@ -126,26 +128,25 @@ fun MangaListItem(
                 modifier = Modifier.fillMaxWidth(),
                 onTagClick = {
                     onTagClick(it)
-                }
+                },
             )
         }
     }
 }
 
-
 @Composable
 fun MangaGenreTags(
     modifier: Modifier = Modifier,
     tags: ImmutableList<String>,
-    onTagClick: (tag: String) -> Unit = {}
+    onTagClick: (tag: String) -> Unit = {},
 ) {
     val space = LocalSpacing.current
 
     LazyRow(modifier) {
         items(
             items = tags,
-            key = { item -> item }
-        ) {language ->
+            key = { item -> item },
+        ) { language ->
             ElevatedSuggestionChip(
                 onClick = { onTagClick(language) },
                 label = { Text(text = language) },
@@ -159,27 +160,28 @@ fun MangaGenreTags(
 fun TranslatedLanguageTags(
     modifier: Modifier = Modifier,
     tags: ImmutableList<String>,
-    onLanguageClick: (language: String) -> Unit = {}
+    onLanguageClick: (language: String) -> Unit = {},
 ) {
     val space = LocalSpacing.current
 
     LazyRow(modifier) {
         items(
             items = tags,
-            key = { item -> item }
-        ) {language ->
+            key = { item -> item },
+        ) { language ->
 
             var showLang by remember {
                 mutableStateOf(false)
             }
 
-            val text = remember(showLang) {
-                if (showLang) {
-                    Language.values().find { it.code == language }?.string ?: language
-                } else {
-                    language
+            val text =
+                remember(showLang) {
+                    if (showLang) {
+                        Language.values().find { it.code == language }?.string ?: language
+                    } else {
+                        language
+                    }
                 }
-            }
 
             ElevatedSuggestionChip(
                 onClick = {
@@ -187,7 +189,7 @@ fun TranslatedLanguageTags(
                     onLanguageClick(language)
                 },
                 label = { Text(text) },
-                modifier = Modifier.padding(horizontal = space.small)
+                modifier = Modifier.padding(horizontal = space.small),
             )
         }
     }
@@ -201,40 +203,45 @@ fun GenreTagsWithBookmark(
     onBookmarkClick: () -> Unit,
     onTagClick: (tag: String) -> Unit = {},
     iconTint: Color = LocalContentColor.current,
-    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
+    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     val space = LocalSpacing.current
 
     LazyRow(modifier, verticalAlignment = Alignment.CenterVertically) {
         item {
             IconButton(onClick = onBookmarkClick) {
-                if (bookmarked) Icon(
-                    imageVector = Icons.Filled.Favorite,
-                    contentDescription = null,
-                    tint = iconTint
-                )
-                else Icon(
-                    imageVector = Icons.Outlined.FavoriteBorder,
-                    contentDescription = null,
-                    tint = iconTint
-                )
+                if (bookmarked) {
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = null,
+                        tint = iconTint,
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Outlined.FavoriteBorder,
+                        contentDescription = null,
+                        tint = iconTint,
+                    )
+                }
             }
         }
         items(
             items = tags,
-            key = { item -> item }
-        ) {tag ->
+            key = { item -> item },
+        ) { tag ->
             SuggestionChip(
                 onClick = { onTagClick(tag) },
                 label = { Text(tag) },
-                colors = SuggestionChipDefaults.suggestionChipColors(
+                colors =
+                SuggestionChipDefaults.suggestionChipColors(
                     labelColor = textColor,
-                    disabledLabelColor = textColor
+                    disabledLabelColor = textColor,
                 ),
-                border = SuggestionChipDefaults.suggestionChipBorder(
-                    borderColor = textColor
+                border =
+                SuggestionChipDefaults.suggestionChipBorder(
+                    borderColor = textColor,
                 ),
-                modifier = Modifier.padding(horizontal = space.small)
+                modifier = Modifier.padding(horizontal = space.small),
             )
         }
     }

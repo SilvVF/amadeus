@@ -1,9 +1,8 @@
 package io.silv.network.model
 
-import kotlinx.serialization.Serializable
 //
-//@Serializable
-//data class AtHomeResponse(
+// @Serializable
+// data class AtHomeResponse(
 //    val result: String,
 //    /**
 //     * The base URL to construct final image URLs from.
@@ -12,7 +11,7 @@ import kotlinx.serialization.Serializable
 //     */
 //    val baseUrl: String,
 //    val chapter: AtHomeData
-//) {
+// ) {
 //
 //    @Serializable
 //    data class AtHomeData(
@@ -20,4 +19,4 @@ import kotlinx.serialization.Serializable
 //        val data: List<String>,
 //        val dataSaver: List<String>
 //    )
-//}
+// }

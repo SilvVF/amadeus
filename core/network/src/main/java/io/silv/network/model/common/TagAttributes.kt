@@ -13,5 +13,5 @@ data class TagAttributes(
     val description: LocalizedString,
     val group: Group,
     val version: Int,
-    val relationships: List<Relationship> = emptyList()
-): Parcelable
+    val relationships: List<Relationship> = emptyList(),
+) : Parcelable

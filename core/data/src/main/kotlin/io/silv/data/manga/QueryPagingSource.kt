@@ -3,9 +3,9 @@ package io.silv.data.manga
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.skydoves.sandwich.getOrThrow
-import io.silv.data.mappers.toSourceManga
-import io.silv.database.dao.SourceMangaDao
-import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.data.mappers.toEntity
+import io.silv.database.dao.MangaDao
+import io.silv.database.entity.manga.MangaEntity
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
 import kotlinx.coroutines.Dispatchers
@@ -14,17 +14,17 @@ import kotlinx.coroutines.withContext
 class QueryPagingSource(
     private val mangaDexApi: MangaDexApi,
     private val query: MangaRequest,
-    private val sourceMangaDao: SourceMangaDao,
-): PagingSource<Int, SourceMangaResource>() {
+    private val sourceMangaDao: MangaDao,
+): PagingSource<Int, MangaEntity>() {
 
-    override fun getRefreshKey(state: PagingState<Int, SourceMangaResource>): Int? {
+    override fun getRefreshKey(state: PagingState<Int, MangaEntity>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
             val anchorPage = state.closestPageToPosition(anchorPosition)
             anchorPage?.prevKey ?: anchorPage?.nextKey
         }
     }
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, SourceMangaResource> {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, MangaEntity> {
 
         return try {
 
@@ -42,7 +42,7 @@ class QueryPagingSource(
                     .getOrThrow()
 
                 result.data
-                    .map { it.toSourceManga() }
+                    .map { it.toEntity() }
                     .also { sourceMangaDao.insertAll(it) } to result.limit
             }
 

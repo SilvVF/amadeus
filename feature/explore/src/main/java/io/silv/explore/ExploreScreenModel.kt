@@ -7,7 +7,7 @@ import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.PagedType
 import io.silv.common.model.Season
-import io.silv.data.manga.SavedMangaRepository
+import io.silv.domain.manga.MangaHandler
 import io.silv.domain.manga.SubscribeToPagingData
 import io.silv.domain.manga.SubscribeToSeasonalLists
 import io.silv.domain.search.RecentSearchHandler
@@ -20,7 +20,6 @@ import io.silv.ui.ioCoroutineScope
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.launchIn
@@ -32,8 +31,8 @@ import kotlinx.coroutines.launch
 class ExploreScreenModel(
     subscribeToPagingData: SubscribeToPagingData,
     subscribeToSeasonalLists: SubscribeToSeasonalLists,
+    private val mangaHandler: MangaHandler,
     private val recentSearchHandler: RecentSearchHandler,
-    private val savedMangaRepository: SavedMangaRepository,
     private val seasonalMangaSyncManager: SyncManager,
 ) : EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState()) {
     init {
@@ -49,7 +48,7 @@ class ExploreScreenModel(
             }
             .launchIn(screenModelScope)
 
-        subscribeToSeasonalLists.getLists(ioCoroutineScope)
+        subscribeToSeasonalLists.subscribe()
             .onEach { lists ->
                 mutableState.update { state ->
                     state.copy(
@@ -128,7 +127,7 @@ class ExploreScreenModel(
 
     fun bookmarkManga(mangaId: String) {
         screenModelScope.launch {
-            savedMangaRepository.addOrRemoveFromLibrary(mangaId)
+            mangaHandler.addOrRemoveFromLibrary(mangaId)
         }
     }
 
@@ -175,7 +174,7 @@ data class UiSeasonalList(
     val id: String,
     val season: Season,
     val year: Int,
-    val mangas: ImmutableList<StateFlow<SavableManga>>,
+    val mangas: ImmutableList<SavableManga>,
 )
 
 @Immutable

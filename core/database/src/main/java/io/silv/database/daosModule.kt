@@ -12,10 +12,6 @@ val daosModule =
         }
 
         single {
-            get<AmadeusDatabase>().savedMangaDao()
-        }
-
-        single {
             get<AmadeusDatabase>().seasonalRemoteKeysDao()
         }
 

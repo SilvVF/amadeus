@@ -20,7 +20,7 @@ interface ChapterDao : SyncableDao<ChapterEntity> {
     fun observeChapterById(id: String): Flow<ChapterEntity?>
 
     @Query("SELECT * FROM chapterentity WHERE id = :id LIMIT 1")
-    fun getChapterById(id: String): ChapterEntity?
+    suspend fun getChapterById(id: String): ChapterEntity?
 
     @Query(
         """

@@ -7,8 +7,7 @@ import io.silv.common.model.ProgressState
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.ReadingStatus
 import io.silv.common.model.Status
-import io.silv.database.entity.manga.SavedMangaEntity
-import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.database.entity.manga.MangaEntity
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.LocalDateTime
@@ -35,7 +34,6 @@ data class SavableManga(
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
     val savedLocalAtEpochSeconds: LocalDateTime,
-    val volumeToCoverArtUrl: Map<String, String>,
     val authors: List<String>,
     val artists: List<String>,
     val year: Int,
@@ -43,57 +41,30 @@ data class SavableManga(
     val tags = tagToId.keys.toImmutableList()
     val tagIds = tagToId.values.toImmutableList()
 
-    constructor(savedManga: SavedMangaEntity) : this(
-        id = savedManga.id,
-        inLibrary = true,
-        description = savedManga.description,
-        progressState = savedManga.progressState,
-        coverArt = savedManga.coverArt,
-        titleEnglish = savedManga.title,
-        alternateTitles = savedManga.alternateTitles,
-        originalLanguage = savedManga.originalLanguage,
-        availableTranslatedLanguages = savedManga.availableTranslatedLanguages.toImmutableList(),
-        status = savedManga.status,
-        tagToId = savedManga.tagToId,
-        contentRating = savedManga.contentRating,
-        lastVolume = savedManga.lastVolume,
-        lastChapter = savedManga.lastChapter,
-        version = savedManga.version,
-        createdAt = savedManga.createdAt,
-        updatedAt = savedManga.updatedAt,
-        savedLocalAtEpochSeconds = savedManga.savedAtLocal,
-        volumeToCoverArtUrl = savedManga.volumeToCoverArt,
-        publicationDemographic = savedManga.publicationDemographic,
-        readingStatus = savedManga.readingStatus,
-        year = savedManga.year,
-        artists = savedManga.artists,
-        authors = savedManga.authors,
-    )
-    constructor(mangaResource: SourceMangaResource) : this(
-        id = mangaResource.id,
-        inLibrary = false,
-        description = mangaResource.description,
-        progressState = mangaResource.progressState,
-        coverArt = mangaResource.coverArt,
-        titleEnglish = mangaResource.title,
-        alternateTitles = mangaResource.alternateTitles,
-        originalLanguage = mangaResource.originalLanguage,
-        availableTranslatedLanguages = mangaResource.availableTranslatedLanguages.toImmutableList(),
-        status = mangaResource.status,
-        tagToId = mangaResource.tagToId,
-        contentRating = mangaResource.contentRating,
-        lastVolume = mangaResource.lastVolume,
-        lastChapter = mangaResource.lastChapter,
-        version = mangaResource.version,
-        createdAt = mangaResource.createdAt,
-        updatedAt = mangaResource.updatedAt,
-        savedLocalAtEpochSeconds = mangaResource.savedAtLocal,
-        volumeToCoverArtUrl = mangaResource.volumeToCoverArt,
-        publicationDemographic = mangaResource.publicationDemographic,
-        readingStatus = mangaResource.readingStatus,
-        year = mangaResource.year,
-        artists = mangaResource.artists,
-        authors = mangaResource.authors,
+    constructor(entity: MangaEntity) : this(
+        id = entity.id,
+        inLibrary = entity.favorite,
+        description = entity.description,
+        progressState = entity.progressState,
+        coverArt = entity.coverArt,
+        titleEnglish = entity.title,
+        alternateTitles = entity.alternateTitles,
+        originalLanguage = entity.originalLanguage,
+        availableTranslatedLanguages = entity.availableTranslatedLanguages.toImmutableList(),
+        status = entity.status,
+        tagToId = entity.tagToId,
+        contentRating = entity.contentRating,
+        lastVolume = entity.lastVolume,
+        lastChapter = entity.lastChapter,
+        version = entity.version,
+        createdAt = entity.createdAt,
+        updatedAt = entity.updatedAt,
+        savedLocalAtEpochSeconds = entity.savedAtLocal,
+        publicationDemographic = entity.publicationDemographic,
+        readingStatus = entity.readingStatus,
+        year = entity.year,
+        artists = entity.artists,
+        authors = entity.authors,
     )
 }
 

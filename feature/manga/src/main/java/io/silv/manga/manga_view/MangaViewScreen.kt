@@ -370,7 +370,7 @@ fun MangaViewSuccessScreen(
 
                     val maxChapterNum =
                         remember(state.chapters) {
-                            state.chapters.maxOf { it.chapter }
+                            state.chapters.maxOfOrNull { it.chapter } ?: 0
                         }
 
                     val missingChapters =

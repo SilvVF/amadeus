@@ -10,8 +10,8 @@ import io.silv.common.model.Download
 import io.silv.common.model.MangaDexSource
 import io.silv.common.model.MangaResource
 import io.silv.common.model.Page
-import io.silv.data.chapter.GetChapter
-import io.silv.data.manga.GetManga
+import io.silv.data.chapter.ChapterRepository
+import io.silv.data.manga.MangaRepository
 import io.silv.data.util.DiskUtil
 import io.silv.data.util.ImageUtil
 import io.silv.datastore.DownloadStore
@@ -61,9 +61,9 @@ internal class Downloader(
     private val mangaDexApi: MangaDexApi,
     private val client: OkHttpClient,
     private val store: DownloadStore,
+    private val chapterRepository: ChapterRepository,
+    private val mangaRepository: MangaRepository,
     applicationScope: ApplicationScope,
-    getManga: GetManga,
-    getChapter: GetChapter,
 ) {
 
 
@@ -93,8 +93,8 @@ internal class Downloader(
         applicationScope.launch {
             val chapters = async {
                 store.restore(
-                    getManga = getManga::await,
-                    getChapter = getChapter::await
+                    getManga = mangaRepository::getMangaById,
+                    getChapter = chapterRepository::getChapterById
                 )
             }
             addAllToQueue(chapters.await())

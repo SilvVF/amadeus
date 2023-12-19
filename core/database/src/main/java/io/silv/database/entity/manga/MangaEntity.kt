@@ -1,5 +1,6 @@
 package io.silv.database.entity.manga
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import io.silv.common.model.ContentRating
@@ -12,31 +13,46 @@ import io.silv.common.time.localDateTimeNow
 import io.silv.database.entity.AmadeusEntity
 import kotlinx.datetime.LocalDateTime
 
-@Entity
-data class SourceMangaResource(
+@Entity(tableName = "manga")
+data class MangaEntity(
+
     @PrimaryKey
     override val id: String,
+
+    @ColumnInfo("cover_art")
     override val coverArt: String,
-    val description: String,
     override val title: String,
+    override val version: Int,
+    @ColumnInfo("created_at")
+    override val createdAt: LocalDateTime,
+    @ColumnInfo("updated_at")
+    override val updatedAt: LocalDateTime,
+
+    val favorite: Boolean,
+    val description: String,
+    @ColumnInfo("alternate_titles")
     val alternateTitles: Map<String, String>,
     val originalLanguage: String,
+    @ColumnInfo("available_translated_languages")
     val availableTranslatedLanguages: List<String>,
     val status: Status,
+    @ColumnInfo("tag_to_id")
     val tagToId: Map<String, String>,
+    @ColumnInfo("content_rating")
     val contentRating: ContentRating,
     val lastVolume: Int,
     val lastChapter: Long,
-    override val version: Int,
-    override val createdAt: LocalDateTime,
-    override val updatedAt: LocalDateTime,
+    @ColumnInfo("publication_demographic")
     val publicationDemographic: PublicationDemographic?,
-    val volumeToCoverArt: Map<String, String> = emptyMap(),
+    @ColumnInfo("saved_at_local")
     val savedAtLocal: LocalDateTime = localDateTimeNow(),
     val year: Int,
+    @ColumnInfo("latest_uploaded_chapter")
     val latestUploadedChapter: String?,
     val authors: List<String>,
     val artists: List<String>,
+    @ColumnInfo("progress_state")
     val progressState: ProgressState,
+    @ColumnInfo("reading_status")
     val readingStatus: ReadingStatus,
 ) : MangaResource, AmadeusEntity<String>

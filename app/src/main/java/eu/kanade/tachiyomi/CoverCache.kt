@@ -1,8 +1,8 @@
 package eu.kanade.tachiyomi
 
 import android.content.Context
+import io.silv.common.model.MangaResource
 import io.silv.data.util.DiskUtil
-import io.silv.database.entity.manga.SavedMangaEntity
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -59,7 +59,7 @@ class CoverCache(private val context: Context) {
      */
     @Throws(IOException::class)
     fun setCustomCoverToCache(
-        manga: SavedMangaEntity,
+        manga: MangaResource,
         inputStream: InputStream,
     ) {
         getCustomCoverFile(manga.id).outputStream().use {
@@ -75,7 +75,7 @@ class CoverCache(private val context: Context) {
      * @return number of files that were deleted.
      */
     fun deleteFromCache(
-        manga: SavedMangaEntity,
+        manga: MangaResource,
         deleteCustomCover: Boolean = false,
     ): Int {
         var deleted = 0

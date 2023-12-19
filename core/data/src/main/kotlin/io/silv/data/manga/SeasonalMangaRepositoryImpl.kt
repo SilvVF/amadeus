@@ -6,10 +6,10 @@ import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.Season
 import io.silv.common.pmap
-import io.silv.data.mappers.toSourceManga
+import io.silv.data.mappers.toEntity
 import io.silv.database.AmadeusDatabase
 import io.silv.database.entity.list.SeasonalListEntity
-import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.database.entity.manga.MangaEntity
 import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
 import io.silv.network.MangaDexApi
 import io.silv.network.model.list.Data
@@ -30,7 +30,7 @@ internal class SeasonalMangaRepositoryImpl(
     private val sourceMangaDao = db.sourceMangaDao()
     private val keyDao = db.seasonalRemoteKeysDao()
 
-    override fun getSeasonalLists(): Flow<List<Pair<SeasonalListEntity, List<SourceMangaResource>>>> {
+    override fun getSeasonalLists(): Flow<List<Pair<SeasonalListEntity, List<MangaEntity>>>> {
         return seasonalListDao.observeSeasonListWithManga().map { lists ->
             lists.map { listWithKeys ->
                 listWithKeys.list to listWithKeys.manga.map { it.manga }
@@ -93,7 +93,7 @@ internal class SeasonalMangaRepositoryImpl(
                     )
                 }
 
-                sourceMangaDao.insertAll(response.map { it.toSourceManga() })
+                sourceMangaDao.insertAll(response.map { it.toEntity() })
 
                 keyDao.insertAll(
                     response.map {

@@ -6,8 +6,8 @@ import io.silv.common.model.UpdateType
 import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.minus
 import io.silv.database.dao.MangaUpdateDao
+import io.silv.database.entity.manga.MangaEntity
 import io.silv.database.entity.manga.MangaUpdateEntity
-import io.silv.database.entity.manga.SavedMangaEntity
 import io.silv.database.entity.relations.MangaUpdateEntityWithManga
 import io.silv.network.model.manga.Manga
 import kotlinx.coroutines.CoroutineScope
@@ -36,7 +36,7 @@ class MangaUpdateRepositoryImpl(
     }
 
     override suspend fun createUpdate(
-        prev: SavedMangaEntity,
+        prev: MangaEntity,
         new: Manga
     ) = withContext(dispatchers.io) {
         if (

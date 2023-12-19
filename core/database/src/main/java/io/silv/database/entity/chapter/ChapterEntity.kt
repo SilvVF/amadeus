@@ -2,28 +2,40 @@ package io.silv.database.entity.chapter
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.ProgressState
 import io.silv.common.time.localDateTimeNow
 import io.silv.database.entity.AmadeusEntity
+import io.silv.database.entity.manga.MangaEntity
 import kotlinx.datetime.LocalDateTime
 
-@Entity
+@Entity(
+    foreignKeys = [
+        ForeignKey(
+            entity = MangaEntity::class,
+            parentColumns = arrayOf("id"),
+            childColumns = arrayOf("manga_id"),
+            onDelete = ForeignKey.CASCADE,
+        )
+    ]
+)
 data class ChapterEntity(
     @PrimaryKey
     override val id: String,
     @ColumnInfo("manga_id")
     override val mangaId: String,
+    override val scanlator: String = "",
+    override val url: String = "",
+    override val title: String,
     val progressState: ProgressState = ProgressState.NotStarted,
     val languageCode: String,
     val scanlationGroupId: String?,
-    override val scanlator: String = "",
     val userId: String?,
     val user: String?,
     val volume: Int = -1,
     val lastPageRead: Int,
-    override val title: String,
     val pages: Int,
     val bookmarked: Boolean,
     val chapterNumber: Long = -1L,
@@ -31,12 +43,12 @@ data class ChapterEntity(
     val updatedAt: LocalDateTime,
     val readableAt: LocalDateTime,
     val uploader: String?,
-    override val url: String = "",
     val version: Int,
     val savedLocalAt: LocalDateTime = localDateTimeNow(),
 ) : ChapterResource, AmadeusEntity<Any> {
+
     val isRecognizedNumber: Boolean
-        get() = chapterNumber >= 0f
+        get() = chapterNumber >= 0L
 
     val read: Boolean
         get() = progressState == ProgressState.Finished

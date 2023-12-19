@@ -65,7 +65,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.palette.graphics.Palette
 import coil.compose.AsyncImage
 import coil.imageLoader
@@ -81,14 +80,13 @@ import kotlin.math.absoluteValue
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SeasonalMangaPager(
     modifier: Modifier,
-    mangaList: ImmutableList<StateFlow<SavableManga>>,
+    mangaList: ImmutableList<SavableManga>,
     onMangaClick: (manga: SavableManga) -> Unit,
     onBookmarkClick: (manga: SavableManga) -> Unit,
     onTagClick: (name: String, id: String) -> Unit,
@@ -170,7 +168,7 @@ fun SeasonalMangaPager(
             beyondBoundsPageCount = 2,
         ) { page ->
 
-            val manga by mangaList[page].collectAsStateWithLifecycle()
+            val manga = mangaList[page]
 
             SeasonalPagingCard(
                 pagerState = pagerState,

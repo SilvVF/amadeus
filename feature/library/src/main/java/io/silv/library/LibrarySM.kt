@@ -5,7 +5,7 @@ import io.silv.common.model.ProgressState
 import io.silv.common.model.UpdateType
 import io.silv.data.chapter.ChapterRepository
 import io.silv.data.manga.MangaUpdateRepository
-import io.silv.domain.manga.GetSavedMangaWithChaptersList
+import io.silv.domain.manga.GetLibraryMangaWithChapters
 import io.silv.model.SavableChapter
 import io.silv.model.SavableManga
 import io.silv.ui.EventScreenModel
@@ -15,13 +15,13 @@ import kotlinx.coroutines.launch
 
 class LibrarySM(
     private val chapterEntityRepository: ChapterRepository,
-    getSavedMangaWithChaptersList: GetSavedMangaWithChaptersList,
+    getSavedMangaWithChaptersList: GetLibraryMangaWithChapters,
     mangaUpdateRepository: MangaUpdateRepository,
 ) : EventScreenModel<LibraryEvent>() {
     val downloadingOrDeleting = flowOf(emptyList<Pair<String, Float>>())
 
     val bookmarkedChapters =
-        chapterEntityRepository.getAllChapters()
+        chapterEntityRepository.observeChapters()
             .map { entities ->
                 entities.filter { chapter -> chapter.bookmarked }
                     .map {

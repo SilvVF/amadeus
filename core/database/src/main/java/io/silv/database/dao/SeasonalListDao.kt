@@ -8,7 +8,7 @@ import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Transaction
 import io.silv.database.entity.list.SeasonalListEntity
-import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.database.entity.manga.MangaEntity
 import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
 import kotlinx.coroutines.flow.Flow
 
@@ -49,5 +49,5 @@ data class SeasonalKeyWithSourceManga(
         parentColumn = "manga_id",
         entityColumn = "id",
     )
-    val manga: SourceMangaResource,
+    val manga: MangaEntity,
 )

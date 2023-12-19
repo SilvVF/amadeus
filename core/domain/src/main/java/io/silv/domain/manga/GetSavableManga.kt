@@ -4,9 +4,8 @@ import com.skydoves.sandwich.getOrNull
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.model.TagsMode
 import io.silv.common.time.timeStringMinus
-import io.silv.data.manga.SavedMangaRepository
-import io.silv.data.manga.SourceMangaRepository
-import io.silv.data.mappers.toSourceManga
+import io.silv.data.manga.MangaRepository
+import io.silv.data.mappers.toEntity
 import io.silv.model.SavableManga
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
@@ -15,15 +14,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class GetSavableManga(
-    private val mangaRepository: SavedMangaRepository,
-    private val sourceMangaRepository: SourceMangaRepository,
+    private val mangaRepository: MangaRepository,
     private val mangaDexApi: MangaDexApi,
     private val dispatchers: AmadeusDispatchers,
 ) {
@@ -52,7 +49,7 @@ class GetSavableManga(
                 .getOrNull()
                 ?.data ?: emptyList()
             )
-            .onEach { sourceMangaRepository.saveManga(it.toSourceManga()) }
+            .onEach { mangaRepository.saveManga(it.toEntity()) }
             .map {
                 subscribe(it.id)
                     .filterNotNull()
@@ -60,29 +57,16 @@ class GetSavableManga(
                     .stateIn(
                         scope,
                         SharingStarted.Lazily,
-                        SavableManga(it.toSourceManga()),
+                        SavableManga(it.toEntity()),
                     )
             }
     }
 
     suspend fun await(id: String): SavableManga? {
-        return combine(
-            mangaRepository.observeSavedMangaById(id),
-            sourceMangaRepository.observeMangaById(id),
-        ) { saved, source ->
-            saved?.let(::SavableManga) ?: source?.let(::SavableManga)
-        }
-            .firstOrNull()
+        return mangaRepository.getMangaById(id)?.let(::SavableManga)
     }
 
     fun subscribe(id: String): Flow<SavableManga> {
-        return combine(
-            sourceMangaRepository.observeMangaById(id),
-            mangaRepository.observeSavedMangaById(id),
-        ) { source, saved ->
-            saved?.let(::SavableManga) ?: SavableManga(
-                source ?: error("no manga found with matching id")
-            )
-        }
+        return mangaRepository.observeMangaById(id).filterNotNull().map { SavableManga(it) }
     }
 }

@@ -1,200 +1,296 @@
 package io.silv.manga.manga_view
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.EaseInOutCirc
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
-import androidx.compose.animation.graphics.res.animatedVectorResource
-import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
-import androidx.compose.animation.graphics.vector.AnimatedImageVector
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.ArrowDownward
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.silv.common.model.Download
 import io.silv.manga.R
 
-private const val size = 24
-private const val iconSize = 20
-private const val borderSize = 2.5
-
-@Composable
-fun NekoDownloadButton(buttonColor: Color, downloadState: Download.State, downloadProgress: Float, modifier: Modifier = Modifier) {
-    var downloadComplete by remember { mutableStateOf(false) }
-    var wasDownloading by remember { mutableStateOf(false) }
-
-    LaunchedEffect(downloadState) {
-        when (downloadState) {
-            // this reset download complete in case you remove the chapter and want to redownload it
-            Download.State.NOT_DOWNLOADED -> downloadComplete = false
-            // this signals its downloading, so a future downloaded state triggers the animation
-            Download.State.DOWNLOADING -> wasDownloading = true
-            Download.State.DOWNLOADED -> {
-                // this will run the animation for the check
-                if (wasDownloading) {
-                    downloadComplete = true
-                    wasDownloading = false
-                }
-            }
-
-            else -> Unit
-        }
-    }
-
-    when (downloadState) {
-        Download.State.ERROR -> NotDownloaded(MaterialTheme.colorScheme.error, modifier)
-        Download.State.NOT_DOWNLOADED -> NotDownloaded(buttonColor, modifier)
-        Download.State.QUEUE -> Queued(modifier)
-        Download.State.DOWNLOADED -> Downloaded(buttonColor, downloadComplete, modifier)
-        Download.State.DOWNLOADING -> Downloading(buttonColor, modifier, downloadProgress)
-        else -> Unit
-    }
+enum class ChapterDownloadAction {
+    START,
+    START_NOW,
+    CANCEL,
+    DELETE,
 }
 
 @Composable
-private fun NotDownloaded(buttonColor: Color, modifier: Modifier) {
-    Background(color = Color.Transparent, borderStroke = BorderStroke(borderSize.dp, buttonColor), modifier = modifier) {
-        DownloadIcon(color = buttonColor, icon = rememberVectorPainter(image = Icons.Filled.ArrowDownward))
-    }
-}
-
-@OptIn(ExperimentalAnimationGraphicsApi::class)
-@Composable
-private fun Downloaded(buttonColor: Color, downloadComplete: Boolean, modifier: Modifier) {
-    val iconPainter = rememberVectorPainter(image = Icons.Filled.ArrowDownward)
-
-    val animatedPainter = rememberAnimatedVectorPainter(
-        animatedImageVector = AnimatedImageVector.animatedVectorResource(R.drawable.anim_dl_to_check_to_dl),
-        atEnd = !downloadComplete,
+fun CircularProgressIndicator(
+    progress: () -> Float,
+    modifier: Modifier = Modifier,
+    color: Color = ProgressIndicatorDefaults.circularColor,
+    strokeWidth: Dp = ProgressIndicatorDefaults.CircularStrokeWidth,
+    trackColor: Color = ProgressIndicatorDefaults.circularTrackColor,
+    strokeCap: StrokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
+) {
+    CircularProgressIndicator(
+        progress = progress(),
+        modifier,
+        color,
+        strokeWidth,
+        trackColor,
+        strokeCap
     )
-
-    val painter = when (downloadComplete) {
-        true -> animatedPainter
-        false -> iconPainter
-    }
-
-    Background(color = buttonColor, modifier = modifier) {
-        DownloadIcon(color = MaterialTheme.colorScheme.surface, icon = painter)
-    }
 }
 
 @Composable
-private fun Queued(modifier: Modifier) {
-    val disabledColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .38f)
-    val infinitePulse = rememberInfiniteTransition(label = "infinite-pulse-queued")
-    val (initialState, finalState) = 0f to .38f
-
-    val alpha = infinitePulse.animateFloat(
-        initialValue = initialState,
-        targetValue = finalState,
-        animationSpec = infiniteRepeatable(tween(1000, easing = EaseInOutCirc), repeatMode = RepeatMode.Reverse),
-        label = "alpha-queued"
-    )
-
-    Background(color = Color.Transparent, modifier = modifier) {
-        CircularProgressIndicator(
-            modifier = Modifier
-                .size(size.dp),
-            color = disabledColor,
-            strokeWidth = borderSize.dp,
+fun ChapterDownloadIndicator(
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    downloadStateProvider: () -> Download.State,
+    downloadProgressProvider: () -> Int,
+    onClick: (ChapterDownloadAction) -> Unit,
+) {
+    when (val downloadState = downloadStateProvider()) {
+        Download.State.NOT_DOWNLOADED -> NotDownloadedIndicator(
+            enabled = enabled,
+            modifier = modifier,
+            onClick = onClick,
         )
-        DownloadIcon(color = disabledColor, icon = rememberVectorPainter(image = Icons.Filled.ArrowDownward), alpha = alpha.value)
-    }
-}
-
-@Composable
-private fun Downloading(buttonColor: Color, modifier: Modifier, downloadProgress: Float) {
-    val (bgColor, iconColor, progressColor) = when {
-        downloadProgress >= 1f -> Triple(buttonColor, MaterialTheme.colorScheme.surface, Color.Transparent)
-        else -> Triple(Color.Transparent, MaterialTheme.colorScheme.onSurface.copy(alpha = .38f), buttonColor)
-    }
-
-    val backgroundColor by animateColorAsState(targetValue = bgColor, label = "background-color-downloading")
-
-    val animatedProgress = animateFloatAsState(
-        targetValue = downloadProgress,
-        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
-        label = "animatedProgress",
-    ).value
-
-    val iconPainter = rememberVectorPainter(image = Icons.Filled.ArrowDownward)
-
-    val infinitePulse = rememberInfiniteTransition(label = "infinitePulse")
-    val (initialState, finalState) = 0f to .38f
-
-    val alpha = infinitePulse.animateFloat(
-        initialValue = initialState,
-        targetValue = finalState,
-        animationSpec = infiniteRepeatable(tween(1000, easing = EaseInOutCirc), repeatMode = RepeatMode.Reverse),
-        label = "alpha",
-    )
-
-    Background(color = backgroundColor, modifier = modifier) {
-        CircularProgressIndicator(
-            progress = animatedProgress,
-            modifier = Modifier
-                .size(size.dp),
-            color = progressColor,
-            strokeWidth = borderSize.dp,
+        Download.State.QUEUE, Download.State.DOWNLOADING -> DownloadingIndicator(
+            enabled = enabled,
+            modifier = modifier,
+            downloadState = downloadState,
+            downloadProgressProvider = downloadProgressProvider,
+            onClick = onClick,
         )
-        DownloadIcon(color = iconColor, icon = iconPainter, alpha = alpha.value)
+        Download.State.DOWNLOADED -> DownloadedIndicator(
+            enabled = enabled,
+            modifier = modifier,
+            onClick = onClick,
+        )
+        Download.State.ERROR -> ErrorIndicator(
+            enabled = enabled,
+            modifier = modifier,
+            onClick = onClick,
+        )
     }
 }
 
 @Composable
-private fun DownloadIcon(color: Color, icon: Painter, alpha: Float = 1f) {
-    Icon(
-        painter = icon,
-        contentDescription = null,
-        modifier = Modifier
-            .requiredSize(iconSize.dp),
-        tint = color.copy(alpha = alpha),
-    )
-}
-
-@Composable
-private fun Background(color: Color, modifier: Modifier = Modifier, borderStroke: BorderStroke? = null, content: @Composable () -> Unit) {
+private fun NotDownloadedIndicator(
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: (ChapterDownloadAction) -> Unit,
+) {
     Box(
-        modifier = Modifier
-            .clip(CircleShape)
-            .size(48.dp)
-            .then(modifier),
+        modifier = modifier
+            .size(40.0.dp)
+            .commonClickable(
+                enabled = enabled,
+                onLongClick = { onClick(ChapterDownloadAction.START_NOW) },
+                onClick = { onClick(ChapterDownloadAction.START) },
+            )
+            .alpha(.78f),
         contentAlignment = Alignment.Center,
     ) {
-        Surface(
-            modifier = Modifier
-                .size(size.dp),
-            shape = CircleShape,
-            border = borderStroke,
-            color = color,
-        ) {
-            content()
+        Icon(
+            painter = painterResource(R.drawable.ic_download_chapter_24dp),
+            contentDescription = "download",
+            modifier = Modifier.size(IndicatorSize),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun DownloadingIndicator(
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    downloadState: Download.State,
+    downloadProgressProvider: () -> Int,
+    onClick: (ChapterDownloadAction) -> Unit,
+) {
+    var isMenuExpanded by remember { mutableStateOf(false) }
+    Box(
+        modifier = modifier
+            .size(40.dp)
+            .commonClickable(
+                enabled = enabled,
+                onLongClick = { onClick(ChapterDownloadAction.CANCEL) },
+                onClick = { isMenuExpanded = true },
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        val arrowColor: Color
+        val strokeColor = MaterialTheme.colorScheme.onSurfaceVariant
+        val downloadProgress = downloadProgressProvider()
+        val indeterminate = downloadState == Download.State.QUEUE ||
+            (downloadState == Download.State.DOWNLOADING && downloadProgress == 0)
+        if (indeterminate) {
+            arrowColor = strokeColor
+            CircularProgressIndicator(
+                modifier = IndicatorModifier,
+                color = strokeColor,
+                strokeWidth = IndicatorStrokeWidth,
+            )
+        } else {
+            val animatedProgress by animateFloatAsState(
+                targetValue = downloadProgress / 100f,
+                animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+                label = "progress",
+            )
+            arrowColor = if (animatedProgress < 0.5f) {
+                strokeColor
+            } else {
+                MaterialTheme.colorScheme.background
+            }
+            CircularProgressIndicator(
+                progress = { animatedProgress },
+                modifier = IndicatorModifier,
+                color = strokeColor,
+                strokeWidth = IndicatorSize / 2,
+            )
+        }
+        DropdownMenu(expanded = isMenuExpanded, onDismissRequest = { isMenuExpanded = false }) {
+            DropdownMenuItem(
+                text = { Text(text = "Start download immediately") },
+                onClick = {
+                    onClick(ChapterDownloadAction.START_NOW)
+                    isMenuExpanded = false
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(text = "Cancel download") },
+                onClick = {
+                    onClick(ChapterDownloadAction.CANCEL)
+                    isMenuExpanded = false
+                },
+            )
+        }
+        Icon(
+            imageVector = Icons.Outlined.ArrowDownward,
+            contentDescription = null,
+            modifier = ArrowModifier,
+            tint = arrowColor,
+        )
+    }
+}
+
+@Composable
+private fun DownloadedIndicator(
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: (ChapterDownloadAction) -> Unit,
+) {
+    var isMenuExpanded by remember { mutableStateOf(false) }
+    Box(
+        modifier = modifier
+            .size(40.0.dp)
+            .commonClickable(
+                enabled = enabled,
+                onLongClick = { isMenuExpanded = true },
+                onClick = { isMenuExpanded = true },
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.CheckCircle,
+            contentDescription = null,
+            modifier = Modifier.size(IndicatorSize),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        DropdownMenu(expanded = isMenuExpanded, onDismissRequest = { isMenuExpanded = false }) {
+            DropdownMenuItem(
+                text = { Text(text = "Delete chapter") },
+                onClick = {
+                    onClick(ChapterDownloadAction.DELETE)
+                    isMenuExpanded = false
+                },
+            )
         }
     }
 }
+
+@Composable
+private fun ErrorIndicator(
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: (ChapterDownloadAction) -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .size(40.0.dp)
+            .commonClickable(
+                enabled = enabled,
+                onLongClick = { onClick(ChapterDownloadAction.START) },
+                onClick = { onClick(ChapterDownloadAction.START) },
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.ErrorOutline,
+            contentDescription = "error",
+            modifier = Modifier.size(IndicatorSize),
+            tint = MaterialTheme.colorScheme.error,
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+private fun Modifier.commonClickable(
+    enabled: Boolean,
+    onLongClick: () -> Unit,
+    onClick: () -> Unit,
+) = composed {
+    val haptic = LocalHapticFeedback.current
+
+    Modifier.combinedClickable(
+        enabled = enabled,
+        onLongClick = {
+            onLongClick()
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        },
+        onClick = onClick,
+        role = Role.Button,
+        interactionSource = remember { MutableInteractionSource() },
+        indication = rememberRipple(
+            bounded = false,
+            radius = 40.0.dp / 2,
+        ),
+    )
+}
+
+private val IndicatorSize = 26.dp
+private val IndicatorPadding = 2.dp
+
+// To match composable parameter name when used later
+private val IndicatorStrokeWidth = IndicatorPadding
+
+private val IndicatorModifier = Modifier
+    .size(IndicatorSize)
+    .padding(IndicatorPadding)
+private val ArrowModifier = Modifier
+    .size(IndicatorSize - 7.dp)

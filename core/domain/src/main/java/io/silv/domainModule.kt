@@ -3,10 +3,10 @@ package io.silv
 import io.silv.data.download.DownloadWorker
 import io.silv.domain.chapter.ChapterHandler
 import io.silv.domain.chapter.GetSavableChapter
-import io.silv.domain.manga.GetCombinedSavableMangaWithChapters
+import io.silv.domain.manga.GetLibraryMangaWithChapters
 import io.silv.domain.manga.GetMangaStatisticsById
 import io.silv.domain.manga.GetSavableManga
-import io.silv.domain.manga.GetSavedMangaWithChaptersList
+import io.silv.domain.manga.GetSavableMangaWithChapters
 import io.silv.domain.manga.MangaHandler
 import io.silv.domain.manga.SubscribeToPagingData
 import io.silv.domain.manga.SubscribeToSeasonalLists
@@ -18,9 +18,9 @@ import org.koin.dsl.module
 val domainModule =
     module {
 
-        factoryOf(::GetCombinedSavableMangaWithChapters)
+        factoryOf(::GetSavableMangaWithChapters)
 
-        factoryOf(::GetSavedMangaWithChaptersList)
+        factoryOf(::GetLibraryMangaWithChapters)
 
         factoryOf(::GetMangaStatisticsById)
 

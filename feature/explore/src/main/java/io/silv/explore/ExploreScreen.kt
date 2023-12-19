@@ -46,7 +46,6 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -474,11 +473,10 @@ private fun LazyGridScope.seasonalMangaGrid(
     seasonalList?.let {
         items(
             items = seasonalList.mangas,
-            key = { v -> v.value.id },
-        ) { item ->
+            key = { v -> v.id },
+        ) { manga ->
 
             val space = LocalSpacing.current
-            val manga by item.collectAsState()
 
             MangaListItem(
                 manga = manga,

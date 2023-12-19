@@ -21,10 +21,12 @@ interface ChapterRepository: Syncable {
 
     suspend fun refetchChapter(id: String): ChapterEntity?
 
-    fun getChapters(mangaId: String): Flow<List<ChapterEntity>>
+    fun observeChaptersByMangaId(mangaId: String): Flow<List<ChapterEntity>>
 
-    fun getChapterById(id: String): Flow<ChapterEntity?>
+    suspend fun getChapterById(id: String): ChapterEntity?
 
-    fun getAllChapters(): Flow<List<ChapterEntity>>
+    fun observeChapterById(id: String): Flow<ChapterEntity>
+
+    fun observeChapters(): Flow<List<ChapterEntity>>
 }
 

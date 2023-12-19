@@ -4,8 +4,8 @@ import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.PagedType
 import io.silv.common.model.TimePeriod
-import io.silv.data.manga.SavedMangaRepository
 import io.silv.domain.manga.GetSavableManga
+import io.silv.domain.manga.MangaHandler
 import io.silv.domain.manga.SubscribeToPagingData
 import io.silv.model.SavableManga
 import io.silv.ui.EventStateScreenModel
@@ -21,9 +21,9 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MangaFilterScreenModel(
+    private val mangaHandler: MangaHandler,
     getManga: GetSavableManga,
     subscribeToPagingData: SubscribeToPagingData,
-    private val savedMangaRepository: SavedMangaRepository,
     tagId: String,
 ) : EventStateScreenModel<MangaFilterEvent, YearlyFilteredUiState>(YearlyFilteredUiState.Loading) {
     private val mutableTimePeriod = MutableStateFlow(TimePeriod.AllTime)
@@ -51,7 +51,7 @@ class MangaFilterScreenModel(
 
     fun bookmarkManga(id: String) {
         screenModelScope.launch {
-            savedMangaRepository.addOrRemoveFromLibrary(id)
+            mangaHandler.addOrRemoveFromLibrary(id)
         }
     }
 }

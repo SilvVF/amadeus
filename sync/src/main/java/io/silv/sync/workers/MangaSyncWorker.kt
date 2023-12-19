@@ -12,25 +12,26 @@ import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.common.pmap
 import io.silv.data.chapter.ChapterRepository
-import io.silv.data.manga.SavedMangaRepository
+import io.silv.data.manga.MangaRepository
 import io.silv.data.workers.createForegroundInfo
 import io.silv.sync.MangaSyncWorkName
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 internal class MangaSyncWorker(
     appContext: Context,
     workerParams: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParams), KoinComponent {
-    private val savedMangaRepository by inject<SavedMangaRepository>()
+
+    private val mangaRepository by inject<MangaRepository>()
     private val chapterInfoRepository by inject<ChapterRepository>()
 
     override suspend fun doWork(): Result {
         val allSynced =
             listOf(
-                savedMangaRepository,
+                mangaRepository,
                 chapterInfoRepository,
             )
                 .pmap { repository ->

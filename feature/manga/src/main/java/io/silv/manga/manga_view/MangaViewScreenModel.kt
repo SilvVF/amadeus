@@ -11,8 +11,8 @@ import io.silv.data.download.DownloadManager
 import io.silv.datastore.UserSettingsStore
 import io.silv.datastore.model.Filters
 import io.silv.domain.chapter.ChapterHandler
-import io.silv.domain.manga.GetCombinedSavableMangaWithChapters
 import io.silv.domain.manga.GetMangaStatisticsById
+import io.silv.domain.manga.GetSavableMangaWithChapters
 import io.silv.domain.manga.MangaHandler
 import io.silv.model.MangaStats
 import io.silv.model.SavableChapter
@@ -36,7 +36,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MangaViewScreenModel(
-    getCombinedSavableMangaWithChapters: GetCombinedSavableMangaWithChapters,
+    getCombinedSavableMangaWithChapters: GetSavableMangaWithChapters,
     getMangaStatisticsById: GetMangaStatisticsById,
     private val userSettingsStore: UserSettingsStore,
     private val mangaHandler: MangaHandler,

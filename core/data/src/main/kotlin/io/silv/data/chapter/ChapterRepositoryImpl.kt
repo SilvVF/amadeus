@@ -14,6 +14,7 @@ import io.silv.database.entity.chapter.ChapterEntity
 import io.silv.network.requests.ChapterListRequest
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withContext
@@ -106,11 +107,15 @@ internal class ChapterRepositoryImpl(
         }
     }
 
-    override fun getChapterById(id: String): Flow<ChapterEntity?> {
-        return chapterDao.observeChapterById(id).flowOn(dispatchers.io)
+    override suspend fun getChapterById(id: String): ChapterEntity? {
+        return chapterDao.getChapterById(id)
     }
 
-    override fun getAllChapters(): Flow<List<ChapterEntity>> {
+    override fun observeChapterById(id: String): Flow<ChapterEntity> {
+        return chapterDao.observeChapterById(id).filterNotNull()
+    }
+
+    override fun observeChapters(): Flow<List<ChapterEntity>> {
         return chapterDao.getChapterEntities().flowOn(dispatchers.io)
     }
 
@@ -119,7 +124,7 @@ internal class ChapterRepositoryImpl(
         chapters == null || chapters.any { localDateTimeNow() - (it.savedLocalAt) > 12.hours }
     }
 
-    override fun getChapters(mangaId: String): Flow<List<ChapterEntity>> {
+    override fun observeChaptersByMangaId(mangaId: String): Flow<List<ChapterEntity>> {
         return chapterDao.observeChaptersByMangaId(mangaId).onStart {
             if (shouldUpdate(mangaId)) {
                 Log.d("ChapterEntityRepository","Updating from network")

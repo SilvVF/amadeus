@@ -6,7 +6,7 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import io.silv.common.model.PagedType
 import io.silv.data.manga.MangaPagingSourceFactory
-import io.silv.data.manga.SavedMangaRepository
+import io.silv.data.manga.MangaRepository
 import io.silv.model.SavableManga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.stateIn
 
 class SubscribeToPagingData(
     private val pagingFactory: MangaPagingSourceFactory,
-    private val savedMangaRepository: SavedMangaRepository,
+    private val mangaRepository: MangaRepository,
 ) {
     operator fun invoke(
         config: PagingConfig,
@@ -31,10 +31,10 @@ class SubscribeToPagingData(
             .map { type ->
                 combine(
                     pagingFactory.pager(config, type).flow.cachedIn(scope),
-                    savedMangaRepository.observeSavedMangaList(),
-                ) { pagingData, saved ->
+                    mangaRepository.observeLibraryManga(),
+                ) { pagingData, libraryManga ->
                     pagingData.map { manga ->
-                        saved.find { it.id == manga.id }
+                        libraryManga.find { it.id == manga.id }
                             ?.let(::SavableManga)
                             ?: SavableManga(manga)
                     }

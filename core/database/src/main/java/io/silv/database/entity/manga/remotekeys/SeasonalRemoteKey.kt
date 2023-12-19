@@ -5,12 +5,12 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import io.silv.database.entity.list.SeasonalListEntity
-import io.silv.database.entity.manga.SourceMangaResource
+import io.silv.database.entity.manga.MangaEntity
 
 @Entity(
     foreignKeys = [
         ForeignKey(
-            entity = SourceMangaResource::class,
+            entity = MangaEntity::class,
             parentColumns = arrayOf("id"),
             childColumns = arrayOf("manga_id"),
             onDelete = ForeignKey.CASCADE,

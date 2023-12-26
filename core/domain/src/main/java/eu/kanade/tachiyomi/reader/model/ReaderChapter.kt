@@ -10,6 +10,7 @@ data class ReaderChapter(
     val chapter: SavableChapter,
 ) {
     val stateFlow = MutableStateFlow<State>(State.Wait)
+
     var state: State
         get() = stateFlow.value
         set(value) {

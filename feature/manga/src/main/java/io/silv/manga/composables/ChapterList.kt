@@ -38,11 +38,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import io.silv.common.model.Download
-import io.silv.manga.manga_view.ChapterDownloadAction
-import io.silv.manga.manga_view.ChapterDownloadIndicator
 import io.silv.manga.manga_view.DownloadActions
 import io.silv.manga.manga_view.MangaViewState
 import io.silv.model.SavableChapter
+import io.silv.ui.composables.ChapterDownloadAction
+import io.silv.ui.composables.ChapterDownloadIndicator
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.flowOf

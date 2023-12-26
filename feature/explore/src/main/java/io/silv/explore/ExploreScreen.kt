@@ -1,5 +1,7 @@
 package io.silv.explore
 
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -59,6 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -145,11 +148,18 @@ class ExploreScreen : Screen {
         Scaffold(
             topBar = {
                 val scope = rememberCoroutineScope()
-
+                val context = LocalContext.current
                 ExploreTopAppBar(
                     selected = state.pagedType,
                     scrollBehavior = scrollBehavior,
-                    onWebClick = { },
+                    onWebClick = {
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://mangadex.org/")
+                            )
+                        )
+                    },
                     onDisplayOptionsClick = {
                         scope.launch {
                             if (expandableState.isExpanded) {

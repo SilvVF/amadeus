@@ -13,3 +13,9 @@ object ExplorePrefs {
     val showSeasonalListPrefKey = booleanPreferencesKey("io.silv.show_seasonal_lists")
     const val showSeasonalDefault = false
 }
+
+object ReaderPrefs {
+    val layoutDirection = intPreferencesKey("io.silv.reader_reverse_layout")
+    const val reverseLayoutDefault = 1
+}
+

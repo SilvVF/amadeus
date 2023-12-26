@@ -18,7 +18,7 @@ val screenModule =
         factoryOf(::LibrarySM)
 
         factory { (mangaId: String, initialChapterId: String) ->
-            ReaderScreenModel(get(), get(), mangaId, initialChapterId, get())
+            ReaderScreenModel(get(), get(), get(), mangaId, initialChapterId)
         }
 
         factoryOf(::MangaViewScreenModel)

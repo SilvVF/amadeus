@@ -25,7 +25,7 @@ class MangaDexApi(
     private val client: HttpClient,
     private val dispatchers: AmadeusDispatchers,
 ) {
-    private val mangaDexUrl = "https://api.mangadex.org"
+    val mangaDexUrl = "https://api.mangadex.org"
 
     suspend fun getMangaStatistics(id: String) =
         withContext(dispatchers.io) {

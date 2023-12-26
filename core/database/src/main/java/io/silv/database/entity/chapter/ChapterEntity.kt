@@ -27,7 +27,7 @@ data class ChapterEntity(
     @ColumnInfo("manga_id")
     override val mangaId: String,
     override val scanlator: String = "",
-    override val url: String = "",
+    override val url: String,
     override val title: String,
     val progressState: ProgressState = ProgressState.NotStarted,
     val languageCode: String,

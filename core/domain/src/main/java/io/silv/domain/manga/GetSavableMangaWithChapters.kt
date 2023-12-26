@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.firstOrNull
 
 /**
  * Combines Saved manga with all resource repository's and transforms the manga received by id into a
@@ -45,4 +46,6 @@ class GetSavableMangaWithChapters(
         }
             .conflate()
     }
+
+    suspend fun await(id: String): SavableMangaWithChapters? = subscribe(id).firstOrNull()
 }

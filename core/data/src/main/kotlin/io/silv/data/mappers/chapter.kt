@@ -20,7 +20,7 @@ fun Chapter.toChapterEntity(prev: ChapterEntity? = null): ChapterEntity {
         updatedAt = chapter.attributes.updatedAt.parseMangaDexTimeToDateTime(),
         readableAt = chapter.attributes.readableAt.parseMangaDexTimeToDateTime(),
         uploader = chapter.attributes.uploader,
-        url = chapter.attributes.externalUrl ?: "",
+        url = chapter.attributes.externalUrl?.replace("\\", "") ?: "",
         languageCode = chapter.attributes.translatedLanguage ?: "",
         version = chapter.attributes.version,
         scanlator = chapter.relationships.find { it.type == "scanlation_group" }?.attributes?.name ?: "",

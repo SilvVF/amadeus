@@ -76,13 +76,15 @@ dependencies {
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.orbital)
     implementation("androidx.compose.ui:ui-graphics")
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.animation:animation-graphics")
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
+
+    implementation("me.saket.swipe:swipe:1.2.0")
+
 
     // Paging 3
     implementation(libs.androidx.paging.compose)

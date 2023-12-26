@@ -1,4 +1,4 @@
-package io.silv.manga.manga_view
+package io.silv.ui.composables
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -37,7 +37,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.silv.common.model.Download
-import io.silv.manga.R
+import io.silv.ui.R
 
 enum class ChapterDownloadAction {
     START,
@@ -148,7 +148,7 @@ private fun DownloadingIndicator(
         val strokeColor = MaterialTheme.colorScheme.onSurfaceVariant
         val downloadProgress = downloadProgressProvider()
         val indeterminate = downloadState == Download.State.QUEUE ||
-            (downloadState == Download.State.DOWNLOADING && downloadProgress == 0)
+                (downloadState == Download.State.DOWNLOADING && downloadProgress == 0)
         if (indeterminate) {
             arrowColor = strokeColor
             CircularProgressIndicator(

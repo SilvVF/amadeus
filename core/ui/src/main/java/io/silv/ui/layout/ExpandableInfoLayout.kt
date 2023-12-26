@@ -30,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
-import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -39,6 +38,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -106,6 +106,21 @@ class ExpandableState(
                 PartiallyExpanded -> maxHeightPx.toFloat() - peekHeightPx.toFloat()
             },
         )
+    }
+
+    /**
+     * value between 0 - 1.
+     * - 1 = hidden.
+     * - 0 = expanded.
+     */
+    val fraction by derivedStateOf {
+        try {
+            ((dragHeightOffset.value / maxHeightPx.toFloat())
+                .takeIf { !it.isNaN() } ?: 0f)
+                .coerceIn(0f, 1f)
+        } catch (e: Exception) {
+            0f
+        }
     }
 
     private fun progressFromHeight(height: Float): SheetValue {

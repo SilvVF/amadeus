@@ -15,16 +15,22 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.LayoutDirection.Ltr
+import androidx.compose.ui.unit.LayoutDirection.Rtl
 import androidx.compose.ui.unit.dp
 import io.silv.ui.theme.LocalSpacing
 import kotlin.math.roundToInt
@@ -33,13 +39,29 @@ import kotlin.math.roundToInt
 fun MenuPageSlider(
     modifier: Modifier = Modifier,
     fraction: Float,
-    page: Int,
-    lastPage: Int,
+    layoutDirection: LayoutDirection,
+    pageIdx: Int,
+    pageCount: Int,
     onPrevClick: () -> Unit,
     onNextClick: () -> Unit,
     onPageChange: (page: Int) -> Unit,
 ) {
     val space = LocalSpacing.current
+    
+    fun leftButtonClick() {
+        when (layoutDirection) {
+            Ltr -> onPrevClick()
+            Rtl -> onNextClick()
+        }
+    }
+    
+    fun rightButtonClick() {
+        when (layoutDirection) {
+            Ltr -> onNextClick()
+            Rtl -> onPrevClick()
+        }
+    }
+    val elevatedSurfaceColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -47,14 +69,14 @@ fun MenuPageSlider(
             .clip(CircleShape)
             .drawBehind {
                 drawRect(
-                    color = Color.DarkGray.copy(alpha = fraction),
+                    color = elevatedSurfaceColor.copy(alpha = fraction),
                 )
             },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         IconButton(
-            onClick = onPrevClick,
+            onClick = ::leftButtonClick,
             modifier = Modifier.padding(space.small),
             colors = IconButtonDefaults.iconButtonColors(
                 contentColor = LocalContentColor.current.copy(alpha = fraction)
@@ -66,43 +88,39 @@ fun MenuPageSlider(
             )
         }
         Text(
-            text = "${page + 1}",
+            text = when (layoutDirection) {
+                Ltr -> "${pageIdx + 1}"
+                Rtl -> pageCount.toString()
+            },
             color = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
             modifier = Modifier.padding(space.small)
         )
         if (fraction > 0f) {
-            Slider(
-                valueRange = 1f..lastPage.toFloat().coerceAtLeast(1f),
-                value = (page + 1f),
-                onValueChange = {
-                    onPageChange((it - 1f).roundToInt())
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(space.small),
-                steps = (lastPage - 2).coerceAtLeast(0),
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
-                    disabledThumbColor = MaterialTheme.colorScheme.onSurface.copy(alpha = fraction).compositeOver(
-                        MaterialTheme.colorScheme.surface),
-                    activeTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
-                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = fraction),
-                    disabledActiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = fraction),
-                    disabledInactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = fraction),
-                    activeTickColor = MaterialTheme.colorScheme.contentColorFor(
-                        MaterialTheme.colorScheme.primary.copy(alpha = fraction)
-                    ).copy(alpha = fraction),
-                    inactiveTickColor = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
+            CompositionLocalProvider(
+                LocalLayoutDirection provides layoutDirection
+            ) {
+                Slider(
+                    valueRange = 1f..pageCount.toFloat().coerceAtLeast(1f),
+                    value = (pageIdx + 1f),
+                    onValueChange = { onPageChange((it - 1f).roundToInt()) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(space.small),
+                    steps = (pageCount - 2).coerceAtLeast(0),
+                    colors = sliderColors(fraction = fraction)
                 )
-            )
+            }
         }
         Text(
-            text = lastPage.toString(),
+            text = when (layoutDirection) {
+                Rtl -> "${pageIdx + 1}"
+                Ltr -> pageCount.toString()
+            },
             modifier = Modifier.padding(space.small),
             color = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
         )
         IconButton(
-            onClick = onNextClick,
+            onClick = ::rightButtonClick,
             modifier = Modifier.padding(space.small),
             colors = IconButtonDefaults.iconButtonColors(
                 contentColor = LocalContentColor.current.copy(alpha = fraction)
@@ -115,3 +133,18 @@ fun MenuPageSlider(
         }
     }
 }
+
+@Composable
+private fun sliderColors(fraction: Float): SliderColors = SliderDefaults.colors(
+    thumbColor = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
+    disabledThumbColor = MaterialTheme.colorScheme.onSurface.copy(alpha = fraction).compositeOver(
+        MaterialTheme.colorScheme.surface),
+    activeTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
+    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = fraction),
+    disabledActiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = fraction),
+    disabledInactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = fraction),
+    activeTickColor = MaterialTheme.colorScheme.contentColorFor(
+        MaterialTheme.colorScheme.primary.copy(alpha = fraction)
+    ).copy(alpha = fraction),
+    inactiveTickColor = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
+)

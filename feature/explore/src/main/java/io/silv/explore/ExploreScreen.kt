@@ -40,7 +40,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -108,7 +107,7 @@ class ExploreScreen : Screen {
             state = rememberTopAppBarState()
         )
 
-        val expandableState = rememberExpandableState(startProgress = SheetValue.Hidden)
+        val expandableState = rememberExpandableState()
         val navigator = LocalNavigator.currentOrThrow
 
         LaunchedEffect(ExploreTab.reselectChannel) {
@@ -162,7 +161,7 @@ class ExploreScreen : Screen {
                     },
                     onDisplayOptionsClick = {
                         scope.launch {
-                            if (expandableState.isExpanded) {
+                            if (!expandableState.isHidden) {
                                 expandableState.hide()
                             } else {
                                 expandableState.expand()
@@ -216,7 +215,7 @@ class ExploreScreen : Screen {
                     state = expandableState,
                     peekContent = {
                         RecentSearchesPeekContent(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
                             recentSearchUiState = state.recentSearchUiState,
                             query = state.filters?.title,
                             onRecentSearchClick = screenModel::onSearch,

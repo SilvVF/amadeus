@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -42,7 +41,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -86,6 +84,7 @@ import io.silv.reader.composables.MenuPageSlider
 import io.silv.ui.CenterBox
 import io.silv.ui.composables.ChapterDownloadAction
 import io.silv.ui.composables.ChapterDownloadIndicator
+import io.silv.ui.layout.DragAnchors
 import io.silv.ui.layout.ExpandableInfoLayout
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.LocalSpacing
@@ -200,7 +199,7 @@ fun HorizontalReader(
         }
     }
 
-    var menuVisible by rememberSaveable { mutableStateOf(false) }
+    var menuVisible by remember { mutableStateOf(false) }
 
     ReaderMenuOverlay(
         readerChapter = readerChapter,
@@ -329,7 +328,7 @@ fun ReaderMenuOverlay(
     content: @Composable () -> Unit,
 ) {
     val space = LocalSpacing.current
-    val expandableState = rememberExpandableState(startProgress = SheetValue.PartiallyExpanded)
+    val expandableState = rememberExpandableState(startProgress = DragAnchors.Peek)
 
     LaunchedEffect(Unit) {
         snapshotFlow { expandableState.fraction }.collect {
@@ -347,9 +346,7 @@ fun ReaderMenuOverlay(
     }
 
     Box(
-        Modifier
-            .fillMaxSize()
-            .systemBarsPadding()
+        Modifier.fillMaxSize()
     ) {
         content()
         AnimatedVisibility(
@@ -385,19 +382,16 @@ fun ReaderMenuOverlay(
             modifier = Modifier.align(Alignment.BottomCenter),
             state = expandableState,
             peekContent = {
-                CompositionLocalProvider(
-                    LocalLayoutDirection provides layoutDirection
-                ) {
-                    MenuPageSlider(
-                        modifier = Modifier.padding(space.large),
-                        fraction = expandableState.fraction,
-                        page = currentPage,
-                        lastPage = readerChapter.pages?.size ?: 0,
-                        onPrevClick = loadPrevChapter,
-                        onNextClick = loadNextChapter,
-                        onPageChange = changePage
-                    )
-                }
+                MenuPageSlider(
+                    modifier = Modifier.padding(space.large),
+                    fraction = expandableState.fraction,
+                    pageIdx = currentPage,
+                    pageCount = readerChapter.pages?.size ?: 0,
+                    onPrevClick = loadPrevChapter,
+                    onNextClick = loadNextChapter,
+                    onPageChange = changePage,
+                    layoutDirection = layoutDirection
+                )
             }
         ){
             Surface(

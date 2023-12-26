@@ -46,7 +46,8 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.material)
+    implementation("androidx.compose.foundation:foundation:1.6.0-alpha07")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
@@ -57,6 +58,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-util")
     implementation(composeBom)
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.material3)
     androidTestImplementation(libs.androidx.compose.ui.test.junit)

@@ -12,7 +12,7 @@ class SubscribeToSeasonalLists(
     private val mangaRepository: MangaRepository,
 ) {
     fun subscribe() =
-        seasonalRepository.getSeasonalLists().map { lists ->
+        seasonalRepository.subscribe().map { lists ->
             lists.map { (list, mangas) ->
                 DomainSeasonalList(
                     id = list.id,

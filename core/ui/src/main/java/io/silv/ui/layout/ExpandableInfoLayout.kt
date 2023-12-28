@@ -4,10 +4,10 @@ package io.silv.ui.layout
 
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.Box
@@ -22,14 +22,18 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun rememberExpandableState(
     startProgress: DragAnchors = DragAnchors.End,
@@ -68,13 +72,60 @@ class ExpandableState(
         animationSpec = tween(),
     )
 
-    /**
-     * value between 0 - 1.
-     * - 1 = hidden.
-     * - 0 = expanded.
-     */
+    fun nestedScrollConnection(
+        scrollState: ScrollableState
+    ) = object: NestedScrollConnection {
+        override fun onPreScroll(
+            available: Offset,
+            source: NestedScrollSource
+        ): Offset {
+            val delta = available.y
+            return if (delta < 0) {
+                Offset(
+                    x = available.x,
+                    y = anchoredDraggableState.dispatchRawDelta(delta)
+                )
+            } else {
+                Offset.Zero
+            }
+        }
+
+        override fun onPostScroll(
+            consumed: Offset,
+            available: Offset,
+            source: NestedScrollSource
+        ): Offset {
+            val delta = available.y
+            return Offset(
+                x = available.x,
+                y = anchoredDraggableState.dispatchRawDelta(delta)
+            )
+        }
+        override suspend fun onPreFling(available: Velocity): Velocity {
+            return if (available.y < 0 && !scrollState.canScrollBackward) {
+                anchoredDraggableState.settle(available.y)
+                available
+            } else {
+                Velocity.Zero
+            }
+        }
+
+        override suspend fun onPostFling(
+            consumed: Velocity,
+            available: Velocity
+        ): Velocity {
+            anchoredDraggableState.settle(available.y)
+            return super.onPostFling(consumed, available)
+        }
+    }
+
     val fraction by lazy {
-        anchoredDraggableState.offset / maxHeightPx
+        derivedStateOf {
+            (anchoredDraggableState.offset / maxHeightPx)
+                .takeIf { !it.isNaN() }
+                ?.coerceIn(0f, 1f)
+                ?: 0f
+        }
     }
 
     val isHidden by derivedStateOf {
@@ -131,8 +182,7 @@ fun ExpandableInfoLayout(
             .anchoredDraggable(
                 state.anchoredDraggableState,
                 orientation = Orientation.Vertical
-            )
-            .background(Color.Red),
+            ),
     ) { measurables, constraints ->
 
         val peekPlaceable =

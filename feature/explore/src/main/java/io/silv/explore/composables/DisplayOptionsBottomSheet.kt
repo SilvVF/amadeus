@@ -35,7 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
-import io.silv.datastore.asState
+import io.silv.datastore.collectAsState
 import io.silv.datastore.model.ExplorePrefs
 import io.silv.ui.composables.CardType
 import io.silv.ui.theme.LocalSpacing
@@ -55,16 +55,16 @@ fun DisplayOptionsBottomSheet(
 
     val scope = rememberCoroutineScope()
 
-    var cardType by ExplorePrefs.cardTypePrefKey.asState(
+    var cardType by ExplorePrefs.cardTypePrefKey.collectAsState(
         defaultValue = CardType.Compact,
         convert = { CardType.valueOf(it) },
         store = { it.toString() },
         scope = scope,
     )
 
-    var gridCells by ExplorePrefs.gridCellsPrefKey.asState(ExplorePrefs.gridCellsDefault, scope)
+    var gridCells by ExplorePrefs.gridCellsPrefKey.collectAsState(ExplorePrefs.gridCellsDefault, scope)
 
-    var showSeasonalLists by ExplorePrefs.showSeasonalListPrefKey.asState(
+    var showSeasonalLists by ExplorePrefs.showSeasonalListPrefKey.collectAsState(
         ExplorePrefs.showSeasonalDefault,
         scope
     )

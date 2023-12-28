@@ -34,4 +34,8 @@ val daosModule =
         single {
             get<AmadeusDatabase>().recentSearchDao()
         }
+
+        single {
+            get<AmadeusDatabase>().userListDao()
+        }
     }

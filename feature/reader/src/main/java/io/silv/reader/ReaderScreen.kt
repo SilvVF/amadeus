@@ -2,9 +2,10 @@
 
 package io.silv.reader
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -16,15 +17,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +39,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Web
 import androidx.compose.material.icons.twotone.Archive
@@ -60,7 +68,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextOverflow
@@ -77,7 +87,7 @@ import coil.request.ImageRequest
 import eu.kanade.tachiyomi.reader.model.ReaderChapter
 import io.silv.common.model.Download
 import io.silv.common.model.Page
-import io.silv.datastore.asState
+import io.silv.datastore.collectAsState
 import io.silv.datastore.model.ReaderPrefs
 import io.silv.model.SavableChapter
 import io.silv.reader.composables.MenuPageSlider
@@ -91,10 +101,7 @@ import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
@@ -113,17 +120,6 @@ class ReaderScreen(
         val screenModel = getScreenModel<ReaderScreenModel> { parametersOf(mangaId, chapterId) }
 
         val state = screenModel.state.collectAsStateWithLifecycle().value
-
-        LaunchedEffect(Unit) {
-            screenModel.state.collectLatest {
-                it.viewerChapters?.currChapter?.pages?.map { page ->
-                    page.statusFlow.onEach {
-                        Log.d(page.chapter.chapter.id, it.toString())
-                    }
-                        .launchIn(this)
-                }
-            }
-        }
 
         Box(Modifier.fillMaxSize()) {
             if (state.viewerChapters != null) {
@@ -175,7 +171,7 @@ fun HorizontalReader(
         }
     }
 
-    val layoutDirection by ReaderPrefs.layoutDirection.asState(
+    val layoutDirection by ReaderPrefs.layoutDirection.collectAsState(
         defaultValue = LayoutDirection.Rtl,
         store = { dir -> dir.ordinal },
         convert = { v -> if (v == 1) LayoutDirection.Rtl else LayoutDirection.Ltr }
@@ -215,12 +211,16 @@ fun HorizontalReader(
             navigator.pop()
         },
         onViewOnWebClick = {
-            context.startActivity(
-                Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse("https://mangadex.org/chapter/${readerChapter.chapter.id}")
+            try {
+                context.startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://mangadex.org/chapter/${readerChapter.chapter.id}/${readerChapter.requestedPage}")
+                    )
                 )
-            )
+            } catch (e: ActivityNotFoundException) {
+                Toast.makeText(context, "couldn't find a way to open chapter", Toast.LENGTH_SHORT).show()
+            }
         }
     ) {
         CompositionLocalProvider(
@@ -303,7 +303,6 @@ fun HorizontalReader(
                                 Text("A problem occurred while loading the page")
                             }
                         }
-                        else -> Unit
                     }
                 }
             }
@@ -328,10 +327,10 @@ fun ReaderMenuOverlay(
     content: @Composable () -> Unit,
 ) {
     val space = LocalSpacing.current
-    val expandableState = rememberExpandableState(startProgress = DragAnchors.Peek)
+    val expandableState = rememberExpandableState(startProgress = DragAnchors.End)
 
     LaunchedEffect(Unit) {
-        snapshotFlow { expandableState.fraction }.collect {
+        snapshotFlow { expandableState.fraction.value }.collect {
             if (it == 1f) {
                 onDismissRequested()
             }
@@ -371,7 +370,9 @@ fun ReaderMenuOverlay(
                         )
                     }
                 },
-                title = { Text(readerChapter.chapter.title) },
+                title = {
+                    Text(readerChapter.chapter.title)
+                },
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
@@ -382,26 +383,56 @@ fun ReaderMenuOverlay(
             modifier = Modifier.align(Alignment.BottomCenter),
             state = expandableState,
             peekContent = {
-                MenuPageSlider(
-                    modifier = Modifier.padding(space.large),
-                    fraction = expandableState.fraction,
-                    pageIdx = currentPage,
-                    pageCount = readerChapter.pages?.size ?: 0,
-                    onPrevClick = loadPrevChapter,
-                    onNextClick = loadNextChapter,
-                    onPageChange = changePage,
-                    layoutDirection = layoutDirection
-                )
+                Box {
+                    MenuPageSlider(
+                        modifier = Modifier
+                            .padding(space.large)
+                            .align(Alignment.Center)
+                            .consumeWindowInsets(WindowInsets.systemBars),
+                        fraction = expandableState.fraction.value,
+                        pageIdx = currentPage,
+                        pageCount = readerChapter.pages?.size ?: 0,
+                        onPrevClick = loadPrevChapter,
+                        onNextClick = loadNextChapter,
+                        onPageChange = changePage,
+                        layoutDirection = layoutDirection
+                    )
+                    MenuIconsList(
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .wrapContentHeight()
+                            .layout { measurable, constraints ->
+
+                                val placeable = measurable.measure(constraints)
+
+                                val height = placeable.height * (1 - expandableState.fraction.value)
+
+                                layout(placeable.width, height.roundToInt()) {
+                                    placeable.placeRelative(0, 0)
+                                }
+                            }
+                    ) {
+                        IconButton(onClick = { /*TODO*/ }) {
+                            Icon(Icons.Default.Menu, null)
+                        }
+                    }
+                }
             }
-        ){
+        ) {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-                shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
             ) {
+                val lazyListState = rememberLazyListState()
                 LazyColumn(
-                    Modifier
+                    state = lazyListState,
+                    modifier = Modifier
                         .fillMaxHeight(0.6f)
                         .fillMaxWidth()
+                        .nestedScroll(
+                            remember {
+                                expandableState.nestedScrollConnection(lazyListState)
+                            }
+                        )
                 ) {
                     chapterListItems(
                         chapters,
@@ -417,6 +448,27 @@ fun ReaderMenuOverlay(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun MenuIconsList(
+    modifier: Modifier = Modifier,
+    icons: @Composable RowScope.() -> Unit,
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+        shape = RoundedCornerShape(
+            topStart = 8.dp,
+            topEnd = 8.dp
+        )
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            icons()
         }
     }
 }

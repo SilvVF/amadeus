@@ -8,7 +8,6 @@ import com.skydoves.sandwich.ApiResponse
 import com.skydoves.sandwich.message
 import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
-import io.silv.datastore.UserSettingsStore
 import io.silv.datastore.model.Filters
 import io.silv.domain.chapter.ChapterHandler
 import io.silv.domain.manga.GetMangaStatisticsById
@@ -38,7 +37,6 @@ import kotlinx.coroutines.launch
 class MangaViewScreenModel(
     getCombinedSavableMangaWithChapters: GetSavableMangaWithChapters,
     getMangaStatisticsById: GetMangaStatisticsById,
-    private val userSettingsStore: UserSettingsStore,
     private val mangaHandler: MangaHandler,
     private val chapterHandler: ChapterHandler,
     private val downloadManager: DownloadManager,
@@ -226,11 +224,6 @@ class MangaViewScreenModel(
         }
     }
 
-    fun setFilterAsDefault() {
-        screenModelScope.launch {
-            userSettingsStore.updateDefaultFilter(mutableFilters.value)
-        }
-    }
 
     fun pauseDownload(download: Download) {
         screenModelScope.launch {

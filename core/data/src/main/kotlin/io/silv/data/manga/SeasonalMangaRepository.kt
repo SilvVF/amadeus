@@ -8,5 +8,5 @@ import kotlinx.coroutines.flow.Flow
 
 interface SeasonalMangaRepository: Syncable {
 
-    fun getSeasonalLists(): Flow<List<Pair<SeasonalListEntity, List<MangaEntity>>>>
+    fun subscribe(): Flow<List<Pair<SeasonalListEntity, List<MangaEntity>>>>
 }

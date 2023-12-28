@@ -10,4 +10,6 @@ data class SeasonalListEntity(
     @PrimaryKey override val id: String,
     val year: Int,
     val season: Season,
+    val version: Int,
 ) : AmadeusEntity<String>
+

@@ -19,6 +19,9 @@ interface ChapterDao : SyncableDao<ChapterEntity> {
     @Query("SELECT * FROM chapterentity WHERE id = :id LIMIT 1")
     fun observeChapterById(id: String): Flow<ChapterEntity?>
 
+    @Query("SELECT * FROM chapterentity WHERE bookmarked")
+    fun observeBookmarkedChapters(): Flow<List<ChapterEntity>>
+
     @Query("SELECT * FROM chapterentity WHERE id = :id LIMIT 1")
     suspend fun getChapterById(id: String): ChapterEntity?
 

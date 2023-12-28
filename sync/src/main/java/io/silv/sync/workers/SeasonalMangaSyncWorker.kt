@@ -13,15 +13,16 @@ import androidx.work.WorkerParameters
 import io.silv.data.manga.SeasonalMangaRepository
 import io.silv.data.workers.createForegroundInfo
 import io.silv.sync.SeasonalMangaSyncWorkName
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 internal class SeasonalMangaSyncWorker(
     appContext: Context,
     workerParams: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParams), KoinComponent {
+
     private val seasonalMangaRepository by inject<SeasonalMangaRepository>()
 
     override suspend fun doWork(): Result {

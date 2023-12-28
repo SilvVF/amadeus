@@ -9,11 +9,13 @@ import io.silv.database.dao.MangaUpdateDao
 import io.silv.database.dao.RecentSearchDao
 import io.silv.database.dao.SeasonalListDao
 import io.silv.database.dao.TagDao
+import io.silv.database.dao.UserListDao
 import io.silv.database.dao.remotekeys.SeasonalKeysDao
 import io.silv.database.entity.RecentSearchEntity
 import io.silv.database.entity.chapter.ChapterEntity
 import io.silv.database.entity.list.SeasonalListEntity
 import io.silv.database.entity.list.TagEntity
+import io.silv.database.entity.list.UserListEntity
 import io.silv.database.entity.manga.MangaEntity
 import io.silv.database.entity.manga.MangaUpdateEntity
 import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
@@ -27,8 +29,9 @@ import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
         TagEntity::class,
         MangaUpdateEntity::class,
         RecentSearchEntity::class,
+        UserListEntity::class
     ],
-    version = 4,
+    version = 5,
 )
 @TypeConverters(Converters::class)
 abstract class AmadeusDatabase : RoomDatabase() {
@@ -45,4 +48,6 @@ abstract class AmadeusDatabase : RoomDatabase() {
     abstract fun mangaUpdateDao(): MangaUpdateDao
 
     abstract fun recentSearchDao(): RecentSearchDao
+
+    abstract fun userListDao(): UserListDao
 }

@@ -1,5 +1,6 @@
 package io.silv.explore
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
@@ -40,6 +41,8 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -71,7 +74,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import io.silv.datastore.asState
+import io.silv.datastore.collectAsState
 import io.silv.datastore.model.ExplorePrefs
 import io.silv.explore.composables.DisplayOptionsBottomSheet
 import io.silv.explore.composables.ExploreTopAppBar
@@ -144,7 +147,10 @@ class ExploreScreen : Screen {
                 }
         }
 
+        val snackbarHostState = remember{ SnackbarHostState() }
+
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 val scope = rememberCoroutineScope()
                 val context = LocalContext.current
@@ -152,12 +158,28 @@ class ExploreScreen : Screen {
                     selected = state.pagedType,
                     scrollBehavior = scrollBehavior,
                     onWebClick = {
-                        context.startActivity(
-                            Intent(
+                        try {
+                            val intent = Intent(
                                 Intent.ACTION_VIEW,
-                                Uri.parse("https://mangadex.org/")
+                                Uri.parse("https://mangadex.org")
                             )
-                        )
+                            val chooser = Intent.createChooser(intent, "view mangadex website.")
+
+                            // Verify the original intent will resolve to at least one activity
+                            if (intent.resolveActivity(context.packageManager) != null) {
+                                context.startActivity(chooser)
+                            } else {
+                                context.startActivity(intent)
+                            }
+                        } catch (e: ActivityNotFoundException) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Couldn't open url.")
+                            }
+                        } catch (e: Exception) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Couldn't open url.")
+                            }
+                        }
                     },
                     onDisplayOptionsClick = {
                         scope.launch {
@@ -215,7 +237,9 @@ class ExploreScreen : Screen {
                     state = expandableState,
                     peekContent = {
                         RecentSearchesPeekContent(
-                            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight(),
                             recentSearchUiState = state.recentSearchUiState,
                             query = state.filters?.title,
                             onRecentSearchClick = screenModel::onSearch,
@@ -379,11 +403,11 @@ fun BrowseMangaContent(
 ) {
     val navigator = LocalNavigator.current
 
-    val gridCells by ExplorePrefs.gridCellsPrefKey.asState(ExplorePrefs.gridCellsDefault)
-    val showSeasonalLists by ExplorePrefs.showSeasonalListPrefKey.asState(
+    val gridCells by ExplorePrefs.gridCellsPrefKey.collectAsState(ExplorePrefs.gridCellsDefault)
+    val showSeasonalLists by ExplorePrefs.showSeasonalListPrefKey.collectAsState(
         ExplorePrefs.showSeasonalDefault
     )
-    val cardType by ExplorePrefs.cardTypePrefKey.asState(
+    val cardType by ExplorePrefs.cardTypePrefKey.collectAsState(
         defaultValue = CardType.Compact,
         store = { it.toString() },
         convert = { CardType.valueOf(it) },

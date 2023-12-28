@@ -23,6 +23,7 @@ class PreferenceMutableState<T>(
     private val key: Preferences.Key<T>,
     private val scope: CoroutineScope,
 ) : MutableState<T>, KoinComponent {
+
     private val dataStore by inject<DataStore<Preferences>>()
 
     private val state =
@@ -96,8 +97,20 @@ class PreferenceMutableStateWithConversion<T, V>(
     override fun component2(): (T) -> Unit = { value = it }
 }
 
-@Composable
 fun <T> Preferences.Key<T>.asState(
+    defaultValue: T,
+    scope: CoroutineScope,
+) = PreferenceMutableState(defaultValue, this, scope)
+
+fun <T, V> Preferences.Key<V>.asState(
+    defaultValue: T,
+    convert: (V) -> T,
+    store: (T) -> V,
+    scope: CoroutineScope,
+) = PreferenceMutableStateWithConversion(defaultValue, convert, store, this, scope)
+
+@Composable
+fun <T> Preferences.Key<T>.collectAsState(
     defaultValue: T,
     scope: CoroutineScope = rememberCoroutineScope(),
 ) = remember {
@@ -105,7 +118,7 @@ fun <T> Preferences.Key<T>.asState(
 }
 
 @Composable
-fun <T, V> Preferences.Key<V>.asState(
+fun <T, V> Preferences.Key<V>.collectAsState(
     defaultValue: T,
     convert: (V) -> T,
     store: (T) -> V,

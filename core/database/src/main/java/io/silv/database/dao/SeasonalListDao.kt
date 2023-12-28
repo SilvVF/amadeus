@@ -20,6 +20,9 @@ interface SeasonalListDao {
     @Query("SELECT * FROM SeasonalListEntity")
     fun observeSeasonalLists(): Flow<List<SeasonalListEntity>>
 
+    @Query("SELECT * FROM SeasonalListEntity")
+    fun getSeasonalLists(): List<SeasonalListEntity>
+
     @Query("DELETE FROM SeasonalListEntity")
     suspend fun clear()
 

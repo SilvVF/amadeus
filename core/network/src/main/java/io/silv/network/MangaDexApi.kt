@@ -21,8 +21,12 @@ import io.silv.network.requests.MangaRequest
 import io.silv.network.requests.query.createQuery
 import kotlinx.coroutines.withContext
 
+internal typealias AtHomeClient = HttpClient
+internal typealias MangaDexClient = HttpClient
+
 class MangaDexApi(
-    private val client: HttpClient,
+    private val client: MangaDexClient,
+    private val atHomeClient: AtHomeClient,
     private val dispatchers: AmadeusDispatchers,
 ) {
     val mangaDexUrl = "https://api.mangadex.org"
@@ -105,6 +109,6 @@ class MangaDexApi(
 
     suspend fun getChapterImages(chapterId: String) =
         withContext(dispatchers.io) {
-            client.getApiResponse<ChapterImageResponse>("$mangaDexUrl/at-home/server/$chapterId")
+            atHomeClient.getApiResponse<ChapterImageResponse>("$mangaDexUrl/at-home/server/$chapterId")
         }
 }

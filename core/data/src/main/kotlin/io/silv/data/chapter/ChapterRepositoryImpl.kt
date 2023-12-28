@@ -5,12 +5,16 @@ import com.skydoves.sandwich.getOrNull
 import com.skydoves.sandwich.getOrThrow
 import com.skydoves.sandwich.suspendMapSuccess
 import com.skydoves.sandwich.suspendOnFailure
+import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.ProgressState
 import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.minus
 import io.silv.data.mappers.toChapterEntity
+import io.silv.data.util.UpdateChapterList
+import io.silv.database.dao.ChapterDao
 import io.silv.database.entity.chapter.ChapterEntity
+import io.silv.network.MangaDexApi
 import io.silv.network.requests.ChapterListRequest
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
@@ -22,15 +26,15 @@ import kotlin.time.Duration.Companion.hours
 
 
 internal class ChapterRepositoryImpl(
-    private val chapterDao: io.silv.database.dao.ChapterDao,
-    private val mangaDexApi: io.silv.network.MangaDexApi,
-    private val updateChapterList: io.silv.data.util.UpdateChapterList,
-    private val dispatchers: io.silv.common.AmadeusDispatchers,
+    private val chapterDao: ChapterDao,
+    private val mangaDexApi: MangaDexApi,
+    private val updateChapterList: UpdateChapterList,
+    private val dispatchers: AmadeusDispatchers,
 ): ChapterRepository {
 
     override suspend fun bookmarkChapter(id: String)  {
         withContext(dispatchers.io) {
-            chapterDao.getChapterById(id)?.let {prev ->
+            chapterDao.getChapterById(id)?.let { prev ->
                 chapterDao.updateChapter(
                     prev.copy(bookmarked = !prev.bookmarked)
                 )

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,15 +29,21 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.silv.common.filterUnique
 import io.silv.common.model.Status
+import io.silv.manga.manga_view.MangaStats
+import io.silv.manga.manga_view.StatsUiState
 import io.silv.model.SavableManga
 import io.silv.ui.fillMaxAfterMesaure
 import io.silv.ui.theme.LocalSpacing
 
 @Composable
 fun MangaImageWithTitle(
+    modifier: Modifier = Modifier,
     manga: SavableManga,
-    modifier: Modifier,
+    stats: StatsUiState,
     padding: PaddingValues,
+    showChapterArt: () -> Unit,
+    addToLibrary: (String) -> Unit,
+    viewOnWeb: () -> Unit,
 ) {
     val space = LocalSpacing.current
 
@@ -51,31 +56,41 @@ fun MangaImageWithTitle(
                 .align(TopStart),
             manga = manga,
         )
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(padding)
-                .padding(space.med),
+        Column(
+            Modifier.padding(horizontal = space.med)
         ) {
-            AsyncImage(
-                model = manga,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier =
+            Row(
                 Modifier
-                    .fillMaxWidth(0.35f)
-                    .clip(RoundedCornerShape(12.dp)),
+                    .fillMaxWidth()
+                    .padding(padding)
+                    .padding(space.med),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                MangaTitle(
+                    modifier =
+                    Modifier
+                        .fillMaxWidth(0.9f)
+                       ,
+                    status = manga.status,
+                    year = manga.year,
+                    title = manga.titleEnglish,
+                    altTitle = manga.alternateTitles["ja-ro"] ?: "",
+                    authors = remember(manga) { (manga.authors + manga.artists).filterUnique { it }.joinToString() },
+                )
+            }
+            MangaStats(
+                modifier = Modifier.fillMaxWidth(),
+                state = stats,
             )
-            MangaTitle(
-                modifier =
-                Modifier
-                    .weight(1f)
-                    .padding(horizontal = space.med),
-                status = manga.status,
-                year = manga.year,
-                title = manga.titleEnglish,
-                altTitle = manga.alternateTitles["ja-ro"] ?: "",
-                authors = remember(manga) { (manga.authors + manga.artists).filterUnique { it }.joinToString() },
+            MangaActions(
+                modifier = Modifier.fillMaxWidth(),
+                inLibrary = manga.inLibrary,
+                showChapterArt = showChapterArt,
+                addToLibraryClicked = {
+                   addToLibrary(manga.id)
+                },
+                viewOnWebClicked = viewOnWeb
             )
         }
     }

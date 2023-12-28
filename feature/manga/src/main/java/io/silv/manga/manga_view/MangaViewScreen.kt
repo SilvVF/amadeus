@@ -1,6 +1,8 @@
 package io.silv.manga.manga_view
 
-import androidx.activity.compose.BackHandler
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -53,11 +55,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
@@ -67,9 +71,8 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import io.silv.manga.composables.MangaDescriptionWithActions
+import io.silv.manga.composables.MangaDescription
 import io.silv.manga.composables.MangaImageWithTitle
-import io.silv.manga.composables.WebViewOverlay
 import io.silv.manga.composables.chapterListItems
 import io.silv.manga.composables.volumePosterItems
 import io.silv.navigation.SharedScreen
@@ -79,12 +82,13 @@ import io.silv.ui.collectEvents
 import io.silv.ui.isScrollingUp
 import io.silv.ui.layout.ScrollbarLazyColumn
 import io.silv.ui.theme.LocalSpacing
+import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 
 class MangaViewScreen(
     private val mangaId: String,
 ) : Screen {
-    @OptIn(ExperimentalMaterial3Api::class)
+
     @Composable
     override fun Content() {
         val screenModel = getScreenModel<MangaViewScreenModel> { parametersOf(mangaId) }
@@ -148,27 +152,36 @@ class MangaViewScreen(
             }
         }
 
-        var webUrl by rememberSaveable { mutableStateOf<String?>(null) }
-
-        BackHandler(
-            enabled = webUrl != null,
-        ) {
-            webUrl = null
-        }
-
-        if (webUrl != null) {
-            webUrl?.let {
-                WebViewOverlay(
-                    base = it,
-                )
-            }
-            return
-        }
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
 
         MangaViewScreenContent(
             state = state,
             snackbarHostState = snackbarHostState,
-            viewOnWeb = { url -> webUrl = url },
+            viewOnWeb = { url ->
+                try {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse(url)
+                    )
+                    val chooser = Intent.createChooser(intent, "view on mangadex website.")
+
+                    // Verify the original intent will resolve to at least one activity
+                    if (intent.resolveActivity(context.packageManager) != null) {
+                        context.startActivity(chooser)
+                    } else {
+                        context.startActivity(intent)
+                    }
+                } catch (e: ActivityNotFoundException) {
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Couldn't open url.")
+                    }
+                } catch (e: Exception) {
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Couldn't open url.")
+                    }
+                }
+            },
             filterActions =
             FilterActions(
                 downloaded = screenModel::filterDownloaded,
@@ -177,7 +190,7 @@ class MangaViewScreen(
                 source = screenModel::filterBySource,
                 bookmarked = screenModel::filterBookmarked,
                 unread = screenModel::filterUnread,
-                setAsDefault = screenModel::setFilterAsDefault,
+                setAsDefault = {},
             ),
             chapterActions =
             ChapterActions(
@@ -342,32 +355,27 @@ fun MangaViewSuccessScreen(
                     manga = state.manga,
                     modifier = Modifier.fillMaxWidth(),
                     padding = paddingValues,
+                    stats = state.statsUiState,
+                    viewOnWeb = {
+                        viewOnWeb("https://mangadex.org/title/${state.manga.id}")
+                    },
+                    addToLibrary = mangaActions.addToLibrary,
+                    showChapterArt = {
+                        currentBottomSheet = VOLUME_ART_BOTTOM_SHEET
+                    },
                 )
             }
             item("manga-info") {
                 Column {
-                    MangaStats(
-                        modifier = Modifier.fillMaxWidth(),
-                        state = state.statsUiState,
-                    )
-                    MangaDescriptionWithActions(
+                    MangaDescription(
                         manga = state.manga,
-                        inLibrary = state.manga.inLibrary,
-                        addToLibraryClicked = mangaActions.addToLibrary,
                         onTagSelected = { tag ->
                             state.manga.tagToId[tag]?.let { id ->
                                 navigator.push(SharedScreen.MangaFilter(tag, id))
                             }
                         },
-                        viewOnWebClicked = {
-                            viewOnWeb("https://mangadex.org/title/${state.manga.id}")
-                        },
-                        showChapterArt = {
-                            currentBottomSheet = VOLUME_ART_BOTTOM_SHEET
-                        },
                     )
                     Spacer(modifier = Modifier.height(22.dp))
-
                     val maxChapterNum =
                         remember(state.chapters) {
                             state.chapters.maxOfOrNull { it.chapter } ?: 0
@@ -448,7 +456,7 @@ fun MangaViewSuccessScreen(
 }
 
 @Composable
-private fun MangaStats(
+fun MangaStats(
     state: StatsUiState,
     modifier: Modifier = Modifier,
     ratingItem: @Composable RowScope.(rating: Double) -> Unit = { rating ->
@@ -502,7 +510,7 @@ private fun MangaStats(
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly,
+        horizontalArrangement = Arrangement.spacedBy(space.med),
     ) {
         when (state) {
             is StatsUiState.Error -> {}

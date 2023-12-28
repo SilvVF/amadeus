@@ -62,9 +62,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDismissState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -78,17 +79,20 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastFirstOrNull
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.silv.model.SavableChapter
+import io.silv.navigation.SharedScreen
+import io.silv.navigation.push
 import io.silv.ui.CenterBox
 import io.silv.ui.ReselectTab
 import io.silv.ui.collectEvents
@@ -98,7 +102,10 @@ import io.silv.ui.header
 import io.silv.ui.noRippleClickable
 import io.silv.ui.theme.LocalSpacing
 import io.silv.ui.theme.Pastel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.flowOf
 
 object LibraryTab : ReselectTab {
     private val reselectChannel = Channel<Unit>()
@@ -128,24 +135,27 @@ object LibraryTab : ReselectTab {
     }
 }
 
+enum class LibTab {
+    Library, Chapters, Updates, UserLists
+}
+
 class LibraryScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
     @Composable
     override fun Content() {
-        val sm = getScreenModel<LibrarySM>()
-        val mangasToChapters by sm.mangaWithDownloadedChapters.collectAsStateWithLifecycle()
+
+        val screenModel = getScreenModel<LibraryScreenModel>()
+
+        val state by screenModel.state.collectAsStateWithLifecycle()
+
         val space = LocalSpacing.current
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
             state = rememberTopAppBarState()
         )
-        val bookmarkedChapters by sm.bookmarkedChapters.collectAsStateWithLifecycle()
-        val downloadingOrDeletingIds by sm.downloadingOrDeleting.collectAsStateWithLifecycle(
-            emptyList()
-        )
-        val updatedManga by sm.updates.collectAsStateWithLifecycle()
+
         val snackbarHostState = remember { SnackbarHostState() }
 
-        sm.collectEvents { event ->
+        screenModel.collectEvents { event ->
             when (event) {
                 is LibraryEvent.BookmarkStatusChanged -> {
                     val result =
@@ -157,7 +167,7 @@ class LibraryScreen : Screen {
                         )
                     when (result) {
                         SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed -> sm.changeChapterBookmarked(event.id)
+                        SnackbarResult.ActionPerformed -> screenModel.changeChapterBookmarked(event.id)
                     }
                 }
                 is LibraryEvent.ReadStatusChanged -> {
@@ -170,23 +180,16 @@ class LibraryScreen : Screen {
                         )
                     when (result) {
                         SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed -> sm.changeChapterReadStatus(event.id)
+                        SnackbarResult.ActionPerformed -> screenModel.changeChapterReadStatus(event.id)
                     }
                 }
             }
         }
 
-        var searching by rememberSaveable {
-            mutableStateOf(false)
-        }
+        var searching by rememberSaveable { mutableStateOf(false) }
+        var searchText by rememberSaveable { mutableStateOf("") }
 
-        var searchText by rememberSaveable {
-            mutableStateOf("")
-        }
-
-        var selectedTab by rememberSaveable {
-            mutableIntStateOf(0)
-        }
+        var selectedTab by rememberSaveable { mutableStateOf(LibTab.Library) }
 
         Scaffold(
             modifier =
@@ -211,49 +214,41 @@ class LibraryScreen : Screen {
             },
         ) { paddingValues ->
 
-            val filteredItems by remember(searchText, mangasToChapters) {
-                derivedStateOf {
-                    if (searchText.isBlank()) {
-                        return@derivedStateOf mangasToChapters
-                    }
-                    mangasToChapters.filter {
-                        listOf(
-                            it.savableManga.titleEnglish,
-                            it.savableManga.artists.joinToString(),
-                            it.savableManga.authors.joinToString(),
-                        ).any { string ->
-                            searchText.lowercase() in string.lowercase()
-                        }
+            var filteredItems by remember { mutableStateOf(state.libraryManga) }
+
+            LaunchedEffect(searchText, state.libraryManga) {
+                if (searchText.isBlank()) {
+                    return@LaunchedEffect
+                }
+                filteredItems = state.libraryManga.filter {
+                    listOf(
+                        it.savableManga.titleEnglish,
+                        it.savableManga.artists.joinToString(),
+                        it.savableManga.authors.joinToString()
+                    ).any { string ->
+                        searchText.lowercase() in string.lowercase()
                     }
                 }
+                    .toImmutableList()
             }
+
             Column(
                 Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
             ) {
                 TabRow(
-                    selectedTabIndex = selectedTab,
+                    selectedTabIndex = selectedTab.ordinal,
                     modifier = Modifier.fillMaxWidth(),
                     containerColor = Color.Transparent,
                 ) {
-                    Tab(
-                        selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
-                    ) {
-                        Text(text = "Manga", modifier = Modifier.padding(space.large))
-                    }
-                    Tab(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
-                    ) {
-                        Text(text = "Chapters", modifier = Modifier.padding(space.large))
-                    }
-                    Tab(
-                        selected = selectedTab == 2,
-                        onClick = { selectedTab = 2 },
-                    ) {
-                        Text(text = "Updates", modifier = Modifier.padding(space.large))
+                    LibTab.values().forEach {
+                        Tab(
+                            selected = selectedTab == it,
+                            onClick = { selectedTab = it },
+                        ) {
+                            Text(text = it.name, modifier = Modifier.padding(space.large))
+                        }
                     }
                 }
                 AnimatedContent(
@@ -261,7 +256,7 @@ class LibraryScreen : Screen {
                     label = "library-content",
                     modifier = Modifier.padding(space.large),
                     transitionSpec = {
-                        if (initialState < targetState) {
+                        if (initialState.ordinal < targetState.ordinal) {
                             slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
                         } else {
                             slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
@@ -269,7 +264,7 @@ class LibraryScreen : Screen {
                     },
                 ) { selectedTab ->
                     when (selectedTab) {
-                        0 ->
+                        LibTab.Library ->
                             LazyVerticalGrid(
                                 modifier = Modifier.weight(1f),
                                 columns = GridCells.Fixed(2),
@@ -299,17 +294,22 @@ class LibraryScreen : Screen {
                                     }
                                 }
                             }
-                        1 ->
+                        LibTab.Chapters ->
                             BookmarkedChapterList(
-                                bookmarkedChapters = bookmarkedChapters,
+                                bookmarkedChapters = state.bookmarkedChapters,
                                 modifier = Modifier.weight(1f),
-                                changeChapterRead = sm::changeChapterReadStatus,
-                                changeChapterBookmarked = sm::changeChapterBookmarked,
-                                downloadingOrDeletingIds = downloadingOrDeletingIds,
-                                downloadImages = sm::downloadChapterImages,
-                                deleteImages = sm::deleteChapterImages,
+                                changeChapterRead = screenModel::changeChapterReadStatus,
+                                changeChapterBookmarked = screenModel::changeChapterBookmarked,
+                                downloadImages = screenModel::downloadChapterImages,
+                                deleteImages = screenModel::deleteChapterImages,
                             )
-                        else -> UpdatesList(updates = updatedManga, modifier = Modifier.weight(1f))
+                        LibTab.Updates -> UpdatesList(
+                            updates = state.updates,
+                            modifier = Modifier.weight(1f)
+                        )
+                        LibTab.UserLists -> {
+
+                        }
                     }
                 }
             }
@@ -324,6 +324,7 @@ fun UpdatesList(
 ) {
     val context = LocalContext.current
     val space = LocalSpacing.current
+    val navigator = LocalNavigator.currentOrThrow
     if (updates.isEmpty()) {
         CenterBox(modifier = Modifier.fillMaxSize()) {
             Text(text = "No updates for manga.")
@@ -341,9 +342,9 @@ fun UpdatesList(
                                 .fillMaxWidth()
                                 .padding(space.large)
                                 .clickable {
-//                                    navigator?.push(
-//                                        MangaReaderScreen(it.manga.id, it.chapterId)
-//                                    )
+                                    navigator.push(
+                                        SharedScreen.Reader(it.manga.id, it.chapterId)
+                                    )
                                 },
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically,
@@ -359,9 +360,9 @@ fun UpdatesList(
                                 Modifier
                                     .size(140.dp)
                                     .clickable {
-//                                        navigator?.push(
-//                                            MangaViewScreen(it.manga)
-//                                        )
+                                        navigator.push(
+                                            SharedScreen.MangaView(it.manga.id)
+                                        )
                                     },
                             )
                             Column {
@@ -378,9 +379,9 @@ fun UpdatesList(
                                 .fillMaxWidth()
                                 .padding(space.large)
                                 .clickable {
-//                                    navigator?.push(
-//                                        MangaReaderScreen(it.manga.id, it.chapterId)
-//                                    )
+                                    navigator.push(
+                                        SharedScreen.Reader(it.manga.id, it.chapterId)
+                                    )
                                 },
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically,
@@ -396,9 +397,9 @@ fun UpdatesList(
                                 Modifier
                                     .size(140.dp)
                                     .clickable {
-//                                        navigator?.push(
-//                                            MangaViewScreen(it.manga)
-//                                        )
+                                        navigator.push(
+                                            SharedScreen.MangaView(it.manga.id)
+                                        )
                                     },
                             )
                             Column {
@@ -416,22 +417,22 @@ fun UpdatesList(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun BookmarkedChapterList(
-    bookmarkedChapters: List<SavableChapter>,
+    bookmarkedChapters: ImmutableList<LibraryChapter>,
     modifier: Modifier,
     changeChapterRead: (id: String) -> Unit,
     changeChapterBookmarked: (id: String) -> Unit,
-    downloadingOrDeletingIds: List<Pair<String, Float>>,
     downloadImages: (List<String>, String) -> Unit,
-    deleteImages: (List<String>) -> Unit,
+    deleteImages: (List<String>, mangaId: String) -> Unit,
 ) {
     val chaptersByManga by remember {
         derivedStateOf {
-            bookmarkedChapters.groupBy { chapter -> chapter.mangaId }
-                .mapKeys { (_, chapter) -> chapter.sortedBy { it.chapter } }
+            bookmarkedChapters.groupBy { (chapter, _) -> chapter.mangaId }
+                .mapKeys { (_, chapter) -> chapter.sortedBy { it.chapter.chapter } }
                 .map { (_, v) -> v.toList() }
         }
     }
     val space = LocalSpacing.current
+    val navigator = LocalNavigator.currentOrThrow
 
     LazyColumn(modifier) {
         if (chaptersByManga.isEmpty()) {
@@ -451,12 +452,12 @@ fun BookmarkedChapterList(
                 when {
                     dismissState.isDismissed(DismissDirection.EndToStart) ->
                         Reset(dismissState = dismissState) {
-                            changeChapterRead(chapter.id)
+                            changeChapterRead(chapter.chapter.id)
                         }
 
                     dismissState.isDismissed(DismissDirection.StartToEnd) ->
                         Reset(dismissState = dismissState) {
-                            changeChapterBookmarked(chapter.id)
+                            changeChapterBookmarked(chapter.chapter.id)
                         }
                 }
                 SwipeToDismiss(
@@ -480,7 +481,7 @@ fun BookmarkedChapterList(
                                         ) {
                                             Icon(
                                                 imageVector =
-                                                if (chapter.bookmarked) {
+                                                if (chapter.chapter.bookmarked) {
                                                     Icons.Default.BookmarkRemove
                                                 } else {
                                                     Icons.Default.BookmarkAdd
@@ -488,7 +489,7 @@ fun BookmarkedChapterList(
                                                 contentDescription = "bookmark",
                                             )
                                             Text(
-                                                if (chapter.bookmarked) "Remove bookmark" else "Add bookmark"
+                                                if (chapter.chapter.bookmarked) "Remove bookmark" else "Add bookmark"
                                             )
                                         }
 
@@ -500,14 +501,14 @@ fun BookmarkedChapterList(
                                         ) {
                                             Icon(
                                                 imageVector =
-                                                if (chapter.read) {
+                                                if (chapter.chapter.read) {
                                                     Icons.Default.VisibilityOff
                                                 } else {
                                                     Icons.Default.Visibility
                                                 },
                                                 contentDescription = "read",
                                             )
-                                            Text(if (chapter.read) "Mark unread" else "Mark read")
+                                            Text(if (chapter.chapter.read) "Mark unread" else "Mark read")
                                         }
 
                                     else -> Unit
@@ -519,6 +520,10 @@ fun BookmarkedChapterList(
                     Modifier
                         .animateItemPlacement(),
                     dismissContent = {
+                        val downloadProgress by chapter.download?.progressFlow
+                            ?.collectAsStateWithLifecycle(0)
+                            ?: flowOf(0).collectAsState(initial = 0)
+
                         ChapterListItem(
                             modifier =
                             Modifier
@@ -528,22 +533,22 @@ fun BookmarkedChapterList(
                                     vertical = space.med,
                                     horizontal = space.large,
                                 ),
-                            chapter = chapter,
-                            downloadProgress = downloadingOrDeletingIds.fastFirstOrNull { it.first == chapter.id }?.second,
+                            chapter = chapter.chapter,
+                            downloadProgress = downloadProgress.toFloat(),
                             showFullTitle = true,
                             onDownloadClicked = {
-                                downloadImages(listOf(chapter.id), chapter.mangaId)
+                                downloadImages(listOf(chapter.chapter.id), chapter.chapter.mangaId)
                             },
                             onDeleteClicked = {
-                                deleteImages(listOf(chapter.id))
+                                deleteImages(listOf(chapter.chapter.id), chapter.chapter.mangaId)
                             },
                             onReadClicked = {
-//                                navigator?.push(
-//                                    MangaReaderScreen(
-//                                        chapter.mangaId,
-//                                        chapter.id
-//                                    )
-//                                )
+                                navigator.push(
+                                    SharedScreen.Reader(
+                                        mangaId = chapter.chapter.mangaId,
+                                        initialChapterId = chapter.chapter.id
+                                    )
+                                )
                             },
                         )
                     },

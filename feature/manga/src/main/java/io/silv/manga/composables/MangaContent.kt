@@ -52,31 +52,15 @@ import io.silv.model.SavableManga
 import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.noRippleClickable
 import io.silv.ui.theme.LocalSpacing
-import kotlin.math.roundToInt
 import kotlinx.collections.immutable.persistentListOf
+import kotlin.math.roundToInt
 
 @Composable
-fun ColumnScope.MangaDescriptionWithActions(
+fun ColumnScope.MangaDescription(
     manga: SavableManga,
-    inLibrary: Boolean,
-    addToLibraryClicked: (String) -> Unit,
     onTagSelected: (tag: String) -> Unit,
-    showChapterArt: () -> Unit,
-    viewOnWebClicked: () -> Unit,
 ) {
     val space = LocalSpacing.current
-    MangaActions(
-        modifier =
-        Modifier
-            .padding(vertical = space.med)
-            .fillMaxWidth(),
-        inLibrary = inLibrary,
-        addToLibraryClicked = {
-            addToLibraryClicked(manga.id)
-        },
-        viewOnWebClicked = viewOnWebClicked,
-        showChapterArt = showChapterArt,
-    )
     MangaInfo(
         manga = manga,
         onTagSelected = onTagSelected,
@@ -92,7 +76,7 @@ private data class MangaActionItem(
 )
 
 @Composable
-private fun MangaActions(
+fun MangaActions(
     modifier: Modifier,
     inLibrary: Boolean,
     showChapterArt: () -> Unit,

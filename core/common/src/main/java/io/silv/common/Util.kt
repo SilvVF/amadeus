@@ -1,13 +1,15 @@
 package io.silv.common
 
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 @OptIn(ExperimentalContracts::class)
 suspend inline fun <T, R> Iterable<T>.pmap(crossinline transform: suspend (T) -> R): List<R> {
@@ -24,6 +26,8 @@ suspend inline fun <T, R> Iterable<T>.pmap(crossinline transform: suspend (T) ->
     }
         .awaitAll()
 }
+
+fun <T> emptyImmutableList(): ImmutableList<T> = persistentListOf()
 
 @OptIn(ExperimentalContracts::class)
 suspend inline fun <T, R> Sequence<T>.pmap(crossinline transform: suspend (T) -> R): List<R> {

@@ -8,22 +8,24 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
-import io.silv.model.SavableManga
+import io.silv.domain.manga.model.Manga
 import io.silv.ui.CenterBox
 import io.silv.ui.composables.CardType
 import io.silv.ui.composables.MangaListItem
 import io.silv.ui.theme.LocalSpacing
+import kotlinx.coroutines.flow.StateFlow
 
 fun LazyGridScope.mangaGrid(
-    manga: LazyPagingItems<SavableManga>,
+    manga: LazyPagingItems<StateFlow<Manga>>,
     cardType: CardType,
-    onTagClick: (manga: SavableManga, name: String) -> Unit,
-    onBookmarkClick: (manga: SavableManga) -> Unit,
-    onMangaClick: (manga: SavableManga) -> Unit,
+    onTagClick: (manga: Manga, name: String) -> Unit,
+    onBookmarkClick: (manga: Manga) -> Unit,
+    onMangaClick: (manga: Manga) -> Unit,
 ) {
     items(
         count = manga.itemCount,
@@ -31,12 +33,12 @@ fun LazyGridScope.mangaGrid(
         key = manga.itemKey(),
     ) { i ->
 
-        val item = manga[i]
+        val item = manga[i]?.collectAsStateWithLifecycle()
         val space = LocalSpacing.current
 
-        item?.let { manga ->
+        item?.value?.let { manga ->
             MangaListItem(
-                manga = item,
+                manga = manga,
                 cardType = cardType,
                 modifier =
                 Modifier

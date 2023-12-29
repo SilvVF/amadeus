@@ -31,14 +31,14 @@ import io.silv.common.filterUnique
 import io.silv.common.model.Status
 import io.silv.manga.manga_view.MangaStats
 import io.silv.manga.manga_view.StatsUiState
-import io.silv.model.SavableManga
+import io.silv.domain.manga.model.Manga
 import io.silv.ui.fillMaxAfterMesaure
 import io.silv.ui.theme.LocalSpacing
 
 @Composable
 fun MangaImageWithTitle(
     modifier: Modifier = Modifier,
-    manga: SavableManga,
+    manga: Manga,
     stats: StatsUiState,
     padding: PaddingValues,
     showChapterArt: () -> Unit,
@@ -194,7 +194,7 @@ private fun MangaTitle(
 @Composable
 private fun BackgroundImageDarkened(
     modifier: Modifier,
-    manga: SavableManga,
+    manga: Manga,
     background: Color = MaterialTheme.colorScheme.background,
 ) {
     Box(

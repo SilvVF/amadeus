@@ -10,7 +10,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
-import io.silv.data.manga.SeasonalMangaRepository
+import io.silv.domain.manga.repository.SeasonalMangaRepository
 import io.silv.data.workers.createForegroundInfo
 import io.silv.sync.SeasonalMangaSyncWorkName
 import org.koin.core.component.KoinComponent

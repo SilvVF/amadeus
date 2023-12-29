@@ -3,11 +3,11 @@ package eu.kanade.tachiyomi
 import coil.key.Keyer
 import coil.request.Options
 import io.silv.common.model.MangaCover
-import io.silv.model.SavableManga
+import io.silv.domain.manga.model.Manga
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 
-fun SavableManga.asMangaCover(): MangaCover {
+fun Manga.asMangaCover(): MangaCover {
     return MangaCover(
         mangaId = id,
         url = coverArt,
@@ -16,13 +16,13 @@ fun SavableManga.asMangaCover(): MangaCover {
     )
 }
 
-fun SavableManga.hasCustomCover(): Boolean {
+fun Manga.hasCustomCover(): Boolean {
     return false
 }
 
-class MangaKeyer : Keyer<SavableManga> {
+class MangaKeyer : Keyer<Manga> {
     override fun key(
-        data: SavableManga,
+        data: Manga,
         options: Options,
     ): String {
         return if (data.hasCustomCover()) {

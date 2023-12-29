@@ -10,7 +10,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
-import io.silv.data.tags.TagRepository
+import io.silv.domain.TagRepository
 import io.silv.data.workers.createForegroundInfo
 import io.silv.sync.TagSyncWorkName
 import kotlin.time.Duration.Companion.seconds

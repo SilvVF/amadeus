@@ -30,7 +30,7 @@ val screenModule =
         factory {
             ExploreScreenModel(
                 subscribeToPagingData = get(),
-                subscribeToSeasonalLists = get(),
+                seasonalManga = get(),
                 recentSearchHandler = get(),
                 mangaHandler = get(),
                 seasonalMangaSyncManager = get(qualifier = named(SeasonalMangaSyncWorkName)),

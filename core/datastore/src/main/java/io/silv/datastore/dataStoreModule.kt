@@ -9,5 +9,7 @@ val dataStoreModule =
 
         single { androidContext().dataStore }
 
+        single { MangaDexUserStore(get()) }
+
         singleOf(::DownloadStore)
     }

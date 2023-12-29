@@ -4,16 +4,16 @@ import android.util.Log
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import eu.kanade.tachiyomi.reader.loader.ChapterLoader
-import eu.kanade.tachiyomi.reader.model.ReaderChapter
+import io.silv.reader.loader.ChapterLoader
+import io.silv.reader.loader.ReaderChapter
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.Download
 import io.silv.common.model.Page
 import io.silv.data.download.DownloadManager
-import io.silv.domain.chapter.ChapterHandler
-import io.silv.domain.manga.GetSavableMangaWithChapters
-import io.silv.model.SavableChapter
-import io.silv.model.SavableManga
+import io.silv.domain.chapter.interactor.ChapterHandler
+import io.silv.domain.manga.interactor.GetMangaWithChapters
+import io.silv.domain.chapter.model.Chapter
+import io.silv.domain.manga.model.Manga
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CancellationException
@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ReaderScreenModel(
-    private val getSavableMangaWithChapters: GetSavableMangaWithChapters,
+    private val getSavableMangaWithChapters: GetMangaWithChapters,
     private val chapterHandler: ChapterHandler,
     private val downloadManager: DownloadManager,
     private val mangaId: String,
@@ -234,7 +234,7 @@ data class ViewerChapters(
 @Immutable
 data class ReaderState(
     val viewerChapters: ViewerChapters? = null,
-    val manga: SavableManga? = null,
+    val manga: Manga? = null,
     val loadingAdjacent: Boolean = false,
-    val chapters: ImmutableList<SavableChapter> = persistentListOf()
+    val chapters: ImmutableList<Chapter> = persistentListOf()
 )

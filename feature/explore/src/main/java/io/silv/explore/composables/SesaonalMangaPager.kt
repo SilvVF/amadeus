@@ -71,24 +71,25 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import io.silv.common.lerp
-import io.silv.model.SavableManga
+import io.silv.domain.manga.model.Manga
 import io.silv.ui.CenterBox
 import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.isLight
 import io.silv.ui.theme.LocalSpacing
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.math.ceil
 import kotlin.math.roundToInt
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SeasonalMangaPager(
     modifier: Modifier,
-    mangaList: ImmutableList<SavableManga>,
-    onMangaClick: (manga: SavableManga) -> Unit,
-    onBookmarkClick: (manga: SavableManga) -> Unit,
+    mangaList: ImmutableList<Manga>,
+    onMangaClick: (manga: Manga) -> Unit,
+    onBookmarkClick: (manga: Manga) -> Unit,
     onTagClick: (name: String, id: String) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -265,7 +266,7 @@ fun AnimatedPageNumber(
 fun SeasonalPagingCard(
     pagerState: PagerState,
     page: Int,
-    manga: SavableManga,
+    manga: Manga,
     onBookmarkClick: () -> Unit,
     onClick: () -> Unit,
     onTagClick: (name: String) -> Unit,
@@ -394,7 +395,11 @@ fun SeasonalPagingCard(
                         color = vibrantColor,
                     ),
                 )
-                TranslatedLanguageTags(tags = manga.availableTranslatedLanguages)
+                TranslatedLanguageTags(
+                    tags = remember(manga.id) {
+                        manga.availableTranslatedLanguages.toImmutableList()
+                    }
+                )
                 Box(modifier = Modifier.weight(1f)) {
                     TagsGridWithBookMark(
                         modifier =

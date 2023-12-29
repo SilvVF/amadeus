@@ -6,14 +6,12 @@ import androidx.compose.runtime.Stable
 import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.PagedType
-import io.silv.common.model.Season
-import io.silv.domain.manga.MangaHandler
 import io.silv.domain.manga.SubscribeToPagingData
-import io.silv.domain.manga.SubscribeToSeasonalLists
+import io.silv.domain.manga.interactor.MangaHandler
+import io.silv.domain.manga.repository.SeasonalMangaRepository
 import io.silv.domain.search.RecentSearchHandler
 import io.silv.model.DomainSeasonalList
 import io.silv.model.RecentSearch
-import io.silv.model.SavableManga
 import io.silv.sync.SyncManager
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ioCoroutineScope
@@ -30,7 +28,7 @@ import kotlinx.coroutines.launch
 
 class ExploreScreenModel(
     subscribeToPagingData: SubscribeToPagingData,
-    subscribeToSeasonalLists: SubscribeToSeasonalLists,
+    seasonalManga: SeasonalMangaRepository,
     private val mangaHandler: MangaHandler,
     private val recentSearchHandler: RecentSearchHandler,
     private val seasonalMangaSyncManager: SyncManager,
@@ -48,13 +46,11 @@ class ExploreScreenModel(
             }
             .launchIn(screenModelScope)
 
-        subscribeToSeasonalLists.subscribe()
+        seasonalManga.subscribe()
             .onEach { lists ->
                 mutableState.update { state ->
                     state.copy(
-                        seasonalLists =
-                        lists.map(::toUi)
-                            .toImmutableList(),
+                        seasonalLists = lists.toImmutableList(),
                     )
                 }
             }
@@ -64,7 +60,7 @@ class ExploreScreenModel(
             .onEach { recentSearchResults ->
                 mutableState.update { state ->
                     state.copy(
-                        recentSearchUiState = RecentSearchUiState.Success(recentSearchResults),
+                        recentSearchUiState = RecentSearchUiState.Success(recentSearchResults.toImmutableList()),
                     )
                 }
             }
@@ -145,10 +141,6 @@ class ExploreScreenModel(
     }
 }
 
-fun toUi(list: DomainSeasonalList): UiSeasonalList {
-    return UiSeasonalList(list.id, list.season, list.year, list.mangas)
-}
-
 sealed interface RecentSearchUiState {
     data object Loading : RecentSearchUiState
 
@@ -170,19 +162,10 @@ sealed interface UiPagedType {
 
 @Immutable
 @Stable
-data class UiSeasonalList(
-    val id: String,
-    val season: Season,
-    val year: Int,
-    val mangas: ImmutableList<SavableManga>,
-)
-
-@Immutable
-@Stable
 data class ExploreState(
     val refreshingSeasonal: Boolean = false,
     val pagedType: UiPagedType = UiPagedType.Popular,
-    val seasonalLists: ImmutableList<UiSeasonalList> = persistentListOf(),
+    val seasonalLists: ImmutableList<DomainSeasonalList> = persistentListOf(),
     val recentSearchUiState: RecentSearchUiState = RecentSearchUiState.Loading,
 ) {
     val filters

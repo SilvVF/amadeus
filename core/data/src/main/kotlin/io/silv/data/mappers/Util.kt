@@ -3,7 +3,7 @@ package io.silv.data.mappers
 import io.silv.common.model.TimePeriod
 import io.silv.common.time.timeStringMinus
 import io.silv.network.model.LocalizedString
-import io.silv.network.model.manga.Manga
+import io.silv.network.model.manga.MangaDto
 import kotlin.time.Duration.Companion.days
 
 fun TimePeriod.timeString(): String? {
@@ -19,23 +19,23 @@ fun TimePeriod.timeString(): String? {
 }
 
 fun coverArtUrl(
-    manga: Manga,
+    mangaDto: MangaDto,
 ): String {
-    val fileName = manga.relationships
+    val fileName = mangaDto.relationships
         .find { it.type == "cover_art" }
         ?.attributes
         ?.fileName
         ?: ""
 
-    return "https://uploads.mangadex.org/covers/${manga.id}/$fileName"
+    return "https://uploads.mangadex.org/covers/${mangaDto.id}/$fileName"
 }
 
-val Manga.titleEnglish: String
+val MangaDto.titleEnglish: String
     get() = attributes.title.getOrElse("en") {
         attributes.altTitles.firstNotNullOfOrNull { it["en"] ?: it["ja-ro"] ?: it["ja"] } ?: ""
     }
 
-val Manga.tagToId: Map<String, String>
+val MangaDto.tagToId: Map<String, String>
     get() = attributes.tags
         .filter { it.type == "tag" }
         .mapNotNull {
@@ -43,24 +43,24 @@ val Manga.tagToId: Map<String, String>
         }
         .toMap()
 
-val Manga.descriptionEnglish: String
+val MangaDto.descriptionEnglish: String
     get() = attributes.description.getOrDefault("en", "No english description")
 
-val Manga.artists: List<String>
+val MangaDto.artists: List<String>
     get() = this.relationships.filter { it.type == "artist" }
         .map {
             it.attributes?.name ?: ""
         }
 
 
-val Manga.authors: List<String>
+val MangaDto.authors: List<String>
     get() = this.relationships.filter { it.type == "author" }
         .map {
             it.attributes?.name ?: ""
         }
 
 
-val Manga.alternateTitles: Map<String, String>
+val MangaDto.alternateTitles: Map<String, String>
     get() {
         return buildMap {
             attributes.altTitles.forEach { langToTitle: LocalizedString ->

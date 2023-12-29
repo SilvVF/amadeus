@@ -1,5 +1,6 @@
 package io.silv.data.manga
 
+import android.util.Log
 import androidx.room.withTransaction
 import com.skydoves.sandwich.getOrThrow
 import io.silv.common.AmadeusDispatchers
@@ -8,13 +9,17 @@ import io.silv.common.model.Season
 import io.silv.data.mappers.toEntity
 import io.silv.database.AmadeusDatabase
 import io.silv.database.entity.list.SeasonalListEntity
-import io.silv.database.entity.manga.MangaEntity
 import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
+import io.silv.domain.manga.repository.SeasonalMangaRepository
+import io.silv.model.DomainSeasonalList
 import io.silv.network.MangaDexApi
 import io.silv.network.model.list.Data
 import io.silv.network.util.fetchMangaChunked
-import kotlinx.coroutines.flow.Flow
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
@@ -28,12 +33,22 @@ internal class SeasonalMangaRepositoryImpl(
     private val sourceMangaDao = db.sourceMangaDao()
     private val keyDao = db.seasonalRemoteKeysDao()
 
-    override fun subscribe(): Flow<List<Pair<SeasonalListEntity, List<MangaEntity>>>> =
+    init {
+        CoroutineScope(Dispatchers.IO).launch {
+            subscribe().collect {
+                Log.d("Seasonal", it.toString())
+            }
+        }
+    }
+
+    override fun subscribe() =
         seasonalListDao.observeSeasonListWithManga().map { lists ->
             lists.map { item ->
-                Pair(
-                    item.list,
-                    item.manga.map { it.manga }
+                DomainSeasonalList(
+                    item.list.id,
+                    item.list.season,
+                    item.list.year,
+                    item.manga.map { it.manga.let(MangaMapper::mapManga) }.toImmutableList()
                 )
             }
         }

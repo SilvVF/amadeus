@@ -1,0 +1,86 @@
+package io.silv.domain.chapter.model
+
+import androidx.compose.runtime.Stable
+import io.silv.DateTimeAsLongSerializer
+import io.silv.common.model.ChapterResource
+import io.silv.common.model.ProgressState
+import io.silv.common.time.localDateTimeNow
+import io.silv.common.time.minus
+import kotlinx.datetime.LocalDateTime
+import kotlinx.serialization.Serializable
+
+
+@Stable
+data class Chapter(
+    val id: String,
+    val url: String,
+    val bookmarked: Boolean,
+    val downloaded: Boolean,
+    val progress: ProgressState,
+    val mangaId: String,
+    val title: String,
+    val volume: Int,
+    val chapter: Long,
+    val pages: Int = 0,
+    val lastReadPage: Int,
+    val translatedLanguage: String,
+    val uploader: String,
+    val scanlationGroupToId: Pair<String, String>? = null,
+    val userToId: Pair<String, String>? = null,
+    val version: Int,
+    @Serializable(with = DateTimeAsLongSerializer::class)
+    val createdAt: LocalDateTime,
+    @Serializable(with = DateTimeAsLongSerializer::class)
+    val updatedAt: LocalDateTime,
+    @Serializable(with = DateTimeAsLongSerializer::class)
+    val readableAt: LocalDateTime,
+    val ableToDownload: Boolean,
+) {
+    val scanlator = scanlationGroupToId?.first ?: ""
+    val scanlatorid = scanlationGroupToId?.second ?: ""
+
+    private val daysSinceCreated: Long
+        get() = (localDateTimeNow() - this.createdAt).inWholeDays
+
+    val validNumber: Boolean
+        get() = this.chapter >= 0
+
+    val daysSinceCreatedString: String by lazy {
+        daysSinceCreated.run {
+            return@run if (this >= 365) {
+                val yearsAgo = this / 365
+                if (yearsAgo <= 1.0) {
+                    "last year"
+                } else {
+                    "${this / 365} years ago"
+                }
+            } else {
+                if (this <= 0.9) {
+                    "today"
+                } else {
+                    "$this days ago"
+                }
+            }
+        }
+    }
+
+    val read: Boolean = progress == ProgressState.Finished
+
+    val started: Boolean = progress == ProgressState.Reading
+}
+
+fun Chapter.toResource(): ChapterResource {
+    val c = this
+    return object : ChapterResource {
+        override val id: String
+            get() = c.id
+        override val mangaId: String
+            get() = c.mangaId
+        override val scanlator: String
+            get() = c.scanlator
+        override val title: String
+            get() = c.title
+        override val url: String
+            get() = c.url
+    }
+}

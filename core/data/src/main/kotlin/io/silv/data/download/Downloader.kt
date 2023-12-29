@@ -10,11 +10,13 @@ import io.silv.common.model.Download
 import io.silv.common.model.MangaDexSource
 import io.silv.common.model.MangaResource
 import io.silv.common.model.Page
-import io.silv.data.chapter.ChapterRepository
-import io.silv.data.manga.MangaRepository
 import io.silv.data.util.DiskUtil
 import io.silv.data.util.ImageUtil
 import io.silv.datastore.DownloadStore
+import io.silv.domain.chapter.interactor.GetChapter
+import io.silv.domain.chapter.model.toResource
+import io.silv.domain.manga.interactor.GetManga
+import io.silv.domain.manga.model.toResource
 import io.silv.network.MangaDexApi
 import io.silv.network.sources.ImageSourceFactory
 import kotlinx.coroutines.CancellationException
@@ -61,8 +63,8 @@ internal class Downloader(
     private val mangaDexApi: MangaDexApi,
     private val client: OkHttpClient,
     private val store: DownloadStore,
-    private val chapterRepository: ChapterRepository,
-    private val mangaRepository: MangaRepository,
+    private val getChapter: GetChapter,
+    private val getManga: GetManga,
     applicationScope: ApplicationScope,
 ) {
 
@@ -93,8 +95,8 @@ internal class Downloader(
         applicationScope.launch {
             val chapters = async {
                 store.restore(
-                    getManga = mangaRepository::getMangaById,
-                    getChapter = chapterRepository::getChapterById
+                    getManga = { getManga.await(it)?.toResource() },
+                    getChapter = { getChapter.await(it)?.toResource() }
                 )
             }
             addAllToQueue(chapters.await())
@@ -336,7 +338,7 @@ internal class Downloader(
             val pageList = download.pages ?: run {
                 Log.d("Downloader", "getting page list bc empty")
                 // Otherwise, pull page list from network and add them to download object
-                val pages = getPageList(download.chapter.url ?: "", download.chapter.id)
+                val pages = getPageList(download.chapter.url, download.chapter.id)
 
                 if (pages.isEmpty()) {
                     throw Exception("empty Page list")

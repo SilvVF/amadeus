@@ -5,9 +5,12 @@ import io.silv.common.time.epochSeconds
 import io.silv.data.util.syncVersions
 import io.silv.database.dao.TagDao
 import io.silv.database.entity.list.TagEntity
+import io.silv.domain.TagRepository
+import io.silv.model.DomainTag
 import io.silv.network.MangaDexApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 internal class TagRepositoryImpl(
     private val  tagDao: TagDao,
@@ -15,8 +18,12 @@ internal class TagRepositoryImpl(
 ) : TagRepository {
 
 
-    override fun allTags(): Flow<List<TagEntity>> {
-        return tagDao.getAllTags()
+    override fun allTags(): Flow<List<DomainTag>> {
+        return tagDao.getAllTags().map { list ->
+            list.map {
+                DomainTag(group = it.group, name = it.name, id = it.id)
+            }
+        }
     }
 
     override suspend fun sync(): Boolean {

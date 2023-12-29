@@ -31,7 +31,7 @@ import androidx.compose.ui.util.fastFirstOrNull
 import io.silv.common.model.Download
 import io.silv.manga.manga_view.DownloadActions
 import io.silv.manga.manga_view.MangaViewState
-import io.silv.model.SavableChapter
+import io.silv.domain.chapter.model.Chapter
 import io.silv.ui.composables.ChapterDownloadAction
 import io.silv.ui.composables.ChapterDownloadIndicator
 import io.silv.ui.theme.LocalSpacing
@@ -119,7 +119,7 @@ fun LazyListScope.chapterListItems(
 }
 
 @Composable
-private fun chapterTitleWithVolText(chapter: SavableChapter, showFullTitle: Boolean) =
+private fun chapterTitleWithVolText(chapter: Chapter, showFullTitle: Boolean) =
     remember(chapter, showFullTitle) {
         if (showFullTitle) {
             "Chapter ${chapter.chapter.coerceAtLeast(0)}"
@@ -134,7 +134,7 @@ private fun chapterTitleWithVolText(chapter: SavableChapter, showFullTitle: Bool
     }
 
 @Composable
-private fun dateWithScanlationText(chapter: SavableChapter) =
+private fun dateWithScanlationText(chapter: Chapter) =
     remember(chapter) {
         val pageText =
             if (chapter.lastReadPage > 0 && !chapter.read) {
@@ -149,7 +149,7 @@ private fun dateWithScanlationText(chapter: SavableChapter) =
 private fun ChapterListItem(
     modifier: Modifier = Modifier,
     showFullTitle: Boolean,
-    chapter: SavableChapter,
+    chapter: Chapter,
     download: Download?,
     onDownloadClicked: () -> Unit,
     onDeleteClicked: () -> Unit,

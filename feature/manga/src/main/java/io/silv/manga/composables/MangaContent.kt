@@ -48,16 +48,17 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 import com.halilibo.richtext.markdown.Markdown
 import com.halilibo.richtext.ui.material3.Material3RichText
-import io.silv.model.SavableManga
+import io.silv.domain.manga.model.Manga
 import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.noRippleClickable
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlin.math.roundToInt
 
 @Composable
 fun ColumnScope.MangaDescription(
-    manga: SavableManga,
+    manga: Manga,
     onTagSelected: (tag: String) -> Unit,
 ) {
     val space = LocalSpacing.current
@@ -136,7 +137,7 @@ fun MangaActions(
 
 @Composable
 private fun TagsAndLanguages(
-    manga: SavableManga,
+    manga: Manga,
     navigate: (name: String) -> Unit,
 ) {
     val space = LocalSpacing.current
@@ -165,7 +166,11 @@ private fun TagsAndLanguages(
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(space.med),
         )
-        TranslatedLanguageTags(tags = manga.availableTranslatedLanguages)
+        TranslatedLanguageTags(
+            tags = remember(manga.id){
+                manga.availableTranslatedLanguages.toImmutableList()
+            }
+        )
     }
 }
 
@@ -173,7 +178,7 @@ private val whitespaceLineRegex = Regex("[\\r\\n]{2,}", setOf(RegexOption.MULTIL
 
 @Composable
 private fun MangaInfo(
-    manga: SavableManga,
+    manga: Manga,
     onTagSelected: (tag: String) -> Unit,
 ) {
     var expanded by rememberSaveable {

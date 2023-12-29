@@ -11,9 +11,9 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import io.silv.common.pmap
-import io.silv.data.chapter.ChapterRepository
-import io.silv.data.manga.MangaRepository
 import io.silv.data.workers.createForegroundInfo
+import io.silv.domain.chapter.repository.ChapterRepository
+import io.silv.domain.manga.repository.MangaRepository
 import io.silv.sync.MangaSyncWorkName
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject

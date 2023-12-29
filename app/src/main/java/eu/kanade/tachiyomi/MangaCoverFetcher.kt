@@ -15,7 +15,7 @@ import coil.request.Parameters
 import eu.kanade.tachiyomi.MangaCoverFetcher.Companion.USE_CUSTOM_COVER
 import io.silv.common.model.MangaCover
 import io.silv.data.download.await
-import io.silv.model.SavableManga
+import io.silv.domain.manga.model.Manga
 import java.io.File
 import java.net.HttpURLConnection.HTTP_NOT_MODIFIED
 import okhttp3.CacheControl
@@ -30,9 +30,9 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 /**
- * A [Fetcher] that fetches cover image for [SavableManga] object.
+ * A [Fetcher] that fetches cover image for [Manga] object.
  *
- * It uses [SavableManga.coverArt] if custom cover is not set by the user.
+ * It uses [Manga.coverArt] if custom cover is not set by the user.
  * Disk caching for library items is handled by [CoverCache], otherwise
  * handled by Coil's [DiskCache].
  *
@@ -284,11 +284,11 @@ class MangaCoverFetcher(
     class MangaFactory(
         private val callFactoryLazy: Lazy<Call.Factory>,
         private val diskCacheLazy: Lazy<DiskCache>,
-    ) : Fetcher.Factory<SavableManga>, KoinComponent {
+    ) : Fetcher.Factory<Manga>, KoinComponent {
         private val coverCache: CoverCache by inject()
 
         override fun create(
-            data: SavableManga,
+            data: Manga,
             options: Options,
             imageLoader: ImageLoader,
         ): Fetcher {

@@ -38,7 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import io.silv.model.SavableManga
+import io.silv.domain.manga.model.Manga
 import io.silv.ui.Language
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
@@ -55,7 +55,7 @@ enum class CardType(val string: String) {
 @Composable
 fun MangaListItem(
     modifier: Modifier = Modifier,
-    manga: SavableManga,
+    manga: Manga,
     onTagClick: (tag: String) -> Unit,
     onBookmarkClick: () -> Unit,
     cardType: CardType = CardType.Compact,

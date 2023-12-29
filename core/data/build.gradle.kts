@@ -40,6 +40,7 @@ dependencies {
     api(project(":core:database"))
     api(project(":core:common"))
     api(project(":core:datastore"))
+    api(project(":core:domain"))
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.disklrucache)
@@ -58,6 +59,7 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.kotlin.serialization)
     implementation(libs.kotlinx.serialization.json.okio)
+    implementation(libs.kotlin.collections.immutable)
 
     // KOIN
     implementation(libs.koin.android)

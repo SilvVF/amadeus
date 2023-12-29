@@ -56,6 +56,8 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":sync"))
 
+    implementation(libs.sandwich)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

@@ -3,8 +3,9 @@ package io.silv.data.author
 import com.skydoves.sandwich.getOrThrow
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.model.QueryResult
+import io.silv.domain.AuthorListRepository
+import io.silv.model.DomainAuthor
 import io.silv.network.MangaDexApi
-import io.silv.network.model.author.AuthorListResponse
 import io.silv.network.requests.AuthorListRequest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -16,7 +17,7 @@ internal class AuthorListRepositoryImpl(
 
     override fun getAuthorList(
         query: String?
-    ) = flow<QueryResult<List<AuthorListResponse.Author>>> {
+    ) = flow<QueryResult<List<DomainAuthor>>> {
 
         if (query.isNullOrBlank()) {
             emit(QueryResult.Done(emptyList()))
@@ -37,7 +38,9 @@ internal class AuthorListRepositoryImpl(
                 .data
         }
             .onSuccess { authorList ->
-                emit(QueryResult.Done(authorList))
+                emit(
+                    QueryResult.Done(authorList.map { DomainAuthor(it.attributes.name, it.id) })
+                )
             }
             .onFailure {
                 emit(QueryResult.Done(emptyList()))

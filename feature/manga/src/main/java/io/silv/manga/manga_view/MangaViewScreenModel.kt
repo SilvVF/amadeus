@@ -8,15 +8,16 @@ import com.skydoves.sandwich.ApiResponse
 import com.skydoves.sandwich.message
 import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
+import io.silv.data.manga.GetMangaStatisticsById
 import io.silv.datastore.model.Filters
-import io.silv.domain.chapter.ChapterHandler
-import io.silv.domain.manga.GetMangaStatisticsById
-import io.silv.domain.manga.GetSavableMangaWithChapters
-import io.silv.domain.manga.MangaHandler
+import io.silv.domain.chapter.interactor.ChapterHandler
+import io.silv.domain.chapter.model.Chapter
+import io.silv.domain.chapter.model.toResource
+import io.silv.domain.manga.interactor.GetMangaWithChapters
+import io.silv.domain.manga.interactor.MangaHandler
+import io.silv.domain.manga.model.Manga
+import io.silv.domain.manga.model.toResource
 import io.silv.model.MangaStats
-import io.silv.model.SavableChapter
-import io.silv.model.SavableManga
-import io.silv.model.toResource
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ioCoroutineScope
 import kotlinx.collections.immutable.ImmutableList
@@ -35,7 +36,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MangaViewScreenModel(
-    getCombinedSavableMangaWithChapters: GetSavableMangaWithChapters,
+    getMangaWithChapters: GetMangaWithChapters,
     getMangaStatisticsById: GetMangaStatisticsById,
     private val mangaHandler: MangaHandler,
     private val chapterHandler: ChapterHandler,
@@ -51,18 +52,26 @@ class MangaViewScreenModel(
     private val mutableFilters = MutableStateFlow(Filters())
 
     init {
-        getCombinedSavableMangaWithChapters.subscribe(mangaId)
-            .onEach { (manga, chapters) ->
-                mutableState.update {
-                    (it.success ?: MangaViewState.Success(manga)).copy(
-                        manga = manga,
-                        chapters = chapters,
-                    )
-                }
+        combine(
+            getMangaWithChapters.subscribe(mangaId),
+            downloadManager.cacheChanges,
+            downloadManager.queueState
+        ) { (manga, chapters), _, _ ->
+
+            mutableState.update {
+                (it.success ?: MangaViewState.Success(manga)).copy(
+                    manga = manga,
+                    chapters = chapters.map { chapter ->
+                        chapter.copy(
+                            downloaded = downloadManager
+                                .isChapterDownloaded(chapter.title, chapter.scanlator, manga.titleEnglish)
+                        )
+                    }
+                        .toImmutableList(),
+                )
             }
-            .catch {
-                mutableState.value = MangaViewState.Error(it.localizedMessage ?: "")
-            }
+        }
+            .catch { mutableState.value = MangaViewState.Error(it.localizedMessage ?: "") }
             .launchIn(screenModelScope)
 
         downloadManager.queueState.onEach { downloads ->
@@ -121,9 +130,11 @@ class MangaViewScreenModel(
         screenModelScope.launch {
             chapterHandler.toggleChapterBookmarked(id)
                 .onSuccess {
-                    mutableEvents.send(
-                        MangaViewEvent.BookmarkStatusChanged(id, it.bookmarked),
-                    )
+                    it?.let {
+                        mutableEvents.send(
+                            MangaViewEvent.BookmarkStatusChanged(id, it.bookmarked),
+                        )
+                    }
                 }
         }
     }
@@ -132,9 +143,11 @@ class MangaViewScreenModel(
         screenModelScope.launch {
             chapterHandler.toggleReadOrUnread(id)
                 .onSuccess {
-                    mutableEvents.send(
-                        MangaViewEvent.ReadStatusChanged(id, it.read),
-                    )
+                    it?.let {
+                        mutableEvents.send(
+                            MangaViewEvent.ReadStatusChanged(id, it.read),
+                        )
+                    }
                 }
         }
     }
@@ -257,8 +270,8 @@ class MangaViewScreenModel(
         }
     }
 
-    private fun List<SavableChapter>.applyFilters(filters: Filters): ImmutableList<SavableChapter> {
-        val sortedChapters: List<SavableChapter> =
+    private fun List<Chapter>.applyFilters(filters: Filters): ImmutableList<Chapter> {
+        val sortedChapters: List<Chapter> =
             when {
                 filters.byChapterAsc == true -> sortedBy { it.chapter }
                 filters.byChapterAsc == false -> sortedByDescending { it.chapter }
@@ -317,13 +330,13 @@ sealed interface MangaViewState {
     data object Loading : MangaViewState
 
     data class Success(
-        val manga: SavableManga,
+        val manga: Manga,
         val downloads: ImmutableList<Download> = persistentListOf(),
         val loadingArt: Boolean = false,
         val volumeToArt: ImmutableMap<Int, String> = persistentMapOf(),
         val statsUiState: StatsUiState = StatsUiState.Loading,
-        val chapters: ImmutableList<SavableChapter> = persistentListOf(),
-        val filteredChapters: ImmutableList<SavableChapter> = persistentListOf(),
+        val chapters: ImmutableList<Chapter> = persistentListOf(),
+        val filteredChapters: ImmutableList<Chapter> = persistentListOf(),
         val filters: Filters = Filters(),
     ) : MangaViewState {
         val volumeToArtList = this.volumeToArt.toList().toImmutableList()

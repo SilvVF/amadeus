@@ -38,16 +38,18 @@ import kotlin.math.roundToInt
 @Composable
 fun MenuPageSlider(
     modifier: Modifier = Modifier,
-    fraction: Float,
-    layoutDirection: LayoutDirection,
-    pageIdx: Int,
-    pageCount: Int,
+    fractionProvider:() -> Float,
+    layoutDirectionProvider: () -> LayoutDirection,
+    pageIdxProvider: () -> Int,
+    pageCountProvider: () -> Int,
     onPrevClick: () -> Unit,
     onNextClick: () -> Unit,
     onPageChange: (page: Int) -> Unit,
 ) {
     val space = LocalSpacing.current
-    
+
+    val layoutDirection = layoutDirectionProvider()
+
     fun leftButtonClick() {
         when (layoutDirection) {
             Ltr -> onPrevClick()
@@ -61,11 +63,16 @@ fun MenuPageSlider(
             Rtl -> onPrevClick()
         }
     }
+
+
     val elevatedSurfaceColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+    val fraction = fractionProvider()
+
     Row(
         modifier = modifier
+            .padding(bottom = space.large)
             .fillMaxWidth()
-            .height(70.dp)
+            .height(60.dp)
             .clip(CircleShape)
             .drawBehind {
                 drawRect(
@@ -75,6 +82,8 @@ fun MenuPageSlider(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
+        val pageCount = pageCountProvider()
+        val pageIdx = pageIdxProvider()
         IconButton(
             onClick = ::leftButtonClick,
             modifier = Modifier.padding(space.small),

@@ -35,8 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
+import io.silv.datastore.ExplorePrefs
 import io.silv.datastore.collectAsState
-import io.silv.datastore.model.ExplorePrefs
 import io.silv.ui.composables.CardType
 import io.silv.ui.theme.LocalSpacing
 import kotlin.math.roundToInt

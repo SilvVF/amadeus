@@ -1,6 +1,9 @@
 package io.silv.ui
 
+import android.content.Context
+import android.content.Intent
 import android.graphics.BlurMaskFilter
+import android.net.Uri
 import androidx.annotation.FloatRange
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
@@ -43,11 +46,10 @@ fun Modifier.shadow(
             val paint = Paint()
             val frameworkPaint = paint.asFrameworkPaint()
             if (blurRadius != 0.dp) {
-                frameworkPaint.maskFilter = (
+                frameworkPaint.maskFilter =
                     BlurMaskFilter(
                         blurRadius.toPx(),
                         BlurMaskFilter.Blur.NORMAL
-                    )
                     )
             }
             frameworkPaint.color = color.toArgb()
@@ -68,6 +70,26 @@ fun Modifier.shadow(
     },
 )
 
+fun Context.openOnWeb(
+    url: String,
+    title: String,
+): Result<Unit> {
+    return runCatching {
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse(url)
+        )
+        val chooser = Intent.createChooser(intent, "view mangadex website.")
+
+        // Verify the original intent will resolve to at least one activity
+        if (intent.resolveActivity(packageManager) != null) {
+            startActivity(chooser)
+        } else {
+            startActivity(intent)
+        }
+    }
+}
+
 fun Color.isLight() = this.luminance() > 0.5
 
 fun Modifier.fillMaxAfterMesaure(
@@ -85,6 +107,8 @@ fun Modifier.fillMaxAfterMesaure(
             }
         }
 }
+
+
 
 fun Modifier.conditional(
     condition: Boolean,

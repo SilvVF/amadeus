@@ -9,8 +9,10 @@ import io.silv.common.model.MangaDexSource
 import io.silv.common.model.MangaResource
 import io.silv.common.model.Page
 import io.silv.common.model.Source
-import io.silv.data.chapter.ChapterRepository
-import io.silv.data.manga.MangaRepository
+import io.silv.domain.chapter.interactor.GetChapter
+import io.silv.domain.chapter.model.toResource
+import io.silv.domain.manga.interactor.GetManga
+import io.silv.domain.manga.model.toResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -20,8 +22,8 @@ class DownloadManager internal constructor(
     private val downloadProvider: DownloadProvider,
     private val downloader: Downloader,
     private val downloadCache: DownloadCache,
-    private val mangaRepository: MangaRepository,
-    private val chapterRepository: ChapterRepository
+    private val getManga: GetManga,
+    private val getChapter: GetChapter,
 ) {
 
     val cacheChanges = downloadCache.changes
@@ -79,10 +81,10 @@ class DownloadManager internal constructor(
 
     private suspend fun downloadFromChapterId(id: String): Download? {
 
-        val chapter = chapterRepository.getChapterById(id) ?: return null
-        val manga = mangaRepository.getMangaById(chapter.mangaId) ?: return null
+        val chapter = getChapter.await(id) ?: return null
+        val manga = getManga.await(chapter.mangaId) ?: return null
 
-        return Download(manga, chapter)
+        return Download(manga.toResource(), chapter.toResource())
     }
 
     fun startDownloadNow(chapterId: String) {

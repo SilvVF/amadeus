@@ -13,13 +13,15 @@ import io.silv.common.time.minus
 import io.silv.data.mappers.toChapterEntity
 import io.silv.data.util.UpdateChapterList
 import io.silv.database.dao.ChapterDao
-import io.silv.database.entity.chapter.ChapterEntity
+import io.silv.domain.chapter.model.Chapter
+import io.silv.domain.chapter.repository.ChapterRepository
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.ChapterListRequest
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.hours
@@ -42,15 +44,14 @@ internal class ChapterRepositoryImpl(
         }
     }
 
-    override suspend fun updateChapter(id: String, copy: (ChapterEntity) -> ChapterEntity): ChapterEntity {
-        var chapter: ChapterEntity? = null
-        withContext(dispatchers.io) {
+    override suspend fun updateChapter(id: String, copy: (Chapter) -> Chapter): Chapter? {
+        return withContext(dispatchers.io) {
             chapterDao.getChapterById(id)?.let { prev ->
-                chapter = copy(prev)
-                chapterDao.updateChapter(chapter!!)
+                val chapter = copy(prev.let(ChapterMapper::mapChapter))
+                chapterDao.updateChapter(chapter.let(ChapterMapper::toEntity))
+                chapter
             }
         }
-        return chapter!!
     }
 
     override suspend fun updateLastReadPage(chapterId: String, page: Int, lastPage: Int) {
@@ -93,34 +94,40 @@ internal class ChapterRepositoryImpl(
             .isSuccess
     }
 
-    override suspend fun saveChapter(chapterEntity: ChapterEntity) {
+    override suspend fun saveChapter(chapter: Chapter) {
         withContext(dispatchers.io) {
-            chapterDao.upsertChapter(chapterEntity)
+            chapterDao.upsertChapter(chapter.let(ChapterMapper::toEntity))
         }
     }
 
-    override suspend fun refetchChapter(id: String): ChapterEntity? {
+    override suspend fun refetchChapter(id: String): Chapter? {
         return withContext(dispatchers.io) {
             mangaDexApi.getChapterData(ChapterListRequest(ids = listOf(id)))
                     .suspendMapSuccess {
                         val chapter = this.data.first().toChapterEntity()
                         chapterDao.upsertChapter(chapter)
-                        chapter
+                        chapter.let(ChapterMapper::mapChapter)
                     }
                     .getOrNull()
         }
     }
 
-    override suspend fun getChapterById(id: String): ChapterEntity? {
-        return chapterDao.getChapterById(id)
+    override suspend fun getChapterById(id: String): Chapter? {
+        return chapterDao.getChapterById(id)?.let(ChapterMapper::mapChapter)
     }
 
-    override fun observeChapterById(id: String): Flow<ChapterEntity> {
-        return chapterDao.observeChapterById(id).filterNotNull()
+    override fun observeChapterById(id: String): Flow<Chapter> {
+        return chapterDao.observeChapterById(id).filterNotNull().map(ChapterMapper::mapChapter)
     }
 
-    override fun observeChapters(): Flow<List<ChapterEntity>> {
-        return chapterDao.getChapterEntities().flowOn(dispatchers.io)
+    override fun observeChapters(): Flow<List<Chapter>> {
+        return chapterDao.getChapterEntities()
+            .map { list -> list.map(ChapterMapper::mapChapter) }
+            .flowOn(dispatchers.io)
+    }
+
+    override fun observeBookmarkedChapters(): Flow<List<Chapter>> {
+        return chapterDao.observeBookmarkedChapters().map { it.map(ChapterMapper::mapChapter) }.flowOn(dispatchers.io)
     }
 
     private suspend fun shouldUpdate(mangaId: String): Boolean = withContext(dispatchers.io) {
@@ -128,8 +135,8 @@ internal class ChapterRepositoryImpl(
         chapters == null || chapters.any { localDateTimeNow() - (it.savedLocalAt) > 12.hours }
     }
 
-    override fun observeChaptersByMangaId(mangaId: String): Flow<List<ChapterEntity>> {
-        return chapterDao.observeChaptersByMangaId(mangaId).onStart {
+    override fun observeChaptersByMangaId(mangaId: String): Flow<List<Chapter>> {
+        return chapterDao.observeChaptersByMangaId(mangaId).map { list -> list.map(ChapterMapper::mapChapter) }.onStart {
             if (shouldUpdate(mangaId)) {
                 Log.d("ChapterEntityRepository","Updating from network")
                 updateChapterList(mangaId)

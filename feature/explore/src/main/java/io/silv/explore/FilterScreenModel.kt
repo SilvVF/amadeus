@@ -11,7 +11,7 @@ import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.QueryFilters
 import io.silv.common.model.Status
 import io.silv.common.model.TagsMode
-import io.silv.data.tags.TagRepository
+import io.silv.domain.TagRepository
 import io.silv.model.DomainTag
 import io.silv.ui.Language
 import kotlinx.collections.immutable.ImmutableList
@@ -42,7 +42,7 @@ class FilterScreenViewModel(
                     tags
                         .groupBy { tag -> tag.group }
                         .mapValues { (_, tags) ->
-                            tags.map { DomainTag(it) }.toImmutableList()
+                            tags.toImmutableList()
                         }
                         .toImmutableMap(),
                 )

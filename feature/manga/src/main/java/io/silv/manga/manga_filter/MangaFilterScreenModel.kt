@@ -4,10 +4,10 @@ import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.PagedType
 import io.silv.common.model.TimePeriod
-import io.silv.domain.manga.GetSavableManga
-import io.silv.domain.manga.MangaHandler
 import io.silv.domain.manga.SubscribeToPagingData
-import io.silv.model.SavableManga
+import io.silv.domain.manga.interactor.MangaHandler
+import io.silv.domain.manga.model.Manga
+import io.silv.domain.manga.repository.TopYearlyFetcher
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ioCoroutineScope
 import kotlinx.collections.immutable.ImmutableList
@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalCoroutinesApi::class)
 class MangaFilterScreenModel(
     private val mangaHandler: MangaHandler,
-    getManga: GetSavableManga,
+    yearlyFetcher: TopYearlyFetcher,
     subscribeToPagingData: SubscribeToPagingData,
     tagId: String,
 ) : EventStateScreenModel<MangaFilterEvent, YearlyFilteredUiState>(YearlyFilteredUiState.Loading) {
@@ -31,7 +31,7 @@ class MangaFilterScreenModel(
 
     init {
         screenModelScope.launch {
-            val mangaList = getManga.getYearlyTopMangaByTagId(tagId, ioCoroutineScope)
+            val mangaList = yearlyFetcher.getYearlyTopMangaByTagId(tagId)
             mutableState.value = YearlyFilteredUiState.Success(mangaList.toImmutableList())
         }
     }
@@ -60,6 +60,6 @@ sealed interface YearlyFilteredUiState {
     data object Loading : YearlyFilteredUiState
 
     data class Success(
-        val resources: ImmutableList<StateFlow<SavableManga>>,
+        val resources: ImmutableList<StateFlow<Manga>>,
     ) : YearlyFilteredUiState
 }

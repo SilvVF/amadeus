@@ -1,8 +1,5 @@
 package io.silv.manga.manga_view
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -81,6 +78,7 @@ import io.silv.ui.CenterBox
 import io.silv.ui.collectEvents
 import io.silv.ui.isScrollingUp
 import io.silv.ui.layout.ScrollbarLazyColumn
+import io.silv.ui.openOnWeb
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
@@ -159,28 +157,12 @@ class MangaViewScreen(
             state = state,
             snackbarHostState = snackbarHostState,
             viewOnWeb = { url ->
-                try {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse(url)
-                    )
-                    val chooser = Intent.createChooser(intent, "view on mangadex website.")
-
-                    // Verify the original intent will resolve to at least one activity
-                    if (intent.resolveActivity(context.packageManager) != null) {
-                        context.startActivity(chooser)
-                    } else {
-                        context.startActivity(intent)
+                context.openOnWeb(url, "View manga using.")
+                    .onFailure {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Couldn't open url.")
+                        }
                     }
-                } catch (e: ActivityNotFoundException) {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Couldn't open url.")
-                    }
-                } catch (e: Exception) {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Couldn't open url.")
-                    }
-                }
             },
             filterActions =
             FilterActions(

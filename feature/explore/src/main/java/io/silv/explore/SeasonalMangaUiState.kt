@@ -3,7 +3,7 @@ package io.silv.explore
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import io.silv.common.model.Season
-import io.silv.model.SavableManga
+import io.silv.domain.manga.model.Manga
 
 @Stable
 @Immutable
@@ -16,6 +16,6 @@ data class SeasonalMangaUiState(
         val id: String,
         val year: Int,
         val season: Season,
-        val mangas: List<SavableManga>,
+        val mangas: List<Manga>,
     )
 }

@@ -1,65 +1,55 @@
 package io.silv.data.manga
 
 import io.silv.common.AmadeusDispatchers
-import io.silv.data.util.Syncable
 import io.silv.database.dao.MangaDao
-import io.silv.database.entity.manga.MangaEntity
-import io.silv.database.entity.relations.MangaEntityWithChapters
+import io.silv.domain.manga.model.Manga
+import io.silv.domain.manga.model.MangaWithChapters
+import io.silv.domain.manga.repository.MangaRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-
-interface MangaRepository: Syncable {
-
-    suspend fun getMangaById(id: String): MangaEntity?
-
-    suspend fun saveManga(manga: MangaEntity)
-
-    suspend fun updateManga(manga: MangaEntity)
-
-    suspend fun saveManga(list: List<MangaEntity>)
-
-    fun observeMangaById(id: String): Flow<MangaEntity?>
-
-    fun observeLibraryManga(): Flow<List<MangaEntity>>
-
-    fun observeLibraryMangaWithChapters(): Flow<List<MangaEntityWithChapters>>
-}
 
 class MangaRepositoryImpl(
     private val mangaDao: MangaDao,
     private val dispatchers: AmadeusDispatchers,
 ): MangaRepository {
 
-    override suspend fun getMangaById(id: String): MangaEntity? =
+    override suspend fun getMangaById(id: String): Manga? =
         withContext(dispatchers.io) {
-            mangaDao.getById(id)
+            mangaDao.getById(id)?.let(MangaMapper::mapManga)
         }
 
-    override suspend fun saveManga(manga: MangaEntity) =
+    override suspend fun saveManga(manga: Manga) =
         withContext(dispatchers.io) {
-            mangaDao.insert(manga)
+            mangaDao.insert(manga.let(MangaMapper::toEntity))
     }
 
-    override suspend fun saveManga(list: List<MangaEntity>) =
+    override suspend fun saveManga(list: List<Manga>) =
         withContext(dispatchers.io) {
-            mangaDao.insertAll(list)
+            mangaDao.insertAll(list.map(MangaMapper::toEntity))
     }
 
-    override suspend fun updateManga(manga: MangaEntity) =
+    override suspend fun updateManga(manga: Manga) =
         withContext(dispatchers.io) {
-            mangaDao.update(manga)
+            mangaDao.update(manga.let(MangaMapper::toEntity))
         }
 
-    override fun observeMangaById(id: String): Flow<MangaEntity?> {
-        return mangaDao.observeById(id)
+    override fun observeMangaById(id: String): Flow<Manga?> {
+        return mangaDao.observeById(id).map { manga -> manga?.let(MangaMapper::mapManga) }
     }
 
-    override fun observeLibraryManga(): Flow<List<MangaEntity>> {
-        return mangaDao.observeLibraryManga()
+    override fun observeManga(): Flow<List<Manga>> {
+        return mangaDao.observeAll().map { list -> list.map(MangaMapper::mapManga) }
     }
 
-    override fun observeLibraryMangaWithChapters(): Flow<List<MangaEntityWithChapters>> {
-        return mangaDao.observeLibraryMangaWithChapters()
+    override fun observeLibraryManga(): Flow<List<Manga>> {
+        return mangaDao.observeLibraryManga().map { list -> list.map(MangaMapper::mapManga) }
+    }
+
+    override fun observeLibraryMangaWithChapters(): Flow<List<MangaWithChapters>> {
+        return mangaDao.observeLibraryMangaWithChapters().map {
+            it.map(MangaMapper::mapMangaWithChapters)
+        }
     }
 
     override suspend fun sync(): Boolean {

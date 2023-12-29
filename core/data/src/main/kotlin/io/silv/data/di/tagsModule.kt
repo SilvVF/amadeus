@@ -1,6 +1,6 @@
 package io.silv.data.di
 
-import io.silv.data.tags.TagRepository
+import io.silv.domain.TagRepository
 import io.silv.data.tags.TagRepositoryImpl
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf

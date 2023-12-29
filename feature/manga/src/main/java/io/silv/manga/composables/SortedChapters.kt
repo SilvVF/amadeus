@@ -2,10 +2,10 @@ package io.silv.manga.composables
 
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import io.silv.model.SavableChapter
+import io.silv.domain.chapter.model.Chapter
 
 class SortedChapters(
-    private val chapters: List<SavableChapter>,
+    private val chapters: List<Chapter>,
     val sortBy: SortBy,
     private val onSortByChange: (SortBy) -> Unit,
 ) {
@@ -24,7 +24,7 @@ class SortedChapters(
         return@derivedStateOf if (sortBy == SortBy.Asc) {
             buildMap {
                 grouped.keys.sorted().forEach {
-                    put(it, (grouped[it]?.sortedBy { it.chapter } ?: emptyList<SavableChapter>()))
+                    put(it, (grouped[it]?.sortedBy { it.chapter } ?: emptyList<Chapter>()))
                 }
             }
         } else {
@@ -32,7 +32,7 @@ class SortedChapters(
                 grouped.keys.sortedDescending().forEach {
                     put(
                         it,
-                        (grouped[it]?.sortedByDescending { it.chapter } ?: emptyList<SavableChapter>())
+                        (grouped[it]?.sortedByDescending { it.chapter } ?: emptyList<Chapter>())
                     )
                 }
             }

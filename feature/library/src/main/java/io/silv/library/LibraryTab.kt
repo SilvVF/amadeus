@@ -90,7 +90,7 @@ import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.silv.model.SavableChapter
+import io.silv.domain.chapter.model.Chapter
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.CenterBox
@@ -639,7 +639,7 @@ fun LibraryMangaPoster(libraryManga: LibraryManga) {
 fun ChapterListItem(
     modifier: Modifier = Modifier,
     showFullTitle: Boolean,
-    chapter: SavableChapter,
+    chapter: Chapter,
     downloadProgress: Float?,
     onDownloadClicked: () -> Unit,
     onDeleteClicked: () -> Unit,

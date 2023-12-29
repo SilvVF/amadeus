@@ -3,12 +3,12 @@ package io.silv.library
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.UpdateType
 import io.silv.data.download.DownloadManager
-import io.silv.data.manga.MangaUpdateRepository
-import io.silv.domain.chapter.ChapterHandler
-import io.silv.domain.chapter.GetBookmarkedChapters
-import io.silv.domain.manga.GetLibraryMangaWithChapters
-import io.silv.model.SavableManga
-import io.silv.model.toResource
+import io.silv.domain.chapter.interactor.ChapterHandler
+import io.silv.domain.chapter.interactor.GetBookmarkedChapters
+import io.silv.domain.chapter.model.toResource
+import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
+import io.silv.domain.manga.model.toResource
+import io.silv.domain.manga.repository.MangaUpdateRepository
 import io.silv.ui.EventStateScreenModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
@@ -47,13 +47,12 @@ class LibraryScreenModel(
             .launchIn(screenModelScope)
 
         mangaUpdateRepository.observeAllUpdates().onEach { updateList ->
-            updateList.mapNotNull { updateWithManga ->
-                val (update, manga) = updateWithManga
+            updateList.mapNotNull { update ->
                 when (update.updateType) {
                     UpdateType.Volume, UpdateType.Chapter ->
                         Update.Chapter(
-                            chapterId = manga.latestUploadedChapter ?: return@mapNotNull null,
-                            SavableManga(manga),
+                            chapterId = update.manga.latestUploadedChapter ?: return@mapNotNull null,
+                            manga = update.manga,
                         )
                     UpdateType.Other -> null
                 }
@@ -117,9 +116,11 @@ class LibraryScreenModel(
         screenModelScope.launch {
             chapterHandler.toggleReadOrUnread(id)
                 .onSuccess {
-                    mutableEvents.send(
-                        LibraryEvent.ReadStatusChanged(id, it.read),
-                    )
+                    it?.let {
+                        mutableEvents.send(
+                            LibraryEvent.ReadStatusChanged(id, it.read),
+                        )
+                    }
                 }
         }
     }

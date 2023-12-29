@@ -41,6 +41,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,7 +65,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
 import io.silv.common.model.TimePeriod
-import io.silv.model.SavableManga
+import io.silv.domain.manga.model.Manga
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.navigation.replace
@@ -76,6 +77,7 @@ import io.silv.ui.composables.MangaListItem
 import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
@@ -206,9 +208,9 @@ class MangaFilterScreen(
                         contentType = timePeriodItems.itemContentType(),
                     ) { i ->
 
-                        val manga = timePeriodItems[i]
+                        val item = timePeriodItems[i]?.collectAsStateWithLifecycle()
 
-                        manga?.let {
+                        item?.value?.let { manga ->
                             MangaListItem(
                                 manga = manga,
                                 modifier =
@@ -263,9 +265,9 @@ class MangaFilterScreen(
 @OptIn(ExperimentalFoundationApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun YearlyMangaPager(
-    mangaList: ImmutableList<StateFlow<SavableManga>>,
-    onMangaClick: (manga: SavableManga) -> Unit,
-    onBookmarkClick: (manga: SavableManga) -> Unit,
+    mangaList: ImmutableList<StateFlow<Manga>>,
+    onMangaClick: (manga: Manga) -> Unit,
+    onBookmarkClick: (manga: Manga) -> Unit,
     onTagClick: (name: String, id: String) -> Unit,
 ) {
     val space = LocalSpacing.current
@@ -337,7 +339,9 @@ fun YearlyMangaPager(
                             overflow = TextOverflow.Ellipsis,
                         )
                         TranslatedLanguageTags(
-                            tags = manga.availableTranslatedLanguages,
+                            tags = remember(manga.id) {
+                                manga.availableTranslatedLanguages.toImmutableList()
+                            },
                             modifier = Modifier.fillMaxWidth(),
                         )
                         MangaGenreTags(

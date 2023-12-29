@@ -1,8 +1,5 @@
 package io.silv.explore
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -74,14 +71,15 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import io.silv.datastore.ExplorePrefs
 import io.silv.datastore.collectAsState
-import io.silv.datastore.model.ExplorePrefs
+import io.silv.domain.manga.model.Manga
 import io.silv.explore.composables.DisplayOptionsBottomSheet
 import io.silv.explore.composables.ExploreTopAppBar
 import io.silv.explore.composables.FiltersBottomSheet
 import io.silv.explore.composables.SeasonalMangaPager
 import io.silv.explore.composables.mangaGrid
-import io.silv.model.SavableManga
+import io.silv.model.DomainSeasonalList
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.CenterBox
@@ -91,9 +89,11 @@ import io.silv.ui.composables.MangaListItem
 import io.silv.ui.composables.PullRefresh
 import io.silv.ui.layout.ExpandableInfoLayout
 import io.silv.ui.layout.rememberExpandableState
+import io.silv.ui.openOnWeb
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -158,28 +158,12 @@ class ExploreScreen : Screen {
                     selected = state.pagedType,
                     scrollBehavior = scrollBehavior,
                     onWebClick = {
-                        try {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse("https://mangadex.org")
-                            )
-                            val chooser = Intent.createChooser(intent, "view mangadex website.")
-
-                            // Verify the original intent will resolve to at least one activity
-                            if (intent.resolveActivity(context.packageManager) != null) {
-                                context.startActivity(chooser)
-                            } else {
-                                context.startActivity(intent)
+                        context.openOnWeb("https://mangadex.org", "View manga using.")
+                            .onFailure {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Couldn't open url.")
+                                }
                             }
-                        } catch (e: ActivityNotFoundException) {
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Couldn't open url.")
-                            }
-                        } catch (e: Exception) {
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Couldn't open url.")
-                            }
-                        }
                     },
                     onDisplayOptionsClick = {
                         scope.launch {
@@ -394,10 +378,10 @@ fun BrowseMangaContent(
     contentPaddingValues: PaddingValues,
     pagedType: UiPagedType,
     gridState: LazyGridState = rememberLazyGridState(),
-    seasonalLists: ImmutableList<UiSeasonalList>,
+    seasonalLists: ImmutableList<DomainSeasonalList>,
     refreshingSeasonal: Boolean,
-    mangaList: LazyPagingItems<SavableManga>,
-    onMangaClick: (manga: SavableManga) -> Unit,
+    mangaList: LazyPagingItems<StateFlow<Manga>>,
+    onMangaClick: (manga: Manga) -> Unit,
     onTagClick: (name: String, id: String) -> Unit,
     onBookmarkClick: (mangaId: String) -> Unit,
 ) {
@@ -498,9 +482,9 @@ fun BrowseMangaContent(
 
 private fun LazyGridScope.seasonalMangaGrid(
     cardType: CardType,
-    seasonalList: UiSeasonalList?,
-    onMangaClick: (manga: SavableManga) -> Unit,
-    onBookmarkClick: (manga: SavableManga) -> Unit,
+    seasonalList: DomainSeasonalList?,
+    onMangaClick: (manga: Manga) -> Unit,
+    onBookmarkClick: (manga: Manga) -> Unit,
     onTagClick: (name: String, id: String) -> Unit,
 ) {
     seasonalList?.let {
@@ -536,9 +520,9 @@ private fun LazyGridScope.seasonalMangaGrid(
 private fun LazyGridScope.seasonalMangaPagerGridItem(
     gridCells: Int,
     refreshing: Boolean,
-    seasonalLists: ImmutableList<UiSeasonalList>,
-    onMangaClick: (manga: SavableManga) -> Unit,
-    onBookmarkClick: (manga: SavableManga) -> Unit,
+    seasonalLists: ImmutableList<DomainSeasonalList>,
+    onMangaClick: (manga: Manga) -> Unit,
+    onBookmarkClick: (manga: Manga) -> Unit,
     onTagClick: (name: String, id: String) -> Unit,
 ) {
     item(
@@ -581,7 +565,7 @@ private fun LazyGridScope.seasonalMangaPagerGridItem(
 @Composable
 fun SeasonalListTags(
     modifier: Modifier = Modifier,
-    seasonalLists: ImmutableList<UiSeasonalList>,
+    seasonalLists: ImmutableList<DomainSeasonalList>,
     refreshing: Boolean,
     selectedIndex: Int,
     onIndexSelected: (Int) -> Unit,

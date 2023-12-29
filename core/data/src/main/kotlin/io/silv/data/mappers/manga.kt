@@ -5,10 +5,10 @@ import io.silv.common.model.ReadingStatus
 import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.parseMangaDexTimeToDateTime
 import io.silv.database.entity.manga.MangaEntity
-import io.silv.network.model.manga.Manga
+import io.silv.network.model.manga.MangaDto
 
 
-fun Manga.toEntity(): MangaEntity {
+fun MangaDto.toEntity(): MangaEntity {
     return MangaEntity(
         id = id,
         favorite = false,

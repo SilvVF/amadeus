@@ -90,6 +90,7 @@ fun MenuPageSlider(
     ) {
         val pageCount = pageCountProvider()
         val pageIdx = pageIdxProvider()
+
         IconButton(
             onClick = ::leftButtonClick,
             modifier = Modifier.padding(space.small),

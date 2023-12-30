@@ -1,5 +1,6 @@
 package io.silv.network
 
+import android.content.Context
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.cache.HttpCache
@@ -14,6 +15,7 @@ import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 val networkModule =
@@ -39,7 +41,6 @@ val networkModule =
                     }
                     .build()
                 }
-                install(HttpCache)
                 install(ContentNegotiation) {
                     json(
                         json = get(),
@@ -52,7 +53,12 @@ val networkModule =
         single<MangaDexClient> {
             HttpClient(OkHttp) {
                 engine { preconfigured = get() }
-                install(HttpCache)
+                install(HttpCache) {
+                    HttpCacheImpl(
+                        directory = File(get<Context>().cacheDir, "network_cache"),
+                        maxSize = 5L * 1024 * 1024, // 5 MiB
+                    )
+                }
                 install(ContentNegotiation) {
                     json(
                         json = get(),

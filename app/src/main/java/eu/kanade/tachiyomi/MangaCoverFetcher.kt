@@ -16,8 +16,6 @@ import eu.kanade.tachiyomi.MangaCoverFetcher.Companion.USE_CUSTOM_COVER
 import io.silv.common.model.MangaCover
 import io.silv.data.download.await
 import io.silv.domain.manga.model.Manga
-import java.io.File
-import java.net.HttpURLConnection.HTTP_NOT_MODIFIED
 import okhttp3.CacheControl
 import okhttp3.Call
 import okhttp3.Request
@@ -28,6 +26,8 @@ import okio.buffer
 import okio.sink
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import java.io.File
+import java.net.HttpURLConnection.HTTP_NOT_MODIFIED
 
 /**
  * A [Fetcher] that fetches cover image for [Manga] object.

@@ -12,7 +12,7 @@ fun Manga.asMangaCover(): MangaCover {
         mangaId = id,
         url = coverArt,
         isMangaFavorite = inLibrary,
-        lastModified = savedLocalAtEpochSeconds.toInstant(TimeZone.currentSystemDefault()).epochSeconds,
+        lastModified = updatedAt.toInstant(TimeZone.currentSystemDefault()).epochSeconds,
     )
 }
 
@@ -26,9 +26,9 @@ class MangaKeyer : Keyer<Manga> {
         options: Options,
     ): String {
         return if (data.hasCustomCover()) {
-            "${data.id};${data.savedLocalAtEpochSeconds}"
+            "${data.id};${data.updatedAt}"
         } else {
-            "${data.coverArt};${data.savedLocalAtEpochSeconds}"
+            "${data.coverArt};${data.updatedAt}"
         }
     }
 }

@@ -55,11 +55,11 @@ val networkModule =
                 engine { preconfigured = get() }
                 install(HttpCache) {
                     publicStorage(
-                        HttpCacheImpl(
+                        DefaultHttpCache(
                             directory = File(get<Context>().cacheDir, "network_cache"),
-                            maxSize = 5L * 1024 * 1024, // 5 MiB
+                            // 5 MiB
+                            maxSize = 5L * 1024 * 1024,
                         )
-                            .cacheStore
                     )
                 }
                 install(ContentNegotiation) {

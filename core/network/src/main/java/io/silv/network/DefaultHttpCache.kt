@@ -30,25 +30,22 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.security.MessageDigest
 
-internal class HttpCacheImpl internal constructor(
+internal class DefaultHttpCache internal constructor(
     directory: File,
     // 5 MiB
     maxSize: Long =  5L * 1024,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
-) {
-
-    internal val cache = DiskLruCache.open(
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+): CacheStorage by LruCacheStorage(
+    DiskLruCache.open(
         directory,
         1,
         1,
-       maxSize
-    )
+        maxSize
+    ),
+    dispatcher
+)
 
-
-    internal val cacheStore = LruCacheStorage(cache, dispatcher)
-}
-
-internal class LruCacheStorage(
+private class LruCacheStorage(
     private val diskCache: DiskLruCache,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : CacheStorage {

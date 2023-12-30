@@ -5,6 +5,7 @@ import com.skydoves.sandwich.ApiResponse
 import com.skydoves.sandwich.ktor.headers
 import com.skydoves.sandwich.ktor.statusCode
 import com.skydoves.sandwich.operators.ApiResponseSuspendOperator
+import io.ktor.util.toMap
 
 class MangaDexApiLogger<T> : ApiResponseSuspendOperator<T>() {
     private val tag = "MangaDexApiLogger"
@@ -15,8 +16,10 @@ class MangaDexApiLogger<T> : ApiResponseSuspendOperator<T>() {
             """
                 [onSuccess]
                 (apiResponse)
-                headers:${apiResponse.headers}, 
+                headers:${apiResponse.headers.toMap()}, 
                 statusCode:${apiResponse.statusCode}
+               
+               ${apiResponse.data.toString()}
                 """,
         )
     }

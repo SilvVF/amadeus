@@ -3,12 +3,15 @@ package io.silv.data.download
 import android.content.Context
 import android.text.format.Formatter
 import com.jakewharton.disklrucache.DiskLruCache
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.utils.io.jvm.javaio.copyTo
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Page
 import io.silv.data.util.DiskUtil
+import kotlinx.coroutines.cancel
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okhttp3.Response
 import okio.IOException
 import okio.buffer
 import okio.sink
@@ -137,7 +140,7 @@ class ChapterCache(
      * @throws IOException image error.
      */
     @Throws(IOException::class)
-    fun putImageToCache(imageUrl: String, response: Response) {
+    suspend fun putImageToCache(imageUrl: String, response: HttpResponse) {
         // Initialize editor (edits the values for an entry).
         var editor: DiskLruCache.Editor? = null
 
@@ -146,14 +149,17 @@ class ChapterCache(
             val key = DiskUtil.hashKeyForDisk(imageUrl)
             editor = diskCache.edit(key) ?: throw IOException("Unable to edit key")
 
-            // Get OutputStream and write image with Okio.
-            response.body?.source()?.saveTo(editor.newOutputStream(0))
+            val body = response.bodyAsChannel()
 
+            // Get OutputStream and write image with Okio.
+            editor.newOutputStream(0).use {
+                body.copyTo(it)
+            }
 
             diskCache.flush()
             editor.commit()
         } finally {
-            response.body?.close()
+            response.cancel()
             editor?.abortUnlessCommitted()
         }
     }

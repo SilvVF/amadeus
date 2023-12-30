@@ -4,6 +4,11 @@ import android.content.Context
 import android.util.Log
 import com.hippo.unifile.UniFile
 import com.skydoves.sandwich.getOrThrow
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.utils.io.jvm.javaio.copyTo
 import io.silv.common.ApplicationScope
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Download
@@ -26,6 +31,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asFlow
@@ -44,10 +50,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
 import java.io.File
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.set
 
 /**
  * This class is the one in charge of downloading chapters.
@@ -61,7 +67,7 @@ internal class Downloader(
     private val chapterCache: ChapterCache,
     private val imageSourceFactory: ImageSourceFactory,
     private val mangaDexApi: MangaDexApi,
-    private val client: OkHttpClient,
+    private val httpClient: HttpClient,
     private val store: DownloadStore,
     private val getChapter: GetChapter,
     private val getManga: GetManga,
@@ -461,16 +467,16 @@ internal class Downloader(
         page.status = Page.State.DOWNLOAD_IMAGE
         page.progress = 0
         return flow {
-            val response = client.newCall(
-                Request.Builder().url(page.imageUrl!!).build()
-            ).await()
+            val response =  httpClient.get(page.imageUrl!!)
             val file = tmpDir.createFile("$filename.tmp")!!
             try {
-                response.body?.source()?.saveTo(file.openOutputStream())
+                file.openOutputStream().use {
+                    response.bodyAsChannel().copyTo(it)
+                }
                 val extension = getImageExtension(response, file)
                 file.renameTo("$filename.$extension")
             } catch (e: Exception) {
-                response.close()
+                response.cancel()
                 file.delete()
                 throw e
             }
@@ -515,16 +521,14 @@ internal class Downloader(
      * @param response the network response of the image.
      * @param file the file where the image is already downloaded.
      */
-    private fun getImageExtension(response: Response, file: UniFile): String {
+    private fun getImageExtension(response: HttpResponse, file: UniFile): String {
         // Read content type if available.
-        val mime = response.body?.contentType()?.run { if (type == "image") "image/$subtype" else null }
-        // Else guess from the uri.
-            ?: context.contentResolver.getType(file.uri)
-            // Else read magic numbers.
-            ?: ImageUtil.findImageType { file.openInputStream() }?.mime
-
+       val mime = response.headers["content-type"].takeIf { it?.contains("image") == true }
+           ?: context.contentResolver.getType(file.uri)
+           ?: ImageUtil.findImageType { file.openInputStream() }?.mime
         return ImageUtil.getExtensionFromMimeType(mime)
     }
+
 
 
     /**

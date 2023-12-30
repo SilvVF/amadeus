@@ -84,9 +84,13 @@ dependencies {
     implementation("androidx.compose.animation:animation-graphics")
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
-
     implementation("me.saket.swipe:swipe:1.2.0")
 
+    implementation(libs.ktor.serialization.json)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.kotlin.serialization)
+    implementation(libs.kotlinx.serialization.json.okio)
+    implementation(libs.sandwich.ktor)
 
     // Paging 3
     implementation(libs.androidx.paging.compose)

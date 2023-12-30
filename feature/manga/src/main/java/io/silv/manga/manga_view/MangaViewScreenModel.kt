@@ -28,6 +28,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -104,7 +105,9 @@ class MangaViewScreenModel(
         }
             .launchIn(screenModelScope)
 
-        state.map { it.success?.manga?.id }.filterNotNull()
+        state.map { it.success?.manga?.id }
+            .filterNotNull()
+            .distinctUntilChanged()
             .onEach { id ->
                 val response = getMangaStatisticsById.await(id)
                 updateSuccess { state ->

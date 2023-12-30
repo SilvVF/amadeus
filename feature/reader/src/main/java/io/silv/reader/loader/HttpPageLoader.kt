@@ -4,7 +4,7 @@ import io.silv.common.ApplicationScope
 import io.silv.common.model.Page
 import io.silv.data.download.ChapterCache
 import io.silv.domain.chapter.model.toResource
-import io.silv.network.MangaDexApi
+import io.silv.network.sources.HttpSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,8 +16,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
-import okhttp3.OkHttpClient
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.concurrent.PriorityBlockingQueue
@@ -33,11 +31,7 @@ internal class HttpPageLoader(
 
     private val chapterCache: ChapterCache by inject()
     private val applicationScope: ApplicationScope by inject()
-    private val mangaDexApi: MangaDexApi by inject()
-    private val client: OkHttpClient by inject()
-    private val json: Json by inject()
-
-    private val source: HttpSource = HttpSource(mangaDexApi, client, json)
+    private val source: HttpSource by inject()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 

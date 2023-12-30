@@ -6,6 +6,7 @@ import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
+import io.silv.network.sources.HttpSource
 import io.silv.network.sources.ImageSourceFactory
 import io.silv.network.util.dohCloudflare
 import io.silv.network.util.rateLimit
@@ -74,6 +75,10 @@ val networkModule =
         }
 
         factoryOf(::ImageSourceFactory)
+
+        single {
+            HttpSource(get(), get())
+        }
 
         single {
             MangaDexApi(get(), get(), get())

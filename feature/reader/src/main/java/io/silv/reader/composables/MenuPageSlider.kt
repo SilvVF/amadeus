@@ -22,11 +22,17 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.LayoutDirection.Ltr
@@ -108,10 +114,24 @@ fun MenuPageSlider(
             CompositionLocalProvider(
                 LocalLayoutDirection provides layoutDirection
             ) {
+                val hapticFeedback = LocalHapticFeedback.current
+
+                var sliderValue by rememberSaveable(pageIdx) { mutableFloatStateOf(pageIdx + 1f) }
+
                 Slider(
                     valueRange = 1f..pageCount.toFloat().coerceAtLeast(1f),
-                    value = (pageIdx + 1f),
-                    onValueChange = { onPageChange((it - 1f).roundToInt()) },
+                    value = sliderValue,
+                    onValueChange = {
+                       sliderValue = it
+                       if (it.roundToInt().toFloat() == it)  {
+                           onPageChange((sliderValue.roundToInt() - 1).coerceAtLeast(0))
+                           hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                       }
+                    },
+                    onValueChangeFinished = {
+                        onPageChange((sliderValue.roundToInt() - 1).coerceAtLeast(0))
+                        sliderValue = sliderValue.roundToInt().toFloat()
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .padding(space.small),

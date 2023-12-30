@@ -54,9 +54,12 @@ val networkModule =
             HttpClient(OkHttp) {
                 engine { preconfigured = get() }
                 install(HttpCache) {
-                    HttpCacheImpl(
-                        directory = File(get<Context>().cacheDir, "network_cache"),
-                        maxSize = 5L * 1024 * 1024, // 5 MiB
+                    publicStorage(
+                        HttpCacheImpl(
+                            directory = File(get<Context>().cacheDir, "network_cache"),
+                            maxSize = 5L * 1024 * 1024, // 5 MiB
+                        )
+                            .cacheStore
                     )
                 }
                 install(ContentNegotiation) {

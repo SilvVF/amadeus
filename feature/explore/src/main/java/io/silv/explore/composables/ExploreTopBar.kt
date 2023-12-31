@@ -1,7 +1,6 @@
 package io.silv.explore.composables
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -9,11 +8,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
@@ -25,11 +21,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,12 +32,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.util.fastForEach
 import io.silv.explore.UiPagedType
 import io.silv.explore.UiQueryFilters
+import io.silv.ui.composables.SearchTextField
 import io.silv.ui.layout.TopAppBarWithBottomContent
 import io.silv.ui.theme.LocalSpacing
 
@@ -181,52 +171,4 @@ fun ExploreTopAppBar(
     )
 }
 
-@Composable
-private fun SearchTextField(
-    searchText: String,
-    modifier: Modifier = Modifier,
-    focusRequester: FocusRequester,
-    onValueChange: (String) -> Unit,
-    onSearch: (query: String) -> Unit,
-) {
-    OutlinedTextField(
-        modifier =
-        modifier
-            .focusRequester(focusRequester),
-        value = searchText,
-        textStyle = MaterialTheme.typography.titleMedium,
-        placeholder = { Text("Search Manga...") },
-        onValueChange = onValueChange,
-        colors =
-        TextFieldDefaults.colors(
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-            cursorColor = LocalContentColor.current,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-        ),
-        trailingIcon = {
-            AnimatedVisibility(
-                visible = searchText.isNotBlank(),
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                IconButton(
-                    onClick = { onValueChange("") },
-                ) {
-                    Icon(imageVector = Icons.Filled.Clear, contentDescription = null)
-                }
-            }
-        },
-        maxLines = 1,
-        singleLine = true,
-        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
-        keyboardActions =
-        KeyboardActions(
-            onSearch = {
-                onSearch(searchText)
-            },
-        ),
-    )
-}
+

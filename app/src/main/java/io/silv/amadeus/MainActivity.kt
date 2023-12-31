@@ -52,6 +52,7 @@ class MainActivity : ComponentActivity() {
                     windowSizeClass = windowSizeClass,
                     bottomBarVisibilityChannel = NavHost.bottomBarVisibility,
                     networkConnectivity = connectivity,
+                    exploreSearchChannel = NavHost.exploreSearchChannel
                 )
 
             AmadeusTheme {

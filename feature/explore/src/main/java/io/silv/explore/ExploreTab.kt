@@ -11,16 +11,27 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
+import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
+import io.silv.ui.GlobalSearchTab
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 
-object ExploreTab : ReselectTab {
+object ExploreTab : ReselectTab, GlobalSearchTab {
+
     internal val reselectChannel = Channel<Unit>()
+
+    internal val searchChannel = Channel<String>(UNLIMITED)
+
+    override suspend fun onSearch(query: String?, navigator: TabNavigator) {
+        query?.let{ searchChannel.send(query) }
+        navigator.current = this
+    }
 
     override suspend fun onReselect(navigator: Navigator) {
         Log.d("Explore", "Sending reselect event")
@@ -45,7 +56,9 @@ object ExploreTab : ReselectTab {
     override fun Content() {
         val appState = LocalAppState.current
 
-        Navigator(ExploreScreen()) { navigator ->
+        Navigator(
+            ExploreScreen()
+        ) { navigator ->
 
             LaunchedEffect(appState) {
                 snapshotFlow { navigator.lastEvent }.onEach { event ->

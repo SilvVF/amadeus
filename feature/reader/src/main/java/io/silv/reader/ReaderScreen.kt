@@ -41,7 +41,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.silv.reader.loader.ReaderChapter
 import io.silv.common.model.Page
 import io.silv.datastore.ReaderPrefs
 import io.silv.datastore.collectAsState
@@ -49,6 +48,7 @@ import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.manga.model.Manga
 import io.silv.reader.composables.GestureHintOverlay
 import io.silv.reader.composables.ReaderMenuOverlay
+import io.silv.reader.loader.ReaderChapter
 import io.silv.ui.CenterBox
 import io.silv.ui.openOnWeb
 import kotlinx.collections.immutable.ImmutableList
@@ -62,13 +62,16 @@ import kotlin.math.roundToInt
 
 class ReaderScreen(
     val mangaId: String,
-    @Stable var chapterId: String,
+    val chapterId: String,
 ) : Screen {
+
+    @Stable
+    private var savedStateChapterId = chapterId
 
     @Composable
     override fun Content() {
 
-        val screenModel = getScreenModel<ReaderScreenModel> { parametersOf(mangaId, chapterId) }
+        val screenModel = getScreenModel<ReaderScreenModel> { parametersOf(mangaId, savedStateChapterId) }
 
         val state = screenModel.state.collectAsStateWithLifecycle().value
 
@@ -77,7 +80,7 @@ class ReaderScreen(
                 .filterNotNull()
                 .distinctUntilChanged()
                 .collect {
-                    chapterId = it.chapter.id
+                    savedStateChapterId = it.chapter.id
                 }
         }
 

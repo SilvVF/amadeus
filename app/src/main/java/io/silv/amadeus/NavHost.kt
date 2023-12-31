@@ -18,10 +18,12 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -32,26 +34,48 @@ import io.silv.explore.ExploreTab
 import io.silv.library.LibraryTab
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.parcelize.IgnoredOnParcel
 
 object NavHost : Screen {
+
+    @IgnoredOnParcel
     internal val bottomBarVisibility = Channel<Boolean>()
+
+    @IgnoredOnParcel
+    internal val exploreSearchChannel = Channel<String?>()
 
     @Composable
     override fun Content() {
         val appState = LocalAppState.current
 
         val visibilityChannel by produceState(initialValue = true) {
-            bottomBarVisibility.receiveAsFlow().onEach { value = it }.collect()
+            bottomBarVisibility.receiveAsFlow().collectLatest { value = it }
         }
+
+        val context = LocalContext.current
 
         TabNavigator(
             tab = ExploreTab,
-        ) {
+        ) { tabNavigator ->
+
+            LaunchedEffect(Unit) {
+                exploreSearchChannel.receiveAsFlow()
+                    .collect { query ->
+
+                        withContext(Dispatchers.Main.immediate) {
+                            Log.d("NavHost", "calling global search $query")
+                            ExploreTab.onSearch(query, tabNavigator)
+                        }
+                    }
+            }
+
+
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 contentWindowInsets = WindowInsets(0),

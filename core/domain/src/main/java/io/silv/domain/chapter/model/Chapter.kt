@@ -6,8 +6,12 @@ import io.silv.common.model.ChapterResource
 import io.silv.common.model.ProgressState
 import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.minus
+import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
+import java.util.UUID
 
 
 @Stable
@@ -67,6 +71,33 @@ data class Chapter(
     val read: Boolean = progress == ProgressState.Finished
 
     val started: Boolean = progress == ProgressState.Reading
+
+    companion object {
+        fun stub(mangaId: String, volume: Int = 1, chapter: Long = 1): Chapter {
+            return Chapter(
+                id = UUID.randomUUID().toString(),
+                url = "",
+                bookmarked = false,
+                downloaded = false,
+                progress = ProgressState.NotStarted,
+                mangaId = mangaId,
+                title = "Random title",
+                volume = volume,
+                chapter = chapter,
+                pages = (4..40).random(),
+                lastReadPage = 0,
+                translatedLanguage = "en",
+                uploader = UUID.randomUUID().toString(),
+                scanlationGroupToId = "" to "",
+                userToId = null,
+                version = 1,
+                createdAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
+                updatedAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
+                readableAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
+                ableToDownload = false
+            )
+        }
+    }
 }
 
 fun Chapter.toResource(): ChapterResource {

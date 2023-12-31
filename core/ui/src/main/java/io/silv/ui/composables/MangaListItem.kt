@@ -79,7 +79,7 @@ fun MangaListItem(
                 ),
         ) {
             AsyncImage(
-                model = manga,
+                model = manga.takeIf { !it.isStub } ?: manga.coverArt,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,

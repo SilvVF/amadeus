@@ -23,8 +23,8 @@ import io.ktor.utils.io.readUTF8Line
 import io.ktor.utils.io.writeFully
 import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -33,7 +33,7 @@ import java.security.MessageDigest
 internal class DefaultHttpCache internal constructor(
     directory: File,
     // 5 MiB
-    maxSize: Long =  5L * 1024,
+    maxSize: Long =  5L * 1024 * 1024,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): CacheStorage by LruCacheStorage(
     DiskLruCache.open(
@@ -60,9 +60,7 @@ private class LruCacheStorage(
             "writing to cache caches ${caches.size}"
         )
 
-        CoroutineScope(dispatcher).launch {
-            writeCache(urlHex, caches)
-        }
+        writeCache(urlHex, caches)
     }
 
     override suspend fun findAll(url: Url): Set<CachedResponseData> {
@@ -101,7 +99,7 @@ private class LruCacheStorage(
     private suspend fun writeCache(
         urlHex: String,
         caches: List<CachedResponseData>
-    ) = withContext(dispatcher) {
+    ) = coroutineScope {
         // Initialize the editor (edits the values for an entry).
         var editor: DiskLruCache.Editor? = null
         val channel = ByteChannel()

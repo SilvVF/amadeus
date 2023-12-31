@@ -1,8 +1,10 @@
 package io.silv
 
 import io.silv.domain.chapter.interactor.ChapterHandler
+import io.silv.domain.chapter.interactor.GetBookmarkedChapters
 import io.silv.domain.chapter.interactor.GetChapter
 import io.silv.domain.manga.SubscribeToPagingData
+import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
 import io.silv.domain.manga.interactor.GetManga
 import io.silv.domain.manga.interactor.GetMangaWithChapters
 import io.silv.domain.manga.interactor.MangaHandler
@@ -26,4 +28,8 @@ val domainModule =
         factoryOf(::MangaHandler)
 
         factoryOf(::ChapterHandler)
+
+        factoryOf(::GetLibraryMangaWithChapters)
+
+        factoryOf(::GetBookmarkedChapters)
     }

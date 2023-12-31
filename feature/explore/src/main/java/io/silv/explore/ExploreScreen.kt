@@ -97,11 +97,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-class ExploreScreen : Screen {
+class ExploreScreen: Screen {
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val screenModel = getScreenModel<ExploreScreenModel>()
+
+        LaunchedEffect(key1 = Unit) {
+            ExploreTab.searchChannel.receiveAsFlow()
+                .collect {
+                    screenModel.onSearch(it)
+                }
+        }
 
         val pagingFlowFlow by screenModel.mangaPagingFlow.collectAsStateWithLifecycle()
         val state by screenModel.state.collectAsStateWithLifecycle()

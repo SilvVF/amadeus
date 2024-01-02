@@ -18,13 +18,13 @@ import io.silv.database.entity.list.TagEntity
 import io.silv.database.entity.list.UserListEntity
 import io.silv.database.entity.manga.MangaEntity
 import io.silv.database.entity.manga.MangaUpdateEntity
-import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
+import io.silv.database.entity.manga.remotekeys.MangaToListRelation
 
 @Database(
     entities = [
         ChapterEntity::class,
         MangaEntity::class,
-        SeasonalRemoteKey::class,
+        MangaToListRelation::class,
         SeasonalListEntity::class,
         TagEntity::class,
         MangaUpdateEntity::class,

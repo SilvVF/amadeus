@@ -23,7 +23,7 @@ import io.silv.database.entity.manga.MangaEntity
         ),
     ],
 )
-data class SeasonalRemoteKey(
+data class MangaToListRelation(
     @ColumnInfo("manga_id", index = true)
     val mangaId: String,
     @ColumnInfo("season_id", index = true)

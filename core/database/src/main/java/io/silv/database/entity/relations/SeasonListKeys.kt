@@ -3,7 +3,7 @@ package io.silv.database.entity.relations
 import androidx.room.Embedded
 import androidx.room.Relation
 import io.silv.database.entity.list.SeasonalListEntity
-import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
+import io.silv.database.entity.manga.remotekeys.MangaToListRelation
 
 data class SeasonListKeys(
     @Embedded val list: SeasonalListEntity,
@@ -11,5 +11,5 @@ data class SeasonListKeys(
         parentColumn = "id",
         entityColumn = "season_id",
     )
-    val keys: List<SeasonalRemoteKey>,
+    val keys: List<MangaToListRelation>,
 )

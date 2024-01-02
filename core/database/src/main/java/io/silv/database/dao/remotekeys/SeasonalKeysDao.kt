@@ -7,27 +7,27 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import io.silv.database.dao.SeasonalKeyWithSourceManga
-import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
+import io.silv.database.entity.manga.remotekeys.MangaToListRelation
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SeasonalKeysDao {
     @Delete
-    suspend fun delete(key: SeasonalRemoteKey)
+    suspend fun delete(key: MangaToListRelation)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(key: SeasonalRemoteKey)
+    suspend fun insert(key: MangaToListRelation)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(keys: List<SeasonalRemoteKey>)
+    suspend fun insertAll(keys: List<MangaToListRelation>)
 
-    @Query("DELETE FROM SeasonalRemoteKey")
+    @Query("DELETE FROM MangaToListRelation")
     suspend fun clear()
 
     @Transaction
     @Query(
         """
-      SELECT * FROM SeasonalRemoteKey
+      SELECT * FROM MangaToListRelation
       WHERE season_id = :id
     """,
     )
@@ -36,14 +36,14 @@ interface SeasonalKeysDao {
     @Transaction
     @Query(
         """
-      SELECT * FROM SeasonalRemoteKey
+      SELECT * FROM MangaToListRelation
       WHERE season_id = :id
     """,
     )
     fun selectBySeasonId(id: String): List<SeasonalKeyWithSourceManga>
 
     @Query(
-        "DELETE FROM SeasonalRemoteKey WHERE manga_id = :mangaId AND season_id = :seasonId",
+        "DELETE FROM MangaToListRelation WHERE manga_id = :mangaId AND season_id = :seasonId",
     )
     suspend fun delete(
         mangaId: String,

@@ -9,7 +9,7 @@ import androidx.room.Relation
 import androidx.room.Transaction
 import io.silv.database.entity.list.SeasonalListEntity
 import io.silv.database.entity.manga.MangaEntity
-import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
+import io.silv.database.entity.manga.remotekeys.MangaToListRelation
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -40,14 +40,14 @@ class SeasonalListAndKeyAndManga(
     @Relation(
         parentColumn = "id",
         entityColumn = "season_id",
-        entity = SeasonalRemoteKey::class,
+        entity = MangaToListRelation::class,
     )
     val manga: List<SeasonalKeyWithSourceManga> = emptyList(),
 )
 
 data class SeasonalKeyWithSourceManga(
     @Embedded
-    val key: SeasonalRemoteKey,
+    val key: MangaToListRelation,
     @Relation(
         parentColumn = "manga_id",
         entityColumn = "id",

@@ -1,6 +1,5 @@
 package io.silv.explore
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +7,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -61,6 +62,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -102,175 +104,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-class ExploreScreen: Screen {
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    override fun Content() {
-        val screenModel = getScreenModel<ExploreScreenModel>()
-
-        val lifecycleOwner = LocalLifecycleOwner.current
-
-        LaunchedEffect(lifecycleOwner) {
-            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                withContext(Dispatchers.Main.immediate) {
-                    ExploreTab.searchChannel.receiveAsFlow()
-                        .collect {
-                            screenModel.onSearch(it)
-                        }
-                }
-            }
-        }
-
-        val pagingFlowFlow by screenModel.mangaPagingFlow.collectAsStateWithLifecycle()
-        val state by screenModel.state.collectAsStateWithLifecycle()
-
-        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
-            state = rememberTopAppBarState()
-        )
-
-        val expandableState = rememberExpandableState()
-        val navigator = LocalNavigator.currentOrThrow
-
-        LaunchedEffect(lifecycleOwner) {
-            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                withContext(Dispatchers.Main.immediate) {
-                    ExploreTab.reselectChannel.receiveAsFlow().collectLatest {
-                        Log.d("Explore", "received reselect event")
-                        expandableState.toggleProgress()
-                    }
-                }
-            }
-        }
-
-        var showDisplayOptionsBottomSheet by rememberSaveable {
-            mutableStateOf(false)
-        }
-
-        var showFiltersBottomSheet by rememberSaveable {
-            mutableStateOf(false)
-        }
-        val changePageType = screenModel::changePagingType
-        when {
-            showDisplayOptionsBottomSheet ->
-                DisplayOptionsBottomSheet(
-                    optionsTitle = {
-                        Text("Explore display options")
-                    },
-                    onDismissRequest = { showDisplayOptionsBottomSheet = false },
-                    clearSearchHistory = screenModel::clearSearchHistory,
-                )
-            showFiltersBottomSheet ->
-                FiltersBottomSheet(
-                    onSaveQuery = {
-                        changePageType(UiPagedType.Query(it))
-                    },
-                ) {
-                    showFiltersBottomSheet = !showFiltersBottomSheet
-                }
-        }
-
-        val snackbarHostState = remember{ SnackbarHostState() }
-
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            topBar = {
-                val scope = rememberCoroutineScope()
-                val context = LocalContext.current
-                ExploreTopAppBar(
-                    selected = state.pagedType,
-                    scrollBehavior = scrollBehavior,
-                    onWebClick = {
-                        context.openOnWeb("https://mangadex.org", "View manga using.")
-                            .onFailure {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Couldn't open url.")
-                                }
-                            }
-                    },
-                    onDisplayOptionsClick = {
-                        scope.launch {
-                            if (!expandableState.isHidden) {
-                                expandableState.hide()
-                            } else {
-                                expandableState.expand()
-                            }
-                        }
-                    },
-                    onSearch = screenModel::onSearch,
-                    onPageTypeSelected = screenModel::changePagingType,
-                    onFilterClick = {
-                        showFiltersBottomSheet = !showFiltersBottomSheet
-                    },
-                )
-            },
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        ) { paddingValues ->
-
-            val pagingItems = pagingFlowFlow.collectAsLazyPagingItems()
-
-            Box(Modifier.fillMaxSize()) {
-                PullRefresh(
-                    paddingValues = paddingValues,
-                    refreshing = false, // refresh indicator handled by BrowseMangaContent
-                    onRefresh =
-                    when (state.pagedType) {
-                        UiPagedType.Seasonal -> screenModel::refreshSeasonalManga
-                        else -> pagingItems::refresh
-                    },
-                ) {
-                    BrowseMangaContent(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPaddingValues = paddingValues,
-                        seasonalLists = state.seasonalLists,
-                        refreshingSeasonal = state.refreshingSeasonal,
-                        mangaList = pagingItems,
-                        onBookmarkClick = screenModel::bookmarkManga,
-                        onMangaClick = {
-                            navigator.push(
-                                SharedScreen.MangaView(it.id),
-                            )
-                        },
-                        onTagClick = { name, id ->
-                            navigator.push(
-                                SharedScreen.MangaFilter(name, id),
-                            )
-                        },
-                        pagedType = state.pagedType,
-                    )
-                }
-                ExpandableInfoLayout(
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                    state = expandableState,
-                    peekContent = {
-                        RecentSearchesPeekContent(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .wrapContentHeight(),
-                            recentSearchUiState = state.recentSearchUiState,
-                            query = state.filters?.title,
-                            onRecentSearchClick = screenModel::onSearch,
-                        )
-                    },
-                ) {
-                    ExpandableInfoLayoutContent(
-                        modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight(),
-                        showGroupingOptions = {
-                            showFiltersBottomSheet = !showFiltersBottomSheet
-                        },
-                        showDisplayOptions = {
-                            showDisplayOptionsBottomSheet = !showDisplayOptionsBottomSheet
-                        },
-                    )
-                }
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

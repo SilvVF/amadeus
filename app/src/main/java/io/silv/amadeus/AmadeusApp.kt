@@ -19,8 +19,6 @@ import eu.kanade.tachiyomi.MangaCoverFetcher
 import eu.kanade.tachiyomi.MangaCoverKeyer
 import eu.kanade.tachiyomi.MangaKeyer
 import eu.kanade.tachiyomi.TachiyomiImageDecoder
-import io.silv.explore.ExploreScreen
-import io.silv.library.LibraryScreen
 import io.silv.manga.download.DownloadQueueScreen
 import io.silv.manga.manga_filter.MangaFilterScreen
 import io.silv.manga.manga_view.MangaViewScreen
@@ -52,12 +50,12 @@ class AmadeusApp : Application(), ImageLoaderFactory {
         }
 
         ScreenRegistry {
-            register<SharedScreen.Explore> {
-                ExploreScreen()
-            }
-            register<SharedScreen.Library> {
-                LibraryScreen()
-            }
+//            register<SharedScreen.Explore> {
+//                ExploreScreen()
+//            }
+//            register<SharedScreen.Library> {
+//                LibraryScreen()
+//            }
             register<SharedScreen.Reader> {
                 ReaderScreen(
                     mangaId = it.mangaId,

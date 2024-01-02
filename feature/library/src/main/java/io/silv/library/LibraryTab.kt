@@ -3,7 +3,6 @@
 package io.silv.library
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
@@ -81,12 +80,10 @@ import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import cafe.adriel.voyager.transitions.FadeTransition
 import io.silv.common.emptyImmutableList
 import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.manga.model.Manga
@@ -138,38 +135,20 @@ object LibraryTab : ReselectTab {
 
     @Composable
     override fun Content() {
-        Navigator(screen = LibraryScreen()) {
-            FadeTransition(navigator = it)
-        }
-    }
-}
 
-enum class LibTab {
-    Library, Chapters, Updates, UserLists {
-        override fun toString(): String {
-            return "User Lists"
-        }
-    }
-}
-
-class LibraryScreen : Screen {
-
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
-    @Composable
-    override fun Content() {
+        val appState = LocalAppState.current
 
         val screenModel = getScreenModel<LibraryScreenModel>()
 
         val state by screenModel.state.collectAsStateWithLifecycle()
 
-        val appState = LocalAppState.current
         val lifeCycleOwner = LocalLifecycleOwner.current
         val expandableState = rememberExpandableState()
 
-        LaunchedEffect(lifeCycleOwner) {
+        LaunchedEffect(reselectChannel, lifeCycleOwner) {
             lifeCycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 withContext(Dispatchers.Main.immediate) {
-                    LibraryTab.reselectChannel.receiveAsFlow().collectLatest {
+                    reselectChannel.receiveAsFlow().collectLatest {
                         expandableState.toggleProgress()
                     }
                 }
@@ -194,6 +173,14 @@ class LibraryScreen : Screen {
                 }
             )
         )
+    }
+}
+
+enum class LibTab {
+    Library, Chapters, Updates, UserLists {
+        override fun toString(): String {
+            return "User Lists"
+        }
     }
 }
 

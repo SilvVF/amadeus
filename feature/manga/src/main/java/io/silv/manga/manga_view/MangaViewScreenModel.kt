@@ -134,7 +134,7 @@ class MangaViewScreenModel(
             chapterHandler.toggleChapterBookmarked(id)
                 .onSuccess {
                     it?.let {
-                        mutableEvents.send(
+                        sendEvent(
                             MangaViewEvent.BookmarkStatusChanged(id, it.bookmarked),
                         )
                     }
@@ -147,7 +147,7 @@ class MangaViewScreenModel(
             chapterHandler.toggleReadOrUnread(id)
                 .onSuccess {
                     it?.let {
-                        mutableEvents.send(
+                        sendEvent(
                             MangaViewEvent.ReadStatusChanged(id, it.read),
                         )
                     }

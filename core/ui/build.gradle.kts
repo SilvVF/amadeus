@@ -47,6 +47,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation("androidx.compose.foundation:foundation:1.6.0-alpha07")
+    implementation("io.github.fornewid:material-motion-compose-core:1.1.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.junit)

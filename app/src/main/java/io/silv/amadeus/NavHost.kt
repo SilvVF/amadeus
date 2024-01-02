@@ -2,26 +2,23 @@ package io.silv.amadeus
 
 import android.annotation.SuppressLint
 import android.util.Log
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.FiniteAnimationSpec
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -40,6 +37,7 @@ import io.silv.library.LibraryTab
 import io.silv.manga.download.RecentsTab
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
+import io.silv.ui.layout.Scaffold
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
@@ -48,94 +46,90 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.IgnoredOnParcel
+import soup.compose.material.motion.animation.materialFadeThroughIn
+import soup.compose.material.motion.animation.materialFadeThroughOut
 
 object NavHost : Screen {
 
     @IgnoredOnParcel
-    internal val bottomBarVisibility = Channel<Boolean>(UNLIMITED)
-
-    @IgnoredOnParcel
     internal val globalSearchChannel = Channel<String?>(UNLIMITED)
 
+    @IgnoredOnParcel
+    internal val bottomBarVisibility = Channel<Boolean>()
+
+    @OptIn(ExperimentalMaterial3Api::class)
     @SuppressLint("UnusedContentLambdaTargetStateParameter")
     @Composable
     override fun Content() {
         val appState = LocalAppState.current
+        val lifecycleOwner = LocalLifecycleOwner.current
 
-        val visibilityChannel by produceState(initialValue = true) {
+        val bottomBarVisible by produceState(initialValue = true) {
             bottomBarVisibility.receiveAsFlow().collectLatest { value = it }
         }
 
-        val lifecycleOwner = LocalLifecycleOwner.current
-
+        val nav = LocalNavigator.currentOrThrow
         TabNavigator(
             tab = ExploreTab,
         ) { tabNavigator ->
+            CompositionLocalProvider(LocalNavigator provides nav) {
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    contentWindowInsets = WindowInsets(0),
+                    startBar = {
+                        if (appState.shouldShowNavRail && bottomBarVisible) {
+                            AmadeusNavRail()
+                        }
+                    },
+                    bottomBar = {
+                        if (appState.shouldShowBottomBar && bottomBarVisible) {
+                            AmadeusBottomBar(modifier = Modifier.fillMaxWidth())
+                        }
+                    }
+                ) { incoming ->
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .padding(incoming)
+                            .consumeWindowInsets(incoming)
+                    ) {
+                        AnimatedContent(
+                            modifier = Modifier.fillMaxSize(),
+                            targetState = tabNavigator.current,
+                            transitionSpec = {
+                                materialFadeThroughIn(
+                                    initialScale = 1f,
+                                    durationMillis = 200
+                                ) togetherWith
+                                        materialFadeThroughOut(durationMillis = 200)
+                            },
+                            label = "tabContent",
+                        ) {
+                            tabNavigator.saveableState(key = "currentTab", it) {
+                                it.Content()
+                            }
+                        }
+                    }
+
+                }
+            }
 
             LaunchedEffect(lifecycleOwner.lifecycle, globalSearchChannel) {
                 lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     withContext(Dispatchers.Main.immediate) {
                         globalSearchChannel.receiveAsFlow()
                             .collect { query ->
-
-                                Log.d("NavHost", "calling global search $query")
-                                ExploreTab.onSearch(query, tabNavigator)
+                                if (query != null) {
+                                    ExploreTab.searchChannel.send(query)
+                                }
                             }
                     }
                 }
             }
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                contentWindowInsets = WindowInsets(0),
-                bottomBar = {
-                    AnimatedVisibility(
-                        visible = appState.shouldShowBottomBar && visibilityChannel,
-                        enter = slideInVertically { it },
-                        exit = slideOutVertically { it },
-                    ) {
-                        AmadeusBottomBar(
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                },
-            ) { incoming ->
-                Row {
-                    if (appState.shouldShowNavRail && visibilityChannel) {
-                        AmadeusNavRail()
-                    }
-                    Box(
-                        Modifier
-                            .padding(incoming)
-                            .consumeWindowInsets(incoming),
-                    ) {
-                        CrossfadeTransition(
-                            navigator = tabNavigator
-                        )
-                    }
-                }
-            }
         }
     }
 }
 
-@Composable
-fun CrossfadeTransition(
-    navigator: TabNavigator,
-    modifier: Modifier = Modifier,
-    animationSpec: FiniteAnimationSpec<Float> = tween(),
-    label: String = "Crossfade",
-) {
-    navigator.saveableState("currentTab") {
-        Crossfade(
-            targetState = navigator.current,
-            animationSpec = animationSpec,
-            modifier = modifier,
-            label = label
-        ) { tab ->
-            tab.Content()
-        }
-    }
-}
 
 
 

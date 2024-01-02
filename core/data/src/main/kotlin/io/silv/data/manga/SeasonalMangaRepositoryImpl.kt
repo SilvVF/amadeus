@@ -1,6 +1,5 @@
 package io.silv.data.manga
 
-import android.util.Log
 import androidx.room.withTransaction
 import com.skydoves.sandwich.getOrThrow
 import io.silv.common.AmadeusDispatchers
@@ -17,11 +16,8 @@ import io.silv.network.MangaDexApi
 import io.silv.network.model.list.Data
 import io.silv.network.util.fetchMangaChunked
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
@@ -34,14 +30,6 @@ internal class SeasonalMangaRepositoryImpl(
     private val seasonalListDao = db.seasonalListDao()
     private val sourceMangaDao = db.sourceMangaDao()
     private val keyDao = db.seasonalRemoteKeysDao()
-
-    init {
-        CoroutineScope(Dispatchers.IO).launch {
-            subscribe().collect {
-                Log.d("Seasonal", it.toString())
-            }
-        }
-    }
 
     override fun subscribe() =
         seasonalListDao.observeSeasonListWithManga().map { lists ->

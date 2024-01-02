@@ -91,10 +91,7 @@ dependencies {
 
     implementation(libs.coil.gif)
     implementation(libs.coil.svg)
-    implementation(libs.accompanist.webview)
-
-    implementation(libs.flow.combinetuple.kt)
-    implementation(libs.tuples.kt)
+    implementation("io.github.fornewid:material-motion-compose-core:1.1.0")
 
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
@@ -115,12 +112,6 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    implementation(libs.androidx.paging.compose)
-    implementation(libs.androidx.paging.runtime)
-    implementation(libs.androidx.paging.common)
-    // optional - Paging 3 Integration
-    implementation(libs.androidx.room.paging)
-
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.animation:animation-graphics")
 
@@ -131,13 +122,6 @@ dependencies {
 
     implementation(libs.disklrucache)
     implementation(libs.okio)
-
-    // ROOM
-    ksp(libs.room.ksp)
-    implementation(libs.room.runtime)
-    annotationProcessor(libs.room.compiler)
-    implementation(libs.room.coroutines)
-    testImplementation(libs.room.test)
 
     // VOYAGER
     implementation(libs.voyager.androidx)

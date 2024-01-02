@@ -16,6 +16,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.transitions.FadeTransition
 import io.silv.amadeus.crash.CrashActivity
 import io.silv.amadeus.crash.GlobalExceptionHandler
 import io.silv.common.model.NetworkConnectivity
@@ -41,9 +42,9 @@ class MainActivity : ComponentActivity() {
             val appState =
                 rememberAppState(
                     windowSizeClass = windowSizeClass,
-                    bottomBarVisibilityChannel = NavHost.bottomBarVisibility,
                     networkConnectivity = connectivity,
-                    exploreSearchChannel = NavHost.globalSearchChannel
+                    exploreSearchChannel = NavHost.globalSearchChannel,
+                    bottomBarVisibilityChannel = NavHost.bottomBarVisibility
                 )
 
             AmadeusTheme {
@@ -54,7 +55,9 @@ class MainActivity : ComponentActivity() {
                     CompositionLocalProvider(
                         LocalAppState provides appState,
                     ) {
-                        Navigator(NavHost)
+                        Navigator(NavHost) {
+                            FadeTransition(it)
+                        }
                     }
                 }
             }

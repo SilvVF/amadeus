@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -28,9 +29,15 @@ import kotlinx.coroutines.withContext
 abstract class EventStateScreenModel<EVENT, STATE>(initialState: STATE) : StateScreenModel<STATE>(
     initialState
 ) {
-    protected val mutableEvents = Channel<EVENT>()
+    private val mutableEvents = Channel<EVENT>(UNLIMITED)
 
     val events = mutableEvents.receiveAsFlow()
+
+    protected suspend fun sendEvent(event: EVENT) {
+        withContext(Dispatchers.Main.immediate) {
+            mutableEvents.send(event)
+        }
+    }
 
     protected fun <T> Flow<T>.stateInUi(initialValue: T) =
         this.stateIn(
@@ -83,7 +90,7 @@ fun <EVENT> EventScreenModel<EVENT>.collectEvents(
     val sideEffectFlow = events
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    LaunchedEffect(sideEffectFlow, lifecycleOwner.lifecycle) {
+    LaunchedEffect(sideEffectFlow, lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(lifecycleState) {
             withContext(Dispatchers.Main.immediate) {
                 sideEffectFlow.collect { event(it) }

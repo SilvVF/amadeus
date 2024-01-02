@@ -34,7 +34,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -114,7 +113,9 @@ private fun DownloadScreenContent(
     actions: DownloadQueueActions,
     running: Boolean
 ) {
-    Scaffold(
+
+    io.silv.ui.layout.Scaffold(
+        modifier = Modifier.fillMaxSize(),
        topBar = {
            TopAppBar(
                navigationIcon = {
@@ -182,8 +183,7 @@ private fun DownloadScreenContent(
         if (downloads.isEmpty()) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                    .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column {
@@ -196,7 +196,7 @@ private fun DownloadScreenContent(
             VerticalReorderList(
                 downloads = downloads,
                 actions = actions,
-                paddingValues
+                paddingValues,
             )
         }
     }

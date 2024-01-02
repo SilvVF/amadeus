@@ -8,8 +8,9 @@ import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.Season
 import io.silv.data.mappers.toEntity
 import io.silv.database.AmadeusDatabase
+import io.silv.database.dao.SeasonalListAndKeyAndManga
 import io.silv.database.entity.list.SeasonalListEntity
-import io.silv.database.entity.manga.remotekeys.SeasonalRemoteKey
+import io.silv.database.entity.manga.remotekeys.MangaToListRelation
 import io.silv.domain.manga.repository.SeasonalMangaRepository
 import io.silv.model.DomainSeasonalList
 import io.silv.network.MangaDexApi
@@ -18,6 +19,7 @@ import io.silv.network.util.fetchMangaChunked
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -58,8 +60,10 @@ internal class SeasonalMangaRepositoryImpl(
     ) {
         withContext(dispatchers.io) {
 
+            val seasonWithManga = seasonalListDao.observeSeasonListWithManga().firstOrNull()
+
             val toUpdate = seasonalLists.filter {
-                needsUpdate(seasonalListDao.getSeasonalLists(), it)
+                seasonWithManga == null || needsUpdate(seasonWithManga, it)
             }
 
 
@@ -94,7 +98,7 @@ internal class SeasonalMangaRepositoryImpl(
 
                 keyDao.insertAll(
                     response.map {
-                        SeasonalRemoteKey(
+                        MangaToListRelation(
                             mangaId = it.id,
                             seasonId = seasonalLists.find { list ->
                                 list.userList.relationships
@@ -139,9 +143,9 @@ internal class SeasonalMangaRepositoryImpl(
         )
     }
 
-    private fun needsUpdate(prevLists: List<SeasonalListEntity>, info: SeasonInfo): Boolean {
-        val prev = prevLists.find { it.id == info.userList.id }
-        return prev == null || prev.version != info.userList.attributes.version
+    private fun needsUpdate(prevLists: List<SeasonalListAndKeyAndManga>, info: SeasonInfo): Boolean {
+        val prev = prevLists.find { it.list.id == info.userList.id }
+        return prev == null || prev.list.version != info.userList.attributes.version || prevLists.find { it.list.id == info.userList.id }?.manga.isNullOrEmpty()
     }
 
     companion object {

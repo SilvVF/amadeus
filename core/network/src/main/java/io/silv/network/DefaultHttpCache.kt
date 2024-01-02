@@ -59,7 +59,6 @@ private class LruCacheStorage(
             "HttpCacheImpl",
             "writing to cache caches ${caches.size}"
         )
-
         writeCache(urlHex, caches)
     }
 

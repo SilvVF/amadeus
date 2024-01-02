@@ -22,4 +22,6 @@ sealed class SharedScreen : ScreenProvider {
     ) : SharedScreen()
 
     data object MangaSearch : SharedScreen()
+
+    data object DownloadQueue: SharedScreen()
 }

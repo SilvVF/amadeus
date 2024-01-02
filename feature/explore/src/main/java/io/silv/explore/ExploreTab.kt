@@ -18,18 +18,18 @@ import io.silv.ui.GlobalSearchTab
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 
 object ExploreTab : ReselectTab, GlobalSearchTab {
 
+
     internal val reselectChannel = Channel<Unit>()
 
-    internal val searchChannel = Channel<String>(UNLIMITED)
+    internal val searchChannel = Channel<String>(capacity = 1)
 
     override suspend fun onSearch(query: String?, navigator: TabNavigator) {
-        query?.let{ searchChannel.send(query) }
+        query?.let{ searchChannel.trySend(query) }
         navigator.current = this
     }
 

@@ -2,18 +2,17 @@
 
 package io.silv.library
 
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.silv.common.emptyImmutableList
 import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
-import io.silv.domain.manga.model.MangaWithChapters
+import io.silv.library.state.LibraryError
+import io.silv.library.state.LibraryEvent
+import io.silv.library.state.LibraryState
 import io.silv.ui.EventStateScreenModel
-import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,56 +26,6 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-@Stable
-data class LibraryTag(
-    val name: String,
-    val id: String,
-    val selected: Boolean
-)
-
-sealed interface LibraryError {
-    data object NoFavoritedChapters: LibraryError
-    data class Generic(val reason: String): LibraryError
-}
-
-@Immutable
-sealed class LibraryState {
-    data object Loading: LibraryState()
-    data class Error(
-        val error: LibraryError
-    ): LibraryState()
-    data class Success(
-        val filteredMangaWithChapters: ImmutableList<MangaWithChapters> = emptyImmutableList(),
-        val mangaWithChapters: ImmutableList<MangaWithChapters> = emptyImmutableList(),
-        val filteredTagIds: ImmutableList<String> = emptyImmutableList(),
-        val filteredText: String = "",
-    ): LibraryState() {
-        val libraryTags = mangaWithChapters
-            .flatMap { it.manga.tagToId.entries }
-            .toSet()
-            .map { (name, id) ->
-                LibraryTag(name, id, filteredTagIds.isEmpty() || filteredTagIds.contains(id))
-            }
-            .toImmutableList()
-
-        val hasFilters = filteredTagIds.isNotEmpty() || filteredText.isNotBlank()
-
-        val isLibraryEmpty = mangaWithChapters.isEmpty()
-    }
-
-    val success = (this as? Success)
-}
-
-sealed interface LibraryEvent
-
-@Stable
-data class LibraryActions(
-    val clearTagFilter: () -> Unit = {},
-    val filterByTag: (id: String) -> Unit = {_-> },
-    val searchChanged: (search: String) -> Unit = {_ ->},
-    val searchOnMangaDex: (query: String) -> Unit = { _ -> },
-    val navigateToExploreTab: () -> Unit = {},
-)
 
 class LibraryScreenModel(
     getLibraryMangaWithChapters: GetLibraryMangaWithChapters
@@ -112,7 +61,7 @@ class LibraryScreenModel(
                     .toImmutableList()
 
                 mutableState.update { state ->
-                    (state.success ?: LibraryState.Success(emptyImmutableList())).copy(
+                    (state.success ?: LibraryState.Success(persistentListOf())).copy(
                         filteredTagIds = tagIds.toImmutableList(),
                         filteredMangaWithChapters = filtered,
                         filteredText = query,

@@ -1,19 +1,23 @@
 package io.silv.network.sources
 
+import android.util.Log
 import com.skydoves.sandwich.getOrThrow
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.onDownload
+import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.utils.CacheControl
 import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Page
 import io.silv.network.MangaDexApi
 import kotlinx.serialization.Serializable
-import okhttp3.CacheControl
 import java.util.Date
 import kotlin.time.Duration.Companion.minutes
 
@@ -56,18 +60,18 @@ class HttpSource(
     private fun mdAtHomeRequest(
         tokenRequestUrl: String,
         headers: HeadersBuilder,
-        cacheControl: CacheControl.Builder,
+        cacheControl: String,
     ): HttpRequestBuilder {
-        val cache = cacheControl.build()
-        if (cache.noCache) {
+        if (cacheControl == CacheControl.NO_CACHE) {
             tokenTracker[tokenRequestUrl] = Date().time
         }
         return HttpRequestBuilder().apply {
             url(tokenRequestUrl)
             headers {
                 headers.build()
+
+                set(HttpHeaders.CacheControl, cacheControl)
             }
-            cacheControl.build()
         }
     }
     /**
@@ -77,7 +81,7 @@ class HttpSource(
         tokenRequestUrl: String,
         client: HttpClient,
         headers: HeadersBuilder,
-        cacheControl: CacheControl.Builder,
+        cacheControl: String,
     ): String {
         val request = mdAtHomeRequest(tokenRequestUrl, headers, cacheControl)
         val response = client.get(request)
@@ -89,7 +93,7 @@ class HttpSource(
                 tokenRequestUrl,
                 client,
                 headers,
-                CacheControl.Builder().noCache()
+                cacheControl
             )
         }
 
@@ -99,7 +103,7 @@ class HttpSource(
     /**
      * Check the token map to see if the MD@Home host is still valid.
      */
-    private suspend fun getValidImageUrlForPage(page: Page, headers: HeadersBuilder): HttpRequestBuilder.() -> Unit {
+    private suspend fun getValidImageUrlForPage(page: Page): String {
         val (host, tokenRequestUrl, time) = page.url.split(",")
 
         val mdAtHomeServerUrl =
@@ -108,27 +112,39 @@ class HttpSource(
                 true -> {
                     val tokenLifespan = Date().time - (tokenTracker[tokenRequestUrl] ?: 0)
                     val cacheControl = if (tokenLifespan > 5.minutes.inWholeMilliseconds) {
-                        CacheControl.Builder().noCache()
+                        CacheControl.NO_CACHE
                     } else {
-                        CacheControl.Builder().onlyIfCached()
+                        CacheControl.ONLY_IF_CACHED
                     }
-                    getMdAtHomeUrl(tokenRequestUrl, client, headers, cacheControl)
+                    getMdAtHomeUrl(tokenRequestUrl, client, reqHeader, cacheControl)
                 }
             }
-        return {
-            url(page.imageUrl!!.replaceBefore("/data", mdAtHomeServerUrl))
-            headers.build()
-        }
+        return page.imageUrl!!.replaceBefore("/data", mdAtHomeServerUrl).also { Log.d("Source", it) }
     }
 
-    private val headers =  HeadersBuilder().apply {
+    private val reqHeader =  HeadersBuilder().apply {
         set("Referer", "${mangaDexApi.mangaDexUrl}/")
     }
 
 
-    suspend fun getImage(page: Page): HttpResponse {
-        return client.get(getValidImageUrlForPage(page, headers))
-
+    suspend fun getImage(
+        page: Page,
+        headers: List<Pair<String, String>>,
+    ): HttpResponse {
+        return client.get {
+                url(getValidImageUrlForPage(page))
+                headers {
+                    headers.forEach { (name, value) ->
+                        set(name, value)
+                    }
+                }
+                onUpload { bytesSentTotal, contentLength -> Log.d("Upload", "$bytesSentTotal, $contentLength")  }
+                onDownload { bytesSentTotal, contentLength ->   Log.d("download", "$bytesSentTotal, $contentLength")
+                    runCatching {
+                        page.update(bytesSentTotal, contentLength, bytesSentTotal >= contentLength)
+                    }
+                }
+            }
     }
 
     suspend fun getPageList(chapter: ChapterResource): List<Page> {

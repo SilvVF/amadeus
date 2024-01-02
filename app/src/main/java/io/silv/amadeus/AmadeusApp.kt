@@ -21,6 +21,7 @@ import eu.kanade.tachiyomi.MangaKeyer
 import eu.kanade.tachiyomi.TachiyomiImageDecoder
 import io.silv.explore.ExploreScreen
 import io.silv.library.LibraryScreen
+import io.silv.manga.download.DownloadQueueScreen
 import io.silv.manga.manga_filter.MangaFilterScreen
 import io.silv.manga.manga_view.MangaViewScreen
 import io.silv.navigation.SharedScreen
@@ -68,6 +69,9 @@ class AmadeusApp : Application(), ImageLoaderFactory {
             }
             register<SharedScreen.MangaView> {
                 MangaViewScreen(it.mangaId)
+            }
+            register<SharedScreen.DownloadQueue> {
+                DownloadQueueScreen()
             }
         }
 

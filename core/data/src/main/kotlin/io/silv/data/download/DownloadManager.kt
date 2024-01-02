@@ -14,6 +14,15 @@ import io.silv.domain.chapter.model.toResource
 import io.silv.domain.manga.interactor.GetManga
 import io.silv.domain.manga.model.toResource
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
 class DownloadManager internal constructor(
@@ -38,6 +47,9 @@ class DownloadManager internal constructor(
     fun downloaderStart() = downloader.start()
 
     fun downloaderStop(reason: String? = null) = downloader.stop(reason)
+
+    val isDownloaderRunning
+        get() = DownloadWorker.isRunningFlow(context)
 
     /**
      * Tells the downloader to begin downloads.
@@ -69,6 +81,38 @@ class DownloadManager internal constructor(
         downloader.clearQueue()
         downloader.stop()
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun statusFlow(): Flow<Download> = queueState
+        .flatMapLatest { downloads ->
+            downloads
+                .map { download ->
+                    download.statusFlow.drop(1).map { download }
+                }
+                .merge()
+        }
+        .onStart {
+            emitAll(
+                queueState.value.filter { download -> download.status == Download.State.DOWNLOADING }.asFlow(),
+            )
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun progressFlow(): Flow<Download> = queueState
+        .flatMapLatest { downloads ->
+            downloads
+                .map { download ->
+                    download.progressFlow.drop(1).map { download }
+                }
+                .merge()
+        }
+        .onStart {
+            emitAll(
+                queueState.value.filter { download -> download.status == Download.State.DOWNLOADING }
+                    .asFlow(),
+            )
+        }
+
     /**
      * Returns the download from queue if the chapter is queued for download
      * else it will return null which means that the chapter is not queued for download

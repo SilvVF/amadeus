@@ -83,7 +83,7 @@ fun <EVENT> EventScreenModel<EVENT>.collectEvents(
     val sideEffectFlow = events
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    LaunchedEffect(sideEffectFlow, lifecycleOwner) {
+    LaunchedEffect(sideEffectFlow, lifecycleOwner.lifecycle) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(lifecycleState) {
             withContext(Dispatchers.Main.immediate) {
                 sideEffectFlow.collect { event(it) }

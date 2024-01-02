@@ -61,9 +61,12 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -93,9 +96,12 @@ import io.silv.ui.openOnWeb
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ExploreScreen: Screen {
 
@@ -104,11 +110,17 @@ class ExploreScreen: Screen {
     override fun Content() {
         val screenModel = getScreenModel<ExploreScreenModel>()
 
-        LaunchedEffect(key1 = Unit) {
-            ExploreTab.searchChannel.receiveAsFlow()
-                .collect {
-                    screenModel.onSearch(it)
+        val lifecycleOwner = LocalLifecycleOwner.current
+
+        LaunchedEffect(lifecycleOwner) {
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                withContext(Dispatchers.Main.immediate) {
+                    ExploreTab.searchChannel.receiveAsFlow()
+                        .collect {
+                            screenModel.onSearch(it)
+                        }
                 }
+            }
         }
 
         val pagingFlowFlow by screenModel.mangaPagingFlow.collectAsStateWithLifecycle()
@@ -121,10 +133,14 @@ class ExploreScreen: Screen {
         val expandableState = rememberExpandableState()
         val navigator = LocalNavigator.currentOrThrow
 
-        LaunchedEffect(ExploreTab.reselectChannel) {
-            ExploreTab.reselectChannel.receiveAsFlow().collect {
-                Log.d("Explore", "received reselect event")
-                expandableState.toggleProgress()
+        LaunchedEffect(lifecycleOwner) {
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                withContext(Dispatchers.Main.immediate) {
+                    ExploreTab.reselectChannel.receiveAsFlow().collectLatest {
+                        Log.d("Explore", "received reselect event")
+                        expandableState.toggleProgress()
+                    }
+                }
             }
         }
 

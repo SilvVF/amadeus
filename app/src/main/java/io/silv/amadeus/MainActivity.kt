@@ -2,7 +2,6 @@
 
 package io.silv.amadeus
 
-import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -36,14 +35,6 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
-        requestPermissions(
-            arrayOf(
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            ),
-            0,
-        )
-
         setContent {
             val windowSizeClass = calculateWindowSizeClass(this)
 
@@ -52,7 +43,7 @@ class MainActivity : ComponentActivity() {
                     windowSizeClass = windowSizeClass,
                     bottomBarVisibilityChannel = NavHost.bottomBarVisibility,
                     networkConnectivity = connectivity,
-                    exploreSearchChannel = NavHost.exploreSearchChannel
+                    exploreSearchChannel = NavHost.globalSearchChannel
                 )
 
             AmadeusTheme {

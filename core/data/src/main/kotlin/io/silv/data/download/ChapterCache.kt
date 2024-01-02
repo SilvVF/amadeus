@@ -3,9 +3,8 @@ package io.silv.data.download
 import android.content.Context
 import android.text.format.Formatter
 import com.jakewharton.disklrucache.DiskLruCache
+import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsChannel
-import io.ktor.utils.io.jvm.javaio.copyTo
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Page
 import io.silv.data.util.DiskUtil
@@ -149,11 +148,11 @@ class ChapterCache(
             val key = DiskUtil.hashKeyForDisk(imageUrl)
             editor = diskCache.edit(key) ?: throw IOException("Unable to edit key")
 
-            val body = response.bodyAsChannel()
+            val responseBody: ByteArray = response.body()
 
             // Get OutputStream and write image with Okio.
             editor.newOutputStream(0).use {
-                body.copyTo(it)
+                it.write(responseBody)
             }
 
             diskCache.flush()

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -79,7 +80,7 @@ fun Context.openOnWeb(
             Intent.ACTION_VIEW,
             Uri.parse(url)
         )
-        val chooser = Intent.createChooser(intent, "view mangadex website.")
+        val chooser = Intent.createChooser(intent, title)
 
         // Verify the original intent will resolve to at least one activity
         if (intent.resolveActivity(packageManager) != null) {
@@ -135,7 +136,7 @@ object StringStateListSaver : Saver<SnapshotStateList<String>, String> {
     }
 }
 
-inline fun Modifier.noRippleClickable(crossinline onClick: () -> Unit): Modifier =
+fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier =
     composed {
         clickable(
             indication = null,
@@ -145,8 +146,9 @@ inline fun Modifier.noRippleClickable(crossinline onClick: () -> Unit): Modifier
         }
     }
 
+@NonRestartableComposable
 @Composable
-fun CenterBox(
+inline fun CenterBox(
     modifier: Modifier = Modifier,
     propagateMinConstraints: Boolean = false,
     content: @Composable BoxScope.() -> Unit,

@@ -5,5 +5,7 @@ interface ChapterResource {
     val id: String
     val title: String
     val mangaId: String
+    val volume: Int
+    val chapter: Long
     val url: String
 }

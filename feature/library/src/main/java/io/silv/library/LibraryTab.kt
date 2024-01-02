@@ -15,6 +15,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -68,6 +69,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -76,7 +78,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.Navigator
@@ -87,25 +91,33 @@ import io.silv.common.emptyImmutableList
 import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaWithChapters
+import io.silv.library.state.LibraryActions
+import io.silv.library.state.LibraryError
+import io.silv.library.state.LibraryState
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
 import io.silv.ui.composables.MangaListItem
 import io.silv.ui.composables.SearchTextField
 import io.silv.ui.layout.ExpandableInfoLayout
+import io.silv.ui.layout.ExpandableState
 import io.silv.ui.layout.TopAppBarWithBottomContent
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.AmadeusTheme
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.IgnoredOnParcel
 
 object LibraryTab : ReselectTab {
 
     @IgnoredOnParcel
-    private val reselectChannel = Channel<Unit>()
+    internal val reselectChannel = Channel<Unit>()
 
     override suspend fun onReselect(navigator: Navigator) {
         reselectChannel.send(Unit)
@@ -118,7 +130,7 @@ object LibraryTab : ReselectTab {
             val isSelected = LocalTabNavigator.current.current.key == key
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_library_enter)
             return TabOptions(
-                index = 2u,
+                index = 1u,
                 title = "Library",
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
@@ -133,8 +145,7 @@ object LibraryTab : ReselectTab {
 }
 
 enum class LibTab {
-    Library, Chapters, Updates,
-    UserLists {
+    Library, Chapters, Updates, UserLists {
         override fun toString(): String {
             return "User Lists"
         }
@@ -152,9 +163,22 @@ class LibraryScreen : Screen {
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         val appState = LocalAppState.current
+        val lifeCycleOwner = LocalLifecycleOwner.current
+        val expandableState = rememberExpandableState()
+
+        LaunchedEffect(lifeCycleOwner) {
+            lifeCycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                withContext(Dispatchers.Main.immediate) {
+                    LibraryTab.reselectChannel.receiveAsFlow().collectLatest {
+                        expandableState.toggleProgress()
+                    }
+                }
+            }
+        }
 
         LibraryScreenContent(
             stateProvider = { state },
+            expandableState = expandableState,
             searchTextProvider = { screenModel.mangaSearchText },
             actions = LibraryActions(
                 searchChanged = screenModel::onSearchChanged,
@@ -266,13 +290,13 @@ fun LibraryTopAppBar(
         },
         bottomContent = {
             val tabs = remember { LibTab.entries }
-            Row {
+            Row(Modifier.horizontalScroll(rememberScrollState())) {
                 val selectedTab = selectedTabProvider()
                 tabs.fastForEach {
                     ElevatedFilterChip(
                         selected = it == selectedTab,
                         onClick = { onTabSelected(it) },
-                        label = { Text(it.name) },
+                        label = { Text(it.name, maxLines = 1) },
                         modifier = Modifier.padding(space.small)
                     )
                 }
@@ -286,6 +310,7 @@ fun LibraryTopAppBar(
 @Composable
 fun LibraryScreenContent(
     stateProvider: () -> LibraryState,
+    expandableState: ExpandableState = rememberExpandableState(),
     searchTextProvider: () -> String,
     actions: LibraryActions
 ) {
@@ -294,7 +319,6 @@ fun LibraryScreenContent(
     val space = LocalSpacing.current
     val scope = rememberCoroutineScope()
 
-    val expandableState = rememberExpandableState()
     var currentTab by rememberSaveable { mutableStateOf(LibTab.Library) }
 
     Scaffold(
@@ -398,6 +422,7 @@ fun ErrorScreenContent(
             },
             modifier = Modifier
                 .clip(CircleShape)
+                .padding(12.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = rememberRipple(color = MaterialTheme.colorScheme.primary)
@@ -539,6 +564,7 @@ fun LibraryScreenErrorNoFavoritedContentPreview() {
             LibraryScreenContent(
                 stateProvider = { state },
                 searchTextProvider = { searchText },
+                expandableState = rememberExpandableState(),
                 actions = LibraryActions(
                     filterByTag = {
 

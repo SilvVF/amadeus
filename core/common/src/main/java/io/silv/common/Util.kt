@@ -1,7 +1,7 @@
 package io.silv.common
 
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -27,7 +27,7 @@ suspend inline fun <T, R> Iterable<T>.pmap(crossinline transform: suspend (T) ->
         .awaitAll()
 }
 
-fun <T> emptyImmutableList(): ImmutableList<T> = emptyList<T>().toImmutableList()
+inline fun <T> emptyImmutableList(): ImmutableList<T> = persistentListOf()
 
 @OptIn(ExperimentalContracts::class)
 suspend inline fun <T, R> Sequence<T>.pmap(crossinline transform: suspend (T) -> R): List<R> {

@@ -1,5 +1,7 @@
 package io.silv.reader.loader
 
+import io.ktor.client.utils.CacheControl
+import io.ktor.http.HttpHeaders
 import io.silv.common.ApplicationScope
 import io.silv.common.model.Page
 import io.silv.data.download.ChapterCache
@@ -175,8 +177,15 @@ internal class HttpPageLoader(
             val imageUrl = page.imageUrl!!
 
             if (!chapterCache.isImageInCache(imageUrl)) {
+
                 page.status = Page.State.DOWNLOAD_IMAGE
-                val imageResponse = source.getImage(page)
+
+                val imageResponse = source.getImage(
+                    page,
+                    headers = listOf(HttpHeaders.CacheControl to CacheControl.NO_CACHE)
+                )
+
+
                 chapterCache.putImageToCache(imageUrl, imageResponse)
             }
             page.stream = { chapterCache.getImageFile(imageUrl).inputStream() }

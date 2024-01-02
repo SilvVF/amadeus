@@ -107,6 +107,10 @@ fun Chapter.toResource(): ChapterResource {
             get() = c.id
         override val mangaId: String
             get() = c.mangaId
+        override val volume: Int
+            get() = c.volume
+        override val chapter: Long
+            get() = c.chapter
         override val scanlator: String
             get() = c.scanlator
         override val title: String

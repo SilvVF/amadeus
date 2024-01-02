@@ -56,6 +56,9 @@ dependencies {
 
     implementation("me.saket.swipe:swipe:1.2.0")
 
+    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+
+
     implementation(project(":core:ui"))
     implementation(project(":core:common"))
     implementation(project(":core:domain"))

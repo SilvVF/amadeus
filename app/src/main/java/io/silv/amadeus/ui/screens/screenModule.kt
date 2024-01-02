@@ -3,6 +3,7 @@ package io.silv.amadeus.ui.screens
 import io.silv.explore.ExploreScreenModel
 import io.silv.explore.FilterScreenViewModel
 import io.silv.library.LibraryScreenModel
+import io.silv.manga.download.DownloadQueueScreenModel
 import io.silv.manga.manga_filter.MangaFilterScreenModel
 import io.silv.manga.manga_view.MangaViewScreenModel
 import io.silv.reader.ReaderScreenModel
@@ -36,4 +37,6 @@ val screenModule =
                 seasonalMangaSyncManager = get(qualifier = named(SeasonalMangaSyncWorkName)),
             )
         }
+
+        factoryOf(::DownloadQueueScreenModel)
     }

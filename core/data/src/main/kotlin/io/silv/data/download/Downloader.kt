@@ -5,16 +5,21 @@ import android.util.Log
 import com.hippo.unifile.UniFile
 import com.skydoves.sandwich.getOrThrow
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.plugins.onDownload
 import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsChannel
-import io.ktor.utils.io.jvm.javaio.copyTo
+import io.ktor.client.utils.CacheControl
+import io.ktor.http.HttpHeaders
 import io.silv.common.ApplicationScope
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Download
 import io.silv.common.model.MangaDexSource
 import io.silv.common.model.MangaResource
 import io.silv.common.model.Page
+import io.silv.common.model.ProgressListener
 import io.silv.data.util.DiskUtil
 import io.silv.data.util.ImageUtil
 import io.silv.datastore.DownloadStore
@@ -50,6 +55,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.MediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.ResponseBody
+import okio.Buffer
+import okio.BufferedSource
+import okio.ForwardingSource
+import okio.IOException
+import okio.Source
+import okio.buffer
 import java.io.File
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -67,7 +84,7 @@ internal class Downloader(
     private val chapterCache: ChapterCache,
     private val imageSourceFactory: ImageSourceFactory,
     private val mangaDexApi: MangaDexApi,
-    private val httpClient: HttpClient,
+    private val client: HttpClient,
     private val store: DownloadStore,
     private val getChapter: GetChapter,
     private val getManga: GetManga,
@@ -467,11 +484,25 @@ internal class Downloader(
         page.status = Page.State.DOWNLOAD_IMAGE
         page.progress = 0
         return flow {
-            val response =  httpClient.get(page.imageUrl!!)
+            val response = withContext(Dispatchers.IO) {
+                client.get {
+                    url(page.imageUrl!!)
+                    headers {
+                        set(HttpHeaders.CacheControl, CacheControl.NO_CACHE)
+                    }
+                    onDownload { bytesSentTotal, contentLength ->
+                        runCatching {
+                            page.update(bytesSentTotal, contentLength, bytesSentTotal >= contentLength)
+                        }
+                    }
+                }
+            }
+
             val file = tmpDir.createFile("$filename.tmp")!!
             try {
+                val bytes: ByteArray = response.body()
                 file.openOutputStream().use {
-                    response.bodyAsChannel().copyTo(it)
+                    it.write(bytes)
                 }
                 val extension = getImageExtension(response, file)
                 file.renameTo("$filename.$extension")
@@ -528,7 +559,23 @@ internal class Downloader(
            ?: ImageUtil.findImageType { file.openInputStream() }?.mime
         return ImageUtil.getExtensionFromMimeType(mime)
     }
+    /**
+     * Returns the extension of the downloaded image from the network response, or if it's null,
+     * analyze the file. If everything fails, assume it's a jpg.
+     *
+     * @param response the network response of the image.
+     * @param file the file where the image is already downloaded.
+     */
+    private fun getImageExtension(response: Response, file: UniFile): String {
+        // Read content type if available.
+        val mime = response.body?.contentType()?.run { if (type == "image") "image/$subtype" else null }
+        // Else guess from the uri.
+            ?: context.contentResolver.getType(file.uri)
+            // Else read magic numbers.
+            ?: ImageUtil.findImageType { file.openInputStream() }?.mime
 
+        return ImageUtil.getExtensionFromMimeType(mime)
+    }
 
 
     /**
@@ -650,6 +697,61 @@ internal class Downloader(
 //        const val WARNING_NOTIF_TIMEOUT_MS = 30_000L
 //        const val CHAPTERS_PER_SOURCE_QUEUE_WARNING_THRESHOLD = 15
 //        private const val DOWNLOADS_QUEUED_WARNING_THRESHOLD = 30
+    }
+}
+
+private fun OkHttpClient.newCachelessCallWithProgress(request: Request, listener: ProgressListener): Call {
+    val progressClient = newBuilder()
+        .cache(null)
+        .addNetworkInterceptor { chain ->
+            val originalResponse = chain.proceed(chain.request())
+            originalResponse.newBuilder()
+                .body(ProgressResponseBody(originalResponse.body!!, listener))
+                .build()
+        }
+        .build()
+
+    return progressClient.newCall(request)
+}
+
+class ProgressResponseBody(
+    private val responseBody: ResponseBody,
+    private val progressListener: ProgressListener,
+) : ResponseBody() {
+
+    private val bufferedSource: BufferedSource by lazy {
+        source(responseBody.source()).buffer()
+    }
+
+    override fun contentType(): MediaType? {
+        return responseBody.contentType()
+    }
+
+    override fun contentLength(): Long {
+        return responseBody.contentLength()
+    }
+
+    override fun source(): BufferedSource {
+        return bufferedSource
+    }
+
+    private fun source(source: Source): Source {
+        return object : ForwardingSource(source) {
+            var totalBytesRead = 0L
+
+            @Throws(IOException::class)
+            override fun read(sink: Buffer, byteCount: Long): Long {
+                val bytesRead = super.read(sink, byteCount)
+                // read() returns the number of bytes read, or -1 if this source is exhausted.
+                totalBytesRead += if (bytesRead != -1L) bytesRead else 0
+                progressListener.update(
+                    totalBytesRead,
+                    responseBody.contentLength(),
+                    bytesRead == -1L,
+                )
+                return bytesRead
+            }
+        }
     }
 }
 

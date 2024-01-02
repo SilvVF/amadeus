@@ -40,7 +40,6 @@ import io.silv.ui.ReselectTab
 import io.silv.ui.layout.Scaffold
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
@@ -52,10 +51,9 @@ import soup.compose.material.motion.animation.materialFadeThroughOut
 object NavHost : Screen {
 
     @IgnoredOnParcel
-    internal val globalSearchChannel = Channel<String?>(UNLIMITED)
-
-    @IgnoredOnParcel
     internal val bottomBarVisibility = Channel<Boolean>()
+
+    internal val globalSearchChannel = Channel<String?>()
 
     @OptIn(ExperimentalMaterial3Api::class)
     @SuppressLint("UnusedContentLambdaTargetStateParameter")
@@ -68,6 +66,7 @@ object NavHost : Screen {
             bottomBarVisibility.receiveAsFlow().collectLatest { value = it }
         }
 
+
         val nav = LocalNavigator.currentOrThrow
         TabNavigator(
             tab = ExploreTab,
@@ -77,12 +76,12 @@ object NavHost : Screen {
                     modifier = Modifier.fillMaxSize(),
                     contentWindowInsets = WindowInsets(0),
                     startBar = {
-                        if (appState.shouldShowNavRail && bottomBarVisible) {
+                        AnimatedVisibility(appState.shouldShowNavRail && bottomBarVisible) {
                             AmadeusNavRail()
                         }
                     },
                     bottomBar = {
-                        if (appState.shouldShowBottomBar && bottomBarVisible) {
+                        AnimatedVisibility(appState.shouldShowBottomBar && bottomBarVisible) {
                             AmadeusBottomBar(modifier = Modifier.fillMaxWidth())
                         }
                     }
@@ -110,19 +109,14 @@ object NavHost : Screen {
                             }
                         }
                     }
-
                 }
             }
-
-            LaunchedEffect(lifecycleOwner.lifecycle, globalSearchChannel) {
-                lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    withContext(Dispatchers.Main.immediate) {
-                        globalSearchChannel.receiveAsFlow()
-                            .collect { query ->
-                                if (query != null) {
-                                    ExploreTab.searchChannel.send(query)
-                                }
-                            }
+            LaunchedEffect(globalSearchChannel, lifecycleOwner) {
+                withContext(Dispatchers.Main.immediate) {
+                    lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                        globalSearchChannel.receiveAsFlow().collectLatest {
+                            ExploreTab.onSearch(it, tabNavigator)
+                        }
                     }
                 }
             }

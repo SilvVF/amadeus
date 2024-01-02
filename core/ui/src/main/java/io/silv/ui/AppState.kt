@@ -24,7 +24,7 @@ val LocalAppState = compositionLocalOf<AppState> { error("App State not yet prov
 fun rememberAppState(
     windowSizeClass: WindowSizeClass,
     networkConnectivity: NetworkConnectivity,
-    exploreSearchChannel: SendChannel<String?>,
+    searchChannel: SendChannel<String?>,
     bottomBarVisibilityChannel: SendChannel<Boolean>,
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
 ) = remember {
@@ -32,7 +32,7 @@ fun rememberAppState(
         windowSizeClass = windowSizeClass,
         connectivity = networkConnectivity,
         scope = coroutineScope,
-        exploreSearchChannel = exploreSearchChannel,
+        exploreSearchChannel = searchChannel,
         bottomBarVisibilityChannel = bottomBarVisibilityChannel
     )
 }
@@ -64,7 +64,7 @@ class AppState(
     fun searchGlobal(query: String?) {
         scope.launch {
             withContext(Dispatchers.Main.immediate) {
-                exploreSearchChannel.trySend(query)
+                exploreSearchChannel.send(query)
             }
         }
     }

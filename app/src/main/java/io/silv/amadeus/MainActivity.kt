@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
                 rememberAppState(
                     windowSizeClass = windowSizeClass,
                     networkConnectivity = connectivity,
-                    exploreSearchChannel = NavHost.globalSearchChannel,
+                    searchChannel = NavHost.globalSearchChannel,
                     bottomBarVisibilityChannel = NavHost.bottomBarVisibility
                 )
 

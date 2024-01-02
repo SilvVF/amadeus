@@ -44,12 +44,14 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
+import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import io.silv.explore.composables.DisplayOptionsBottomSheet
 import io.silv.explore.composables.ExploreTopAppBar
 import io.silv.explore.composables.FiltersBottomSheet
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
+import io.silv.ui.GlobalSearchTab
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
 import io.silv.ui.composables.PullRefresh
@@ -63,12 +65,17 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-object ExploreTab : ReselectTab {
+object ExploreTab : ReselectTab, GlobalSearchTab {
 
 
     internal val reselectChannel = Channel<Unit>()
 
-    val searchChannel = Channel<String>(capacity = 1)
+    internal val searchChannel = Channel<String?>(capacity = 1)
+
+    override suspend fun onSearch(query: String?, navigator: TabNavigator) {
+        searchChannel.trySend(query)
+        navigator.current = this
+    }
 
     override suspend fun onReselect(navigator: Navigator) {
         Log.d("Explore", "Sending reselect event")
@@ -92,7 +99,7 @@ object ExploreTab : ReselectTab {
     @Composable
     override fun Content() {
         val appState = LocalAppState.current
-
+        val tabNavigator = LocalTabNavigator.current
         val screenModel = getScreenModel<ExploreScreenModel>()
 
         val lifecycleOwner = LocalLifecycleOwner.current
@@ -102,7 +109,10 @@ object ExploreTab : ReselectTab {
                 withContext(Dispatchers.Main.immediate) {
                     searchChannel.receiveAsFlow()
                         .collect {
-                            screenModel.onSearch(it)
+                            tabNavigator.current = this@ExploreTab
+                            if (it != null) {
+                                screenModel.onSearch(it)
+                            }
                         }
                 }
             }

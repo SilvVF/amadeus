@@ -4,10 +4,9 @@ import com.skydoves.sandwich.getOrNull
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.model.TagsMode
 import io.silv.common.time.timeStringMinus
-import io.silv.data.mappers.toEntity
-import io.silv.database.dao.MangaDao
 import io.silv.domain.manga.interactor.GetManga
 import io.silv.domain.manga.model.Manga
+import io.silv.domain.manga.repository.MangaRepository
 import io.silv.domain.manga.repository.TopYearlyFetcher
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
@@ -22,7 +21,7 @@ import kotlin.time.Duration.Companion.days
 
 class YearlyTopMangaFetcher(
     private val mangaDexApi: MangaDexApi,
-    private val mangaDao: MangaDao,
+    private val mangaRepository: MangaRepository,
     private val getManga: GetManga,
     dispatchers: AmadeusDispatchers,
 ): TopYearlyFetcher {
@@ -53,17 +52,22 @@ class YearlyTopMangaFetcher(
                     .getOrNull()
                     ?.data
                     ?: emptyList()
-                )
-            .onEach { mangaDao.insert(it.toEntity()) }
-            .map {
+        ).also { list ->
+              mangaRepository.upsertManga(
+                  list.map(MangaMapper::dtoToUpdate)
+              )
+        }
+            .mapNotNull {
                 getManga.subscribe(it.id)
                     .filterNotNull()
                     .distinctUntilChanged()
                     .stateIn(
                         scope,
                         SharingStarted.Lazily,
-                        MangaMapper.mapManga(it.toEntity()),
+                        getManga.await(it.id) ?: return@mapNotNull null
                     )
             }
+
+
     }
 }

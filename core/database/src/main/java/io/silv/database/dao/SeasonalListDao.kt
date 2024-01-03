@@ -9,7 +9,7 @@ import androidx.room.Relation
 import androidx.room.Transaction
 import io.silv.database.entity.list.SeasonalListEntity
 import io.silv.database.entity.manga.MangaEntity
-import io.silv.database.entity.manga.remotekeys.MangaToListRelation
+import io.silv.database.entity.manga.MangaToListRelation
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -32,6 +32,10 @@ interface SeasonalListDao {
     @Transaction
     @Query("SELECT * FROM SeasonalListEntity")
     fun observeSeasonListWithManga(): Flow<List<SeasonalListAndKeyAndManga>>
+
+    @Transaction
+    @Query("SELECT * FROM SeasonalListEntity")
+    suspend fun getSeasonListWithManga(): List<SeasonalListAndKeyAndManga>
 }
 
 class SeasonalListAndKeyAndManga(

@@ -1,8 +1,7 @@
-package eu.kanade.tachiyomi
+package io.silv.data.util
 
 import android.content.Context
 import io.silv.common.model.MangaResource
-import io.silv.data.util.DiskUtil
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -34,10 +33,8 @@ class CoverCache(private val context: Context) {
      * @param mangaThumbnailUrl thumbnail url for the manga.
      * @return cover image.
      */
-    fun getCoverFile(mangaThumbnailUrl: String?): File? {
-        return mangaThumbnailUrl?.let {
-            File(cacheDir, DiskUtil.hashKeyForDisk(it))
-        }
+    fun getCoverFile(mangaThumbnailUrl: String): File {
+        return File(cacheDir, DiskUtil.hashKeyForDisk(mangaThumbnailUrl))
     }
 
     /**
@@ -46,8 +43,8 @@ class CoverCache(private val context: Context) {
      * @param mangaId the manga id.
      * @return cover image.
      */
-    fun getCustomCoverFile(mangaId: String?): File {
-        return File(customCoverCacheDir, DiskUtil.hashKeyForDisk(mangaId.toString()))
+    fun getCustomCoverFile(mangaId: String): File {
+        return File(customCoverCacheDir, DiskUtil.hashKeyForDisk(mangaId))
     }
 
     /**
@@ -80,7 +77,7 @@ class CoverCache(private val context: Context) {
     ): Int {
         var deleted = 0
 
-        getCoverFile(manga.coverArt)?.let {
+        getCoverFile(manga.coverArt).let {
             if (it.exists() && it.delete()) ++deleted
         }
 
@@ -97,7 +94,7 @@ class CoverCache(private val context: Context) {
      * @param mangaId the manga id.
      * @return whether the cover was deleted.
      */
-    fun deleteCustomCover(mangaId: String?): Boolean {
+    fun deleteCustomCover(mangaId: String): Boolean {
         return getCustomCoverFile(mangaId).let {
             it.exists() && it.delete()
         }

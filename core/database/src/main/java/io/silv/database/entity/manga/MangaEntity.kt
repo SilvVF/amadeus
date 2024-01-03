@@ -40,7 +40,9 @@ data class MangaEntity(
     val tagToId: Map<String, String>,
     @ColumnInfo("content_rating")
     val contentRating: ContentRating,
+    @ColumnInfo("last_volume")
     val lastVolume: Int,
+    @ColumnInfo("last_chapter")
     val lastChapter: Long,
     @ColumnInfo("publication_demographic")
     val publicationDemographic: PublicationDemographic?,
@@ -56,3 +58,6 @@ data class MangaEntity(
     @ColumnInfo("reading_status")
     val readingStatus: ReadingStatus,
 ) : MangaResource, AmadeusEntity<String>
+
+
+

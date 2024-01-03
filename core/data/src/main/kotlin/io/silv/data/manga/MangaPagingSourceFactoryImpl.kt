@@ -9,15 +9,15 @@ import io.silv.common.model.TimePeriod
 import io.silv.common.time.timeStringMinus
 import io.silv.common.time.toMangaDexTimeString
 import io.silv.data.mappers.timeString
-import io.silv.database.AmadeusDatabase
 import io.silv.domain.manga.MangaPagingSourceFactory
+import io.silv.domain.manga.repository.MangaRepository
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
 import kotlin.time.Duration.Companion.days
 
 
 class MangaPagingSourceFactoryImpl(
-    private val db: AmadeusDatabase,
+    private val mangaRepository: MangaRepository,
     private val mangaDexApi: MangaDexApi,
 ): MangaPagingSourceFactory {
 
@@ -82,7 +82,7 @@ class MangaPagingSourceFactoryImpl(
                    is PagedType.Query -> queryMangaRequest(type.filters)
                    is PagedType.TimePeriod -> timePeriodsMangaRequest(type.tagId, type.timePeriod)
                },
-               db
+               mangaRepository = mangaRepository
            )
         },
     )

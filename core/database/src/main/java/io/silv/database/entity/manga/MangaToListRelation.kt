@@ -1,4 +1,4 @@
-package io.silv.database.entity.manga.remotekeys
+package io.silv.database.entity.manga
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

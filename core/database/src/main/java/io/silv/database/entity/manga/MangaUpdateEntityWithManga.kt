@@ -1,4 +1,4 @@
-package io.silv.database.entity.relations
+package io.silv.database.entity.manga
 
 import androidx.room.Embedded
 import androidx.room.Relation

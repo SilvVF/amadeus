@@ -1,10 +1,11 @@
 package io.silv.data.manga
 
 import com.skydoves.sandwich.getOrThrow
-import io.silv.data.mappers.toEntity
+import io.silv.data.util.CoverCache
 import io.silv.database.dao.UserListDao
 import io.silv.database.entity.list.UserListEntity
 import io.silv.datastore.MangaDexUserStore
+import io.silv.domain.manga.interactor.GetManga
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.repository.MangaRepository
 import io.silv.network.MangaDexApi
@@ -22,6 +23,8 @@ class GetUserLists(
     private val mangaDexApi: MangaDexApi,
     private val mangaRepository: MangaRepository,
     private val userListDao: UserListDao,
+    private val getManga: GetManga,
+    private val coverCache: CoverCache,
     private val store: MangaDexUserStore
 ) {
 
@@ -90,9 +93,10 @@ class GetUserLists(
         )
             .getOrThrow()
             .data
-            .map { it.toEntity() }
 
-        mangaRepository.saveManga(mangas.map(MangaMapper::mapManga))
+        mangaRepository.upsertManga(
+            mangas.map(MangaMapper::dtoToUpdate)
+        )
         userListDao.upsertUserList(userList)
     }
 }

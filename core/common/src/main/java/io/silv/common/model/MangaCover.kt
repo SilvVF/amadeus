@@ -5,7 +5,7 @@ package io.silv.common.model
  */
 data class MangaCover(
     val mangaId: String,
-    val url: String?,
+    val url: String,
     val isMangaFavorite: Boolean,
     val lastModified: Long,
 )

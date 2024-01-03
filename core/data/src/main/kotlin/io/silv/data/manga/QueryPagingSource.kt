@@ -3,28 +3,28 @@ package io.silv.data.manga
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.skydoves.sandwich.getOrThrow
-import io.silv.data.mappers.toEntity
-import io.silv.database.AmadeusDatabase
-import io.silv.domain.manga.model.Manga
+import io.silv.common.model.MangaResource
+import io.silv.domain.manga.repository.MangaRepository
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.LocalDateTime
 
 class QueryPagingSource(
     private val mangaDexApi: MangaDexApi,
     private val query: MangaRequest,
-    private val db: AmadeusDatabase,
-): PagingSource<Int, Manga>() {
+    private val mangaRepository: MangaRepository,
+): PagingSource<Int, MangaResource>() {
 
-    override fun getRefreshKey(state: PagingState<Int, Manga>): Int? {
+    override fun getRefreshKey(state: PagingState<Int, MangaResource>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
             val anchorPage = state.closestPageToPosition(anchorPosition)
             anchorPage?.prevKey ?: anchorPage?.nextKey
         }
     }
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Manga> {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, MangaResource> {
 
         return try {
 
@@ -41,10 +41,20 @@ class QueryPagingSource(
                 )
                     .getOrThrow()
 
-                result.data
-                    .map { it.toEntity() }
-                    .also { db.sourceMangaDao().insertAll(it) }
-                    .map { it.let(MangaMapper::mapManga) } to result.limit
+                val updates = result.data.map(MangaMapper::dtoToUpdate)
+
+                mangaRepository.upsertManga(updates)
+
+                updates.map {
+                    object : MangaResource {
+                        override val id: String = it.id
+                        override val coverArt: String = it.coverArt
+                        override val title: String = it.title
+                        override val version: Int = it.version
+                        override val createdAt: LocalDateTime = it.createdAt
+                        override val updatedAt: LocalDateTime = it.updatedAt
+                    }
+                } to result.limit
             }
 
 

@@ -14,7 +14,7 @@ import coil.decode.ImageDecoderDecoder
 import coil.disk.DiskCache
 import coil.util.DebugLogger
 import com.skydoves.sandwich.SandwichInitializer
-import eu.kanade.tachiyomi.CoverCache
+import io.silv.data.util.CoverCache
 import eu.kanade.tachiyomi.MangaCoverFetcher
 import eu.kanade.tachiyomi.MangaCoverKeyer
 import eu.kanade.tachiyomi.MangaKeyer

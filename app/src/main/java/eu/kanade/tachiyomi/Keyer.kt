@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi
 import coil.key.Keyer
 import coil.request.Options
 import io.silv.common.model.MangaCover
+import io.silv.data.util.CoverCache
 import io.silv.domain.manga.model.Manga
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant

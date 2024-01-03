@@ -1,15 +1,120 @@
 package io.silv.data.manga
 
+import io.silv.common.time.localDateTimeNow
+import io.silv.common.time.parseMangaDexTimeToDateTime
 import io.silv.data.chapter.ChapterMapper
+import io.silv.data.mappers.alternateTitles
+import io.silv.data.mappers.artists
+import io.silv.data.mappers.authors
+import io.silv.data.mappers.coverArtUrl
+import io.silv.data.mappers.descriptionEnglish
+import io.silv.data.mappers.tagToId
+import io.silv.data.mappers.titleEnglish
 import io.silv.database.entity.manga.MangaEntity
-import io.silv.database.entity.relations.MangaEntityWithChapters
-import io.silv.database.entity.relations.MangaUpdateEntityWithManga
+import io.silv.database.entity.manga.MangaEntityWithChapters
+import io.silv.database.entity.manga.MangaUpdateEntityWithManga
 import io.silv.domain.manga.model.Manga
+import io.silv.domain.manga.model.MangaUpdate
 import io.silv.domain.manga.model.MangaUpdateWithManga
 import io.silv.domain.manga.model.MangaWithChapters
+import io.silv.network.model.manga.MangaDto
 import kotlinx.collections.immutable.toPersistentList
 
 object MangaMapper {
+
+    fun dtoToUpdate(
+        mangaDto: MangaDto
+    ): MangaUpdate = with(mangaDto) {
+        MangaUpdate(
+            id = id,
+            favorite = null,
+            coverArt = coverArtUrl(this),
+            description = descriptionEnglish,
+            title = titleEnglish,
+            alternateTitles = alternateTitles,
+            originalLanguage = attributes.originalLanguage,
+            availableTranslatedLanguages = attributes.availableTranslatedLanguages.filterNotNull(),
+            status = attributes.status,
+            tagToId = tagToId,
+            contentRating = attributes.contentRating,
+            lastVolume = attributes.lastVolume?.toIntOrNull() ?: -1,
+            lastChapter = attributes.lastChapter?.toLongOrNull() ?: -1L,
+            version = attributes.version,
+            createdAt = attributes.createdAt.parseMangaDexTimeToDateTime(),
+            updatedAt = attributes.updatedAt.parseMangaDexTimeToDateTime(),
+            publicationDemographic = attributes.publicationDemographic,
+            savedAtLocal = localDateTimeNow(),
+            year = attributes.year ?: -1,
+            latestUploadedChapter = attributes.latestUploadedChapter,
+            authors = authors,
+            artists = artists,
+            progressState = null,
+            readingStatus = null
+        )
+    }
+
+    fun mangaToUpdate(manga: Manga) : MangaUpdate {
+        return with(manga) {
+             MangaUpdate(
+                id = id,
+                favorite = inLibrary,
+                description = description,
+                progressState = progressState,
+                coverArt = coverArt,
+                title = titleEnglish,
+                alternateTitles = alternateTitles,
+                originalLanguage = originalLanguage,
+                availableTranslatedLanguages = availableTranslatedLanguages,
+                status = status,
+                tagToId = tagToId,
+                contentRating = contentRating,
+                lastVolume = lastVolume,
+                lastChapter = lastChapter,
+                version = version,
+                createdAt = createdAt,
+                updatedAt = updatedAt,
+                savedAtLocal = savedLocalAtEpochSeconds,
+                publicationDemographic = publicationDemographic,
+                readingStatus = readingStatus,
+                year = year,
+                artists = artists,
+                authors = authors,
+                latestUploadedChapter = latestUploadedChapter
+            )
+        }
+    }
+
+    fun toEntity(manga: Manga) : MangaEntity {
+        return with(manga) {
+             MangaEntity(
+                id = id,
+                favorite = inLibrary,
+                description = description,
+                progressState = progressState,
+                coverArt = coverArt,
+                title = titleEnglish,
+                alternateTitles = alternateTitles,
+                originalLanguage = originalLanguage,
+                availableTranslatedLanguages = availableTranslatedLanguages,
+                status = status,
+                tagToId = tagToId,
+                contentRating = contentRating,
+                lastVolume = lastVolume,
+                lastChapter = lastChapter,
+                version = version,
+                createdAt = createdAt,
+                updatedAt = updatedAt,
+                savedAtLocal = savedLocalAtEpochSeconds,
+                publicationDemographic = publicationDemographic,
+                readingStatus = readingStatus,
+                year = year,
+                artists = artists,
+                authors = authors,
+                latestUploadedChapter = latestUploadedChapter
+            )
+        }
+    }
+
 
     fun mapManga(
         entity: MangaEntity
@@ -40,37 +145,6 @@ object MangaMapper {
             authors = entity.authors,
             latestUploadedChapter = entity.latestUploadedChapter
         )
-    }
-
-    fun toEntity(manga: Manga) : MangaEntity {
-        with(manga) {
-            return MangaEntity(
-                id = id,
-                favorite = inLibrary,
-                description = description,
-                progressState = progressState,
-                coverArt = coverArt,
-                title = titleEnglish,
-                alternateTitles = alternateTitles,
-                originalLanguage = originalLanguage,
-                availableTranslatedLanguages = availableTranslatedLanguages,
-                status = status,
-                tagToId = tagToId,
-                contentRating = contentRating,
-                lastVolume = lastVolume,
-                lastChapter = lastChapter,
-                version = version,
-                createdAt = createdAt,
-                updatedAt = updatedAt,
-                savedAtLocal = savedLocalAtEpochSeconds,
-                publicationDemographic = publicationDemographic,
-                readingStatus = readingStatus,
-                year = year,
-                artists = artists,
-                authors = authors,
-                latestUploadedChapter = latestUploadedChapter
-            )
-        }
     }
 
     fun mapUpdateWithManga(mangaUpdateEntityWithManga: MangaUpdateEntityWithManga) =

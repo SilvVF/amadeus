@@ -5,18 +5,17 @@ import com.skydoves.sandwich.getOrThrow
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.Season
-import io.silv.data.mappers.toEntity
 import io.silv.database.AmadeusDatabase
 import io.silv.database.dao.SeasonalListAndKeyAndManga
 import io.silv.database.entity.list.SeasonalListEntity
-import io.silv.database.entity.manga.remotekeys.MangaToListRelation
+import io.silv.database.entity.manga.MangaToListRelation
+import io.silv.domain.manga.repository.MangaRepository
 import io.silv.domain.manga.repository.SeasonalMangaRepository
 import io.silv.model.DomainSeasonalList
 import io.silv.network.MangaDexApi
 import io.silv.network.model.list.Data
 import io.silv.network.util.fetchMangaChunked
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
@@ -25,10 +24,10 @@ internal class SeasonalMangaRepositoryImpl(
     private val mangaDexApi: MangaDexApi,
     private val db: AmadeusDatabase,
     private val dispatchers: AmadeusDispatchers,
+    private val mangaRepository: MangaRepository,
 ): SeasonalMangaRepository {
 
     private val seasonalListDao = db.seasonalListDao()
-    private val sourceMangaDao = db.sourceMangaDao()
     private val keyDao = db.seasonalRemoteKeysDao()
 
     override fun subscribe() =
@@ -48,12 +47,15 @@ internal class SeasonalMangaRepositoryImpl(
     ) {
         withContext(dispatchers.io) {
 
-            val seasonWithManga = seasonalListDao.observeSeasonListWithManga().firstOrNull()
+            val seasonWithManga = seasonalListDao.getSeasonListWithManga()
 
             val toUpdate = seasonalLists.filter {
-                seasonWithManga == null || needsUpdate(seasonWithManga, it)
+                needsUpdate(seasonWithManga, it)
             }
 
+            if (toUpdate.isEmpty()) {
+                return@withContext
+            }
 
             val response = mangaDexApi.fetchMangaChunked(
                 ids = toUpdate.map { (_, _, data) ->
@@ -64,6 +66,7 @@ internal class SeasonalMangaRepositoryImpl(
                     .flatten(),
                 chunkSize = 100
             )
+
 
             db.withTransaction {
 
@@ -82,7 +85,12 @@ internal class SeasonalMangaRepositoryImpl(
                     )
                 }
 
-                sourceMangaDao.insertAll(response.map { it.toEntity() })
+
+
+                mangaRepository.upsertManga(
+                    response.map(MangaMapper::dtoToUpdate),
+                    withTransaction = false
+                )
 
                 keyDao.insertAll(
                     response.map {
@@ -91,7 +99,6 @@ internal class SeasonalMangaRepositoryImpl(
                             seasonId = seasonalLists.find { list ->
                                 list.userList.relationships
                                     .any { r -> r.type == "manga" && r.id == it.id }
-
                             }?.userList?.id!!,
                         )
                     }

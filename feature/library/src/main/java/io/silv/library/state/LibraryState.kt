@@ -20,10 +20,13 @@ sealed interface LibraryError {
 
 
 sealed interface LibraryState {
+
     data object Loading: LibraryState
+
     data class Error(
         val error: LibraryError
     ): LibraryState
+
     data class Success(
         val filteredMangaWithChapters: ImmutableList<MangaWithChapters> = persistentListOf(),
         val mangaWithChapters: ImmutableList<MangaWithChapters> = persistentListOf(),

@@ -9,6 +9,7 @@ import com.skydoves.sandwich.message
 import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
 import io.silv.data.manga.GetMangaStatisticsById
+import io.silv.data.download.CoverCache
 import io.silv.datastore.model.Filters
 import io.silv.domain.chapter.interactor.ChapterHandler
 import io.silv.domain.chapter.model.Chapter
@@ -42,6 +43,7 @@ class MangaViewScreenModel(
     private val mangaHandler: MangaHandler,
     private val chapterHandler: ChapterHandler,
     private val downloadManager: DownloadManager,
+    private val coverCache: CoverCache,
     mangaId: String,
 ) : EventStateScreenModel<MangaViewEvent, MangaViewState>(MangaViewState.Loading) {
     private fun updateSuccess(block: (state: MangaViewState.Success) -> MangaViewState) {
@@ -126,6 +128,15 @@ class MangaViewScreenModel(
     fun toggleLibraryManga(id: String) {
         screenModelScope.launch {
             mangaHandler.addOrRemoveFromLibrary(id)
+                .onSuccess {
+
+                    if (!it.inLibrary) {
+
+                        ioCoroutineScope.launch {
+                            coverCache.deleteFromCache(it.toResource(), true)
+                        }
+                    }
+                }
         }
     }
 
@@ -133,11 +144,7 @@ class MangaViewScreenModel(
         screenModelScope.launch {
             chapterHandler.toggleChapterBookmarked(id)
                 .onSuccess {
-                    it?.let {
-                        sendEvent(
-                            MangaViewEvent.BookmarkStatusChanged(id, it.bookmarked),
-                        )
-                    }
+                    sendEvent(MangaViewEvent.BookmarkStatusChanged(id, it.bookmarked))
                 }
         }
     }
@@ -146,11 +153,7 @@ class MangaViewScreenModel(
         screenModelScope.launch {
             chapterHandler.toggleReadOrUnread(id)
                 .onSuccess {
-                    it?.let {
-                        sendEvent(
-                            MangaViewEvent.ReadStatusChanged(id, it.read),
-                        )
-                    }
+                    sendEvent(MangaViewEvent.ReadStatusChanged(id, it.read))
                 }
         }
     }

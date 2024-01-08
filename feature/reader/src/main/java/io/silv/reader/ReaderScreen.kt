@@ -50,6 +50,7 @@ import io.silv.reader.composables.GestureHintOverlay
 import io.silv.reader.composables.ReaderMenuOverlay
 import io.silv.reader.loader.ReaderChapter
 import io.silv.ui.CenterBox
+import io.silv.ui.Converters
 import io.silv.ui.openOnWeb
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -139,8 +140,7 @@ fun HorizontalReader(
 
     val layoutDirection by ReaderPrefs.layoutDirection.collectAsState(
         defaultValue = LayoutDirection.Rtl,
-        store = { dir -> dir.ordinal },
-        convert = { v -> if (v == 1) LayoutDirection.Rtl else LayoutDirection.Ltr }
+        converter = Converters.LayoutDirectionConverter
     )
 
     fun scrollToNextPage() {

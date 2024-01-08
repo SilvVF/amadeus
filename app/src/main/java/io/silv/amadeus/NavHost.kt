@@ -5,7 +5,9 @@ import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
@@ -35,6 +38,7 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.explore.ExploreTab
 import io.silv.library.LibraryTab
 import io.silv.manga.download.RecentsTab
+import io.silv.manga.settings.MoreTab
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
 import io.silv.ui.layout.Scaffold
@@ -69,7 +73,7 @@ object NavHost : Screen {
 
         val nav = LocalNavigator.currentOrThrow
         TabNavigator(
-            tab = ExploreTab,
+            tab = LibraryTab,
         ) { tabNavigator ->
             CompositionLocalProvider(LocalNavigator provides nav) {
                 Scaffold(
@@ -130,9 +134,16 @@ object NavHost : Screen {
 @Composable
 fun AmadeusBottomBar(modifier: Modifier = Modifier) {
     BottomAppBar(modifier) {
-        TabNavigationItem(ExploreTab)
-        TabNavigationItem(LibraryTab)
-        TabNavigationItem(RecentsTab)
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TabNavigationItem(LibraryTab)
+            TabNavigationItem(RecentsTab)
+            TabNavigationItem(ExploreTab)
+            TabNavigationItem(MoreTab)
+        }
     }
 }
 
@@ -143,9 +154,10 @@ fun AmadeusNavRail(
 ) {
     AnimatedVisibility(visible = visible) {
         NavigationRail(modifier) {
-            TabNavigationItem(ExploreTab)
             TabNavigationItem(LibraryTab)
             TabNavigationItem(RecentsTab)
+            TabNavigationItem(ExploreTab)
+            TabNavigationItem(MoreTab)
         }
     }
 }
@@ -159,7 +171,7 @@ private fun TabNavigationItem(tab: ReselectTab) {
 
     NavigationRailItem(
         label = { Text(tab.options.title) },
-        alwaysShowLabel = false,
+        alwaysShowLabel = true,
         selected = selected,
         onClick = {
             Log.d("Reselect", "onclick $tab")

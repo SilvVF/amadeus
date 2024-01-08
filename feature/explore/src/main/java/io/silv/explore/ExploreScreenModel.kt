@@ -6,8 +6,10 @@ import androidx.compose.runtime.Stable
 import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.PagedType
+import io.silv.data.download.CoverCache
 import io.silv.domain.manga.SubscribeToPagingData
 import io.silv.domain.manga.interactor.MangaHandler
+import io.silv.domain.manga.model.toResource
 import io.silv.domain.manga.repository.SeasonalMangaRepository
 import io.silv.domain.search.RecentSearchHandler
 import io.silv.model.DomainSeasonalList
@@ -30,6 +32,7 @@ class ExploreScreenModel(
     subscribeToPagingData: SubscribeToPagingData,
     seasonalManga: SeasonalMangaRepository,
     private val mangaHandler: MangaHandler,
+    private val coverCache: CoverCache,
     private val recentSearchHandler: RecentSearchHandler,
     private val seasonalMangaSyncManager: SyncManager,
 ) : EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState()) {
@@ -124,6 +127,13 @@ class ExploreScreenModel(
     fun bookmarkManga(mangaId: String) {
         screenModelScope.launch {
             mangaHandler.addOrRemoveFromLibrary(mangaId)
+                .onSuccess {
+                    if (!it.inLibrary) {
+                        ioCoroutineScope.launch {
+                            coverCache.deleteFromCache(it.toResource(), true)
+                        }
+                    }
+                }
         }
     }
 

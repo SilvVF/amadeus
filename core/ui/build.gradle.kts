@@ -78,6 +78,9 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil)
 
+    implementation(libs.androidx.paging.common)
+    implementation(libs.androidx.paging.compose)
+
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)
     implementation(libs.voyager.tabNavigator)

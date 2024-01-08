@@ -51,6 +51,7 @@ dependencies {
     implementation(project(":core:navigation"))
 
     implementation(libs.androidx.core.ktx)
+    implementation("me.saket.swipe:swipe:1.2.0")
 
 
     // COMPOSE

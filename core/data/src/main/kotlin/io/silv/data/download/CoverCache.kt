@@ -1,7 +1,8 @@
-package io.silv.data.util
+package io.silv.data.download
 
 import android.content.Context
 import io.silv.common.model.MangaResource
+import io.silv.data.util.DiskUtil
 import java.io.File
 import java.io.IOException
 import java.io.InputStream

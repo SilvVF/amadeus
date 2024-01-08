@@ -8,6 +8,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import io.silv.common.PrefsConverter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
@@ -58,8 +59,7 @@ class PreferenceMutableState<T>(
 
 class PreferenceMutableStateWithConversion<T, V>(
     defaultValue: T,
-    private inline val fromPref: (V) -> T,
-    private inline val toPref: (T) -> V,
+    private val converter: PrefsConverter<T, V>,
     private val key: Preferences.Key<V>,
     private val scope: CoroutineScope,
 ) : MutableState<T>, KoinComponent {
@@ -68,7 +68,7 @@ class PreferenceMutableStateWithConversion<T, V>(
     private val state =
         mutableStateOf(
             runBlocking {
-                fromPref(
+                converter.convertFrom(
                     dataStore.data.first()[key] ?: return@runBlocking defaultValue,
                 )
             },
@@ -77,7 +77,7 @@ class PreferenceMutableStateWithConversion<T, V>(
     init {
         dataStore.data.map { it[key] }
             .onEach {
-                state.value = fromPref(it ?: return@onEach)
+                state.value = converter.convertFrom(it ?: return@onEach)
             }
             .launchIn(scope)
     }
@@ -87,7 +87,7 @@ class PreferenceMutableStateWithConversion<T, V>(
         set(value) {
             scope.launch {
                 dataStore.edit {
-                    it[key] = toPref(value)
+                    it[key] = converter.convertTo(value)
                 }
             }
         }
@@ -104,10 +104,9 @@ fun <T> Preferences.Key<T>.asState(
 
 fun <T, V> Preferences.Key<V>.asState(
     defaultValue: T,
-    convert: (V) -> T,
-    store: (T) -> V,
+    converter: PrefsConverter<T, V>,
     scope: CoroutineScope,
-) = PreferenceMutableStateWithConversion(defaultValue, convert, store, this, scope)
+) = PreferenceMutableStateWithConversion(defaultValue, converter, this, scope)
 
 @Composable
 fun <T> Preferences.Key<T>.collectAsState(
@@ -120,9 +119,8 @@ fun <T> Preferences.Key<T>.collectAsState(
 @Composable
 fun <T, V> Preferences.Key<V>.collectAsState(
     defaultValue: T,
-    convert: (V) -> T,
-    store: (T) -> V,
+    converter: PrefsConverter<T, V>,
     scope: CoroutineScope = rememberCoroutineScope(),
 ) = remember {
-    PreferenceMutableStateWithConversion(defaultValue, convert, store, this, scope)
+    PreferenceMutableStateWithConversion(defaultValue, converter, this, scope)
 }

@@ -24,11 +24,12 @@ val syncModule =
             bind<SyncManager>()
         }
 
-        singleOf(::SavedMangaSyncManager) {
+        singleOf(::SavedMangaSyncManager) withOptions {
             named(MangaSyncWorkName)
             bind<SyncManager>()
         }
-        singleOf(::SeasonalMangaSyncManager) {
+
+        singleOf(::SeasonalMangaSyncManager) withOptions {
             named(SeasonalMangaSyncWorkName)
             bind<SyncManager>()
         }

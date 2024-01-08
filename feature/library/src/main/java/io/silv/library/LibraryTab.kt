@@ -9,7 +9,9 @@ import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -21,18 +23,23 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -40,15 +47,19 @@ import androidx.compose.material.icons.filled.HeartBroken
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.More
+import androidx.compose.material.icons.twotone.Archive
+import androidx.compose.material.icons.twotone.Unarchive
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
@@ -65,7 +76,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -81,22 +95,34 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import io.silv.common.emptyImmutableList
+import io.silv.datastore.LibraryPrefs
+import io.silv.datastore.collectAsState
 import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.library.state.LibraryActions
 import io.silv.library.state.LibraryError
 import io.silv.library.state.LibraryState
+import io.silv.navigation.SharedScreen
+import io.silv.navigation.push
+import io.silv.ui.Converters
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
+import io.silv.ui.composables.CardType
+import io.silv.ui.composables.ChapterListItem
+import io.silv.ui.composables.MangaGridItem
 import io.silv.ui.composables.MangaListItem
 import io.silv.ui.composables.SearchTextField
+import io.silv.ui.conditional
 import io.silv.ui.layout.ExpandableInfoLayout
 import io.silv.ui.layout.ExpandableState
+import io.silv.ui.layout.ScrollbarLazyColumn
 import io.silv.ui.layout.TopAppBarWithBottomContent
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.AmadeusTheme
@@ -110,6 +136,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.IgnoredOnParcel
+import me.saket.swipe.SwipeAction
+import me.saket.swipe.SwipeableActionsBox
 
 object LibraryTab : ReselectTab {
 
@@ -184,6 +212,9 @@ enum class LibTab {
     }
 }
 
+enum class LibraryBottomSheet {
+    DisplayOptions, Filters
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -243,11 +274,17 @@ fun LibraryTopAppBar(
                         focusRequester = focusRequester,
                     )
                 } else {
-                    Text(
-                        text = remember(selectedTabProvider()) {
-                            selectedTabProvider.invoke().toString()
+                    AnimatedContent(
+                        targetState = selectedTabProvider(),
+                        label = "tab-text",
+                        transitionSpec = {
+                            fadeIn() togetherWith fadeOut()
                         }
-                    )
+                    ) { tab ->
+                        Text(
+                            text = remember(tab) { tab.toString() }
+                        )
+                    }
                 }
             }
         },
@@ -307,6 +344,15 @@ fun LibraryScreenContent(
     val scope = rememberCoroutineScope()
 
     var currentTab by rememberSaveable { mutableStateOf(LibTab.Library) }
+    var currentBottomSheet: LibraryBottomSheet? by remember { mutableStateOf(null) }
+
+    when (currentBottomSheet) {
+        LibraryBottomSheet.DisplayOptions -> LibraryOptionsBottomSheet {
+            currentBottomSheet = null
+        }
+        LibraryBottomSheet.Filters -> Unit
+        null -> Unit
+    }
 
     Scaffold(
         topBar = {
@@ -322,7 +368,8 @@ fun LibraryScreenContent(
                 selectedTabProvider = { currentTab },
                 scrollBehavior = scrollBehavior
             )
-        }
+        },
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
             when (val state = stateProvider()) {
@@ -354,13 +401,46 @@ fun LibraryScreenContent(
                     )
                 }
             ) {
-                Surface(
+                val surfaceColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
+                    BottomSheetDefaults.Elevation
+                )
+                Column(
                     Modifier
-                        .fillMaxWidth()
-                        .height(120.dp),
-                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                        .drawBehind {
+                            drawRect(color = surfaceColor)
+                        }
+                        .padding(space.small),
                 ) {
-
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { currentBottomSheet = LibraryBottomSheet.Filters }
+                            .padding(space.med),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.More,
+                            contentDescription = "Filter",
+                            modifier = Modifier.graphicsLayer { rotationX = 180f },
+                        )
+                        Spacer(modifier = Modifier.width(space.med))
+                        Text(text = "Filter manga by...")
+                    }
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { currentBottomSheet = LibraryBottomSheet.DisplayOptions }
+                            .padding(space.med),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = "Display options",
+                        )
+                        Spacer(modifier = Modifier.width(space.med))
+                        Text(text = "Display options")
+                    }
                 }
             }
         }
@@ -475,6 +555,7 @@ fun LibraryPeekContent(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SuccessScreenContent(
     state: LibraryState.Success,
@@ -492,43 +573,251 @@ fun SuccessScreenContent(
         }
     }
 
+    val scope = rememberCoroutineScope()
+    val navigator = LocalNavigator.currentOrThrow
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        contentPadding = paddingValues,
+    val cardType by LibraryPrefs.cardTypePrefKey.collectAsState(
+        defaultValue = CardType.Compact,
+        converter = Converters.CardTypeToStringConverter,
+        scope = scope,
+    )
+
+    val gridCells by LibraryPrefs.gridCellsPrefKey.collectAsState(LibraryPrefs.gridCellsDefault, scope)
+    val useList by LibraryPrefs.useListPrefKey.collectAsState(false, scope)
+    val animatePlacement by LibraryPrefs.animatePlacementPrefKey.collectAsState(true, scope)
+
+    AnimatedContent(
+        targetState = currentTab,
+        label = "",
+        transitionSpec = {
+            if (this.targetState.ordinal < this.initialState.ordinal) {
+                slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
+            } else {
+                slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
+            }
+        },
         modifier = Modifier.fillMaxSize()
+    ) {currentTab ->
+        when (currentTab) {
+            LibTab.Library -> LibraryManga(
+                useList = useList,
+                cardType = cardType,
+                gridCells = gridCells,
+                animatePlacement = animatePlacement,
+                paddingValues = paddingValues,
+                showGlobalSearch = showGlobalSearch,
+                state = state,
+                actions = actions
+            )
+            LibTab.Chapters -> BookmarkedChapters(
+                paddingValues = paddingValues,
+                state = state,
+                actions = actions
+            )
+            LibTab.Updates -> {
+            }
+            LibTab.UserLists -> {}
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun BookmarkedChapters(
+    paddingValues: PaddingValues,
+    state: LibraryState.Success,
+    actions: LibraryActions,
+) {
+    val navigator = LocalNavigator.currentOrThrow
+    val filtered by remember {
+        derivedStateOf {
+            buildMap {
+                state.mangaWithChapters.fastForEach {
+                    put(it.manga, it.chapters.filter { it.bookmarked }.ifEmpty { return@fastForEach })
+                }
+            }
+                .toList()
+        }
+    }
+    ScrollbarLazyColumn(
+        contentPadding = paddingValues
     ) {
-        if (showGlobalSearch) {
-            item(
-                key = "search-global",
-                span = { GridItemSpan(maxLineSpan) }
-            ) {
+        filtered.fastForEach { (manga, chapters)  ->
+            item(key = "${manga.id}-header") {
                 Text(
-                    text = "Search for \"${state.filteredText}\" on MangaDex",
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        color = MaterialTheme.colorScheme.primary
-                    ),
+                    text = manga.titleEnglish,
+                    style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            items(chapters, key = { it.id }) { chapter ->
+                val space = LocalSpacing.current
+
+                val archive =
+                    SwipeAction(
+                        icon =
+                        rememberVectorPainter(
+                            if (chapter.bookmarked) {
+                                Icons.TwoTone.Archive
+                            } else {
+                                Icons.TwoTone.Unarchive
+                            },
+                        ),
+                        background = MaterialTheme.colorScheme.primary,
+                        isUndo = chapter.bookmarked,
+                        onSwipe = {
+
+                        },
+                    )
+
+                val read =
+                    SwipeAction(
+                        icon =
+                        rememberVectorPainter(
+                            if (chapter.read) {
+                                Icons.Filled.VisibilityOff
+                            } else {
+                                Icons.Filled.VisibilityOff
+                            },
+                        ),
+                        background = MaterialTheme.colorScheme.primary,
+                        isUndo = chapter.read,
+                        onSwipe = {
+
+                        },
+                    )
+
+                SwipeableActionsBox(
+                    startActions = listOf(archive),
+                    endActions = listOf(read),
+                ) {
+                    ChapterListItem(
+                        modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                navigator.push(
+                                    SharedScreen.Reader(manga.id, chapter.id)
+                                )
+                            }
+                            .padding(
+                                vertical = space.med,
+                                horizontal = space.large,
+                            ),
+                        chapter = chapter,
+                        download = null,
+                        showFullTitle = true,
+                        onDownloadClicked = {  },
+                        onDeleteClicked = {
+
+                        },
+                        onCancelClicked = { },
+                        onPauseClicked = {  }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun LibraryManga(
+    useList: Boolean,
+    cardType: CardType,
+    gridCells: Int,
+    animatePlacement: Boolean,
+    paddingValues: PaddingValues,
+    showGlobalSearch: Boolean,
+    state: LibraryState.Success,
+    actions: LibraryActions,
+) {
+    val space = LocalSpacing.current
+    val navigator = LocalNavigator.currentOrThrow
+    if (useList) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = paddingValues
+        ) {
+            if (showGlobalSearch) {
+                item(
+                    key = "search-global",
+                ) {
+                    Text(
+                        text = "Search for \"${state.filteredText}\" on MangaDex",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                actions.searchOnMangaDex(state.filteredText)
+                            }
+                    )
+                }
+            }
+            items(
+                items = state.filteredMangaWithChapters,
+                key = { (manga, _) -> manga.id }
+            ) { (manga, _) ->
+                MangaListItem(
+                    manga = manga,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            actions.searchOnMangaDex(state.filteredText)
+                        .conditional(animatePlacement) {
+                            animateItemPlacement()
                         }
+                        .padding(space.small),
+                    onFavoriteClick = {},
                 )
             }
         }
-        items(
-            items = state.filteredMangaWithChapters,
-            key = { (manga, _) -> manga.id }
-        ) { (manga, _) ->
-            MangaListItem(
-                manga = manga,
-                modifier = Modifier
-                    .padding(space.small)
-                    .aspectRatio(2f / 3f),
-                onTagClick = {},
-                onBookmarkClick = {}
-            )
+    } else {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(gridCells),
+            contentPadding = paddingValues,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            if (showGlobalSearch) {
+                item(
+                    key = "search-global",
+                    span = { GridItemSpan(maxLineSpan) }
+                ) {
+                    Text(
+                        text = "Search for \"${state.filteredText}\" on MangaDex",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                actions.searchOnMangaDex(state.filteredText)
+                            }
+                    )
+                }
+            }
+            items(
+                items = state.filteredMangaWithChapters,
+                key = { (manga, _) -> manga.id },
+            ) { (manga, _) ->
+                MangaGridItem(
+                    manga = manga,
+                    modifier = Modifier
+                        .clickable {
+                            navigator.push(SharedScreen.MangaView(manga.id))
+                        }
+                        .conditional(animatePlacement) {
+                            animateItemPlacement()
+                        }
+                        .padding(space.small)
+                        .aspectRatio(2f / 3f),
+                    onTagClick = {},
+                    onBookmarkClick = {},
+                    cardType = cardType
+                )
+            }
         }
     }
 }

@@ -32,9 +32,10 @@ val screenModule =
             ExploreScreenModel(
                 subscribeToPagingData = get(),
                 seasonalManga = get(),
-                recentSearchHandler = get(),
                 mangaHandler = get(),
-                seasonalMangaSyncManager = get(qualifier = named(SeasonalMangaSyncWorkName)),
+                coverCache = get(),
+                recentSearchHandler = get(),
+                seasonalMangaSyncManager = get(qualifier = named(SeasonalMangaSyncWorkName))
             )
         }
 

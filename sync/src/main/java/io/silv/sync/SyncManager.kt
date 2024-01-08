@@ -8,10 +8,12 @@ const val MangaSyncWorkName = "MangaSyncWorkName"
 const val TagSyncWorkName = "TagSyncWorkName"
 const val SeasonalMangaSyncWorkName = "SeasonalMangaSyncWorkName"
 
+
 interface SyncManager {
     val isSyncing: Flow<Boolean>
 
     fun requestSync()
 }
+
 
 fun List<WorkInfo>.anyRunning() = any { it.state == WorkInfo.State.RUNNING }

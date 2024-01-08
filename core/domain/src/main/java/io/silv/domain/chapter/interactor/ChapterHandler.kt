@@ -12,7 +12,7 @@ class ChapterHandler(
                 chapter.copy(
                     bookmarked = !chapter.bookmarked,
                 )
-            }
+            }!!
         }
 
     suspend fun updateLastReadPage(id: String, page: Int, isLast: Boolean) =
@@ -35,6 +35,6 @@ class ChapterHandler(
                         ProgressState.NotStarted, ProgressState.Reading -> ProgressState.Finished
                     },
                 )
-            }
+            }!!
         }
 }

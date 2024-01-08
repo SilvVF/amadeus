@@ -1,7 +1,7 @@
 package io.silv.data.manga
 
 import com.skydoves.sandwich.getOrThrow
-import io.silv.data.util.CoverCache
+import io.silv.data.download.CoverCache
 import io.silv.database.dao.UserListDao
 import io.silv.database.entity.list.UserListEntity
 import io.silv.datastore.MangaDexUserStore

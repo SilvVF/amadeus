@@ -1,20 +1,18 @@
 package io.silv.explore
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -38,19 +36,12 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -60,50 +51,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.collectAsLazyPagingItems
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.datastore.ExplorePrefs
 import io.silv.datastore.collectAsState
 import io.silv.domain.manga.model.Manga
-import io.silv.explore.composables.DisplayOptionsBottomSheet
-import io.silv.explore.composables.ExploreTopAppBar
-import io.silv.explore.composables.FiltersBottomSheet
-import io.silv.explore.composables.SeasonalMangaPager
-import io.silv.explore.composables.mangaGrid
 import io.silv.model.DomainSeasonalList
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.CenterBox
+import io.silv.ui.Converters
 import io.silv.ui.composables.AnimatedBoxShimmer
 import io.silv.ui.composables.CardType
+import io.silv.ui.composables.MangaGridItem
 import io.silv.ui.composables.MangaListItem
-import io.silv.ui.composables.PullRefresh
-import io.silv.ui.layout.ExpandableInfoLayout
-import io.silv.ui.layout.rememberExpandableState
-import io.silv.ui.openOnWeb
+import io.silv.ui.composables.mangaGrid
+import io.silv.ui.composables.mangaList
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -242,17 +213,16 @@ fun BrowseMangaContent(
     onTagClick: (name: String, id: String) -> Unit,
     onBookmarkClick: (mangaId: String) -> Unit,
 ) {
-    val navigator = LocalNavigator.current
+    val navigator = LocalNavigator.currentOrThrow
+    val scope = rememberCoroutineScope()
 
-    val gridCells by ExplorePrefs.gridCellsPrefKey.collectAsState(ExplorePrefs.gridCellsDefault)
-    val showSeasonalLists by ExplorePrefs.showSeasonalListPrefKey.collectAsState(
-        ExplorePrefs.showSeasonalDefault
-    )
+    val gridCells by ExplorePrefs.gridCellsPrefKey.collectAsState(ExplorePrefs.gridCellsDefault, scope)
     val cardType by ExplorePrefs.cardTypePrefKey.collectAsState(
         defaultValue = CardType.Compact,
-        store = { it.toString() },
-        convert = { CardType.valueOf(it) },
+        converter = Converters.CardTypeToStringConverter,
+        scope = scope
     )
+    val useList by ExplorePrefs.useListPrefKey.collectAsState(false, scope)
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
     val refreshing = pagedType is UiPagedType.Seasonal && refreshingSeasonal || mangaList.loadState.refresh is LoadState.Loading
@@ -270,72 +240,132 @@ fun BrowseMangaContent(
             }
         }
         else -> {
-            LazyVerticalGrid(
-                modifier = modifier.fillMaxSize(),
-                state = gridState,
-                columns = GridCells.Fixed(gridCells),
-                contentPadding = contentPaddingValues,
-            ) {
-                if (showSeasonalLists && pagedType !is UiPagedType.Seasonal) {
-                    seasonalMangaPagerGridItem(
-                        gridCells = gridCells,
-                        refreshing = refreshingSeasonal,
-                        seasonalLists = seasonalLists,
-                        onMangaClick = onMangaClick,
-                        onTagClick = onTagClick,
-                        onBookmarkClick = {
-                            onBookmarkClick(it.id)
-                        },
-                    )
+            if (useList) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = contentPaddingValues,
+                ) {
+                    if (pagedType is UiPagedType.Seasonal) {
+                        item(
+                            key = "seasonal-tags",
+                        ) {
+                            SeasonalListTags(
+                                seasonalLists = seasonalLists,
+                                refreshing = refreshingSeasonal,
+                                selectedIndex = selectedIndex,
+                                onIndexSelected = {
+                                    selectedIndex = it
+                                },
+                            )
+                        }
+                        seasonalMangaList(
+                            seasonalList = seasonalLists.getOrNull(selectedIndex),
+                            onMangaClick = onMangaClick,
+                            onBookmarkClick = { manga ->
+                                onBookmarkClick(manga.id)
+                            },
+                        )
+                    } else {
+                        mangaList(
+                            manga = mangaList,
+                            onFavoriteClick = { manga ->
+                                onBookmarkClick(manga.id)
+                            },
+                            onMangaClick = { manga ->
+                                navigator.push(
+                                    SharedScreen.MangaView(manga.id),
+                                )
+                            }
+                        )
+                    }
                 }
-                if (pagedType is UiPagedType.Seasonal) {
-                    item(
-                        key = "seasonal-tags",
-                        span = { GridItemSpan(gridCells) },
-                    ) {
-                        SeasonalListTags(
-                            seasonalLists = seasonalLists,
-                            refreshing = refreshingSeasonal,
-                            selectedIndex = selectedIndex,
-                            onIndexSelected = {
-                                selectedIndex = it
+            } else {
+                LazyVerticalGrid(
+                    modifier = modifier.fillMaxSize(),
+                    state = gridState,
+                    columns = GridCells.Fixed(gridCells),
+                    contentPadding = contentPaddingValues,
+                ) {
+                    if (pagedType is UiPagedType.Seasonal) {
+                        item(
+                            key = "seasonal-tags",
+                            span = { GridItemSpan(gridCells) },
+                        ) {
+                            SeasonalListTags(
+                                seasonalLists = seasonalLists,
+                                refreshing = refreshingSeasonal,
+                                selectedIndex = selectedIndex,
+                                onIndexSelected = {
+                                    selectedIndex = it
+                                },
+                            )
+                        }
+                        seasonalMangaGrid(
+                            cardType,
+                            seasonalLists.getOrNull(selectedIndex),
+                            onMangaClick = onMangaClick,
+                            onBookmarkClick = {
+                                onBookmarkClick(it.id)
+                            },
+                            onTagClick = onTagClick,
+                        )
+                    } else {
+                        mangaGrid(
+                            manga = mangaList,
+                            cardType = cardType,
+                            onBookmarkClick = { manga ->
+                                onBookmarkClick(manga.id)
+                            },
+                            onTagClick = { manga, name ->
+                                manga.tagToId[name]?.let { id ->
+                                    navigator?.push(
+                                        SharedScreen.MangaFilter(name, id),
+                                    )
+                                }
+                            },
+                            onMangaClick = { manga ->
+                                navigator?.push(
+                                    SharedScreen.MangaView(manga.id),
+                                )
                             },
                         )
                     }
-                    seasonalMangaGrid(
-                        cardType,
-                        seasonalLists.getOrNull(selectedIndex),
-                        onMangaClick = onMangaClick,
-                        onBookmarkClick = {
-                            onBookmarkClick(it.id)
-                        },
-                        onTagClick = onTagClick,
-                    )
-                } else {
-                    mangaGrid(
-                        manga = mangaList,
-                        cardType = cardType,
-                        onBookmarkClick = { manga ->
-                            onBookmarkClick(manga.id)
-                        },
-                        onTagClick = { manga, name ->
-                            manga.tagToId[name]?.let { id ->
-                                navigator?.push(
-                                    SharedScreen.MangaFilter(name, id),
-                                )
-                            }
-                        },
-                        onMangaClick = { manga ->
-                            navigator?.push(
-                                SharedScreen.MangaView(manga.id),
-                            )
-                        },
-                    )
                 }
             }
         }
     }
 }
+
+private fun LazyListScope.seasonalMangaList(
+    seasonalList: DomainSeasonalList?,
+    onMangaClick: (manga: Manga) -> Unit,
+    onBookmarkClick: (manga: Manga) -> Unit,
+) {
+    seasonalList?.let {
+        items(
+            items = seasonalList.mangas,
+            key = { v -> v.id },
+        ) { manga ->
+
+            val space = LocalSpacing.current
+
+            MangaListItem(
+                manga = manga,
+                modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(space.small)
+                    .clickable {
+                        onMangaClick(manga)
+                    },
+                onFavoriteClick = {
+                    onBookmarkClick(manga)
+                },
+            )
+        }
+    }
+}
+
 
 private fun LazyGridScope.seasonalMangaGrid(
     cardType: CardType,
@@ -352,7 +382,7 @@ private fun LazyGridScope.seasonalMangaGrid(
 
             val space = LocalSpacing.current
 
-            MangaListItem(
+            MangaGridItem(
                 manga = manga,
                 cardType = cardType,
                 modifier =
@@ -373,50 +403,6 @@ private fun LazyGridScope.seasonalMangaGrid(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-private fun LazyGridScope.seasonalMangaPagerGridItem(
-    gridCells: Int,
-    refreshing: Boolean,
-    seasonalLists: ImmutableList<DomainSeasonalList>,
-    onMangaClick: (manga: Manga) -> Unit,
-    onBookmarkClick: (manga: Manga) -> Unit,
-    onTagClick: (name: String, id: String) -> Unit,
-) {
-    item(
-        key = "seasonal-tag",
-        span = { GridItemSpan(gridCells) },
-    ) {
-        var selectedIndex by rememberSaveable {
-            mutableIntStateOf(0)
-        }
-        SeasonalListTags(
-            seasonalLists = seasonalLists,
-            refreshing = refreshing,
-            selectedIndex = selectedIndex,
-            onIndexSelected = {
-                selectedIndex = it
-            },
-        )
-        if (refreshing) {
-            AnimatedBoxShimmer(
-                Modifier
-                    .fillMaxWidth()
-                    .height(240.dp),
-            )
-        } else {
-            SeasonalMangaPager(
-                modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(240.dp),
-                mangaList = seasonalLists.getOrNull(selectedIndex)?.mangas ?: persistentListOf(),
-                onMangaClick = onMangaClick,
-                onBookmarkClick = onBookmarkClick,
-                onTagClick = onTagClick,
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

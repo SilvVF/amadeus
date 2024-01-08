@@ -1,4 +1,4 @@
-package io.silv.explore.composables
+package io.silv.ui.composables
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.aspectRatio
@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
@@ -15,8 +14,6 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import io.silv.domain.manga.model.Manga
 import io.silv.ui.CenterBox
-import io.silv.ui.composables.CardType
-import io.silv.ui.composables.MangaListItem
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.coroutines.flow.StateFlow
 
@@ -37,7 +34,7 @@ fun LazyGridScope.mangaGrid(
         val space = LocalSpacing.current
 
         item?.value?.let { manga ->
-            MangaListItem(
+            MangaGridItem(
                 manga = manga,
                 cardType = cardType,
                 modifier =
@@ -56,13 +53,14 @@ fun LazyGridScope.mangaGrid(
             )
         }
     }
+
     if (manga.loadState.append is LoadState.Loading) {
         item(
             span = { GridItemSpan(maxLineSpan) },
             key = "load-state-append-manga",
         ) {
             CenterBox(Modifier.fillMaxWidth()) {
-                CircularProgressIndicator()
+                androidx.compose.material3.CircularProgressIndicator()
             }
         }
     }

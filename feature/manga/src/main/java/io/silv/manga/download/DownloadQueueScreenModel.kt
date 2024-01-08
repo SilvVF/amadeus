@@ -26,7 +26,7 @@ class DownloadQueueScreenModel(
     init {
         downloadManager.queueState
             .map { downloads ->
-                downloads.map { download ->
+                downloads.filter{ it.status != Download.State.DOWNLOADED }.map { download ->
                     DownloadItem(download = download)
                 }
             }.onEach { items ->
@@ -39,6 +39,7 @@ class DownloadQueueScreenModel(
         .stateIn(screenModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun getDownloadStatusFlow() = downloadManager.statusFlow()
+
     fun getDownloadProgressFlow() = downloadManager.progressFlow()
 
     fun startDownloads() {

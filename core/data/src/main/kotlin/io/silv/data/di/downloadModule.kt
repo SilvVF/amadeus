@@ -1,6 +1,7 @@
 package io.silv.data.di
 
 import io.silv.data.download.ChapterCache
+import io.silv.data.download.CoverCache
 import io.silv.data.download.DownloadCache
 import io.silv.data.download.DownloadManager
 import io.silv.data.download.DownloadProvider
@@ -25,4 +26,6 @@ val downloadModule = module {
     singleOf(::Downloader)
 
     singleOf(::DownloadManager)
+
+    singleOf(::CoverCache)
 }

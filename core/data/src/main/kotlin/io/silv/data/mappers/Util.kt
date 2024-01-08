@@ -9,11 +9,12 @@ import kotlin.time.Duration.Companion.days
 fun TimePeriod.timeString(): String? {
     return timeStringMinus(
             when (this) {
+                TimePeriod.AllTime -> return null
+                TimePeriod.OneYear -> 360.days
                 TimePeriod.SixMonths -> (6 * 30).days
                 TimePeriod.ThreeMonths ->  (3 * 30).days
                 TimePeriod.LastMonth -> 30.days
                 TimePeriod.OneWeek -> 7.days
-                TimePeriod.AllTime -> return null
             }
     )
 }

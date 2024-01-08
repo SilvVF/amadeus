@@ -1,4 +1,4 @@
-package io.silv.explore.composables
+package io.silv.library
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.silv.datastore.ExplorePrefs
+import io.silv.datastore.LibraryPrefs
 import io.silv.datastore.collectAsState
 import io.silv.ui.Converters
 import io.silv.ui.composables.CardType
@@ -40,9 +43,8 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
-fun DisplayOptionsBottomSheet(
+fun LibraryOptionsBottomSheet(
     optionsTitle: @Composable () -> Unit = {},
-    clearSearchHistory: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     val sheetState =
@@ -52,24 +54,25 @@ fun DisplayOptionsBottomSheet(
 
     val scope = rememberCoroutineScope()
 
-    var cardType by ExplorePrefs.cardTypePrefKey.collectAsState(
+    var cardType by LibraryPrefs.cardTypePrefKey.collectAsState(
         defaultValue = CardType.Compact,
         converter = Converters.CardTypeToStringConverter,
         scope = scope,
     )
 
-    var gridCells by ExplorePrefs.gridCellsPrefKey.collectAsState(ExplorePrefs.gridCellsDefault, scope)
-    var useList by ExplorePrefs.useListPrefKey.collectAsState(false, scope)
+    var gridCells by LibraryPrefs.gridCellsPrefKey.collectAsState(LibraryPrefs.gridCellsDefault, scope)
+    var useList by LibraryPrefs.useListPrefKey.collectAsState(false, scope)
+    var animatePlacement by LibraryPrefs.animatePlacementPrefKey.collectAsState(true, scope)
 
 
     LaunchedEffect(Unit) {
         sheetState.show()
     }
 
-    val space = LocalSpacing.current
 
     ModalBottomSheet(
         sheetState = sheetState,
+        windowInsets = WindowInsets(0),
         onDismissRequest = onDismissRequest,
     ) {
         Column(
@@ -96,19 +99,14 @@ fun DisplayOptionsBottomSheet(
                 },
                 size = gridCells,
             )
-            Text(
-                text = "Clear search history",
-                style =
-                MaterialTheme.typography.labelLarge.copy(
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                ),
-                modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(space.med)
-                    .clickable { clearSearchHistory() },
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = animatePlacement,
+                    onCheckedChange = { animatePlacement = it }
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Animate item placement.",   style = MaterialTheme.typography.titleSmall,)
+            }
             Spacer(
                 Modifier.windowInsetsPadding(WindowInsets.systemBars),
             )

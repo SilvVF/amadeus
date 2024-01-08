@@ -1,5 +1,6 @@
 package io.silv.data.util
 
+import io.silv.data.download.CoverCache
 import io.silv.database.entity.manga.MangaEntity
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaUpdate
@@ -19,7 +20,9 @@ internal fun MangaEntity.deleteOldCoverFromCache(
 
     if (!refreshSameUrl && coverArt == newUrl) return update
 
-    coverCache.deleteFromCache(this, false)
+    if (favorite) {
+        coverCache.deleteFromCache(this, false)
+    }
 
     return update
 }

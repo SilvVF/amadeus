@@ -1,4 +1,5 @@
-package io.silv.explore.composables
+package io.silv.manga.manga_filter
+
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.silv.datastore.ExplorePrefs
+import io.silv.datastore.FilterPrefs
 import io.silv.datastore.collectAsState
 import io.silv.ui.Converters
 import io.silv.ui.composables.CardType
@@ -40,9 +43,8 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
-fun DisplayOptionsBottomSheet(
+fun FilterDisplayOptionsBottomSheet(
     optionsTitle: @Composable () -> Unit = {},
-    clearSearchHistory: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     val sheetState =
@@ -52,28 +54,29 @@ fun DisplayOptionsBottomSheet(
 
     val scope = rememberCoroutineScope()
 
-    var cardType by ExplorePrefs.cardTypePrefKey.collectAsState(
+    var cardType by FilterPrefs.cardTypePrefKey.collectAsState(
         defaultValue = CardType.Compact,
         converter = Converters.CardTypeToStringConverter,
         scope = scope,
     )
 
-    var gridCells by ExplorePrefs.gridCellsPrefKey.collectAsState(ExplorePrefs.gridCellsDefault, scope)
-    var useList by ExplorePrefs.useListPrefKey.collectAsState(false, scope)
+    var gridCells by FilterPrefs.gridCellsPrefKey.collectAsState(FilterPrefs.gridCellsDefault, scope)
+    var useList by FilterPrefs.useListPrefKey.collectAsState(false, scope)
 
 
     LaunchedEffect(Unit) {
         sheetState.show()
     }
 
-    val space = LocalSpacing.current
-
     ModalBottomSheet(
         sheetState = sheetState,
+        windowInsets = WindowInsets(0),
         onDismissRequest = onDismissRequest,
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
     ) {
         Column(
-            Modifier.verticalScroll(rememberScrollState()),
+            Modifier
+                .verticalScroll(rememberScrollState()),
         ) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 optionsTitle()
@@ -85,9 +88,7 @@ fun DisplayOptionsBottomSheet(
             )
             SelectCardType(
                 cardType = cardType,
-                onCardTypeSelected = {
-                    cardType = it
-                },
+                onCardTypeSelected = { cardType = it },
             )
             GridSizeSelector(
                 Modifier.fillMaxWidth(),
@@ -96,22 +97,7 @@ fun DisplayOptionsBottomSheet(
                 },
                 size = gridCells,
             )
-            Text(
-                text = "Clear search history",
-                style =
-                MaterialTheme.typography.labelLarge.copy(
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                ),
-                modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(space.med)
-                    .clickable { clearSearchHistory() },
-            )
-            Spacer(
-                Modifier.windowInsetsPadding(WindowInsets.systemBars),
-            )
+            Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars))
         }
     }
 }

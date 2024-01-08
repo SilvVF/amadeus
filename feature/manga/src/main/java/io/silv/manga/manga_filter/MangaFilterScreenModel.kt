@@ -4,62 +4,54 @@ import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.PagedType
 import io.silv.common.model.TimePeriod
+import io.silv.data.download.CoverCache
 import io.silv.domain.manga.SubscribeToPagingData
 import io.silv.domain.manga.interactor.MangaHandler
-import io.silv.domain.manga.model.Manga
-import io.silv.domain.manga.repository.TopYearlyFetcher
+import io.silv.domain.manga.model.toResource
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ioCoroutineScope
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MangaFilterScreenModel(
     private val mangaHandler: MangaHandler,
-    yearlyFetcher: TopYearlyFetcher,
     subscribeToPagingData: SubscribeToPagingData,
+    private val coverCache: CoverCache,
     tagId: String,
-) : EventStateScreenModel<MangaFilterEvent, YearlyFilteredUiState>(YearlyFilteredUiState.Loading) {
-    private val mutableTimePeriod = MutableStateFlow(TimePeriod.AllTime)
-    val timePeriod = mutableTimePeriod.asStateFlow()
-
-    init {
-        screenModelScope.launch {
-            val mangaList = yearlyFetcher.getYearlyTopMangaByTagId(tagId)
-            mutableState.value = YearlyFilteredUiState.Success(mangaList.toImmutableList())
-        }
-    }
+) : EventStateScreenModel<MangaFilterEvent, YearlyFilteredUiState>(YearlyFilteredUiState()) {
 
     val timePeriodFilteredPagingFlow =
         subscribeToPagingData(
             config = PagingConfig(30, 30),
-            typeFlow = timePeriod.map { time -> PagedType.TimePeriod(tagId, time) },
+            typeFlow = state.map { (time) ->
+                PagedType.TimePeriod(tagId, time)
+            },
             scope = ioCoroutineScope,
         )
 
     fun changeTimePeriod(timePeriod: TimePeriod) {
         screenModelScope.launch {
-            mutableTimePeriod.emit(timePeriod)
+            mutableState.update { it.copy(timePeriod = timePeriod) }
         }
     }
 
-    fun bookmarkManga(id: String) {
+    fun toggleFavorite(id: String) {
         screenModelScope.launch {
             mangaHandler.addOrRemoveFromLibrary(id)
+                .onSuccess {
+                    if (!it.inLibrary) {
+                        ioCoroutineScope.launch {
+                            coverCache.deleteFromCache(it.toResource(), true)
+                        }
+                    }
+                }
         }
     }
 }
 
-sealed interface YearlyFilteredUiState {
-    data object Loading : YearlyFilteredUiState
-
-    data class Success(
-        val resources: ImmutableList<StateFlow<Manga>>,
-    ) : YearlyFilteredUiState
-}
+data class YearlyFilteredUiState(
+    val timePeriod: TimePeriod = TimePeriod.OneYear
+)

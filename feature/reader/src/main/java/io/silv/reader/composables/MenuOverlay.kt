@@ -67,13 +67,14 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
-import io.silv.reader.loader.ReaderChapter
 import io.silv.common.model.Download
 import io.silv.common.model.ReaderOrientation
 import io.silv.datastore.ReaderPrefs
 import io.silv.datastore.collectAsState
 import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.manga.model.Manga
+import io.silv.reader.loader.ReaderChapter
+import io.silv.ui.Converters
 import io.silv.ui.composables.ChapterDownloadAction
 import io.silv.ui.composables.ChapterDownloadIndicator
 import io.silv.ui.layout.DragAnchors
@@ -279,14 +280,12 @@ private fun Options(
 
     val layoutDirection by ReaderPrefs.layoutDirection.collectAsState(
         defaultValue = LayoutDirection.Rtl,
-        store = { dir -> dir.ordinal },
-        convert = { v -> if (v == 1) LayoutDirection.Rtl else LayoutDirection.Ltr }
+        converter = Converters.LayoutDirectionConverter
     )
 
     val orientation by ReaderPrefs.readerOrientation.collectAsState(
         defaultValue = ReaderOrientation.Horizontal,
-        store = { it.toString() },
-        convert = { ReaderOrientation.valueOf(it) }
+        converter = Converters.OrientationConverter
     )
 
     val fullscreen by ReaderPrefs.fullScreen.collectAsState(defaultValue = true)

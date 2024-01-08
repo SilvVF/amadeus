@@ -6,6 +6,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import io.silv.common.PrefsConverter
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
@@ -41,8 +42,10 @@ class MangaDexUserStore(
         fun collectUserIdsAsState(): MutableState<List<String>> {
             return userListPrefKey.collectAsState(
                 defaultValue = emptyList(),
-                convert = ::decode,
-                store = ::encode
+                converter = PrefsConverter.create(
+                    convertTo = { encode(it) },
+                    convertFrom = { decode(it) }
+                )
             )
         }
 

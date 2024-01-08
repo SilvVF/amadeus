@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,23 +23,26 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.FileDownloadOff
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -57,11 +61,16 @@ import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.model.Download
+import io.silv.common.model.Page
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorder
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
@@ -113,24 +122,28 @@ private fun DownloadScreenContent(
     actions: DownloadQueueActions,
     running: Boolean
 ) {
+    val navigator = LocalNavigator.currentOrThrow
+    val space = LocalSpacing.current
 
     io.silv.ui.layout.Scaffold(
         modifier = Modifier.fillMaxSize(),
        topBar = {
-           TopAppBar(
+           CenterAlignedTopAppBar(
+               colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                 containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+               ),
                navigationIcon = {
                    IconButton(
-                       onClick = {  }
+                       onClick = { navigator.pop() }
                    ) {
                        Icon(
-                           imageVector = Icons.Filled.ArrowBack,
-                           contentDescription = null)
-
+                           imageVector = Icons.Filled.Close,
+                           contentDescription = null
+                       )
                    }
                },
                title = { Text("Download queue") },
                actions = {
-                   val space = LocalSpacing.current
                    val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
                    if (downloads.isNotEmpty()) {
                        Text(
@@ -172,8 +185,12 @@ private fun DownloadScreenContent(
             } else {
                 Triple(Icons.Filled.Pause, actions.pause, "Pause")
             }
-            FloatingActionButton(onClick = action) {
-                Row {
+
+            if (downloads.isNotEmpty()) {
+                ExtendedFloatingActionButton(
+                    onClick = action,
+                    containerColor = MaterialTheme.colorScheme.surfaceTint
+                ) {
                     Icon(imageVector = icon, contentDescription = null)
                     Text(text)
                 }
@@ -181,16 +198,25 @@ private fun DownloadScreenContent(
         }
     ) { paddingValues ->
         if (downloads.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column {
-                    Text(text = "(uwu)", style = MaterialTheme.typography.titleLarge)
-                    Text(text = "No downloads", style = MaterialTheme.typography.labelMedium)
-
-                }
+                Icon(
+                    imageVector = Icons.Filled.FileDownloadOff,
+                    contentDescription = "No downloads",
+                    tint = MaterialTheme.colorScheme.surfaceTint,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.2f)
+                )
+                Spacer(modifier = Modifier.height(space.large))
+                Text(
+                    text = "No downloads in progress",
+                    color = MaterialTheme.colorScheme.surfaceTint,
+                    style = MaterialTheme.typography.titleLarge
+                )
             }
         } else {
             VerticalReorderList(
@@ -209,10 +235,10 @@ fun VerticalReorderList(
     actions: DownloadQueueActions,
     paddingValues: PaddingValues,
 ) {
-    var data by remember(downloads) {
-        mutableStateOf(
-            downloads.map { it.download }
-        )
+    var list by remember(downloads) { mutableStateOf(downloads) }
+
+    val data by remember {
+        derivedStateOf { list.map { it.download } }
     }
 
     val view = LocalView.current
@@ -227,7 +253,7 @@ fun VerticalReorderList(
             actions.reorder(data)
         },
         onMove = { from, to ->
-            data = data.toMutableList().apply {
+            list = list.toMutableList().apply {
                 add(to.index, removeAt(from.index))
             }
                 .toImmutableList()
@@ -262,11 +288,14 @@ fun VerticalReorderList(
                     val progress by item.progressFlow.collectAsStateWithLifecycle(0L)
 
                     val primaryColor = MaterialTheme.colorScheme.primary
+                    val surfaceColor = MaterialTheme.colorScheme.onSurface
 
-                    val pages by produceState(initialValue = 0 to (item.pages?.size ?: 0)) {
-                        while (true) {
-                            value = item.downloadedImages to (item.pages?.size ?: 0)
-                            delay(50)
+                    val readyPages by produceState(initialValue = 0) {
+                        withContext(Dispatchers.Default) {
+                            while (true) {
+                                value = item.pages?.count { it.status == Page.State.READY } ?: 0
+                                delay(1000)
+                            }
                         }
                     }
 
@@ -299,8 +328,8 @@ fun VerticalReorderList(
 
                             Column(Modifier.weight(1f)) {
                                 Row (Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-                                     Column {
-                                         Text(item.manga.title, style = MaterialTheme.typography.titleMedium)
+                                     Column(Modifier.weight(1f)) {
+                                         Text(item.manga.title, style = MaterialTheme.typography.titleMedium, maxLines = 1)
                                          Spacer(Modifier.height(space.xs))
                                          Text(
                                              remember(item) {
@@ -309,7 +338,9 @@ fun VerticalReorderList(
                                              style = MaterialTheme.typography.labelMedium
                                          )
                                      }
-                                    Text("${pages.first} / ${pages.second}", style = MaterialTheme.typography.labelSmall)
+                                    item.pages?.let {
+                                        Text("$readyPages / ${item.pages?.size ?: ""}", style = MaterialTheme.typography.labelSmall)
+                                    }
                                 }
 
                                 val widthPct by animateFloatAsState(
@@ -324,6 +355,10 @@ fun VerticalReorderList(
                                         .fillMaxWidth()
                                         .clip(CircleShape)
                                 ) {
+                                    drawRoundRect(
+                                        color = surfaceColor,
+                                        size = Size(this.size.width, this.size.height)
+                                    )
                                     drawRoundRect(
                                         color = primaryColor,
                                         size = Size(this.size.width * (widthPct / 100), this.size.height)

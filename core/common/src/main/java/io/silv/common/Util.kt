@@ -11,6 +11,23 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
+interface PrefsConverter<T, V> {
+    fun convertTo(value: T): V
+    fun convertFrom(value: V): T
+
+    companion object {
+        fun <T, V> create(
+            convertTo: (obj: T) -> V,
+            convertFrom: (obj: V) -> T
+        ): PrefsConverter<T, V> {
+            return object: PrefsConverter<T, V> {
+                override fun convertFrom(value: V): T  = convertFrom(value)
+                override fun convertTo(value: T): V = convertTo(value)
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalContracts::class)
 suspend inline fun <T, R> Iterable<T>.pmap(crossinline transform: suspend (T) -> R): List<R> {
     contract { callsInPlace(transform) }

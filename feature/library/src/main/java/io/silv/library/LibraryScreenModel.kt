@@ -7,7 +7,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.silv.data.download.DownloadManager
 import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
+import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.library.state.LibraryError
 import io.silv.library.state.LibraryEvent
 import io.silv.library.state.LibraryState
@@ -21,14 +23,15 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 
 class LibraryScreenModel(
-    getLibraryMangaWithChapters: GetLibraryMangaWithChapters
+    getLibraryMangaWithChapters: GetLibraryMangaWithChapters,
+    downloadManager: DownloadManager,
 ): EventStateScreenModel<LibraryEvent, LibraryState>(LibraryState.Loading) {
 
     var mangaSearchText by mutableStateOf("")
@@ -40,17 +43,37 @@ class LibraryScreenModel(
         .distinctUntilChanged()
         .onStart { emit("") }
 
+    private val downloadTrigger = combine(
+        downloadManager.queueState,
+        downloadManager.cacheChanges,
+    ) { _, _ -> Unit }
+        .onStart { emit(Unit) }
+
+    private val libraryMangaWithDownloadState = getLibraryMangaWithChapters.subscribe()
+        .map { list ->
+            list.map {(manga, chapters) ->
+                MangaWithChapters(
+                    manga = manga,
+                    chapters = chapters.map {
+                        it.copy(
+                            downloaded = downloadManager.isChapterDownloaded(it.title, it.scanlator, manga.titleEnglish))
+                    }
+                        .toImmutableList()
+                )
+            }
+        }
+
     init {
         combine(
-            getLibraryMangaWithChapters.subscribe(),
+            libraryMangaWithDownloadState,
             debouncedSearch,
-            filteredTagIds
-        ) { x, y, z -> Triple(x, y, z) }
-            .onEach { (list, query, tagIds) ->
+            filteredTagIds,
+            downloadTrigger
+        ) { list, query, tagIds, _ ->
 
                 if (list.isEmpty()) {
                     mutableState.value = LibraryState.Error(LibraryError.NoFavoritedChapters)
-                    return@onEach
+                    return@combine
                 }
 
                 val filtered = list.filter { (manga, _) ->

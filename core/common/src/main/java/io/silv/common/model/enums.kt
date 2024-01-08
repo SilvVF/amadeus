@@ -101,6 +101,7 @@ enum class Season {
 }
 
 enum class TimePeriod {
+    OneYear,
     SixMonths,
     ThreeMonths,
     LastMonth,

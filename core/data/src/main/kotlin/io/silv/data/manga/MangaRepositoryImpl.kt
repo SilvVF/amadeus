@@ -2,7 +2,7 @@ package io.silv.data.manga
 
 import androidx.room.withTransaction
 import io.silv.common.AmadeusDispatchers
-import io.silv.data.util.CoverCache
+import io.silv.data.download.CoverCache
 import io.silv.data.util.deleteOldCoverFromCache
 import io.silv.database.AmadeusDatabase
 import io.silv.database.dao.MangaDao
@@ -66,6 +66,7 @@ class MangaRepositoryImpl(
                 favorite = update.favorite,
                 readingStatus = update.readingStatus,
             ) { existing ->
+                // if the existing manga
                 existing.deleteOldCoverFromCache(coverCache, update)
             }
         }

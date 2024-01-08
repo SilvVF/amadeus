@@ -3,8 +3,9 @@ package eu.kanade.tachiyomi
 import coil.key.Keyer
 import coil.request.Options
 import io.silv.common.model.MangaCover
-import io.silv.data.util.CoverCache
+import io.silv.data.download.CoverCache
 import io.silv.domain.manga.model.Manga
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 
@@ -13,9 +14,12 @@ fun Manga.asMangaCover(): MangaCover {
         mangaId = id,
         url = coverArt,
         isMangaFavorite = inLibrary,
-        lastModified = updatedAt.toInstant(TimeZone.currentSystemDefault()).epochSeconds,
+        lastModified = updatedAt.epochSeconds,
     )
 }
+
+private val LocalDateTime.epochSeconds
+    get() = toInstant(TimeZone.currentSystemDefault()).epochSeconds
 
 fun Manga.hasCustomCover(): Boolean {
     return false

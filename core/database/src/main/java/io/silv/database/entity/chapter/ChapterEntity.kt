@@ -18,7 +18,8 @@ import kotlinx.datetime.LocalDateTime
             childColumns = arrayOf("manga_id"),
             onDelete = ForeignKey.CASCADE,
         )
-    ]
+    ],
+    tableName = "chapters"
 )
 data class ChapterEntity(
     @PrimaryKey

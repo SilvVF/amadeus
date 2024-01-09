@@ -4,28 +4,35 @@ import android.util.Log
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.silv.reader.loader.ChapterLoader
-import io.silv.reader.loader.ReaderChapter
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.Download
 import io.silv.common.model.Page
 import io.silv.data.download.DownloadManager
 import io.silv.domain.chapter.interactor.ChapterHandler
-import io.silv.domain.manga.interactor.GetMangaWithChapters
 import io.silv.domain.chapter.model.Chapter
+import io.silv.domain.history.HistoryRepository
+import io.silv.domain.manga.interactor.GetMangaWithChapters
 import io.silv.domain.manga.model.Manga
+import io.silv.model.HistoryUpdate
+import io.silv.reader.loader.ChapterLoader
+import io.silv.reader.loader.ReaderChapter
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 class ReaderScreenModel(
     private val getSavableMangaWithChapters: GetMangaWithChapters,
     private val chapterHandler: ChapterHandler,
     private val downloadManager: DownloadManager,
+    private val historyRepository: HistoryRepository,
     private val mangaId: String,
     private val initialChapterId: String,
 ) : StateScreenModel<ReaderState>(ReaderState()) {
@@ -35,6 +42,11 @@ class ReaderScreenModel(
     private var loader: ChapterLoader? = null
 
     private var chapterToDownload: Download? = null
+
+    /**
+     * The time the chapter was started reading
+     */
+    private var chapterReadStartTime: Long? = null
 
     init {
         initializeReader()
@@ -142,9 +154,13 @@ class ReaderScreenModel(
         chapter: ReaderChapter,
     ): ViewerChapters {
 
+        flushReadTimer()
+        restartReadTimer()
         Log.d("Reader", "loading chapter $chapter")
 
-        loader.loadChapter(chapter)
+        withContext(Dispatchers.IO) {
+            loader.loadChapter(chapter)
+        }
 
         val chapterPos = chapterList.indexOf(chapter)
         val newChapters = ViewerChapters(
@@ -197,6 +213,33 @@ class ReaderScreenModel(
                 isLast = readerChapter.pages?.lastIndex == pageIndex
             )
         }
+    }
+
+    fun restartReadTimer() {
+        chapterReadStartTime = Clock.System.now().toEpochMilliseconds()
+    }
+
+    fun flushReadTimer() {
+        state.value.viewerChapters?.currChapter?.let {
+            screenModelScope.launch(NonCancellable) {
+                updateHistory(it)
+            }
+        }
+    }
+
+    /**
+     * Saves the chapter last read history if incognito mode isn't on.
+     */
+    private suspend fun updateHistory(readerChapter: ReaderChapter) {
+
+        val chapterId = readerChapter.chapter.id
+        val end = Clock.System.now()
+        val endDateTime = end.toLocalDateTime(TimeZone.currentSystemDefault())
+        val endMillis = end.toEpochMilliseconds()
+        val sessionReadDuration = chapterReadStartTime?.let { endMillis - it } ?: 0
+
+        historyRepository.insertHistory(HistoryUpdate(chapterId, endDateTime, sessionReadDuration))
+        chapterReadStartTime = null
     }
 
     override fun onDispose() {

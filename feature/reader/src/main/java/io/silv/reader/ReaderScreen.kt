@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
@@ -33,7 +34,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
@@ -75,6 +79,23 @@ class ReaderScreen(
         val screenModel = getScreenModel<ReaderScreenModel> { parametersOf(mangaId, savedStateChapterId) }
 
         val state = screenModel.state.collectAsStateWithLifecycle().value
+        val lifecycle = LocalLifecycleOwner.current
+
+        DisposableEffect(lifecycle.lifecycle) {
+
+            val observer = LifecycleEventObserver { source, event ->
+                when (event) {
+                    Lifecycle.Event.ON_RESUME -> screenModel.restartReadTimer()
+                    Lifecycle.Event.ON_PAUSE -> screenModel.flushReadTimer()
+                    else -> Unit
+                }
+            }
+
+            lifecycle.lifecycle.addObserver(
+                observer = observer
+            )
+            onDispose { lifecycle.lifecycle.removeObserver(observer) }
+        }
 
         LaunchedEffect(key1 = Unit) {
             screenModel.state.map { it.viewerChapters?.currChapter }

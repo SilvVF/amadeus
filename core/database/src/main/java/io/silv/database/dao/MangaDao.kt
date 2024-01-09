@@ -19,7 +19,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDateTime
 
 @Dao
-interface MangaDao {
+abstract class MangaDao {
+
     @Query(
         """
         UPDATE manga SET
@@ -45,7 +46,7 @@ interface MangaDao {
         WHERE id = :mangaId
         """
     )
-    suspend fun updateIfExists(
+    protected abstract suspend fun updateIfExists(
         mangaId: String,
         coverArt: String,
         title: String,
@@ -69,10 +70,10 @@ interface MangaDao {
     )
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(manga: MangaEntity): Long
+    abstract suspend fun insert(manga: MangaEntity): Long
 
     @Update
-    suspend fun update(manga: MangaEntity)
+    abstract suspend fun update(manga: MangaEntity)
 
     @Update
     suspend fun upsert(
@@ -146,40 +147,40 @@ interface MangaDao {
     }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(mangas: List<MangaEntity>)
+    abstract suspend fun insertAll(mangas: List<MangaEntity>)
 
     @Delete
-    suspend fun delete(manga: MangaEntity)
+    abstract suspend fun delete(manga: MangaEntity)
 
     @Query("SELECT * FROM MANGA WHERE id = :id LIMIT 1")
-    suspend fun getById(id: String): MangaEntity?
+    abstract suspend fun getById(id: String): MangaEntity?
 
     @Query("SELECT * FROM MANGA WHERE id in (:ids)")
-    suspend fun getByIds(ids: List<String>): List<MangaEntity>
+    abstract suspend fun getByIds(ids: List<String>): List<MangaEntity>
 
     @Query("SELECT * FROM MANGA WHERE id in (:ids)")
-    fun observeByIds(ids: List<String>): Flow<List<MangaEntity>>
+    abstract fun observeByIds(ids: List<String>): Flow<List<MangaEntity>>
 
     @Query("SELECT * FROM MANGA WHERE id = :id LIMIT 1")
-    fun observeById(id: String): Flow<MangaEntity?>
+    abstract fun observeById(id: String): Flow<MangaEntity?>
 
     @Query("SELECT * FROM MANGA")
-    suspend fun getAll(): List<MangaEntity>
+    abstract suspend fun getAll(): List<MangaEntity>
 
     @Query("SELECT * FROM MANGA")
-    fun observeAll(): Flow<List<MangaEntity>>
+    abstract fun observeAll(): Flow<List<MangaEntity>>
 
     @Query("SELECT * FROM MANGA WHERE favorite")
-    suspend fun getLibraryManga(): List<MangaEntity>
+    abstract suspend fun getLibraryManga(): List<MangaEntity>
 
     @Query("SELECT * FROM MANGA WHERE favorite")
-    fun observeLibraryManga(): Flow<List<MangaEntity>>
+    abstract fun observeLibraryManga(): Flow<List<MangaEntity>>
 
     @Transaction
     @Query("SELECT * FROM MANGA WHERE favorite")
-    fun observeLibraryMangaWithChapters(): Flow<List<MangaEntityWithChapters>>
+    abstract fun observeLibraryMangaWithChapters(): Flow<List<MangaEntityWithChapters>>
 
     @Transaction
     @Query("SELECT * FROM MANGA WHERE id = :id")
-    fun observeMangaWithChaptersById(id: String): Flow<MangaEntityWithChapters>
+    abstract fun observeMangaWithChaptersById(id: String): Flow<MangaEntityWithChapters>
 }

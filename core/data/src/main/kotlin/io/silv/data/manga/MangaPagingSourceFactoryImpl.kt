@@ -49,10 +49,10 @@ class MangaPagingSourceFactoryImpl(
         filters: QueryFilters
     ) =  MangaRequest(
         includes = listOf("cover_art", "author", "artist"),
-        order = mapOf("followedCount" to "desc"),
+        order = filters.order,
         includedTags = filters.includedTags,
         availableTranslatedLanguage = listOf("en"),
-        hasAvailableChapters = true,
+        hasAvailableChapters = filters.hasAvailableChapters,
         createdAtSince = filters.createdAtSince?.toMangaDexTimeString(),
         includedTagsMode = filters.includedTagsMode,
         excludedTagsMode = filters.excludedTagsMode,
@@ -86,11 +86,4 @@ class MangaPagingSourceFactoryImpl(
            )
         },
     )
-
-//    companion object {
-//        const val LATEST_MANGA_QUERY =  "io.silv.query.latest"
-//        const val POPULAR_MANGA_QUERY =  "io.silv.query.popular"
-//        const val FILTER_MANGA_QUERY = "io.silv.query.filter"
-//        const val TIME_PERIOD_MANGA_QUERY = "io.silv.query.timeperiod"
-//    }
 }

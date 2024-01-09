@@ -324,7 +324,7 @@ fun BrowseMangaContent(
                                 }
                             },
                             onMangaClick = { manga ->
-                                navigator?.push(
+                                navigator.push(
                                     SharedScreen.MangaView(manga.id),
                                 )
                             },

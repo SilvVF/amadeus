@@ -37,7 +37,7 @@ import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.explore.ExploreTab
 import io.silv.library.LibraryTab
-import io.silv.manga.download.RecentsTab
+import io.silv.manga.history.RecentsTab
 import io.silv.manga.settings.MoreTab
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab

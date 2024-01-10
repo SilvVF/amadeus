@@ -29,8 +29,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.silv.common.filterUnique
 import io.silv.common.model.Status
-import io.silv.manga.manga_view.MangaStats
-import io.silv.manga.manga_view.StatsUiState
+import io.silv.manga.view.MangaStats
+import io.silv.manga.view.StatsUiState
 import io.silv.domain.manga.model.Manga
 import io.silv.ui.fillMaxAfterMesaure
 import io.silv.ui.theme.LocalSpacing

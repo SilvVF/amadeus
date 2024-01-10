@@ -10,7 +10,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.silv.common.model.MangaCover
-import io.silv.manga.manga_view.MangaViewState
+import io.silv.manga.view.MangaViewState
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 

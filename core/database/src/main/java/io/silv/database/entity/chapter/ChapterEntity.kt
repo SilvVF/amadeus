@@ -38,7 +38,7 @@ data class ChapterEntity(
     val lastPageRead: Int,
     val pages: Int,
     val bookmarked: Boolean,
-    val chapterNumber: Long = -1L,
+    val chapterNumber: Double = -1.0,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
     val readableAt: LocalDateTime,

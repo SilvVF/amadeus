@@ -13,7 +13,7 @@ import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.history.HistoryRepository
 import io.silv.domain.manga.interactor.GetMangaWithChapters
 import io.silv.domain.manga.model.Manga
-import io.silv.model.HistoryUpdate
+import io.silv.domain.history.HistoryUpdate
 import io.silv.reader.loader.ChapterLoader
 import io.silv.reader.loader.ReaderChapter
 import kotlinx.collections.immutable.ImmutableList

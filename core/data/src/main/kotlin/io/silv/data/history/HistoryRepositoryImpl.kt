@@ -2,11 +2,14 @@ package io.silv.data.history
 
 import io.silv.common.AmadeusDispatchers
 import io.silv.database.dao.HistoryDao
+import io.silv.domain.history.History
 import io.silv.domain.history.HistoryRepository
-import io.silv.model.History
-import io.silv.model.HistoryUpdate
-import io.silv.model.HistoryWithRelations
+import io.silv.domain.history.HistoryUpdate
+import io.silv.domain.history.HistoryWithRelations
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 
 class HistoryRepositoryImpl(
     private val historyDao: HistoryDao,
@@ -34,17 +37,30 @@ class HistoryRepositoryImpl(
             }
         }
 
-    override suspend fun getHistory(): List<HistoryWithRelations> =
-        withContext(dispatchers.io){
-            historyDao.history().map {
-                HistoryWithRelations(
-                    id = it.id,
-                    chapterId = it.chapterId,
-                    lastRead = it.lastRead,
-                    timeRead = it.timeRead,
-                    mangaId = it.mangaId,
-                    coverArt = it.coverArt
-                )
+    override fun getHistory(query: String) =
+            historyDao.history(query).map { list ->
+                list.map {
+                    HistoryWithRelations(
+                        id = it.id,
+                        chapterId = it.chapterId,
+                        lastRead = it.lastRead,
+                        timeRead = it.timeRead,
+                        mangaId = it.mangaId,
+                        coverArt = it.coverArt,
+                        chapterName = it.name,
+                        title = it.title,
+                        lastPage = it.lastPageRead,
+                        pageCount = it.pageCount,
+                        chapterNumber = it.chapter,
+                        volume = it.volume,
+                        favorite = it.favorite,
+                        mangaLastUpdatedAt = it.mangaSavedAt
+                            .toInstant(TimeZone.currentSystemDefault())
+                            .toEpochMilliseconds()
+                    )
+                }
             }
-        }
+
+    override suspend fun clearHistory() =
+        withContext(dispatchers.io) { historyDao.clear() }
 }

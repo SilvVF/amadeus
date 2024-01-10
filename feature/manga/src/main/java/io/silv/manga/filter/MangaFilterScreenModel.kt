@@ -1,4 +1,4 @@
-package io.silv.manga.manga_filter
+package io.silv.manga.filter
 
 import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope

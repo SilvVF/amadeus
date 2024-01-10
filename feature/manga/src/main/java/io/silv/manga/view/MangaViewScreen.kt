@@ -1,4 +1,4 @@
-package io.silv.manga.manga_view
+package io.silv.manga.view
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -310,7 +310,7 @@ fun MangaViewSuccessScreen(
                     onClick = {
                         val lastUnread =
                             state.chapters
-                                .sortedBy { chapter -> chapter.chapter.takeIf { it >= 0 } ?: Long.MAX_VALUE }
+                                .sortedBy { chapter -> chapter.takeIf { it.validNumber }?.chapter ?: Double.MAX_VALUE }
                                 .fastFirstOrNull { !it.read }
                                 ?: state.success?.chapters?.minByOrNull { it.chapter }
                                 ?: return@ExtendedFloatingActionButton
@@ -365,10 +365,10 @@ fun MangaViewSuccessScreen(
 
                     val missingChapters =
                         remember(state.chapters) {
-                            var prevChapter: Long? = null
+                            var prevChapter: Double? = null
                             state.chapters
                                 .distinctBy { it.chapter }
-                                .filter { it.chapter != -1L }
+                                .filter { it.validNumber }
                                 .sortedBy { it.chapter }
                                 .count { c ->
                                     (c.chapter - 1 != prevChapter && prevChapter != null)

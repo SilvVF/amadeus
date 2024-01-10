@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import io.silv.database.entity.history.HistoryEntity
 import io.silv.database.entity.history.HistoryView
+import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDateTime
 
 @Dao
@@ -28,7 +29,7 @@ abstract class HistoryDao {
             WHERE chapter_id = :chapterId
         """
     )
-    protected abstract suspend fun update(chapterId: String, readAt: LocalDateTime, timeRead: Long)
+    protected abstract suspend fun update(chapterId: String, readAt: LocalDateTime, timeRead: Long): Int
 
     /**
      * inserts a new HistoryEntity if it does not exist other wise updates [HistoryEntity.lastRead]
@@ -36,9 +37,15 @@ abstract class HistoryDao {
      */
     @Transaction
     open suspend fun upsert(chapterId: String, readAt: LocalDateTime, timeRead: Long) {
-        val res = insert(HistoryEntity(chapterId = chapterId, lastRead = readAt, timeRead = timeRead))
-        if (res == -1L) {
-            update(chapterId, readAt, timeRead)
+        val res = update(chapterId, readAt, timeRead)
+        if (res <= 0) {
+            insert(
+                HistoryEntity(
+                    chapterId = chapterId,
+                    lastRead = readAt,
+                    timeRead = timeRead
+                )
+            )
         }
     }
 
@@ -55,6 +62,16 @@ abstract class HistoryDao {
     """)
     abstract suspend fun getHistoryByMangaId(mangaId: String): List<HistoryEntity>
 
-    @Query("SELECT * FROM historyview ORDER BY lastRead DESC")
-    abstract suspend fun history(): List<HistoryView>
+    @Query("""
+        SELECT *
+        FROM historyView
+        WHERE historyView.lastRead > 0
+        AND maxReadAtChapterId = historyView.chapterId
+        AND lower(historyView.title) LIKE ('%' || :query || '%')
+        ORDER BY lastRead DESC;
+    """)
+    abstract fun history(query: String): Flow<List<HistoryView>>
+
+    @Query("DELETE FROM history")
+    abstract suspend fun clear()
 }

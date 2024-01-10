@@ -905,7 +905,7 @@ fun LibraryScreenContentSuccessPreview() {
                                 manga = manga,
                                 chapters = buildList {
                                     repeat(30) {
-                                        add(Chapter.stub(manga.id, 1, it.toLong()))
+                                        add(Chapter.stub(manga.id, 1, it.toDouble()))
                                     }
                                 }
                                     .toImmutableList()

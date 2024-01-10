@@ -97,6 +97,11 @@ class ReaderScreen(
             onDispose { lifecycle.lifecycle.removeObserver(observer) }
         }
 
+        DisposableEffect(Unit) {
+            onDispose { screenModel.flushReadTimer() }
+        }
+
+
         LaunchedEffect(key1 = Unit) {
             screenModel.state.map { it.viewerChapters?.currChapter }
                 .filterNotNull()

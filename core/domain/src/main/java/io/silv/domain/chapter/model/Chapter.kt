@@ -24,7 +24,7 @@ data class Chapter(
     val mangaId: String,
     val title: String,
     val volume: Int,
-    val chapter: Long,
+    val chapter: Double,
     val pages: Int = 0,
     val lastReadPage: Int,
     val translatedLanguage: String,
@@ -47,7 +47,7 @@ data class Chapter(
         get() = (localDateTimeNow() - this.createdAt).inWholeDays
 
     val validNumber: Boolean
-        get() = this.chapter >= 0
+        get() = this.chapter >= 0.0
 
     val daysSinceCreatedString: String by lazy {
         daysSinceCreated.run {
@@ -73,7 +73,7 @@ data class Chapter(
     val started: Boolean = progress == ProgressState.Reading
 
     companion object {
-        fun stub(mangaId: String, volume: Int = 1, chapter: Long = 1): Chapter {
+        fun stub(mangaId: String, volume: Int = 1, chapter: Double = 1.0): Chapter {
             return Chapter(
                 id = UUID.randomUUID().toString(),
                 url = "",
@@ -109,7 +109,7 @@ fun Chapter.toResource(): ChapterResource {
             get() = c.mangaId
         override val volume: Int
             get() = c.volume
-        override val chapter: Long
+        override val chapter: Double
             get() = c.chapter
         override val scanlator: String
             get() = c.scanlator

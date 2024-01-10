@@ -448,7 +448,7 @@ fun LazyListScope.chapterListItems(
 private fun chapterTitleWithVolText(chapter: Chapter, showFullTitle: Boolean) =
     remember(chapter, showFullTitle) {
         if (showFullTitle) {
-            "Chapter ${chapter.chapter.coerceAtLeast(0)}"
+            "Chapter ${chapter.chapter.coerceAtLeast(0.0)}"
         }
         val vol =
             if (chapter.volume >= 0) {

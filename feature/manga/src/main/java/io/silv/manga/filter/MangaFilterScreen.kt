@@ -1,4 +1,4 @@
-package io.silv.manga.manga_filter
+package io.silv.manga.filter
 
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize

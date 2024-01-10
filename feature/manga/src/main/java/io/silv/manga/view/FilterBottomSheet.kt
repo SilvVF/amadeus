@@ -1,4 +1,4 @@
-package io.silv.manga.manga_view
+package io.silv.manga.view
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.slideInHorizontally

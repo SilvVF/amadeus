@@ -1,8 +1,6 @@
 package io.silv.domain.history
 
-import io.silv.model.History
-import io.silv.model.HistoryUpdate
-import io.silv.model.HistoryWithRelations
+import kotlinx.coroutines.flow.Flow
 
 interface HistoryRepository {
 
@@ -10,5 +8,7 @@ interface HistoryRepository {
 
     suspend fun getHistoryByMangaId(id: String): List<History>
 
-    suspend fun getHistory(): List<HistoryWithRelations>
+    fun getHistory(query: String): Flow<List<HistoryWithRelations>>
+
+    suspend fun clearHistory()
 }

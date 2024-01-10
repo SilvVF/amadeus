@@ -14,14 +14,14 @@ import coil.decode.ImageDecoderDecoder
 import coil.disk.DiskCache
 import coil.util.DebugLogger
 import com.skydoves.sandwich.SandwichInitializer
-import io.silv.data.download.CoverCache
 import eu.kanade.tachiyomi.MangaCoverFetcher
 import eu.kanade.tachiyomi.MangaCoverKeyer
 import eu.kanade.tachiyomi.MangaKeyer
 import eu.kanade.tachiyomi.TachiyomiImageDecoder
+import io.silv.data.download.CoverCache
 import io.silv.manga.download.DownloadQueueScreen
-import io.silv.manga.manga_filter.MangaFilterScreen
-import io.silv.manga.manga_view.MangaViewScreen
+import io.silv.manga.filter.MangaFilterScreen
+import io.silv.manga.view.MangaViewScreen
 import io.silv.navigation.SharedScreen
 import io.silv.network.util.MangaDexApiLogger
 import io.silv.reader.ReaderScreen

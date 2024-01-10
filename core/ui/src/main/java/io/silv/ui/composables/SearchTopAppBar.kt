@@ -1,7 +1,6 @@
 package io.silv.ui.composables
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -14,22 +13,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,50 +35,47 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchTopAppBar(
     title: String = "Home",
     onSearchText: (String) -> Unit,
-    color: Color? = null,
     showTextField: Boolean,
-    navigationIconLabel: String,
-    navigationIcon: ImageVector,
-    onNavigationIconClicked: () -> Unit,
     actions: @Composable (RowScope.() -> Unit),
     scrollBehavior: TopAppBarScrollBehavior,
     searchText: String,
     onForceSearch: () -> Unit,
     onSearchChanged: (active: Boolean) -> Unit,
+    onNavigationIconClicked: () -> Unit = {},
+    navigationIconLabel: String? = null,
+    navigationIcon: ImageVector? = null,
 ) {
     var alreadyRequestedFocus by rememberSaveable { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val space = io.silv.ui.theme.LocalSpacing.current
 
-    val makeTransparent by remember {
-        derivedStateOf {
-            scrollBehavior.state.heightOffset == scrollBehavior.state.heightOffsetLimit
-        }
-    }
-
     TopAppBar(
         title = {
-            AnimatedVisibility(!showTextField) {
+            AnimatedVisibility(
+                visible = !showTextField,
+                enter = fadeIn() + slideInVertically { it },
+                exit = fadeOut() + slideOutVertically { it },
+            ) {
                 Text(title)
             }
         },
         navigationIcon = {
-            if (showTextField) {
-                IconButton(
-                    onClick = onNavigationIconClicked,
-                ) {
-                    Icon(
-                        imageVector = navigationIcon,
-                        contentDescription = navigationIconLabel,
-                    )
+            if (!showTextField) {
+                navigationIcon?.let {
+                    IconButton(
+                        onClick = onNavigationIconClicked,
+                    ) {
+                        Icon(
+                            imageVector = navigationIcon,
+                            contentDescription = navigationIconLabel,
+                        )
+                    }
                 }
             }
         },
@@ -165,49 +156,6 @@ fun SearchTopAppBar(
             }
             actions()
         },
-        colors =
-        color?.let {
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = color,
-                scrolledContainerColor =
-                animateColorAsState(
-                    label = "search-bar-transparency",
-                    targetValue =
-                    if (makeTransparent) {
-                        Color.Transparent
-                    } else {
-                        color
-                    },
-                )
-                    .value,
-            )
-        } ?: TopAppBarDefaults.topAppBarColors(
-            scrolledContainerColor =
-            animateColorAsState(
-                label = "search-bar-transparency",
-                targetValue =
-                if (makeTransparent) {
-                    Color.Transparent
-                } else {
-                    MaterialTheme.colorScheme.applyTonalElevation(
-                        backgroundColor = MaterialTheme.colorScheme.surface,
-                        elevation = 3.0.dp,
-                    )
-                },
-            )
-                .value,
-        ),
         scrollBehavior = scrollBehavior,
     )
-}
-
-private fun ColorScheme.applyTonalElevation(
-    backgroundColor: Color,
-    elevation: Dp,
-): Color {
-    return if (backgroundColor == surface) {
-        surfaceColorAtElevation(elevation)
-    } else {
-        backgroundColor
-    }
 }

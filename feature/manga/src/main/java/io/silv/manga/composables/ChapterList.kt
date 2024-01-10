@@ -14,8 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.util.fastFirstOrNull
 import io.silv.common.model.Download
-import io.silv.manga.manga_view.DownloadActions
-import io.silv.manga.manga_view.MangaViewState
+import io.silv.manga.view.DownloadActions
+import io.silv.manga.view.MangaViewState
 import io.silv.ui.composables.ChapterListItem
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList

@@ -268,30 +268,25 @@ class DownloadManager internal constructor(
      */
     fun deleteChapters(chapters: List<ChapterResource>, manga: MangaResource) {
         applicationScope.launch(Dispatchers.IO) {
-            val filteredChapters = getChaptersToDelete(chapters, manga)
-            if (filteredChapters.isEmpty()) {
+            if (chapters.isEmpty()) {
                 return@launch
             }
 
-            removeFromDownloadQueue(filteredChapters)
+            removeFromDownloadQueue(chapters)
 
             val (mangaDir, chapterDirs) = downloadProvider.findChapterDirs(
-                filteredChapters,
+                chapters,
                 manga.title,
                 MangaDexSource
             )
             chapterDirs.forEach { it.delete() }
-            downloadCache.removeChapters(filteredChapters, manga)
+            downloadCache.removeChapters(chapters, manga)
 
             // Delete manga directory if empty
             if (mangaDir?.listFiles()?.isEmpty() == true) {
                 deleteManga(manga, MangaDexSource, removeQueued = false)
             }
         }
-    }
-
-    private fun getChaptersToDelete(chapters: List<ChapterResource>, manga: MangaResource): List<ChapterResource> {
-        return chapters
     }
 
     /**

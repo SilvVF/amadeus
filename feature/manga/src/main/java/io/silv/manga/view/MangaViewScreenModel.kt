@@ -1,4 +1,4 @@
-package io.silv.manga.manga_view
+package io.silv.manga.view
 
 import android.util.Log
 import androidx.compose.runtime.Immutable

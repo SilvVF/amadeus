@@ -4,9 +4,9 @@ import io.silv.explore.ExploreScreenModel
 import io.silv.explore.FilterScreenViewModel
 import io.silv.library.LibraryScreenModel
 import io.silv.manga.download.DownloadQueueScreenModel
-import io.silv.manga.download.RecentsScreenModel
-import io.silv.manga.manga_filter.MangaFilterScreenModel
-import io.silv.manga.manga_view.MangaViewScreenModel
+import io.silv.manga.history.RecentsScreenModel
+import io.silv.manga.filter.MangaFilterScreenModel
+import io.silv.manga.view.MangaViewScreenModel
 import io.silv.reader.ReaderScreenModel
 import io.silv.sync.SeasonalMangaSyncWorkName
 import org.koin.androidx.viewmodel.dsl.viewModelOf

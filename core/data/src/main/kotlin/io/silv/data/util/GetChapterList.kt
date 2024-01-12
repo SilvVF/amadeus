@@ -6,31 +6,26 @@ import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.Order
 import io.silv.common.model.OrderBy
-import io.silv.data.mappers.toChapterEntity
-import io.silv.database.dao.ChapterDao
-import io.silv.database.entity.chapter.ChapterEntity
 import io.silv.network.MangaDexApi
-import io.silv.network.model.chapter.Chapter
+import io.silv.network.model.chapter.ChapterDto
 import io.silv.network.requests.MangaFeedRequest
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 
-internal class UpdateChapterList(
+internal class GetChapterList(
     private val mangaDexApi: MangaDexApi,
-    private val chapterDao: ChapterDao,
     private val dispatchers: AmadeusDispatchers
 ) {
-    private val syncer = createSyncer<ChapterEntity, Chapter, String>(
-            networkToKey = { it.id },
-            mapper = { chapter, entity ->
-                chapter.toChapterEntity(entity)
-            },
-            upsert = {
-                chapterDao.upsertChapter(it)
-            }
-        )
 
-    suspend operator fun invoke(id: String) { updateFromNetwork(id) }
+    suspend fun await(id: String): List<ChapterDto> {
+        return fetchChapterList(id)
+    }
+
+    private suspend fun fetchChapterList(mangaId: String): List<ChapterDto> = withContext(dispatchers.io) {
+
+        val initialList = getInitialChapterList(mangaId).getOrThrow()
+
+        initialList.data + getRestOfChapters(initialList, mangaId)
+    }
 
     private suspend fun getInitialChapterList(
         mangaId: String,
@@ -53,7 +48,7 @@ internal class UpdateChapterList(
         response: ChapterListResponse,
         mangaId: String,
         langs: List<String> = listOf("en")
-    ): List<Chapter> {
+    ): List<ChapterDto> {
         return withContext(dispatchers.io) {
             val count = (response.total / response.limit)
             (1..count).map {
@@ -72,23 +67,5 @@ internal class UpdateChapterList(
             }
                 .flatten()
         }
-    }
-
-    private suspend fun updateFromNetwork(mangaId: String) = withContext(dispatchers.io) {
-        getInitialChapterList(mangaId)
-            .fold(
-                onSuccess = {
-                    val result = syncer.sync(
-                        current = chapterDao.observeChaptersByMangaId(mangaId).firstOrNull() ?: emptyList(),
-                        networkResponse =  it.data + getRestOfChapters(it, mangaId)
-                    )
-                    for (chapter in result.unhandled) {
-                        chapterDao.deleteChapter(chapter)
-                    }
-                },
-                onFailure = {
-                    it.printStackTrace()
-                }
-            )
     }
 }

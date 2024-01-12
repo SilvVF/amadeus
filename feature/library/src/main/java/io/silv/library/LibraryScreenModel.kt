@@ -107,7 +107,7 @@ class LibraryScreenModel(
             .launchIn(screenModelScope)
 
         combine(
-            updatesRepository.observeUpdates(),
+            updatesRepository.observeUpdates(limit = 100),
             downloadManager.queueState,
             downloadTrigger,
         ) { x, y ,z -> Triple(x, y, z) }

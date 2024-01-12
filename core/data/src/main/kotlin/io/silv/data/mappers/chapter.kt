@@ -2,9 +2,9 @@ package io.silv.data.mappers
 
 import io.silv.common.time.parseMangaDexTimeToDateTime
 import io.silv.database.entity.chapter.ChapterEntity
-import io.silv.network.model.chapter.Chapter
+import io.silv.network.model.chapter.ChapterDto
 
-fun Chapter.toChapterEntity(prev: ChapterEntity? = null): ChapterEntity {
+fun ChapterDto.toChapterEntity(prev: ChapterEntity? = null): ChapterEntity {
     val chapter = this
     return ChapterEntity(
         id = chapter.id,

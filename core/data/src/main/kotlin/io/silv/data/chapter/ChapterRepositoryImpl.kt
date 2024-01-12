@@ -1,6 +1,7 @@
 package io.silv.data.chapter
 
 import android.util.Log
+import androidx.room.withTransaction
 import com.skydoves.sandwich.getOrNull
 import com.skydoves.sandwich.getOrThrow
 import com.skydoves.sandwich.suspendMapSuccess
@@ -10,11 +11,13 @@ import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.minus
 import io.silv.data.mappers.toChapterEntity
-import io.silv.data.util.UpdateChapterList
+import io.silv.data.util.GetChapterList
+import io.silv.database.AmadeusDatabase
 import io.silv.database.dao.ChapterDao
 import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.chapter.repository.ChapterRepository
 import io.silv.network.MangaDexApi
+import io.silv.network.model.chapter.ChapterDto
 import io.silv.network.requests.ChapterListRequest
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
@@ -29,7 +32,8 @@ import kotlin.time.Duration.Companion.hours
 internal class ChapterRepositoryImpl(
     private val chapterDao: ChapterDao,
     private val mangaDexApi: MangaDexApi,
-    private val updateChapterList: UpdateChapterList,
+    private val getChapterList: GetChapterList,
+    private val database: AmadeusDatabase,
     private val dispatchers: AmadeusDispatchers,
 ): ChapterRepository {
 
@@ -137,15 +141,36 @@ internal class ChapterRepositoryImpl(
         return chapterDao.observeChaptersByMangaId(mangaId).map { list -> list.map(ChapterMapper::mapChapter) }.onStart {
             if (shouldUpdate(mangaId)) {
                 Log.d("ChapterEntityRepository","Updating from network")
-                updateChapterList(mangaId)
+
+                updateDbChapters(
+                    chapters = getChapterList.await(mangaId),
+                    mangaId = mangaId
+                )
             } else {
                 Log.d("ChapterEntityRepository","Skipped Fetch From network")
             }
         }
     }
 
+    private suspend fun updateDbChapters(chapters: List<ChapterDto>, mangaId: String) {
+        database.withTransaction {
 
-    override suspend fun sync(): Boolean {
-        return true
+            val prevList = chapterDao.getChaptersByMangaId(mangaId)
+
+            for (chapter in chapters) {
+
+                val prev = prevList.find { p -> p.id == chapter.id }
+
+                if (prev != null) {
+                    chapterDao.updateChapter(chapter.toChapterEntity(prev))
+                } else {
+                    chapterDao.upsertChapter(chapter.toChapterEntity())
+                }
+            }
+            val newIds = chapters.map { it.id }
+            for (unhandled in prevList.filter { prev -> prev.id !in newIds }) {
+                chapterDao.deleteChapter(unhandled)
+            }
+        }
     }
 }

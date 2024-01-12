@@ -11,8 +11,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.silv.common.model.MangaCover
 import io.silv.manga.view.MangaViewState
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 
 fun LazyListScope.volumePosterItems(state: MangaViewState.Success) {
     items(
@@ -26,7 +24,7 @@ fun LazyListScope.volumePosterItems(state: MangaViewState.Success) {
                     mangaId = state.manga.id,
                     url = url,
                     isMangaFavorite = state.manga.inLibrary,
-                    lastModified = state.manga.updatedAt.toInstant(TimeZone.currentSystemDefault()).epochSeconds,
+                    lastModified = state.manga.coverLastModified,
                 )
             }
         AsyncImage(

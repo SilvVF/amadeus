@@ -1,12 +1,12 @@
 
-import io.silv.network.model.chapter.Chapter
+import io.silv.network.model.chapter.ChapterDto
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class ChapterListResponse(
     val result: String,
     val response: String,
-    val data: List<Chapter> = emptyList(),
+    val data: List<ChapterDto> = emptyList(),
     val limit: Int,
     val offset: Int,
     val total: Int,

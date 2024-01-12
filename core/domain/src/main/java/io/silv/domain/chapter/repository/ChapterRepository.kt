@@ -1,13 +1,12 @@
 package io.silv.domain.chapter.repository
 
-import io.silv.domain.Syncable
 import io.silv.domain.chapter.model.Chapter
 import kotlinx.coroutines.flow.Flow
 
 /**
  * Repository responsible for handling Chapters that have been saved to the local db.
  */
-interface ChapterRepository: Syncable {
+interface ChapterRepository {
 
     suspend fun bookmarkChapter(id: String)
 

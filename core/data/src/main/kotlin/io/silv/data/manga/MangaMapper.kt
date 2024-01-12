@@ -1,6 +1,5 @@
 package io.silv.data.manga
 
-import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.parseMangaDexTimeToDateTime
 import io.silv.data.chapter.ChapterMapper
 import io.silv.data.mappers.alternateTitles
@@ -41,13 +40,13 @@ object MangaMapper {
             createdAt = attributes.createdAt.parseMangaDexTimeToDateTime(),
             updatedAt = attributes.updatedAt.parseMangaDexTimeToDateTime(),
             publicationDemographic = attributes.publicationDemographic,
-            savedAtLocal = localDateTimeNow(),
             year = attributes.year ?: -1,
             latestUploadedChapter = attributes.latestUploadedChapter,
             authors = authors,
             artists = artists,
             progressState = null,
-            readingStatus = null
+            readingStatus = null,
+            coverLastModified = null
         )
     }
 
@@ -71,7 +70,6 @@ object MangaMapper {
                 version = version,
                 createdAt = createdAt,
                 updatedAt = updatedAt,
-                savedAtLocal = savedLocalAtEpochSeconds,
                 publicationDemographic = publicationDemographic,
                 readingStatus = readingStatus,
                 year = year,
@@ -141,7 +139,8 @@ object MangaMapper {
             year = entity.year,
             artists = entity.artists,
             authors = entity.authors,
-            latestUploadedChapter = entity.latestUploadedChapter
+            latestUploadedChapter = entity.latestUploadedChapter,
+            coverLastModified = entity.coverLastModified
         )
     }
 

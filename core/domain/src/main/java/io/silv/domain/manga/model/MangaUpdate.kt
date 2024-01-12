@@ -5,7 +5,6 @@ import io.silv.common.model.ProgressState
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.ReadingStatus
 import io.silv.common.model.Status
-import io.silv.common.time.localDateTimeNow
 import kotlinx.datetime.LocalDateTime
 
 data class MangaUpdate(
@@ -26,11 +25,11 @@ data class MangaUpdate(
     val lastVolume: Int,
     val lastChapter: Long,
     val publicationDemographic: PublicationDemographic?,
-    val savedAtLocal: LocalDateTime = localDateTimeNow(),
     val year: Int,
     val latestUploadedChapter: String?,
     val authors: List<String>,
     val artists: List<String>,
-    val progressState: ProgressState?,
-    val readingStatus: ReadingStatus?,
+    val progressState: ProgressState? = null,
+    val readingStatus: ReadingStatus? = null,
+    val coverLastModified: Long? = null
 )

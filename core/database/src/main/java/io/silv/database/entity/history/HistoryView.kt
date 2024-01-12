@@ -9,6 +9,7 @@ import kotlinx.datetime.LocalDateTime
         manga.id AS mangaId,
         chapters.id AS chapterId,
         manga.title,
+        manga.cover_last_modified AS coverLastModified,
         manga.cover_art AS coverArt,
         manga.favorite,
         manga.saved_at_local AS mangaSavedAt,
@@ -46,5 +47,6 @@ data class HistoryView(
     val lastPageRead: Int,
     val pageCount: Int,
     val mangaSavedAt: LocalDateTime,
+    val coverLastModified: Long,
     val maxReadAtChapterId: String
 )

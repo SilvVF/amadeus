@@ -1,12 +1,11 @@
 package io.silv.domain.manga.repository
 
-import io.silv.domain.Syncable
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaUpdate
 import io.silv.domain.manga.model.MangaWithChapters
 import kotlinx.coroutines.flow.Flow
 
-interface MangaRepository: Syncable {
+interface MangaRepository {
 
     suspend fun getMangaById(id: String): Manga?
 
@@ -21,6 +20,8 @@ interface MangaRepository: Syncable {
     fun observeMangaById(id: String): Flow<Manga?>
 
     fun observeLibraryManga(): Flow<List<Manga>>
+
+    suspend fun getLibraryManga(): List<Manga>
 
     fun observeManga(): Flow<List<Manga>>
 

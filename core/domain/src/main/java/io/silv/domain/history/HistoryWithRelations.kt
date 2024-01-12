@@ -16,7 +16,7 @@ data class HistoryWithRelations(
     val chapterNumber: Double,
     val volume: Int,
     val favorite: Boolean,
-    val mangaLastUpdatedAt: Long,
+    val coverLastModified: Long,
 ) {
 
     val formattedTimeText: String

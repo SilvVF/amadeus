@@ -6,14 +6,15 @@ import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
+import androidx.work.PeriodicWorkRequest
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkerParameters
-import io.silv.common.pmap
+import io.silv.common.coroutine.suspendRunCatching
+import io.silv.common.model.AutomaticUpdatePeriod
+import io.silv.data.updates.MangaUpdateJob
 import io.silv.data.workers.createForegroundInfo
-import io.silv.domain.chapter.repository.ChapterRepository
-import io.silv.domain.manga.repository.MangaRepository
 import io.silv.sync.MangaSyncWorkName
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -25,21 +26,15 @@ internal class MangaSyncWorker(
     workerParams: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParams), KoinComponent {
 
-    private val mangaRepository by inject<MangaRepository>()
-    private val chapterInfoRepository by inject<ChapterRepository>()
+    private val mangaUpdateJob by inject<MangaUpdateJob>()
 
     override suspend fun doWork(): Result {
-        val allSynced =
-            listOf(
-                mangaRepository,
-                chapterInfoRepository,
-            )
-                .pmap { repository ->
-                    repository.sync()
-                }
-                .all { successful -> successful }
 
-        return if (allSynced) {
+        val result = suspendRunCatching {
+            mangaUpdateJob.update(false)
+        }
+
+        return if (result.isSuccess) {
             Result.success()
         } else {
             Result.failure()
@@ -58,8 +53,8 @@ internal class MangaSyncWorker(
                     .setRequiredNetworkType(NetworkType.CONNECTED)
                     .build()
 
-        fun syncWorkRequest(): OneTimeWorkRequest {
-            return OneTimeWorkRequestBuilder<MangaSyncWorker>()
+        fun oneTimeWorkRequest() {
+            OneTimeWorkRequestBuilder<MangaSyncWorker>()
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .setBackoffCriteria(
                     BackoffPolicy.EXPONENTIAL,
@@ -67,6 +62,21 @@ internal class MangaSyncWorker(
                 )
                 .setConstraints(SyncConstraints)
                 .build()
+        }
+
+        fun syncWorkRequest(updatePeriod: AutomaticUpdatePeriod): PeriodicWorkRequest? {
+            return when(updatePeriod){
+                AutomaticUpdatePeriod.Off -> null
+                else -> {
+                    PeriodicWorkRequestBuilder<MangaSyncWorker>(updatePeriod.duration.toJavaDuration())
+                        .setBackoffCriteria(
+                            BackoffPolicy.EXPONENTIAL,
+                            15.seconds.toJavaDuration()
+                        )
+                        .setConstraints(SyncConstraints)
+                        .build()
+                }
+            }
         }
     }
 }

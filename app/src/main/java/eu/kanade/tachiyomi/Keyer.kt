@@ -14,7 +14,7 @@ fun Manga.asMangaCover(): MangaCover {
         mangaId = id,
         url = coverArt,
         isMangaFavorite = inLibrary,
-        lastModified = updatedAt.epochSeconds,
+        lastModified = coverLastModified,
     )
 }
 
@@ -31,9 +31,9 @@ class MangaKeyer : Keyer<Manga> {
         options: Options,
     ): String {
         return if (data.hasCustomCover()) {
-            "${data.id};${data.updatedAt}"
+            "${data.id};${data.coverLastModified}"
         } else {
-            "${data.coverArt};${data.updatedAt}"
+            "${data.coverArt};${data.coverLastModified}"
         }
     }
 }

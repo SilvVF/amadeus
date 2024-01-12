@@ -12,7 +12,6 @@ import io.silv.common.model.ProgressState
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.ReadingStatus
 import io.silv.common.model.Status
-import io.silv.common.time.localDateTimeNow
 import io.silv.database.entity.manga.MangaEntity
 import io.silv.database.entity.manga.MangaEntityWithChapters
 import kotlinx.coroutines.flow.Flow
@@ -41,7 +40,8 @@ abstract class MangaDao {
         year = :year,
         latest_uploaded_chapter = :latestUploadedChapter,
         authors = :authors,
-        artists = :artists
+        artists = :artists,
+        cover_last_modified = coalesce(cover_last_modified, :coverLastModified)
         WHERE id = :mangaId
         """
     )
@@ -65,6 +65,7 @@ abstract class MangaDao {
         latestUploadedChapter: String?,
         authors: List<String>,
         artists: List<String>,
+        coverLastModified: Long?,
     )
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -92,14 +93,13 @@ abstract class MangaDao {
         lastVolume: Int,
         lastChapter: Long,
         publicationDemographic: PublicationDemographic?,
-        savedAtLocal: LocalDateTime = localDateTimeNow(),
         year: Int,
         latestUploadedChapter: String?,
         authors: List<String>,
         artists: List<String>,
         progressState: ProgressState?,
         readingStatus: ReadingStatus?,
-        doBeforeUpdate: (MangaEntity) -> Unit
+        checkIfCoverNeedsUpdate: (MangaEntity?) -> Long?
     ) {
         if (
             coverArt != null &&
@@ -108,17 +108,14 @@ abstract class MangaDao {
                     id, coverArt, title, version, createdAt, updatedAt,
                     favorite == true, description, alternateTitles,
                     originalLanguage, availableTranslatedLanguages, status, tagToId,
-                    contentRating, lastVolume, lastChapter, publicationDemographic, savedAtLocal,
+                    contentRating, lastVolume, lastChapter, publicationDemographic,
                     year, latestUploadedChapter, authors, artists,
-                    progressState ?: ProgressState.NotStarted, readingStatus ?: ReadingStatus.None
+                    progressState ?: ProgressState.NotStarted,
+                    readingStatus ?: ReadingStatus.None,
                 )
             ) == -1L
         ) {
-            runCatching {
-                doBeforeUpdate(
-                    getById(id)!!
-                )
-            }
+            val coverLastModified = checkIfCoverNeedsUpdate(getById(id))
             updateIfExists(
                 mangaId = id,
                 coverArt = coverArt,
@@ -139,6 +136,7 @@ abstract class MangaDao {
                 latestUploadedChapter = latestUploadedChapter,
                 authors = authors,
                 artists = artists,
+                coverLastModified = coverLastModified
             )
         }
     }

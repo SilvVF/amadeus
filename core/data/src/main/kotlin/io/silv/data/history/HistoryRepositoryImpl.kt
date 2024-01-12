@@ -8,8 +8,6 @@ import io.silv.domain.history.HistoryUpdate
 import io.silv.domain.history.HistoryWithRelations
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 
 class HistoryRepositoryImpl(
     private val historyDao: HistoryDao,
@@ -54,9 +52,7 @@ class HistoryRepositoryImpl(
                         chapterNumber = it.chapter,
                         volume = it.volume,
                         favorite = it.favorite,
-                        mangaLastUpdatedAt = it.mangaSavedAt
-                            .toInstant(TimeZone.currentSystemDefault())
-                            .toEpochMilliseconds()
+                        coverLastModified = it.coverLastModified
                     )
                 }
             }

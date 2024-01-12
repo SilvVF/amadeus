@@ -40,6 +40,7 @@ data class Manga(
     val artists: List<String>,
     val year: Int,
     val latestUploadedChapter: String?,
+    val coverLastModified: Long,
     val isStub: Boolean = false
 ) {
     val tags = tagToId.keys.toImmutableList()
@@ -86,6 +87,7 @@ data class Manga(
                 artists = emptyList(),
                 year = 2000,
                 latestUploadedChapter = null,
+                coverLastModified = 0L,
                 isStub = true
             )
         }

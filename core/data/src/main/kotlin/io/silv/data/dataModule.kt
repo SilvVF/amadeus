@@ -10,9 +10,10 @@ import io.silv.data.di.workersModule
 import io.silv.data.history.HistoryRepositoryImpl
 import io.silv.data.manga.GetMangaStatisticsById
 import io.silv.data.manga.MangaPagingSourceFactoryImpl
+import io.silv.data.updates.MangaUpdateJob
 import io.silv.data.updates.UpdatesRepositoryImpl
+import io.silv.data.util.GetChapterList
 import io.silv.data.util.NetworkConnectivityImpl
-import io.silv.data.util.UpdateChapterList
 import io.silv.database.daosModule
 import io.silv.database.databaseModule
 import io.silv.domain.chapter.repository.ChapterRepository
@@ -42,6 +43,8 @@ val dataModule = module {
         bind<UpdatesRepository>()
     }
 
+    singleOf(::MangaUpdateJob)
+
     singleOf(::HistoryRepositoryImpl) {
         bind<HistoryRepository>()
     }
@@ -54,7 +57,7 @@ val dataModule = module {
         bind<NetworkConnectivity>()
     }
 
-    factoryOf(::UpdateChapterList)
+    factoryOf(::GetChapterList)
 
     singleOf(::MangaPagingSourceFactoryImpl)
 

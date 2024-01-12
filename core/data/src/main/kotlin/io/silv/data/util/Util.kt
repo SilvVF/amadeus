@@ -12,17 +12,16 @@ internal fun MangaEntity.deleteOldCoverFromCache(
     coverCache: CoverCache,
     update: MangaUpdate,
     refreshSameUrl: Boolean = false
-): MangaUpdate {
+): Boolean {
     // Never refresh covers if the new url is null, as the current url has possibly become invalid
     val newUrl = update.coverArt
         .ifEmpty { null }
-        ?: return update.copy(coverArt = coverArt)
+        ?: return false
 
-    if (!refreshSameUrl && coverArt == newUrl) return update
+    if (!refreshSameUrl && coverArt == newUrl) return false
 
     if (favorite) {
-        coverCache.deleteFromCache(this, false)
+        return coverCache.deleteFromCache(this, false) > 0
     }
-
-    return update
+    return false
 }

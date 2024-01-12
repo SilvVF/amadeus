@@ -208,7 +208,7 @@ fun LazyItemScope.MangaHistoryItem(
                 history.mangaId,
                 history.coverArt,
                 history.favorite,
-                history.mangaLastUpdatedAt
+                history.coverLastModified
             )
                 .takeIf { !preview } ?: history.coverArt,
             contentDescription = null,
@@ -268,7 +268,7 @@ fun PreviewRecentsScreen() {
                             chapterNumber = 1.0,
                             volume = 1,
                             favorite = false,
-                            mangaLastUpdatedAt = 0L,
+                            coverLastModified = 0L,
                             coverArt="https://uploads.mangadex.org/covers/296cbc31-af1a-4b5b-a34b-fee2b4cad542/8564d11b-1e50-4c60-91be-ea5ccb924996.jpg"
                         ),
                         HistoryWithRelations(
@@ -284,7 +284,7 @@ fun PreviewRecentsScreen() {
                             chapterNumber = 1.0,
                             volume = 1,
                             favorite = false,
-                            mangaLastUpdatedAt = 0L,
+                            coverLastModified = 0L,
                             coverArt="https://uploads.mangadex.org/covers/296cbc31-af1a-4b5b-a34b-fee2b4cad542/8564d11b-1e50-4c60-91be-ea5ccb924996.jpg"
                         ),
                         HistoryWithRelations(
@@ -300,7 +300,7 @@ fun PreviewRecentsScreen() {
                             chapterNumber = 1.0,
                             volume = 1,
                             favorite = false,
-                            mangaLastUpdatedAt = 0L,
+                            coverLastModified = 0L,
                             coverArt="https://uploads.mangadex.org/covers/296cbc31-af1a-4b5b-a34b-fee2b4cad542/8564d11b-1e50-4c60-91be-ea5ccb924996.jpg"
                         )
                     )

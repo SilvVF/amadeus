@@ -2,6 +2,10 @@
 
 package io.silv.common.model
 
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
+
 enum class Result {
     ok,
     error,
@@ -117,4 +121,8 @@ enum class ReaderOrientation {
 enum class ReaderDirection {
     Ltr,
     Rtl,
+}
+
+enum class AutomaticUpdatePeriod(val duration: Duration) {
+    Off(Duration.ZERO), H12(12.hours), H24(24.hours), H48(48.hours), H72(72.hours), W1(7.days)
 }

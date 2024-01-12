@@ -10,7 +10,8 @@ import io.silv.database.entity.chapter.ChapterEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface ChapterDao : SyncableDao<ChapterEntity> {
+interface ChapterDao {
+
     @Insert(
         onConflict = OnConflictStrategy.REPLACE,
     )

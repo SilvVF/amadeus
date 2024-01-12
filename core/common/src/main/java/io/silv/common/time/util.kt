@@ -1,20 +1,20 @@
 package io.silv.common.time
 
-import java.time.Duration
-import kotlin.time.toKotlinDuration
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import java.time.Duration
+import kotlin.time.toKotlinDuration
 
 fun localDateTimeNow() = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
 fun epochSeconds() = Clock.System.now().epochSeconds
 
-fun timeZone() = TimeZone.currentSystemDefault()
+fun LocalDateTime.epochMillis() = this.toInstant(timeZone()).toEpochMilliseconds()
 
-fun timeNow() = Clock.System.now().toLocalDateTime(timeZone())
+fun timeZone() = TimeZone.currentSystemDefault()
 
 fun timeStringMinus(duration: kotlin.time.Duration): String {
     return Clock.System.now()

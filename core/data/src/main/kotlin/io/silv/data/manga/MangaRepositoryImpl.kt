@@ -2,6 +2,7 @@ package io.silv.data.manga
 
 import androidx.room.withTransaction
 import io.silv.common.AmadeusDispatchers
+import io.silv.common.time.epochSeconds
 import io.silv.data.download.CoverCache
 import io.silv.data.util.deleteOldCoverFromCache
 import io.silv.database.AmadeusDatabase
@@ -14,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
-class MangaRepositoryImpl(
+class MangaRepositoryImpl internal constructor(
     private val mangaDao: MangaDao,
     private val dispatchers: AmadeusDispatchers,
     private val database: AmadeusDatabase,
@@ -56,7 +57,6 @@ class MangaRepositoryImpl(
                 lastVolume = update.lastVolume,
                 lastChapter = update.lastChapter,
                 publicationDemographic = update.publicationDemographic,
-                savedAtLocal = update.savedAtLocal,
                 year = update.year,
                 latestUploadedChapter = update.latestUploadedChapter,
                 authors = update.authors,
@@ -66,8 +66,12 @@ class MangaRepositoryImpl(
                 favorite = update.favorite,
                 readingStatus = update.readingStatus,
             ) { existing ->
-                // if the existing manga
-                existing.deleteOldCoverFromCache(coverCache, update)
+                runCatching {
+                    existing?.deleteOldCoverFromCache(coverCache, update)
+                        ?.takeIf { deleted -> deleted }
+                        ?.let { epochSeconds() }
+                }
+                    .getOrNull()
             }
         }
 
@@ -94,13 +98,14 @@ class MangaRepositoryImpl(
         return mangaDao.observeLibraryManga().map { list -> list.map(MangaMapper::mapManga) }
     }
 
+    override suspend fun getLibraryManga(): List<Manga> =
+        withContext(dispatchers.io) {
+            mangaDao.getLibraryManga().map(MangaMapper::mapManga)
+        }
+
     override fun observeLibraryMangaWithChapters(): Flow<List<MangaWithChapters>> {
         return mangaDao.observeLibraryMangaWithChapters().map {
             it.map(MangaMapper::mapMangaWithChapters)
         }
-    }
-
-    override suspend fun sync(): Boolean {
-        return true
     }
 }

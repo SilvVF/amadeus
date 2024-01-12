@@ -9,6 +9,7 @@ import io.silv.common.model.ProgressState
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.ReadingStatus
 import io.silv.common.model.Status
+import io.silv.common.time.epochSeconds
 import io.silv.common.time.localDateTimeNow
 import io.silv.database.entity.AmadeusEntity
 import kotlinx.datetime.LocalDateTime
@@ -46,8 +47,6 @@ data class MangaEntity(
     val lastChapter: Long,
     @ColumnInfo("publication_demographic")
     val publicationDemographic: PublicationDemographic?,
-    @ColumnInfo("saved_at_local")
-    val savedAtLocal: LocalDateTime = localDateTimeNow(),
     val year: Int,
     @ColumnInfo("latest_uploaded_chapter")
     val latestUploadedChapter: String?,
@@ -57,6 +56,15 @@ data class MangaEntity(
     val progressState: ProgressState,
     @ColumnInfo("reading_status")
     val readingStatus: ReadingStatus,
+
+    @ColumnInfo("cover_last_modified")
+    val coverLastModified: Long = epochSeconds(),
+
+    @ColumnInfo("saved_at_local")
+    val savedAtLocal: LocalDateTime = localDateTimeNow(),
+
+    @ColumnInfo("last_synced_for_updates")
+    val lastSyncedForUpdates: LocalDateTime? = null,
 ) : MangaResource, AmadeusEntity<String>
 
 

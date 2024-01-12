@@ -50,12 +50,6 @@ class AmadeusApp : Application(), ImageLoaderFactory {
         }
 
         ScreenRegistry {
-//            register<SharedScreen.Explore> {
-//                ExploreScreen()
-//            }
-//            register<SharedScreen.Library> {
-//                LibraryScreen()
-//            }
             register<SharedScreen.Reader> {
                 ReaderScreen(
                     mangaId = it.mangaId,

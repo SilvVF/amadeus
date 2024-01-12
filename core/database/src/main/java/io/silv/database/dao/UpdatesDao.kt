@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface UpdatesDao {
 
+    @Query("SELECT COUNT(DISTINCT mangaId) FROM updatesview")
+    fun mangaWithUpdatesCount(): Flow<Int>
+
     @Query("SELECT * FROM updatesview LIMIT :limit")
     fun updates(limit: Int = Int.MAX_VALUE): Flow<List<UpdatesView>>
 

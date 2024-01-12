@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RewriteQueriesToDropUnusedColumns
 import androidx.room.Transaction
 import io.silv.database.entity.history.HistoryEntity
 import io.silv.database.entity.history.HistoryView
@@ -52,7 +53,7 @@ abstract class HistoryDao {
     @Delete
     abstract suspend fun delete(historyEntity: HistoryEntity)
 
-    @Transaction
+
     @Query("""
         SELECT *
         FROM history H
@@ -60,6 +61,7 @@ abstract class HistoryDao {
         ON H.chapter_id = C.id
         WHERE C.manga_id = :mangaId AND C.id = H.chapter_id;
     """)
+    @RewriteQueriesToDropUnusedColumns
     abstract suspend fun getHistoryByMangaId(mangaId: String): List<HistoryEntity>
 
     @Query("""

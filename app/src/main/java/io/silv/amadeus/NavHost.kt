@@ -13,9 +13,12 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
@@ -24,6 +27,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +39,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
+import io.silv.domain.update.GetUpdateCount
 import io.silv.explore.ExploreTab
 import io.silv.library.LibraryTab
 import io.silv.manga.history.RecentsTab
@@ -42,6 +47,7 @@ import io.silv.manga.settings.MoreTab
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
 import io.silv.ui.layout.Scaffold
+import io.silv.ui.theme.LocalSpacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
@@ -49,6 +55,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.IgnoredOnParcel
+import org.koin.compose.rememberKoinInject
 import soup.compose.material.motion.animation.materialFadeThroughIn
 import soup.compose.material.motion.animation.materialFadeThroughOut
 
@@ -133,13 +140,20 @@ object NavHost : Screen {
 
 @Composable
 fun AmadeusBottomBar(modifier: Modifier = Modifier) {
+
+    val getUpdateCount = rememberKoinInject<GetUpdateCount>()
+
+    val mangaWithUpdates by produceState(initialValue = 0) {
+        getUpdateCount.subscribe().collect { value = it }
+    }
+
     BottomAppBar(modifier) {
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TabNavigationItem(LibraryTab)
+            TabNavigationItemWithNotifications(LibraryTab, mangaWithUpdates)
             TabNavigationItem(RecentsTab)
             TabNavigationItem(ExploreTab)
             TabNavigationItem(MoreTab)
@@ -152,13 +166,75 @@ fun AmadeusNavRail(
     modifier: Modifier = Modifier,
     visible: Boolean = true,
 ) {
+    val getUpdateCount = rememberKoinInject<GetUpdateCount>()
+
+    val mangaWithUpdates by produceState(initialValue = 0) {
+        getUpdateCount.subscribe().collect { value = it }
+    }
+
     AnimatedVisibility(visible = visible) {
         NavigationRail(modifier) {
-            TabNavigationItem(LibraryTab)
+            TabNavigationItemWithNotifications(LibraryTab, mangaWithUpdates)
             TabNavigationItem(RecentsTab)
             TabNavigationItem(ExploreTab)
             TabNavigationItem(MoreTab)
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TabNavigationItemWithNotifications(tab: ReselectTab, notificationCount: Int) {
+    val tabNavigator = LocalTabNavigator.current
+    val selected = tabNavigator.current == tab
+    val scope = rememberCoroutineScope()
+    val navigator = LocalNavigator.currentOrThrow
+    val space = LocalSpacing.current
+
+    Box {
+        NavigationRailItem(
+            label = {
+                Text(tab.options.title)
+            },
+            alwaysShowLabel = true,
+            selected = selected,
+            onClick = {
+                Log.d("Reselect", "onclick $tab")
+                if (selected) {
+                    scope.launch {
+                        Log.d("Reselect", "Sending Reselect event to $tab")
+                        tab.onReselect(navigator)
+                    }
+                } else {
+                    tabNavigator.current = tab
+                }
+            },
+            icon = {
+                BadgedBox(
+                    badge = {
+                        if (notificationCount > 0) {
+                            Badge(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ) {
+                                Text(
+                                    text = remember(notificationCount) {
+                                        notificationCount.toString()
+                                    },
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    tab.options.icon?.let {
+                        Icon(
+                            painter = it,
+                            contentDescription = tab.options.title,
+                        )
+                    }
+                }
+            },
+        )
     }
 }
 

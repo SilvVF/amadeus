@@ -23,7 +23,7 @@ import kotlinx.datetime.LocalDateTime
 data class ChapterEntity(
     @PrimaryKey
     override val id: String,
-    @ColumnInfo("manga_id")
+    @ColumnInfo("manga_id", index = true)
     val mangaId: String,
     val scanlator: String = "",
     val url: String,

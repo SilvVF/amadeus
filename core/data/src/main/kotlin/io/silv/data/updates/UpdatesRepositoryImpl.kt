@@ -10,6 +10,8 @@ class UpdatesRepositoryImpl(
     private val updatesDao: UpdatesDao,
 ): UpdatesRepository {
 
+    override fun observeUpdateCount(): Flow<Int> = updatesDao.mangaWithUpdatesCount()
+
     override fun observeUpdates(limit: Int): Flow<List<UpdateWithRelations>> =
         updatesDao.updates(limit).map { updates ->
             updates.map { update ->

@@ -118,6 +118,7 @@ import io.silv.ui.composables.CardType
 import io.silv.ui.composables.ChapterListItem
 import io.silv.ui.composables.MangaGridItem
 import io.silv.ui.composables.MangaListItem
+import io.silv.ui.composables.PullRefresh
 import io.silv.ui.composables.SearchTextField
 import io.silv.ui.conditional
 import io.silv.ui.layout.ExpandableInfoLayout
@@ -205,11 +206,7 @@ object LibraryTab : ReselectTab {
 }
 
 enum class LibTab {
-    Library, Chapters, Updates, UserLists {
-        override fun toString(): String {
-            return "User Lists"
-        }
-    }
+    Library, Chapters, Updates
 }
 
 enum class LibraryBottomSheet {
@@ -588,7 +585,7 @@ fun SuccessScreenContent(
 
     AnimatedContent(
         targetState = currentTab,
-        label = "",
+        label = "curr-tab",
         transitionSpec = {
             if (this.targetState.ordinal < this.initialState.ordinal) {
                 slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
@@ -597,8 +594,8 @@ fun SuccessScreenContent(
             }
         },
         modifier = Modifier.fillMaxSize()
-    ) {currentTab ->
-        when (currentTab) {
+    ) {targetStateTab ->
+        when (targetStateTab) {
             LibTab.Library -> LibraryManga(
                 useList = useList,
                 cardType = cardType,
@@ -614,9 +611,29 @@ fun SuccessScreenContent(
                 state = state,
                 actions = actions
             )
-            LibTab.Updates -> {
-            }
-            LibTab.UserLists -> {}
+            LibTab.Updates -> UpdatesList(
+                state = state,
+                actions = actions,
+                paddingValues = paddingValues
+            )
+        }
+    }
+}
+
+@Composable
+fun UpdatesList(
+    state: LibraryState.Success,
+    actions: LibraryActions,
+    paddingValues: PaddingValues,
+) {
+    PullRefresh(
+        refreshing = false,
+        onRefresh = {  }
+    ) {
+        LazyColumn(
+            contentPadding = paddingValues
+        ) {
+
         }
     }
 }
@@ -897,7 +914,7 @@ fun LibraryScreenContentSuccessPreview() {
     var state by remember {
         mutableStateOf(
             LibraryState.Success(
-                filteredMangaWithChapters = buildList {
+                mangaWithChapters = buildList {
                     repeat(5) {
                         val manga = Manga.stub()
                         add(

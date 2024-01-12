@@ -12,10 +12,8 @@ import io.silv.data.mappers.tagToId
 import io.silv.data.mappers.titleEnglish
 import io.silv.database.entity.manga.MangaEntity
 import io.silv.database.entity.manga.MangaEntityWithChapters
-import io.silv.database.entity.manga.MangaUpdateEntityWithManga
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaUpdate
-import io.silv.domain.manga.model.MangaUpdateWithManga
 import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.network.model.manga.MangaDto
 import kotlinx.collections.immutable.toPersistentList
@@ -146,15 +144,6 @@ object MangaMapper {
             latestUploadedChapter = entity.latestUploadedChapter
         )
     }
-
-    fun mapUpdateWithManga(mangaUpdateEntityWithManga: MangaUpdateEntityWithManga) =
-        MangaUpdateWithManga(
-            id = mangaUpdateEntityWithManga.update.id,
-            savedMangaId = mangaUpdateEntityWithManga.update.savedMangaId,
-            updateType = mangaUpdateEntityWithManga.update.updateType,
-            createdAt = mangaUpdateEntityWithManga.update.createdAt,
-            manga = mangaUpdateEntityWithManga.manga.let(::mapManga)
-        )
 
     fun mapMangaWithChapters(
         entity: MangaEntityWithChapters

@@ -4,7 +4,6 @@ import io.silv.data.author.AuthorListRepositoryImpl
 import io.silv.data.chapter.ChapterRepositoryImpl
 import io.silv.data.manga.MangaPagingSourceFactoryImpl
 import io.silv.data.manga.MangaRepositoryImpl
-import io.silv.data.manga.MangaUpdateRepositoryImpl
 import io.silv.data.manga.SeasonalMangaRepositoryImpl
 import io.silv.data.manga.YearlyTopMangaFetcher
 import io.silv.data.tags.TagRepositoryImpl
@@ -13,7 +12,6 @@ import io.silv.domain.TagRepository
 import io.silv.domain.chapter.repository.ChapterRepository
 import io.silv.domain.manga.MangaPagingSourceFactory
 import io.silv.domain.manga.repository.MangaRepository
-import io.silv.domain.manga.repository.MangaUpdateRepository
 import io.silv.domain.manga.repository.SeasonalMangaRepository
 import io.silv.domain.manga.repository.TopYearlyFetcher
 import org.koin.core.module.dsl.bind
@@ -48,9 +46,5 @@ val mangaModule = module {
 
     singleOf(::MangaPagingSourceFactoryImpl) {
         bind<MangaPagingSourceFactory>()
-    }
-
-    singleOf(::MangaUpdateRepositoryImpl) {
-        bind<MangaUpdateRepository>()
     }
 }

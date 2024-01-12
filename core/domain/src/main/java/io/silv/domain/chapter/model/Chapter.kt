@@ -20,13 +20,12 @@ data class Chapter(
     val url: String,
     val bookmarked: Boolean,
     val downloaded: Boolean,
-    val progress: ProgressState,
     val mangaId: String,
     val title: String,
     val volume: Int,
     val chapter: Double,
     val pages: Int = 0,
-    val lastReadPage: Int,
+    val lastReadPage: Int?,
     val translatedLanguage: String,
     val uploader: String,
     val scanlationGroupToId: Pair<String, String>? = null,
@@ -42,6 +41,13 @@ data class Chapter(
 ) {
     val scanlator = scanlationGroupToId?.first ?: ""
     val scanlatorid = scanlationGroupToId?.second ?: ""
+
+    val progress: ProgressState
+        get() = when(lastReadPage) {
+            null -> ProgressState.NotStarted
+            pages -> ProgressState.Finished
+            else -> ProgressState.Reading
+        }
 
     private val daysSinceCreated: Long
         get() = (localDateTimeNow() - this.createdAt).inWholeDays
@@ -79,7 +85,6 @@ data class Chapter(
                 url = "",
                 bookmarked = false,
                 downloaded = false,
-                progress = ProgressState.NotStarted,
                 mangaId = mangaId,
                 title = "Random title",
                 volume = volume,

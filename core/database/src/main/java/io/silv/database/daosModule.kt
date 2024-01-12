@@ -28,7 +28,7 @@ val daosModule =
         }
 
         single {
-            get<AmadeusDatabase>().mangaUpdateDao()
+            get<AmadeusDatabase>().updatesDao()
         }
 
         single {

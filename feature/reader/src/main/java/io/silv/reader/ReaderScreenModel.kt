@@ -11,9 +11,9 @@ import io.silv.data.download.DownloadManager
 import io.silv.domain.chapter.interactor.ChapterHandler
 import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.history.HistoryRepository
+import io.silv.domain.history.HistoryUpdate
 import io.silv.domain.manga.interactor.GetMangaWithChapters
 import io.silv.domain.manga.model.Manga
-import io.silv.domain.history.HistoryUpdate
 import io.silv.reader.loader.ChapterLoader
 import io.silv.reader.loader.ReaderChapter
 import kotlinx.collections.immutable.ImmutableList
@@ -209,8 +209,7 @@ class ReaderScreenModel(
 
             chapterHandler.updateLastReadPage(
                 readerChapter.chapter.id,
-                pageIndex,
-                isLast = readerChapter.pages?.lastIndex == pageIndex
+                page.number,
             )
         }
     }

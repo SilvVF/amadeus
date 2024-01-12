@@ -3,6 +3,8 @@ package io.silv.manga.view
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.StarRate
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,7 +51,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,8 +63,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
@@ -246,8 +255,9 @@ fun MangaViewSuccessScreen(
     downloadActions: DownloadActions
 ) {
     val navigator = LocalNavigator.currentOrThrow
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
-        state = rememberTopAppBarState()
+    val topBarState = rememberTopAppBarState()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
+        state = topBarState
     )
     val listState = rememberLazyListState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -256,15 +266,40 @@ fun MangaViewSuccessScreen(
     var showSourceTitle by rememberSaveable { mutableStateOf(true) }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
+
+            val collapsed by remember {
+                derivedStateOf {
+                    topBarState.overlappedFraction == 1f
+                }
+            }
+
             TopAppBar(
                 colors =
                 TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                            .copy(alpha = scrollBehavior.state.overlappedFraction.coerceIn(0f, 1f)),
                 ),
-                title = {},
+                title = {
+                    AnimatedVisibility(
+                        visible = collapsed,
+                        enter = slideInVertically { it  } + fadeIn(),
+                        exit = slideOutVertically { it } + fadeOut()
+                    ) {
+                        Text(
+                            text = state.manga.titleEnglish,
+                            maxLines = 1,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge,
+                            textAlign = TextAlign.Start,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = {
                         navigator.pop()
@@ -273,6 +308,27 @@ fun MangaViewSuccessScreen(
                     }
                 },
                 actions = {
+                    val primary = MaterialTheme.colorScheme.primary
+                    val background =  MaterialTheme.colorScheme.onBackground
+
+                    val (icon, tint) = remember(state.manga, primary, background) {
+                        if (state.manga.inLibrary)
+                            Icons.Filled.Favorite to primary
+                        else
+                            Icons.Outlined.FavoriteBorder to background
+                    }
+
+                    AnimatedVisibility(visible = collapsed) {
+                        IconButton(onClick = {
+                            mangaActions.addToLibrary(state.manga.id)
+                        }) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = tint
+                            )
+                        }
+                    }
                     IconButton(
                         onClick = { currentBottomSheet = FILTER_BOTTOM_SHEET },
                     ) {

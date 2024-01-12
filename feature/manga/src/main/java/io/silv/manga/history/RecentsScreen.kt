@@ -1,6 +1,7 @@
 package io.silv.manga.history
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -34,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,11 +48,16 @@ import coil.compose.AsyncImage
 import io.silv.common.model.MangaCover
 import io.silv.common.time.localDateTimeNow
 import io.silv.domain.history.HistoryWithRelations
+import io.silv.navigation.SharedScreen
+import io.silv.navigation.push
 import io.silv.ui.composables.SearchTopAppBar
+import io.silv.ui.layout.ScrollbarLazyColumn
 import io.silv.ui.theme.AmadeusTheme
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.LocalDateTime
+import me.saket.swipe.SwipeAction
+import me.saket.swipe.SwipeableActionsBox
 
 class RecentsScreen: Screen {
 
@@ -113,7 +120,10 @@ private fun RecentsScreenContent(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+
+        val topLevelNavigator = LocalTopLevelNavigator.current
+
+        ScrollbarLazyColumn(
             contentPadding = paddingValues
         ) {
             state.groupedByEpochDays.fastForEach { (epochDay, historyItems) ->
@@ -129,56 +139,105 @@ private fun RecentsScreenContent(
                         text,
                         style = MaterialTheme.typography.labelLarge
                             .copy(fontWeight = FontWeight.SemiBold),
-                        modifier = Modifier.padding(space.med)
+                        modifier = Modifier
+                            .animateItemPlacement()
+                            .padding(space.med)
                     )
                 }
                 items(
                     items = historyItems,
                     key = { it.id }
                 ) { history ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(space.med),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
+
+
+                    val deleteAction = SwipeAction(
+                        onSwipe = { actions.deleteHistoryForManga(history.mangaId) },
+                        icon = rememberVectorPainter(image = Icons.Outlined.DeleteSweep),
+                        background = MaterialTheme.colorScheme.surfaceTint
+                    )
+
+                    SwipeableActionsBox(
+                        endActions = listOf(deleteAction)
                     ) {
-                        AsyncImage(
-                            model = MangaCover(
-                                history.mangaId,
-                                history.coverArt,
-                                history.favorite,
-                                history.mangaLastUpdatedAt
-                            )
-                                .takeIf { !preview } ?: history.coverArt,
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier
-                                .height(90.dp)
-                                .clip(RoundedCornerShape(8.dp))
+                        MangaHistoryItem(
+                            history = history,
+                            onCoverClick = {
+                                topLevelNavigator.push(
+                                    SharedScreen.MangaView(history.mangaId)
+                                )
+                            },
+                            onClick = {
+                                topLevelNavigator.push(
+                                    SharedScreen.Reader(history.mangaId, history.chapterId)
+                                )
+                            },
+                            onDeleteClick = {
+                                actions.deleteHistory(history.id)
+                            }
                         )
-                        Spacer(modifier = Modifier.width(space.large))
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                text = history.title,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                maxLines = 2
-                            )
-                            Text(
-                                text = "Ch. ${history.chapterNumber} -" +
-                                        " ${history.formattedTimeText}",
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(space.large))
-                        IconButton(onClick = { /*TODO*/ }) {
-                            Icon(imageVector = Icons.Outlined.Delete, contentDescription = null)
-                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun LazyItemScope.MangaHistoryItem(
+    onCoverClick: () -> Unit,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    history: HistoryWithRelations,
+    preview: Boolean = false
+) {
+    val space = LocalSpacing.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(space.med)
+            .animateItemPlacement()
+            .clickable {
+                onClick()
+            },
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AsyncImage(
+            model = MangaCover(
+                history.mangaId,
+                history.coverArt,
+                history.favorite,
+                history.mangaLastUpdatedAt
+            )
+                .takeIf { !preview } ?: history.coverArt,
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .height(90.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable {
+                    onCoverClick()
+                }
+        )
+        Spacer(modifier = Modifier.width(space.large))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = history.title,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                maxLines = 2
+            )
+            Text(
+                text = "Ch. ${history.chapterNumber} -" +
+                        " ${history.formattedTimeText}",
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+        Spacer(modifier = Modifier.width(space.large))
+        IconButton(onClick = onDeleteClick) {
+            Icon(imageVector = Icons.Outlined.Delete, contentDescription = null)
         }
     }
 }

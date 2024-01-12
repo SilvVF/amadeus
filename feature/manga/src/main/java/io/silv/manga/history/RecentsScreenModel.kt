@@ -89,5 +89,7 @@ data class RecentsState(
 @Stable
 data class RecentsActions(
     val searchChanged: (query: String) -> Unit = {},
-    val clearHistory: () -> Unit = {}
+    val clearHistory: () -> Unit = {},
+    val deleteHistory: (id: Long) -> Unit = {},
+    val deleteHistoryForManga: (mangaId: String) -> Unit = {},
 )

@@ -1,6 +1,5 @@
 package io.silv.data.mappers
 
-import io.silv.common.model.ProgressState
 import io.silv.common.time.parseMangaDexTimeToDateTime
 import io.silv.database.entity.chapter.ChapterEntity
 import io.silv.network.model.chapter.Chapter
@@ -11,7 +10,6 @@ fun Chapter.toChapterEntity(prev: ChapterEntity? = null): ChapterEntity {
         id = chapter.id,
         mangaId = chapter.relationships.find { it.type == "manga" }?.id
             ?: throw IllegalStateException("Chapter had no related manga id"),
-        progressState = prev?.progressState ?: ProgressState.NotStarted,
         volume = chapter.attributes.volume?.toIntOrNull() ?: -1,
         title = chapter.attributes.title ?: "",
         pages = chapter.attributes.pages,
@@ -28,6 +26,6 @@ fun Chapter.toChapterEntity(prev: ChapterEntity? = null): ChapterEntity {
         user = chapter.relationships.find { it.type == "user" }?.attributes?.username,
         userId = chapter.relationships.find { it.type == "user" }?.id,
         bookmarked = prev?.bookmarked ?: false,
-        lastPageRead = prev?.lastPageRead ?: 0
+        lastPageRead = prev?.lastPageRead
     )
 }

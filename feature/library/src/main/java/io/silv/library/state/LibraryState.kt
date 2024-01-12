@@ -2,6 +2,7 @@ package io.silv.library.state
 
 import androidx.compose.runtime.Stable
 import io.silv.domain.manga.model.MangaWithChapters
+import io.silv.library.UiChapterUpdate
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -28,11 +29,20 @@ sealed interface LibraryState {
     ): LibraryState
 
     data class Success(
-        val filteredMangaWithChapters: ImmutableList<MangaWithChapters> = persistentListOf(),
         val mangaWithChapters: ImmutableList<MangaWithChapters> = persistentListOf(),
+        val updates: ImmutableList<UiChapterUpdate> = persistentListOf(),
         val filteredTagIds: ImmutableList<String> = persistentListOf(),
         val filteredText: String = "",
     ): LibraryState {
+
+        val filteredMangaWithChapters = mangaWithChapters
+            .filter { (manga, _) ->
+                filteredText.isBlank() || (manga.alternateTitles.values + manga.titleEnglish)
+                .any { title -> filteredText in title }
+            }
+            .filter { (manga, _) -> filteredTagIds.isEmpty() || filteredTagIds.any { manga.tagIds.contains(it) } }
+            .toImmutableList()
+
         val libraryTags = mangaWithChapters
             .flatMap { it.manga.tagToId.entries }
             .toSet()

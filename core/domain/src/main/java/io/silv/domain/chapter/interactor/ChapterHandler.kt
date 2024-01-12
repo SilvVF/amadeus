@@ -15,12 +15,11 @@ class ChapterHandler(
             }!!
         }
 
-    suspend fun updateLastReadPage(id: String, page: Int, isLast: Boolean) =
+    suspend fun updateLastReadPage(id: String, page: Int) =
         runCatching {
             chapterRepository.updateChapter(id) {
                 it.copy(
                     lastReadPage = page,
-                    progress = if (isLast) ProgressState.Finished else ProgressState.Reading,
                 )
             }
         }
@@ -29,10 +28,10 @@ class ChapterHandler(
         runCatching {
             chapterRepository.updateChapter(id) {
                 it.copy(
-                    progress =
+                    lastReadPage =
                     when (it.progress) {
-                        ProgressState.Finished -> ProgressState.NotStarted
-                        ProgressState.NotStarted, ProgressState.Reading -> ProgressState.Finished
+                        ProgressState.Finished -> null
+                        ProgressState.NotStarted, ProgressState.Reading -> it.pages
                     },
                 )
             }!!

@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -29,9 +31,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.silv.common.filterUnique
 import io.silv.common.model.Status
+import io.silv.domain.manga.model.Manga
 import io.silv.manga.view.MangaStats
 import io.silv.manga.view.StatsUiState
-import io.silv.domain.manga.model.Manga
 import io.silv.ui.fillMaxAfterMesaure
 import io.silv.ui.theme.LocalSpacing
 
@@ -59,6 +61,7 @@ fun MangaImageWithTitle(
         Column(
             Modifier.padding(horizontal = space.med)
         ) {
+            Spacer(modifier = Modifier.height(space.xlarge))
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -70,8 +73,7 @@ fun MangaImageWithTitle(
                 MangaTitle(
                     modifier =
                     Modifier
-                        .fillMaxWidth(0.9f)
-                       ,
+                        .fillMaxWidth(0.9f),
                     status = manga.status,
                     year = manga.year,
                     title = manga.titleEnglish,

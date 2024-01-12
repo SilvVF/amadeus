@@ -7,15 +7,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
 import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
 import io.silv.domain.manga.model.MangaWithChapters
+import io.silv.domain.update.UpdateWithRelations
+import io.silv.domain.update.UpdatesRepository
 import io.silv.library.state.LibraryError
 import io.silv.library.state.LibraryEvent
 import io.silv.library.state.LibraryState
 import io.silv.ui.EventStateScreenModel
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
@@ -24,12 +27,21 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
+
+data class UiChapterUpdate(
+    val update: UpdateWithRelations,
+    val downloaded: Boolean,
+    val download: Download?
+)
 
 class LibraryScreenModel(
+    private val updatesRepository: UpdatesRepository,
     getLibraryMangaWithChapters: GetLibraryMangaWithChapters,
     downloadManager: DownloadManager,
 ): EventStateScreenModel<LibraryEvent, LibraryState>(LibraryState.Loading) {
@@ -56,7 +68,10 @@ class LibraryScreenModel(
                     manga = manga,
                     chapters = chapters.map {
                         it.copy(
-                            downloaded = downloadManager.isChapterDownloaded(it.title, it.scanlator, manga.titleEnglish))
+                            downloaded = withContext(Dispatchers.IO) {
+                                downloadManager.isChapterDownloaded(it.title, it.scanlator, manga.titleEnglish)
+                            }
+                        )
                     }
                         .toImmutableList()
                 )
@@ -76,17 +91,9 @@ class LibraryScreenModel(
                     return@combine
                 }
 
-                val filtered = list.filter { (manga, _) ->
-                    query.isBlank() || (manga.alternateTitles.values + manga.titleEnglish)
-                        .any { title -> query in title }
-                }
-                    .filter { (manga, _) -> tagIds.isEmpty() || tagIds.any { manga.tagIds.contains(it) } }
-                    .toImmutableList()
-
                 mutableState.update { state ->
-                    (state.success ?: LibraryState.Success(persistentListOf())).copy(
+                    (state.success ?: LibraryState.Success()).copy(
                         filteredTagIds = tagIds.toImmutableList(),
-                        filteredMangaWithChapters = filtered,
                         filteredText = query,
                         mangaWithChapters = list.toImmutableList()
                     )
@@ -96,6 +103,34 @@ class LibraryScreenModel(
                 mutableState.value = LibraryState.Error(
                     LibraryError.Generic(it.message ?: "unknown err")
                 )
+            }
+            .launchIn(screenModelScope)
+
+        combine(
+            updatesRepository.observeUpdates(),
+            downloadManager.queueState,
+            downloadTrigger,
+        ) { x, y ,z -> Triple(x, y, z) }
+            .onEach { (updates, downloads, _) ->
+
+
+                mutableState.update { state ->
+                    (state.success ?: LibraryState.Success()).copy(
+                        updates = updates.map {
+
+                            val downloaded = withContext(Dispatchers.IO) {
+                                downloadManager.isChapterDownloaded(it.chapterName, it.scanlator, it.mangaTitle)
+                            }
+
+                            UiChapterUpdate(
+                                update = it,
+                                downloaded = downloaded,
+                                download = downloads.find { download -> download.chapter.id == it.chapterId },
+                            )
+                        }
+                            .toImmutableList()
+                    )
+                }
             }
             .launchIn(screenModelScope)
     }

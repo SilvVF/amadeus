@@ -463,7 +463,7 @@ private fun chapterTitleWithVolText(chapter: Chapter, showFullTitle: Boolean) =
 private fun dateWithScanlationText(chapter: Chapter) =
     remember(chapter) {
         val pageText =
-            if (chapter.lastReadPage > 0 && !chapter.read) {
+            if ((chapter.lastReadPage ?: 0) > 0 && !chapter.read) {
                 "· Page ${chapter.lastReadPage}"
             } else {
                 ""

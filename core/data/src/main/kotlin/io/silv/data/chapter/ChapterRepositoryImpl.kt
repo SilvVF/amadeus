@@ -7,7 +7,6 @@ import com.skydoves.sandwich.suspendMapSuccess
 import com.skydoves.sandwich.suspendOnFailure
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
-import io.silv.common.model.ProgressState
 import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.minus
 import io.silv.data.mappers.toChapterEntity
@@ -61,7 +60,6 @@ internal class ChapterRepositoryImpl(
                     it.copy(
                         lastPageRead = page.coerceAtMost(lastPage),
                         pages = lastPage,
-                        progressState = if (page >= lastPage) ProgressState.Finished else ProgressState.Reading
                     )
                 )
             }

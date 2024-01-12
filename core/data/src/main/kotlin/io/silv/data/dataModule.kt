@@ -10,6 +10,7 @@ import io.silv.data.di.workersModule
 import io.silv.data.history.HistoryRepositoryImpl
 import io.silv.data.manga.GetMangaStatisticsById
 import io.silv.data.manga.MangaPagingSourceFactoryImpl
+import io.silv.data.updates.UpdatesRepositoryImpl
 import io.silv.data.util.NetworkConnectivityImpl
 import io.silv.data.util.UpdateChapterList
 import io.silv.database.daosModule
@@ -17,6 +18,7 @@ import io.silv.database.databaseModule
 import io.silv.domain.chapter.repository.ChapterRepository
 import io.silv.domain.history.HistoryRepository
 import io.silv.domain.search.RecentSearchRepository
+import io.silv.domain.update.UpdatesRepository
 import io.silv.network.networkModule
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
@@ -35,6 +37,10 @@ val dataModule = module {
         tagsModule,
         downloadModule
     )
+
+    singleOf(::UpdatesRepositoryImpl) {
+        bind<UpdatesRepository>()
+    }
 
     singleOf(::HistoryRepositoryImpl) {
         bind<HistoryRepository>()

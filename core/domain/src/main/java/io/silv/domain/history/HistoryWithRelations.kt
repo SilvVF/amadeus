@@ -1,7 +1,9 @@
 package io.silv.domain.history
 
+import androidx.compose.runtime.Stable
 import kotlinx.datetime.LocalDateTime
 
+@Stable
 data class HistoryWithRelations(
     val id: Long,
     val chapterId: String,

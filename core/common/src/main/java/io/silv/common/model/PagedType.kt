@@ -1,7 +1,9 @@
 package io.silv.common.model
 
+import androidx.compose.runtime.Stable
 import kotlinx.datetime.LocalDateTime
 
+@Stable
 sealed class PagedType {
     data object Popular : PagedType()
 
@@ -14,6 +16,7 @@ sealed class PagedType {
     ) : PagedType()
 }
 
+@Stable
 data class QueryFilters(
     val title: String? = null,
     val authorOrArtist: String? = null,

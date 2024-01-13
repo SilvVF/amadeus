@@ -1,9 +1,11 @@
 package io.silv.common.model
 
+import androidx.compose.runtime.Stable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 
+@Stable
 @Serializable
 open class Page(
     val index: Int,

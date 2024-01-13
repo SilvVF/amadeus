@@ -15,4 +15,5 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlin.collections.immutable)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    compileOnly("com.github.skydoves:compose-stable-marker:1.0.3")
 }

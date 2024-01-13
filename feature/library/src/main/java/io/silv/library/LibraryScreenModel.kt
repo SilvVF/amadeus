@@ -9,14 +9,21 @@ import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
+import io.silv.domain.chapter.interactor.GetBookmarkedChapters
+import io.silv.domain.chapter.interactor.GetChapter
+import io.silv.domain.chapter.model.toResource
 import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
+import io.silv.domain.manga.interactor.GetManga
+import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaWithChapters
+import io.silv.domain.manga.model.toResource
 import io.silv.domain.update.UpdateWithRelations
 import io.silv.domain.update.UpdatesRepository
 import io.silv.library.state.LibraryError
 import io.silv.library.state.LibraryEvent
 import io.silv.library.state.LibraryState
 import io.silv.ui.EventStateScreenModel
+import io.silv.ui.composables.ChapterDownloadAction.*
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -42,8 +49,11 @@ data class UiChapterUpdate(
 
 class LibraryScreenModel(
     private val updatesRepository: UpdatesRepository,
+    private val downloadManager: DownloadManager,
+    private val getManga: GetManga,
+    private val getBookmarkedChapters: GetBookmarkedChapters,
+    private val getChapter: GetChapter,
     getLibraryMangaWithChapters: GetLibraryMangaWithChapters,
-    downloadManager: DownloadManager,
 ): EventStateScreenModel<LibraryEvent, LibraryState>(LibraryState.Loading) {
 
     var mangaSearchText by mutableStateOf("")
@@ -77,6 +87,8 @@ class LibraryScreenModel(
                 )
             }
         }
+
+    private val cachedManga = mutableMapOf<String, Manga>()
 
     init {
         combine(
@@ -112,8 +124,6 @@ class LibraryScreenModel(
             downloadTrigger,
         ) { x, y ,z -> Triple(x, y, z) }
             .onEach { (updates, downloads, _) ->
-
-
                 mutableState.update { state ->
                     (state.success ?: LibraryState.Success()).copy(
                         updates = updates.map {
@@ -128,7 +138,27 @@ class LibraryScreenModel(
                                 download = downloads.find { download -> download.chapter.id == it.chapterId },
                             )
                         }
+                            .groupBy { it.update.chapterUpdatedAt.date.toEpochDays() }
+                            .toList()
+                            .map { it.first to it.second.toImmutableList() }
                             .toImmutableList()
+                    )
+                }
+            }
+            .launchIn(screenModelScope)
+
+        getBookmarkedChapters.subscribe()
+            .onEach { chapters ->
+
+                val grouped = chapters.groupBy { it.mangaId }
+                    .mapKeys { (k, _) -> cachedManga.getOrElse(k) { getManga.await(k) } }
+                    .toList()
+                    .mapNotNull { if (it.first == null) null else Pair(it.first!!, it.second.toImmutableList()) }
+                    .toImmutableList()
+
+                mutableState.update { state ->
+                    (state.success ?: LibraryState.Success()).copy(
+                        bookmarkedChapters = grouped
                     )
                 }
             }
@@ -142,6 +172,41 @@ class LibraryScreenModel(
                     if(!add(id)) { remove(id) }
                 }
             }
+        }
+    }
+
+    fun startDownload(mangaId: String, chapterId: String) {
+        screenModelScope.launch {
+
+            val manga = getManga.await(mangaId) ?: return@launch
+            val chapter = getChapter.await(chapterId) ?: return@launch
+
+            downloadManager.downloadChapters(manga.toResource(), listOf(chapter.toResource()))
+        }
+    }
+
+    fun cancelDownload(download: Download) {
+        screenModelScope.launch {
+            downloadManager.cancelQueuedDownloads(listOf(download))
+        }
+    }
+
+    fun deleteDownloadedChapter(mangaId: String, chapterId: String) {
+        screenModelScope.launch {
+
+            val manga = getManga.await(mangaId) ?: return@launch
+            val chapter = getChapter.await(chapterId) ?: return@launch
+
+            downloadManager.deleteChapters(
+                chapters = listOf(chapter.toResource()),
+                manga = manga.toResource()
+            )
+        }
+    }
+
+    fun startDownloadNow(download: Download) {
+        screenModelScope.launch {
+            downloadManager.startDownloadNow(download.chapter.id)
         }
     }
 

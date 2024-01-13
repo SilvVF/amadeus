@@ -3,6 +3,7 @@ package io.silv.data.manga
 import androidx.room.withTransaction
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.time.epochSeconds
+import io.silv.common.time.localDateTimeNow
 import io.silv.data.download.CoverCache
 import io.silv.data.util.deleteOldCoverFromCache
 import io.silv.database.AmadeusDatabase
@@ -11,9 +12,16 @@ import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaUpdate
 import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.domain.manga.repository.MangaRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Duration.Companion.days
 
 class MangaRepositoryImpl internal constructor(
     private val mangaDao: MangaDao,
@@ -21,6 +29,19 @@ class MangaRepositoryImpl internal constructor(
     private val database: AmadeusDatabase,
     private val coverCache: CoverCache,
 ): MangaRepository {
+
+    init {
+        CoroutineScope(Dispatchers.IO).launch {
+            mangaDao.getById("296cbc31-af1a-4b5b-a34b-fee2b4cad542")?.let {
+                mangaDao.update(
+                    it.copy(
+                        savedAtLocal = (localDateTimeNow().toInstant(TimeZone.currentSystemDefault()) - 40.days)
+                            .toLocalDateTime(TimeZone.currentSystemDefault())
+                    )
+                )
+            }
+        }
+    }
 
     override suspend fun getMangaById(id: String): Manga? =
         withContext(dispatchers.io) {

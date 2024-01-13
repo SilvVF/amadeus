@@ -9,6 +9,7 @@ import kotlinx.datetime.LocalDateTime
         manga.title AS mangaTitle,
         manga.favorite,
         manga.cover_art AS coverArt,
+        manga.cover_last_modified AS coverLastModified,
         manga.saved_at_local AS savedAtLocal, 
         chapters.id AS chapterId,
         chapters.scanlator AS scanlator,
@@ -16,7 +17,8 @@ import kotlinx.datetime.LocalDateTime
         chapters.last_page_read AS lastPageRead,
         chapters.bookmarked,
         chapters.updated_at AS chapterUpdatedAt,
-        chapters.title As chapterName
+        chapters.title As chapterName,
+        chapters.chapter_number AS chapterNumber
     FROM manga 
     JOIN chapters ON manga_id = manga.id
     WHERE manga.favorite
@@ -36,4 +38,6 @@ data class UpdatesView(
     val coverArt: String,
     val savedAtLocal: LocalDateTime,
     val chapterUpdatedAt: LocalDateTime,
+    val coverLastModified: Long,
+    val chapterNumber: Double,
 )

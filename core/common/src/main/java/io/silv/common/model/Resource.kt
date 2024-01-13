@@ -1,5 +1,8 @@
 package io.silv.common.model
 
+import androidx.compose.runtime.Stable
+
+@Stable
 sealed class Resource<out T> {
     object Loading : Resource<Nothing>()
 

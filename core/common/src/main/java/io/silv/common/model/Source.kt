@@ -1,5 +1,8 @@
 package io.silv.common.model
 
+import androidx.compose.runtime.Stable
+
+@Stable
 data class Source(
     val id: Long,
     val lang: String,

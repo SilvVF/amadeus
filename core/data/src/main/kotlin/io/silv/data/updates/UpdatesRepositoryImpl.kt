@@ -27,7 +27,9 @@ class UpdatesRepositoryImpl(
                     favorite = update.favorite,
                     coverArt = update.coverArt,
                     savedAtLocal = update.savedAtLocal,
-                    chapterUpdatedAt = update.chapterUpdatedAt
+                    chapterUpdatedAt = update.chapterUpdatedAt,
+                    coverLastModified = update.coverLastModified,
+                    chapterNumber = update.chapterNumber
                 )
             }
         }
@@ -47,7 +49,9 @@ class UpdatesRepositoryImpl(
                     favorite = update.favorite,
                     coverArt = update.coverArt,
                     savedAtLocal = update.savedAtLocal,
-                    chapterUpdatedAt = update.chapterUpdatedAt
+                    chapterUpdatedAt = update.chapterUpdatedAt,
+                    coverLastModified = update.coverLastModified,
+                    chapterNumber = update.chapterNumber
                 )
             }
         }

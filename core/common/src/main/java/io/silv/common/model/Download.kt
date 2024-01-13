@@ -1,5 +1,6 @@
 package io.silv.common.model
 
+import androidx.compose.runtime.Stable
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,6 +11,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 
+
+@Stable
 data class Download(
     val manga: MangaResource,
     val chapter: ChapterResource,

@@ -11,7 +11,7 @@ import io.silv.database.AmadeusDatabase
 import io.silv.database.dao.ChapterDao
 import io.silv.database.dao.MangaDao
 import io.silv.database.entity.manga.MangaEntity
-import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 class MangaUpdateJob internal constructor(
     private val database: AmadeusDatabase,
@@ -22,7 +22,7 @@ class MangaUpdateJob internal constructor(
 
     private fun shouldCheckForUpdates(mangaEntity: MangaEntity): Boolean {
         return mangaEntity.lastSyncedForUpdates != null
-                && localDateTimeNow().epochMillis() - (mangaEntity.lastSyncedForUpdates?.epochMillis() ?: 0L) > 6.hours.inWholeMilliseconds
+                && localDateTimeNow().epochMillis() - (mangaEntity.lastSyncedForUpdates?.epochMillis() ?: 0L) > 5.minutes.inWholeMilliseconds
                 && mangaEntity.status != Status.completed
                 && mangaEntity.progressState != ProgressState.NotStarted
     }

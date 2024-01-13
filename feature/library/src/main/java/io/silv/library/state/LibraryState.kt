@@ -1,6 +1,9 @@
 package io.silv.library.state
 
 import androidx.compose.runtime.Stable
+import io.silv.common.model.Download
+import io.silv.domain.chapter.model.Chapter
+import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.library.UiChapterUpdate
 import kotlinx.collections.immutable.ImmutableList
@@ -30,7 +33,8 @@ sealed interface LibraryState {
 
     data class Success(
         val mangaWithChapters: ImmutableList<MangaWithChapters> = persistentListOf(),
-        val updates: ImmutableList<UiChapterUpdate> = persistentListOf(),
+        val bookmarkedChapters: ImmutableList<Pair<Manga, ImmutableList<Chapter>>> = persistentListOf(),
+        val updates: ImmutableList<Pair<Int, ImmutableList<UiChapterUpdate>>> = persistentListOf(),
         val filteredTagIds: ImmutableList<String> = persistentListOf(),
         val filteredText: String = "",
     ): LibraryState {
@@ -38,7 +42,7 @@ sealed interface LibraryState {
         val filteredMangaWithChapters = mangaWithChapters
             .filter { (manga, _) ->
                 filteredText.isBlank() || (manga.alternateTitles.values + manga.titleEnglish)
-                .any { title -> filteredText in title }
+                .any { title -> filteredText.lowercase() in title.lowercase() }
             }
             .filter { (manga, _) -> filteredTagIds.isEmpty() || filteredTagIds.any { manga.tagIds.contains(it) } }
             .toImmutableList()
@@ -69,4 +73,10 @@ data class LibraryActions(
     val searchChanged: (search: String) -> Unit = {_ ->},
     val searchOnMangaDex: (query: String) -> Unit = { _ -> },
     val navigateToExploreTab: () -> Unit = {},
+    val refreshUpdates: () -> Unit = {},
+    val markUpdatesAsSeen: (mangaId: String, chapterId: String) -> Unit = { _, _ ->},
+    val onDownload: (mangaId: String, chapterId: String) -> Unit = {_, _ ->},
+    val onStartDownloadNow: (download: Download) -> Unit = {},
+    val onCancelDownload: (download: Download) -> Unit = {},
+    val onDeleteDownloadedChapter: (mangaId: String, chapterId: String) -> Unit = {_, _ ->}
 )

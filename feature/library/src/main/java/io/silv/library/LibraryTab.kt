@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -49,6 +50,7 @@ import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.More
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.twotone.Archive
 import androidx.compose.material.icons.twotone.Unarchive
 import androidx.compose.material.ripple.rememberRipple
@@ -66,6 +68,7 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,6 +84,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.buildAnnotatedString
@@ -100,12 +104,17 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import coil.compose.AsyncImage
 import io.silv.common.emptyImmutableList
+import io.silv.common.model.Download
+import io.silv.common.model.MangaCover
+import io.silv.common.time.localDateTimeNow
 import io.silv.datastore.LibraryPrefs
 import io.silv.datastore.collectAsState
 import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaWithChapters
+import io.silv.domain.update.UpdateWithRelations
 import io.silv.library.state.LibraryActions
 import io.silv.library.state.LibraryError
 import io.silv.library.state.LibraryState
@@ -115,6 +124,8 @@ import io.silv.ui.Converters
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
 import io.silv.ui.composables.CardType
+import io.silv.ui.composables.ChapterDownloadAction
+import io.silv.ui.composables.ChapterDownloadIndicator
 import io.silv.ui.composables.ChapterListItem
 import io.silv.ui.composables.MangaGridItem
 import io.silv.ui.composables.MangaListItem
@@ -133,6 +144,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -199,7 +211,11 @@ object LibraryTab : ReselectTab {
                 },
                 navigateToExploreTab = {
                     appState.searchGlobal(null)
-                }
+                },
+                onDownload = screenModel::startDownload,
+                onCancelDownload = screenModel::cancelDownload,
+                onStartDownloadNow = screenModel::startDownloadNow,
+                onDeleteDownloadedChapter = screenModel::deleteDownloadedChapter
             )
         )
     }
@@ -620,21 +636,162 @@ fun SuccessScreenContent(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UpdatesList(
     state: LibraryState.Success,
     actions: LibraryActions,
     paddingValues: PaddingValues,
 ) {
+    val space = LocalSpacing.current
+    val navigator = LocalNavigator.currentOrThrow
+
     PullRefresh(
         refreshing = false,
-        onRefresh = {  }
+        onRefresh = { actions.refreshUpdates() }
     ) {
         LazyColumn(
             contentPadding = paddingValues
         ) {
+            state.updates.fastForEach { (epochDay, updatesList) ->
+                item(epochDay) {
+                    val text = remember {
+                        when(val dif = localDateTimeNow().date.toEpochDays() - epochDay) {
+                            0 -> "Today"
+                            1 -> "Yesterday"
+                            else -> "$dif days ago"
+                        }
+                    }
+                    Text(
+                        text,
+                        style = MaterialTheme.typography.labelLarge
+                            .copy(fontWeight = FontWeight.SemiBold),
+                        modifier = Modifier
+                            .animateItemPlacement()
+                            .padding(space.med)
+                    )
+                }
+                items(updatesList, { it.update.chapterId }) { (update, downloaded, download) ->
+                    val markSeen = SwipeAction(
+                        onSwipe = { actions.markUpdatesAsSeen(update.mangaId, update.chapterId) },
+                        icon = rememberVectorPainter(image = Icons.Outlined.VisibilityOff),
+                        background = MaterialTheme.colorScheme.surfaceTint
+                    )
 
+                    SwipeableActionsBox(
+                        endActions = listOf(markSeen)
+                    ) {
+                        MangaUpdateItem(
+                            update = update,
+                            download = download,
+                            downloaded = downloaded,
+                            onCoverClick = {
+                                navigator.push(
+                                    SharedScreen.MangaView(update.mangaId)
+                                )
+                            },
+                            onClick = {
+                                navigator.push(
+                                    SharedScreen.Reader(update.mangaId, update.chapterId)
+                                )
+                            },
+                            onDownloadAction = { action ->
+                                when(action) {
+                                    ChapterDownloadAction.START ->
+                                        actions.onDownload(update.mangaId, update.chapterId)
+                                    ChapterDownloadAction.START_NOW ->
+                                        download?.let { actions.onStartDownloadNow(it) }
+                                    ChapterDownloadAction.CANCEL ->
+                                        download?.let { actions.onCancelDownload(it) }
+                                    ChapterDownloadAction.DELETE ->
+                                        actions.onDeleteDownloadedChapter(update.mangaId, update.chapterId)
+                                }
+                            }
+                        )
+                    }
+                }
+            }
         }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun LazyItemScope.MangaUpdateItem(
+    download: Download?,
+    downloaded: Boolean,
+    update: UpdateWithRelations,
+    onCoverClick: () -> Unit,
+    onClick: () -> Unit,
+    onDownloadAction: (ChapterDownloadAction) -> Unit,
+    preview: Boolean = false
+) {
+    val space = LocalSpacing.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(space.med)
+            .animateItemPlacement()
+            .clickable {
+                onClick()
+            },
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AsyncImage(
+            model = MangaCover(
+                update.mangaId,
+                update.coverArt,
+                update.favorite,
+                update.coverLastModified
+            )
+                .takeIf { !preview } ?: update.coverArt,
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .height(90.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable {
+                    onCoverClick()
+                }
+        )
+        Spacer(modifier = Modifier.width(space.large))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = update.chapterName,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                maxLines = 2
+            )
+            Text(
+                text = "Ch. ${update.chapterNumber} -" +
+                        " ${update.scanlator}",
+                maxLines = 1,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+        Spacer(modifier = Modifier.width(space.large))
+
+        val status by remember(download) {
+            download?.statusFlow
+                ?: flowOf(
+                    if (downloaded) Download.State.DOWNLOADED else Download.State.NOT_DOWNLOADED
+                )
+        }
+            .collectAsState(Download.State.NOT_DOWNLOADED)
+
+        val progress by remember(download) {
+            download?.progressFlow ?: flowOf(0)
+        }
+            .collectAsState(0)
+
+        ChapterDownloadIndicator(
+            enabled = true,
+            downloadStateProvider = { status },
+            downloadProgressProvider = { progress },
+            onClick = onDownloadAction
+        )
     }
 }
 
@@ -646,20 +803,10 @@ fun BookmarkedChapters(
     actions: LibraryActions,
 ) {
     val navigator = LocalNavigator.currentOrThrow
-    val filtered by remember {
-        derivedStateOf {
-            buildMap {
-                state.mangaWithChapters.fastForEach {
-                    put(it.manga, it.chapters.filter { it.bookmarked }.ifEmpty { return@fastForEach })
-                }
-            }
-                .toList()
-        }
-    }
     ScrollbarLazyColumn(
         contentPadding = paddingValues
     ) {
-        filtered.fastForEach { (manga, chapters)  ->
+        state.bookmarkedChapters.fastForEach { (manga, chapters)  ->
             item(key = "${manga.id}-header") {
                 Text(
                     text = manga.titleEnglish,

@@ -1,7 +1,11 @@
 package io.silv.manga.filter
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -10,6 +14,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -26,12 +31,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
@@ -44,6 +52,7 @@ import io.silv.datastore.collectAsState
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.navigation.replace
+import io.silv.ui.CenterBox
 import io.silv.ui.Converters
 import io.silv.ui.composables.CardType
 import io.silv.ui.composables.mangaGrid
@@ -183,36 +192,68 @@ class MangaFilterScreen(
             val gridCells by FilterPrefs.gridCellsPrefKey.collectAsState(FilterPrefs.gridCellsDefault, scope)
             val useList by FilterPrefs.useListPrefKey.collectAsState(false, scope)
 
-            if (useList) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = paddingValues,
-                ) {
-                    mangaList(
-                        manga = timePeriodItems,
-                        onFavoriteClick = { sm::toggleFavorite.invoke(it.id) },
-                        onMangaClick = { navigator.push(SharedScreen.MangaView(it.id)) }
-                    )
+            when {
+                timePeriodItems.loadState.refresh is LoadState.Loading -> {
+                    CenterBox(Modifier.fillMaxSize()) {
+                        androidx.compose.material3.CircularProgressIndicator()
+                    }
                 }
-            } else {
-                LazyVerticalGrid(
-                    modifier = Modifier.fillMaxSize(),
-                    columns = GridCells.Fixed(gridCells),
-                    contentPadding = paddingValues,
-                ) {
-                  mangaGrid(
-                      manga = timePeriodItems,
-                      cardType = cardType,
-                      onTagClick = { manga, tag ->
-                          manga.tagToId[tag]?.let { id ->
-                              navigator.replace(
-                                  SharedScreen.MangaFilter(tag, id)
-                              )
-                          }
-                      },
-                      onBookmarkClick = { sm::toggleFavorite.invoke(it.id) },
-                      onMangaClick = { navigator.push(SharedScreen.MangaView(it.id)) }
-                  )
+                timePeriodItems.itemCount == 0 &&
+                        timePeriodItems.loadState.refresh != LoadState.Loading
+                        && timePeriodItems.loadState.append != LoadState.Loading -> {
+                    Column(
+                        Modifier
+                            .fillMaxSize()
+                            .padding(space.xlarge),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.SearchOff,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.surfaceTint,
+                            modifier = Modifier.fillMaxWidth().fillMaxHeight(0.16f)
+                        )
+                        Text(
+                            "No items to display try adjusting the time period.",
+                            style = MaterialTheme.typography.titleMedium,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                useList -> {
+                    if (timePeriodItems.itemCount == 0)
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = paddingValues,
+                    ) {
+                        mangaList(
+                            manga = timePeriodItems,
+                            onFavoriteClick = { sm::toggleFavorite.invoke(it.id) },
+                            onMangaClick = { navigator.push(SharedScreen.MangaView(it.id)) }
+                        )
+                    }
+                }
+                else -> {
+                    LazyVerticalGrid(
+                        modifier = Modifier.fillMaxSize(),
+                        columns = GridCells.Fixed(gridCells),
+                        contentPadding = paddingValues,
+                    ) {
+                        mangaGrid(
+                            manga = timePeriodItems,
+                            cardType = cardType,
+                            onTagClick = { manga, tag ->
+                                manga.tagToId[tag]?.let { id ->
+                                    navigator.replace(
+                                        SharedScreen.MangaFilter(tag, id)
+                                    )
+                                }
+                            },
+                            onBookmarkClick = { sm::toggleFavorite.invoke(it.id) },
+                            onMangaClick = { navigator.push(SharedScreen.MangaView(it.id)) }
+                        )
+                    }
                 }
             }
         }

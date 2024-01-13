@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
@@ -61,6 +63,22 @@ fun LazyGridScope.mangaGrid(
         ) {
             CenterBox(Modifier.fillMaxWidth()) {
                 androidx.compose.material3.CircularProgressIndicator()
+            }
+        }
+    }
+    if (manga.loadState.append is LoadState.Error || manga.loadState.refresh is LoadState.Error) {
+        item(
+            key = "retry-loading",
+            span = { GridItemSpan(maxLineSpan) },
+        ) {
+            CenterBox(
+                Modifier.fillMaxWidth(),
+            ) {
+                Button(
+                    onClick = { manga.retry() },
+                ) {
+                    Text("Retry loading items")
+                }
             }
         }
     }

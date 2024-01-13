@@ -18,8 +18,8 @@ kotlinxCoroutinesGuava = "1.7.3"
 kotlinxSerializationJsonOkio = "1.6.1"
 ktorClientOkhttp = "2.3.3"
 ktorServerRateLimit = "2.3.3"
-lifecycleRuntimeCompose = "2.6.2"
-lifecycleRuntimeKtx = "2.6.2"
+lifecycleRuntimeCompose = "2.7.0"
+lifecycleRuntimeKtx = "2.7.0"
 material = "1.11.0"
 material3WindowSizeClass = "1.1.2"
 materialIconsExtended = "1.5.4"
@@ -35,16 +35,16 @@ pagingRuntime = "3.2.1"
 roomPaging = "2.6.1"
 testJunit = "1.1.5"
 junit= "4.13.2"
-koinVersion="3.5.0"
+koinVersion="3.5.3"
 koinCompose="3.5.0"
 coil = "2.4.0"
 tokenBucket = "1.2"
 tuplesKt = "1.2.0"
 unifile = "7c257e1c64"
-voyager="1.0.0-rc10"
-ktor="2.3.6"
-kotlinserialization="1.6.0"
-kotlinxdatetime="0.4.1"
+voyager="1.0.0"
+ktor="2.3.7"
+kotlinserialization="1.6.1"
+kotlinxdatetime="0.5.0"
 room_version = "2.6.1"
 workGcm = "2.9.0"
 workMultiprocess = "2.9.0"
@@ -52,7 +52,7 @@ workRuntimeKtx = "2.9.0"
 workRuntimeKtxVersion = "2.9.0"
 workRxjava2 = "2.9.0"
 workTesting = "2.9.0"
-agp = "8.1.4"
+agp = "8.2.1"
 uiautomator = "2.2.0"
 benchmark-macro-junit4 = "1.2.2"
 org-jetbrains-kotlin-android = "1.9.20"
@@ -134,10 +134,10 @@ token-bucket = { module = "org.isomorphism:token-bucket", version.ref = "tokenBu
 tuples-kt = { module = "com.github.Zhuinden:tuples-kt", version.ref = "tuplesKt" }
 unifile = { module = "com.github.tachiyomiorg:unifile", version.ref = "unifile" }
 voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyager" }
+voyager-screenModel = { module = "cafe.adriel.voyager:voyager-screenmodel", version.ref = "voyager" }
 voyager-bottomSheetNavigator = { module = "cafe.adriel.voyager:voyager-bottom-sheet-navigator", version.ref = "voyager" }
 voyager-tabNavigator = { module = "cafe.adriel.voyager:voyager-tab-navigator", version.ref = "voyager" }
 voyager-transitions = { module = "cafe.adriel.voyager:voyager-transitions", version.ref = "voyager" }
-voyager-androidx = { module = "cafe.adriel.voyager:voyager-androidx", version.ref = "voyager" }
 voyager-koin = { module = "cafe.adriel.voyager:voyager-koin", version.ref = "voyager" }
 coil = {module ="io.coil-kt:coil", version.ref="coil" }
 coil-compose = {module="io.coil-kt:coil-compose", version.ref="coil" }

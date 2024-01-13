@@ -49,6 +49,7 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:datastore"))
     implementation(project(":sync"))
+    implementation(libs.voyager.screenModel)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -98,7 +99,6 @@ dependencies {
     implementation(libs.kotlin.collections.immutable)
 
     // VOYAGER
-    implementation(libs.voyager.androidx)
     implementation(libs.voyager.koin)
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)

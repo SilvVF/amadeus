@@ -49,6 +49,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
 
+    implementation(libs.voyager.screenModel)
     implementation(project(":core:ui"))
     implementation(project(":core:common"))
     implementation(project(":core:domain"))
@@ -113,7 +114,6 @@ dependencies {
     implementation(libs.kotlin.collections.immutable)
 
     // VOYAGER
-    implementation(libs.voyager.androidx)
     implementation(libs.voyager.koin)
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)

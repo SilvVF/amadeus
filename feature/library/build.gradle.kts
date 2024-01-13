@@ -53,7 +53,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation("me.saket.swipe:swipe:1.2.0")
 
-
+    implementation(libs.voyager.screenModel)
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(libs.androidx.material3.window.size)
@@ -90,7 +90,6 @@ dependencies {
     implementation(libs.kotlin.collections.immutable)
 
     // VOYAGER
-    implementation(libs.voyager.androidx)
     implementation(libs.voyager.koin)
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)

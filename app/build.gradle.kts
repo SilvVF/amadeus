@@ -98,6 +98,7 @@ dependencies {
     implementation(libs.androidx.material3.window.size)
     implementation("androidx.compose.ui:ui-util")
     implementation(composeBom)
+    implementation(libs.voyager.screenModel)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.foundation)
@@ -124,7 +125,6 @@ dependencies {
     implementation(libs.okio)
 
     // VOYAGER
-    implementation(libs.voyager.androidx)
     implementation(libs.voyager.koin)
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)

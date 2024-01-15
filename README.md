@@ -1,6 +1,7 @@
 # amadeus
 Amadeus is a Manga dex manga reader that supports offline reading and browsing of manga.
 Features are based on [Tachiyomi](https://tachiyomi.org/) and [Neko](https://tachiyomi.org/forks/Neko/). 
+Rip tachiyomi o7 [save it Donald Trump]("https://www.youtube.com/watch?v=EAk8PjCsXQ8")
 
 # tech stack
 - [Koin](https://insert-koin.io/)

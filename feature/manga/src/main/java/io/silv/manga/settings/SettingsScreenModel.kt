@@ -1,14 +1,68 @@
 package io.silv.manga.settings
 
+import android.util.Log
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.StateScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
+import io.silv.common.model.AutomaticUpdatePeriod
+import io.silv.datastore.SettingsStore
+import io.silv.datastore.UserSettings
+import io.silv.sync.MangaSyncPeriodicWorkName
+import io.silv.sync.workers.MangaSyncWorker
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class SettingsScreenModel(
-
+    private val workManager: WorkManager,
+    private val settingsStore: SettingsStore
 ): StateScreenModel<SettingsState>(SettingsState()) {
 
+    val settingsPrefs = settingsStore.observe()
+        .onEach { Log.d("Settings", it.toString()) }
+        .stateIn(
+            screenModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            initialValue = UserSettings()
+        )
 
+    fun changeCurrentDialog(key: String?) {
+        mutableState.update {
+            it.copy(
+                dialogkey = key
+            )
+        }
+    }
+
+    fun changeAutomaticUpdatePeriod(automaticUpdatePeriod: AutomaticUpdatePeriod) {
+        screenModelScope.launch {
+            val persisted = settingsStore.update { prev ->
+                Log.d("Settings", "$prev")
+                prev.copy(updateInterval = automaticUpdatePeriod)
+            }
+            if (persisted) {
+                MangaSyncWorker.syncWorkRequest(automaticUpdatePeriod)
+                    ?.let {
+                        workManager.enqueueUniquePeriodicWork(
+                            MangaSyncPeriodicWorkName,
+                            ExistingPeriodicWorkPolicy.UPDATE,
+                            it
+                        )
+                    }
+            }
+        }
+    }
+
+    companion object {
+        const val UPDATE_PERIOD_KEY = "auto_update_period"
+        const val LIBRARY_DISPLAY_KEY = "library_display_key"
+        const val EXPLORE_DISPLAY_KEY = "explore_display_key"
+    }
 }
 
 data class SettingsState(
-    val loading: Boolean = true
+    val dialogkey: String? = null
 )

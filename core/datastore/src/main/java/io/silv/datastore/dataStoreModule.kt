@@ -12,4 +12,6 @@ val dataStoreModule =
         single { MangaDexUserStore(get()) }
 
         singleOf(::DownloadStore)
+
+        singleOf(::SettingsStore)
     }

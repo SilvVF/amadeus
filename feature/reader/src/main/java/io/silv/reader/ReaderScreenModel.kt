@@ -77,9 +77,6 @@ class ReaderScreenModel(
 
                 val chapter = chapterList.first { it.chapter.id == initialChapterId }
 
-                Log.d("Reader", "$chapter")
-                Log.d("Reader", manga.id)
-
                 mutableState.update {
                     it.copy(manga = manga)
                 }

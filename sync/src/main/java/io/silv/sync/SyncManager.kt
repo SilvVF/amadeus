@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 // This name should not be changed otherwise the app may have concurrent sync requests running
 const val MangaSyncWorkName = "MangaSyncWorkName"
+const val MangaSyncPeriodicWorkName = "MangaSyncPeriodicWorkName"
 const val TagSyncWorkName = "TagSyncWorkName"
 const val SeasonalMangaSyncWorkName = "SeasonalMangaSyncWorkName"
 

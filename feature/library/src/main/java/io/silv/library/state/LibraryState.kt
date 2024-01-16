@@ -22,22 +22,27 @@ sealed interface LibraryError {
     data class Generic(val reason: String): LibraryError
 }
 
+data class LibraryState(
+    val updatingLibrary: Boolean = false,
+    val bookmarkedChapters: ImmutableList<Pair<Manga, ImmutableList<Chapter>>> = persistentListOf(),
+    val updates: ImmutableList<Pair<Int, ImmutableList<UiChapterUpdate>>> = persistentListOf(),
+    val libraryMangaState: LibraryMangaState = LibraryMangaState.Loading
+)
 
-sealed interface LibraryState {
+sealed interface LibraryMangaState {
 
-    data object Loading: LibraryState
+    data object Loading: LibraryMangaState
 
     data class Error(
         val error: LibraryError
-    ): LibraryState
+    ): LibraryMangaState
 
     data class Success(
         val mangaWithChapters: ImmutableList<MangaWithChapters> = persistentListOf(),
-        val bookmarkedChapters: ImmutableList<Pair<Manga, ImmutableList<Chapter>>> = persistentListOf(),
-        val updates: ImmutableList<Pair<Int, ImmutableList<UiChapterUpdate>>> = persistentListOf(),
         val filteredTagIds: ImmutableList<String> = persistentListOf(),
         val filteredText: String = "",
-    ): LibraryState {
+        val updatingLibrary: Boolean = false,
+    ): LibraryMangaState {
 
         val filteredMangaWithChapters = mangaWithChapters
             .filter { (manga, _) ->
@@ -78,5 +83,9 @@ data class LibraryActions(
     val onDownload: (mangaId: String, chapterId: String) -> Unit = {_, _ ->},
     val onStartDownloadNow: (download: Download) -> Unit = {},
     val onCancelDownload: (download: Download) -> Unit = {},
-    val onDeleteDownloadedChapter: (mangaId: String, chapterId: String) -> Unit = {_, _ ->}
+    val onDeleteDownloadedChapter: (mangaId: String, chapterId: String) -> Unit = {_, _ ->},
+    val toggleChapterRead: (chapterId: String) -> Unit = {},
+    val toggleChapterBookmark: (chapterId: String) -> Unit = {},
+    val pauseAllDownloads: () -> Unit = {},
+    val updateMangaTrackedAfter: (mangaId: String, chapter: Chapter) -> Unit = { _, _ -> },
 )

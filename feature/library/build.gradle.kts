@@ -48,6 +48,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
+    implementation(project(":sync"))
     implementation(project(":core:navigation"))
 
     implementation(libs.androidx.core.ktx)

@@ -288,7 +288,7 @@ private fun Options(
         converter = Converters.OrientationConverter
     )
 
-    val fullscreen by ReaderPrefs.fullScreen.collectAsState(defaultValue = true)
+    val fullscreen by ReaderPrefs.fullscreen.collectAsState(defaultValue = true)
 
     val showPageNumber by ReaderPrefs.showPageNumber.collectAsState(defaultValue = true)
 

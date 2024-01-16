@@ -9,11 +9,13 @@ import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
+import io.silv.domain.chapter.interactor.ChapterHandler
 import io.silv.domain.chapter.interactor.GetBookmarkedChapters
 import io.silv.domain.chapter.interactor.GetChapter
 import io.silv.domain.chapter.model.toResource
 import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
 import io.silv.domain.manga.interactor.GetManga
+import io.silv.domain.manga.interactor.MangaHandler
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.domain.manga.model.toResource
@@ -21,9 +23,10 @@ import io.silv.domain.update.UpdateWithRelations
 import io.silv.domain.update.UpdatesRepository
 import io.silv.library.state.LibraryError
 import io.silv.library.state.LibraryEvent
+import io.silv.library.state.LibraryMangaState
 import io.silv.library.state.LibraryState
+import io.silv.sync.workers.MangaSyncWorker
 import io.silv.ui.EventStateScreenModel
-import io.silv.ui.composables.ChapterDownloadAction.*
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -53,8 +56,10 @@ class LibraryScreenModel(
     private val getManga: GetManga,
     private val getBookmarkedChapters: GetBookmarkedChapters,
     private val getChapter: GetChapter,
+    private val mangaHandler: MangaHandler,
+    private val chapterHandler: ChapterHandler,
     getLibraryMangaWithChapters: GetLibraryMangaWithChapters,
-): EventStateScreenModel<LibraryEvent, LibraryState>(LibraryState.Loading) {
+): EventStateScreenModel<LibraryEvent, LibraryState>(LibraryState()) {
 
     var mangaSearchText by mutableStateOf("")
     private val filteredTagIds = MutableStateFlow(emptySet<String>())
@@ -99,21 +104,26 @@ class LibraryScreenModel(
         ) { list, query, tagIds, _ ->
 
                 if (list.isEmpty()) {
-                    mutableState.value = LibraryState.Error(LibraryError.NoFavoritedChapters)
+                    mutableState.value = mutableState.value.copy(
+                        libraryMangaState = LibraryMangaState.Error(LibraryError.NoFavoritedChapters)
+                    )
                     return@combine
                 }
 
                 mutableState.update { state ->
-                    (state.success ?: LibraryState.Success()).copy(
-                        filteredTagIds = tagIds.toImmutableList(),
-                        filteredText = query,
-                        mangaWithChapters = list.toImmutableList()
+                    state.copy(
+                        libraryMangaState =
+                        (state.libraryMangaState.success ?: LibraryMangaState.Success()).copy(
+                            filteredTagIds = tagIds.toImmutableList(),
+                            filteredText = query,
+                            mangaWithChapters = list.toImmutableList()
+                        )
                     )
                 }
             }
             .catch {
-                mutableState.value = LibraryState.Error(
-                    LibraryError.Generic(it.message ?: "unknown err")
+                mutableState.value = mutableState.value.copy(
+                    libraryMangaState = LibraryMangaState.Error(LibraryError.NoFavoritedChapters)
                 )
             }
             .launchIn(screenModelScope)
@@ -125,7 +135,7 @@ class LibraryScreenModel(
         ) { x, y ,z -> Triple(x, y, z) }
             .onEach { (updates, downloads, _) ->
                 mutableState.update { state ->
-                    (state.success ?: LibraryState.Success()).copy(
+                   state.copy(
                         updates = updates.map {
 
                             val downloaded = withContext(Dispatchers.IO) {
@@ -157,11 +167,18 @@ class LibraryScreenModel(
                     .toImmutableList()
 
                 mutableState.update { state ->
-                    (state.success ?: LibraryState.Success()).copy(
+                    state.copy(
                         bookmarkedChapters = grouped
                     )
                 }
             }
+            .launchIn(screenModelScope)
+
+        MangaSyncWorker.isRunning.onEach {
+            mutableState.update { state ->
+                state.copy(updatingLibrary = it)
+            }
+        }
             .launchIn(screenModelScope)
     }
 
@@ -191,6 +208,12 @@ class LibraryScreenModel(
         }
     }
 
+    fun refreshLibrary() {
+        screenModelScope.launch {
+            MangaSyncWorker.enqueueOneTimeWork()
+        }
+    }
+
     fun deleteDownloadedChapter(mangaId: String, chapterId: String) {
         screenModelScope.launch {
 
@@ -204,9 +227,37 @@ class LibraryScreenModel(
         }
     }
 
+    fun updateMangaUpdatedTrackedAfter(mangaId: String, chapterId: String) {
+        screenModelScope.launch {
+
+            val manga = getManga.await(mangaId) ?: return@launch
+            val chapter = getChapter.await(chapterId) ?: return@launch
+
+            mangaHandler.updateTrackedAfterTime(manga, chapter.updatedAt)
+        }
+    }
+
+    fun pauseAllDownloads() {
+        screenModelScope.launch {
+            downloadManager.pauseDownloads()
+        }
+    }
+
     fun startDownloadNow(download: Download) {
         screenModelScope.launch {
             downloadManager.startDownloadNow(download.chapter.id)
+        }
+    }
+
+    fun toggleChapterRead(chapterId: String) {
+        screenModelScope.launch {
+            chapterHandler.toggleReadOrUnread(chapterId)
+        }
+    }
+
+    fun toggleChapterBookmark(chapterId: String) {
+        screenModelScope.launch {
+            chapterHandler.toggleChapterBookmarked(chapterId)
         }
     }
 

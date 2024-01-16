@@ -10,5 +10,9 @@ interface HistoryRepository {
 
     fun getHistory(query: String): Flow<List<HistoryWithRelations>>
 
+    suspend fun delete(id: Long)
+
+    suspend fun deleteAllForManga(id: String)
+
     suspend fun clearHistory()
 }

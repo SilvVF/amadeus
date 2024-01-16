@@ -14,7 +14,7 @@ object ReaderPrefs {
 
     val backgroundColor = intPreferencesKey("io.silv.reader.background_color")
 
-    val fullScreen = booleanPreferencesKey("io.silv.reader.fullscreen")
+    val fullscreen = booleanPreferencesKey("io.silv.reader.fullscreen")
 
     val scaleType = intPreferencesKey("io.silv.reader.scale_type")
 }

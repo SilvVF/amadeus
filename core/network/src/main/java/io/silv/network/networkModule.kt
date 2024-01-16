@@ -12,6 +12,7 @@ import io.silv.network.sources.ImageSourceFactory
 import io.silv.network.util.dohCloudflare
 import io.silv.network.util.rateLimit
 import kotlinx.serialization.json.Json
+import okhttp3.Cache
 import okhttp3.OkHttpClient
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
@@ -86,7 +87,25 @@ val networkModule =
         factoryOf(::ImageSourceFactory)
 
         single {
-            HttpSource(get(), get())
+            HttpSource(
+                get(),
+                HttpClient(OkHttp) {
+                    engine {
+                        preconfigured = OkHttpClient.Builder()
+                            .callTimeout(1, TimeUnit.MINUTES)
+                            .cache(
+                                Cache(
+                                    File(get<Context>().cacheDir, "chapter_url_cache"),
+                                    2L * 1024 * 1024
+                                )
+                            )
+                            .apply {
+                                dohCloudflare()
+                            }
+                            .build()
+                    }
+                }
+            )
         }
 
         single {

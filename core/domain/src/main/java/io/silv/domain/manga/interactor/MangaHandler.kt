@@ -2,6 +2,7 @@ package io.silv.domain.manga.interactor
 
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.repository.MangaRepository
+import kotlinx.datetime.LocalDateTime
 
 class MangaHandler(
     private val mangaRepository: MangaRepository,
@@ -18,4 +19,12 @@ class MangaHandler(
 
             newManga
         }
+
+    suspend fun updateTrackedAfterTime(manga: Manga, time: LocalDateTime) = runCatching {
+        mangaRepository.updateManga(
+            manga.copy(
+                savedAtLocal = time
+            )
+        )
+    }
 }

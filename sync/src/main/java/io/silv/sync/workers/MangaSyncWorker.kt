@@ -10,18 +10,24 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.AutomaticUpdatePeriod
 import io.silv.data.updates.MangaUpdateJob
 import io.silv.data.workers.createForegroundInfo
+import io.silv.sync.MangaSyncPeriodicWorkName
 import io.silv.sync.MangaSyncWorkName
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 import org.koin.core.component.inject
+import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
 
-internal class MangaSyncWorker(
+class MangaSyncWorker(
     appContext: Context,
     workerParams: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParams), KoinComponent {
@@ -53,27 +59,52 @@ internal class MangaSyncWorker(
                     .setRequiredNetworkType(NetworkType.CONNECTED)
                     .build()
 
-        fun oneTimeWorkRequest() {
-            OneTimeWorkRequestBuilder<MangaSyncWorker>()
-                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-                .setBackoffCriteria(
-                    BackoffPolicy.EXPONENTIAL,
-                    15.seconds.toJavaDuration(),
-                )
-                .setConstraints(SyncConstraints)
-                .build()
+        val isRunning: Flow<Boolean> = run {
+            val koin = object : KoinComponent {}
+            val workManager = koin.get<WorkManager>()
+            workManager
+                .getWorkInfosByTagFlow(MangaSyncWorkName)
+                .map {
+                    it.toList()
+                        .filterNotNull()
+                        .any { it.state == WorkInfo.State.RUNNING }
+                }
+        }
+
+        fun enqueueOneTimeWork() {
+
+            val koin = object : KoinComponent {}
+            val workManager = koin.get<WorkManager>()
+
+            workManager.enqueue(
+                OneTimeWorkRequestBuilder<MangaSyncWorker>()
+                    .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                    .setBackoffCriteria(
+                        BackoffPolicy.EXPONENTIAL,
+                        15.seconds.inWholeSeconds,
+                        TimeUnit.SECONDS
+                    )
+                    .setConstraints(SyncConstraints)
+                    .addTag(MangaSyncWorkName)
+                    .build()
+            )
         }
 
         fun syncWorkRequest(updatePeriod: AutomaticUpdatePeriod): PeriodicWorkRequest? {
             return when(updatePeriod){
                 AutomaticUpdatePeriod.Off -> null
                 else -> {
-                    PeriodicWorkRequestBuilder<MangaSyncWorker>(updatePeriod.duration.toJavaDuration())
+                    PeriodicWorkRequestBuilder<MangaSyncWorker>(
+                        updatePeriod.duration.inWholeSeconds,
+                        TimeUnit.SECONDS
+                    )
                         .setBackoffCriteria(
                             BackoffPolicy.EXPONENTIAL,
-                            15.seconds.toJavaDuration()
+                            15.seconds.inWholeSeconds,
+                            TimeUnit.SECONDS
                         )
                         .setConstraints(SyncConstraints)
+                        .addTag(MangaSyncPeriodicWorkName)
                         .build()
                 }
             }

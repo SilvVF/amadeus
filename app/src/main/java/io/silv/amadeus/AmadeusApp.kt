@@ -80,7 +80,7 @@ class AmadeusApp : Application(), ImageLoaderFactory {
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun newImageLoader(): ImageLoader {
         return ImageLoader.Builder(this).apply {
-            val callFactoryInit = inject<OkHttpClient>()
+            val callFactoryInit = lazy { OkHttpClient.Builder().build() }
             val diskCacheInit = { CoilDiskCache.get(this@AmadeusApp) }
 
             components {

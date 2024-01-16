@@ -4,8 +4,9 @@ import io.silv.explore.ExploreScreenModel
 import io.silv.explore.FilterScreenViewModel
 import io.silv.library.LibraryScreenModel
 import io.silv.manga.download.DownloadQueueScreenModel
-import io.silv.manga.history.RecentsScreenModel
 import io.silv.manga.filter.MangaFilterScreenModel
+import io.silv.manga.history.RecentsScreenModel
+import io.silv.manga.settings.SettingsScreenModel
 import io.silv.manga.view.MangaViewScreenModel
 import io.silv.reader.ReaderScreenModel
 import io.silv.sync.SeasonalMangaSyncWorkName
@@ -30,6 +31,8 @@ val screenModule =
         factoryOf(::MangaFilterScreenModel)
 
         viewModelOf(::FilterScreenViewModel)
+
+        factoryOf(::SettingsScreenModel)
 
         factory {
             ExploreScreenModel(

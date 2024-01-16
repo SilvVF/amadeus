@@ -5,7 +5,6 @@ import com.skydoves.sandwich.getOrThrow
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.onDownload
-import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -23,6 +22,7 @@ import kotlin.time.Duration.Companion.minutes
 
 @Serializable
 private data class AtHomeDto(
+    val result: String? = null,
     val baseUrl: String,
     val chapter: AtHomeChapterDto,
 )
@@ -93,7 +93,7 @@ class HttpSource(
                 tokenRequestUrl,
                 client,
                 headers,
-                cacheControl
+                CacheControl.NO_CACHE
             )
         }
 
@@ -138,8 +138,7 @@ class HttpSource(
                         set(name, value)
                     }
                 }
-                onUpload { bytesSentTotal, contentLength -> Log.d("Upload", "$bytesSentTotal, $contentLength")  }
-                onDownload { bytesSentTotal, contentLength ->   Log.d("download", "$bytesSentTotal, $contentLength")
+                onDownload { bytesSentTotal, contentLength ->
                     runCatching {
                         page.update(bytesSentTotal, contentLength, bytesSentTotal >= contentLength)
                     }
@@ -152,7 +151,6 @@ class HttpSource(
         val host = response.baseUrl
         val atHomeRequestUrl = "https://api.mangadex.org/at-home/server/${chapter.id}"
 
-        // Have to add the time, and url to the page because pages timeout within 30 minutes now.
         val now = Date().time
 
         return response.chapter.data.mapIndexed { index, data ->

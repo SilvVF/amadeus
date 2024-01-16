@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,11 +44,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.HeartBroken
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.UpdateDisabled
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.More
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -105,7 +108,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import coil.compose.AsyncImage
-import io.silv.common.emptyImmutableList
 import io.silv.common.model.Download
 import io.silv.common.model.MangaCover
 import io.silv.common.time.localDateTimeNow
@@ -117,6 +119,7 @@ import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.domain.update.UpdateWithRelations
 import io.silv.library.state.LibraryActions
 import io.silv.library.state.LibraryError
+import io.silv.library.state.LibraryMangaState
 import io.silv.library.state.LibraryState
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
@@ -139,7 +142,6 @@ import io.silv.ui.layout.TopAppBarWithBottomContent
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.AmadeusTheme
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -204,7 +206,7 @@ object LibraryTab : ReselectTab {
                 searchChanged = screenModel::onSearchChanged,
                 filterByTag = screenModel::onTagFiltered,
                 clearTagFilter = {
-                    state.success?.filteredTagIds?.fastForEach(screenModel::onTagFiltered)
+                    state.libraryMangaState.success?.filteredTagIds?.fastForEach(screenModel::onTagFiltered)
                 },
                 searchOnMangaDex = {
                     appState.searchGlobal(it)
@@ -215,7 +217,12 @@ object LibraryTab : ReselectTab {
                 onDownload = screenModel::startDownload,
                 onCancelDownload = screenModel::cancelDownload,
                 onStartDownloadNow = screenModel::startDownloadNow,
-                onDeleteDownloadedChapter = screenModel::deleteDownloadedChapter
+                onDeleteDownloadedChapter = screenModel::deleteDownloadedChapter,
+                refreshUpdates = screenModel::refreshLibrary,
+                toggleChapterBookmark = screenModel::toggleChapterBookmark,
+                toggleChapterRead = screenModel::toggleChapterRead,
+                markUpdatesAsSeen = screenModel::updateMangaUpdatedTrackedAfter,
+                pauseAllDownloads = screenModel::pauseAllDownloads
             )
         )
     }
@@ -385,18 +392,19 @@ fun LibraryScreenContent(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
-            when (val state = stateProvider()) {
-                LibraryState.Loading -> {}
-                is LibraryState.Error -> {
+            when (val mangaState = stateProvider().libraryMangaState) {
+                LibraryMangaState.Loading -> {}
+                is LibraryMangaState.Error -> {
                     ErrorScreenContent(
-                        state = state,
+                        state = mangaState,
                         paddingValues = paddingValues,
                         navigateToExploreTab = actions.navigateToExploreTab
                     )
                 }
-                is LibraryState.Success -> {
+                is LibraryMangaState.Success -> {
                     SuccessScreenContent(
-                        state = state,
+                        state = stateProvider(),
+                        mangaState = mangaState,
                         paddingValues,
                         currentTab,
                         actions
@@ -462,7 +470,7 @@ fun LibraryScreenContent(
 
 @Composable
 fun ErrorScreenContent(
-    state: LibraryState.Error,
+    state: LibraryMangaState.Error,
     navigateToExploreTab: () -> Unit,
     paddingValues: PaddingValues
 ) {
@@ -514,7 +522,7 @@ fun ErrorScreenContent(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryPeekContent(
     modifier: Modifier = Modifier,
@@ -529,7 +537,7 @@ fun LibraryPeekContent(
     LazyRow(
         modifier = modifier
     ) {
-        state.success?.libraryTags?.let { tags ->
+        state.libraryMangaState.success?.libraryTags?.let { tags ->
             if(tags.fastAny { it.selected } && !tags.fastAll { it.selected }) {
                 item(
                     key = "clear"
@@ -571,7 +579,8 @@ fun LibraryPeekContent(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SuccessScreenContent(
-    state: LibraryState.Success,
+    state: LibraryState,
+    mangaState: LibraryMangaState.Success,
     paddingValues: PaddingValues,
     currentTab: LibTab,
     actions: LibraryActions,
@@ -580,9 +589,9 @@ fun SuccessScreenContent(
 
     val showGlobalSearch by remember(state) {
         derivedStateOf {
-            state.filteredTagIds.isEmpty() &&
-            state.filteredMangaWithChapters.isEmpty() &&
-            state.filteredText.isNotBlank()
+            mangaState.filteredTagIds.isEmpty() &&
+                    mangaState.filteredMangaWithChapters.isEmpty() &&
+                    mangaState.filteredText.isNotBlank()
         }
     }
 
@@ -619,7 +628,7 @@ fun SuccessScreenContent(
                 animatePlacement = animatePlacement,
                 paddingValues = paddingValues,
                 showGlobalSearch = showGlobalSearch,
-                state = state,
+                state = mangaState,
                 actions = actions
             )
             LibTab.Chapters -> BookmarkedChapters(
@@ -639,7 +648,7 @@ fun SuccessScreenContent(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UpdatesList(
-    state: LibraryState.Success,
+    state: LibraryState,
     actions: LibraryActions,
     paddingValues: PaddingValues,
 ) {
@@ -647,67 +656,106 @@ fun UpdatesList(
     val navigator = LocalNavigator.currentOrThrow
 
     PullRefresh(
-        refreshing = false,
-        onRefresh = { actions.refreshUpdates() }
+        refreshing = state.updatingLibrary,
+        onRefresh = { actions.refreshUpdates() },
+        paddingValues = paddingValues
     ) {
-        LazyColumn(
-            contentPadding = paddingValues
-        ) {
-            state.updates.fastForEach { (epochDay, updatesList) ->
-                item(epochDay) {
-                    val text = remember {
-                        when(val dif = localDateTimeNow().date.toEpochDays() - epochDay) {
-                            0 -> "Today"
-                            1 -> "Yesterday"
-                            else -> "$dif days ago"
-                        }
-                    }
-                    Text(
-                        text,
-                        style = MaterialTheme.typography.labelLarge
-                            .copy(fontWeight = FontWeight.SemiBold),
-                        modifier = Modifier
-                            .animateItemPlacement()
-                            .padding(space.med)
-                    )
-                }
-                items(updatesList, { it.update.chapterId }) { (update, downloaded, download) ->
-                    val markSeen = SwipeAction(
-                        onSwipe = { actions.markUpdatesAsSeen(update.mangaId, update.chapterId) },
-                        icon = rememberVectorPainter(image = Icons.Outlined.VisibilityOff),
-                        background = MaterialTheme.colorScheme.surfaceTint
-                    )
-
-                    SwipeableActionsBox(
-                        endActions = listOf(markSeen)
-                    ) {
-                        MangaUpdateItem(
-                            update = update,
-                            download = download,
-                            downloaded = downloaded,
-                            onCoverClick = {
-                                navigator.push(
-                                    SharedScreen.MangaView(update.mangaId)
-                                )
-                            },
-                            onClick = {
-                                navigator.push(
-                                    SharedScreen.Reader(update.mangaId, update.chapterId)
-                                )
-                            },
-                            onDownloadAction = { action ->
-                                when(action) {
-                                    ChapterDownloadAction.START ->
-                                        actions.onDownload(update.mangaId, update.chapterId)
-                                    ChapterDownloadAction.START_NOW ->
-                                        download?.let { actions.onStartDownloadNow(it) }
-                                    ChapterDownloadAction.CANCEL ->
-                                        download?.let { actions.onCancelDownload(it) }
-                                    ChapterDownloadAction.DELETE ->
-                                        actions.onDeleteDownloadedChapter(update.mangaId, update.chapterId)
-                                }
+        if (state.bookmarkedChapters.isEmpty()) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.UpdateDisabled,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.surfaceTint,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                )
+                Text(
+                    "No updates",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+        } else {
+            LazyColumn(
+                contentPadding = paddingValues
+            ) {
+                state.updates.fastForEach { (epochDay, updatesList) ->
+                    item(key = epochDay) {
+                        val text = remember {
+                            when (val dif = localDateTimeNow().date.toEpochDays() - epochDay) {
+                                0 -> "Today"
+                                1 -> "Yesterday"
+                                else -> "$dif days ago"
                             }
+                        }
+                        Text(
+                            text,
+                            style = MaterialTheme.typography.labelLarge
+                                .copy(fontWeight = FontWeight.SemiBold),
+                            modifier = Modifier
+                                .animateItemPlacement()
+                                .padding(space.med)
                         )
+                    }
+                    items(
+                        updatesList,
+                        key = { it.update.chapterId }) { (update, downloaded, download) ->
+                        val markSeen = SwipeAction(
+                            onSwipe = {
+                                actions.markUpdatesAsSeen(
+                                    update.mangaId,
+                                    update.chapterId
+                                )
+                            },
+                            icon = rememberVectorPainter(image = Icons.Outlined.VisibilityOff),
+                            background = MaterialTheme.colorScheme.surfaceTint
+                        )
+
+                        SwipeableActionsBox(
+                            endActions = listOf(markSeen),
+                            modifier = Modifier.animateItemPlacement()
+                        ) {
+                            MangaUpdateItem(
+                                update = update,
+                                download = download,
+                                downloaded = downloaded,
+                                onCoverClick = {
+                                    navigator.push(
+                                        SharedScreen.MangaView(update.mangaId)
+                                    )
+                                },
+                                onClick = {
+                                    navigator.push(
+                                        SharedScreen.Reader(update.mangaId, update.chapterId)
+                                    )
+                                },
+                                onDownloadAction = { action ->
+                                    when (action) {
+                                        ChapterDownloadAction.START ->
+                                            actions.onDownload(update.mangaId, update.chapterId)
+
+                                        ChapterDownloadAction.START_NOW ->
+                                            download?.let { actions.onStartDownloadNow(it) }
+
+                                        ChapterDownloadAction.CANCEL ->
+                                            download?.let { actions.onCancelDownload(it) }
+
+                                        ChapterDownloadAction.DELETE ->
+                                            actions.onDeleteDownloadedChapter(
+                                                update.mangaId,
+                                                update.chapterId
+                                            )
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -799,86 +847,110 @@ fun LazyItemScope.MangaUpdateItem(
 @Composable
 fun BookmarkedChapters(
     paddingValues: PaddingValues,
-    state: LibraryState.Success,
+    state: LibraryState,
     actions: LibraryActions,
 ) {
     val navigator = LocalNavigator.currentOrThrow
-    ScrollbarLazyColumn(
-        contentPadding = paddingValues
-    ) {
-        state.bookmarkedChapters.fastForEach { (manga, chapters)  ->
-            item(key = "${manga.id}-header") {
-                Text(
-                    text = manga.titleEnglish,
-                    style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            items(chapters, key = { it.id }) { chapter ->
-                val space = LocalSpacing.current
 
-                val archive =
-                    SwipeAction(
-                        icon =
-                        rememberVectorPainter(
-                            if (chapter.bookmarked) {
-                                Icons.TwoTone.Archive
-                            } else {
-                                Icons.TwoTone.Unarchive
-                            },
-                        ),
-                        background = MaterialTheme.colorScheme.primary,
-                        isUndo = chapter.bookmarked,
-                        onSwipe = {
-
-                        },
+    if (state.bookmarkedChapters.isEmpty()) {
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Filled.BookmarkBorder,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.surfaceTint,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.2f)
+            )
+            Text(
+                "No chapters bookmarked",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+    } else {
+        ScrollbarLazyColumn(
+            contentPadding = paddingValues
+        ) {
+            state.bookmarkedChapters.fastForEach { (manga, chapters) ->
+                item(key = "${manga.id}-header") {
+                    Text(
+                        text = manga.titleEnglish,
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
+                }
+                items(chapters, key = { it.id }) { chapter ->
+                    val space = LocalSpacing.current
 
-                val read =
-                    SwipeAction(
-                        icon =
-                        rememberVectorPainter(
-                            if (chapter.read) {
-                                Icons.Filled.VisibilityOff
-                            } else {
-                                Icons.Filled.VisibilityOff
-                            },
-                        ),
-                        background = MaterialTheme.colorScheme.primary,
-                        isUndo = chapter.read,
-                        onSwipe = {
-
-                        },
-                    )
-
-                SwipeableActionsBox(
-                    startActions = listOf(archive),
-                    endActions = listOf(read),
-                ) {
-                    ChapterListItem(
-                        modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                navigator.push(
-                                    SharedScreen.Reader(manga.id, chapter.id)
-                                )
-                            }
-                            .padding(
-                                vertical = space.med,
-                                horizontal = space.large,
+                    val archive =
+                        SwipeAction(
+                            icon =
+                            rememberVectorPainter(
+                                if (chapter.bookmarked) {
+                                    Icons.TwoTone.Archive
+                                } else {
+                                    Icons.TwoTone.Unarchive
+                                },
                             ),
-                        chapter = chapter,
-                        download = null,
-                        showFullTitle = true,
-                        onDownloadClicked = {  },
-                        onDeleteClicked = {
+                            background = MaterialTheme.colorScheme.primary,
+                            isUndo = chapter.bookmarked,
+                            onSwipe = {
+                                actions.toggleChapterBookmark(chapter.id)
+                            },
+                        )
 
-                        },
-                        onCancelClicked = { },
-                        onPauseClicked = {  }
-                    )
+                    val read =
+                        SwipeAction(
+                            icon =
+                            rememberVectorPainter(
+                                if (chapter.read) {
+                                    Icons.Filled.VisibilityOff
+                                } else {
+                                    Icons.Filled.VisibilityOff
+                                },
+                            ),
+                            background = MaterialTheme.colorScheme.primary,
+                            isUndo = chapter.read,
+                            onSwipe = {
+                                actions.toggleChapterRead(chapter.id)
+                            },
+                        )
+
+                    SwipeableActionsBox(
+                        startActions = listOf(archive),
+                        endActions = listOf(read),
+                        modifier = Modifier.animateItemPlacement()
+                    ) {
+                        ChapterListItem(
+                            modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    navigator.push(
+                                        SharedScreen.Reader(manga.id, chapter.id)
+                                    )
+                                }
+                                .padding(
+                                    vertical = space.med,
+                                    horizontal = space.large,
+                                ),
+                            chapter = chapter,
+                            download = null,
+                            showFullTitle = true,
+                            onDownloadClicked = { actions.onDownload(chapter.mangaId, chapter.id) },
+                            onDeleteClicked = {
+                                actions.onDeleteDownloadedChapter(chapter.mangaId, chapter.id)
+                            },
+                            onCancelClicked = {
+                                actions.onCancelDownload(it)
+                            },
+                            onPauseClicked = {
+                                actions.pauseAllDownloads()
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -894,7 +966,7 @@ fun LibraryManga(
     animatePlacement: Boolean,
     paddingValues: PaddingValues,
     showGlobalSearch: Boolean,
-    state: LibraryState.Success,
+    state: LibraryMangaState.Success,
     actions: LibraryActions,
 ) {
     val space = LocalSpacing.current
@@ -996,7 +1068,9 @@ fun LibraryScreenErrorNoFavoritedContentPreview() {
     }
 
     val state = remember {
-        LibraryState.Error(LibraryError.NoFavoritedChapters)
+        LibraryState().copy(
+            libraryMangaState = LibraryMangaState.Error(LibraryError.NoFavoritedChapters)
+        )
     }
 
     AmadeusTheme {
@@ -1030,7 +1104,9 @@ fun LibraryScreeGenericErrorPreview() {
     }
 
     val state = remember {
-        LibraryState.Error(LibraryError.NoFavoritedChapters)
+        LibraryState(
+            libraryMangaState = LibraryMangaState.Error(LibraryError.Generic("dkjfakljdf"))
+        )
     }
 
     AmadeusTheme {
@@ -1060,23 +1136,25 @@ fun LibraryScreenContentSuccessPreview() {
 
     var state by remember {
         mutableStateOf(
-            LibraryState.Success(
-                mangaWithChapters = buildList {
-                    repeat(5) {
-                        val manga = Manga.stub()
-                        add(
-                            MangaWithChapters(
-                                manga = manga,
-                                chapters = buildList {
-                                    repeat(30) {
-                                        add(Chapter.stub(manga.id, 1, it.toDouble()))
+            LibraryState(
+                libraryMangaState = LibraryMangaState.Success(
+                    mangaWithChapters = buildList {
+                        repeat(5) {
+                            val manga = Manga.stub()
+                            add(
+                                MangaWithChapters(
+                                    manga = manga,
+                                    chapters = buildList {
+                                        repeat(30) {
+                                            add(Chapter.stub(manga.id, 1, it.toDouble()))
+                                        }
                                     }
-                                }
-                                    .toImmutableList()
+                                        .toImmutableList()
+                                )
                             )
-                        )
-                    }
-                }.toImmutableList()
+                        }
+                    }.toImmutableList()
+                )
             )
         )
     }
@@ -1084,26 +1162,16 @@ fun LibraryScreenContentSuccessPreview() {
         Box(modifier = Modifier.fillMaxSize()) {
             LibraryScreenContent(
                 stateProvider = { state },
-                searchTextProvider = { state.filteredText },
+                searchTextProvider = { state.libraryMangaState.success?.filteredText ?: "" },
                 actions = LibraryActions(
                     filterByTag = {
-                        state = state.copy(
-                            filteredTagIds = (if (state.filteredTagIds.contains(it))
-                                state.filteredTagIds - it
-                            else
-                                state.filteredTagIds + it
-                        ).toImmutableList())
+
                     },
                     clearTagFilter = {
-                        state = state.copy(
-                            filteredTagIds = persistentListOf()
-                        )
+
                     },
-                    searchChanged = { t ->
-                        state = state.copy(
-                            filteredText = t,
-                            mangaWithChapters = emptyImmutableList()
-                        )
+                    searchChanged = { _ ->
+
                     }
                 )
             )

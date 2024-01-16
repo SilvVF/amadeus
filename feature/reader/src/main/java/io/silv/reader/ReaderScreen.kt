@@ -3,19 +3,27 @@
 package io.silv.reader
 
 import android.widget.Toast
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -31,11 +39,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,6 +67,7 @@ import io.silv.reader.loader.ReaderChapter
 import io.silv.ui.CenterBox
 import io.silv.ui.Converters
 import io.silv.ui.openOnWeb
+import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -239,8 +251,7 @@ fun HorizontalReader(
                         }
                 ) { i ->
 
-                    val page = readerChapter.pages?.getOrNull(i)
-                        ?: return@HorizontalPager
+                    val page = readerChapter.pages?.getOrNull(i) ?: return@HorizontalPager
 
                     val status by page.statusFlow.collectAsState()
 
@@ -256,7 +267,6 @@ fun HorizontalReader(
                                         page.stream?.let {
                                             ByteBuffer.wrap(it().readBytes())
                                         }
-                                            ?: page.imageUrl
                                     )
                                     .build(),
                                 modifier = Modifier.fillMaxSize(),
@@ -274,11 +284,52 @@ fun HorizontalReader(
                             }
                         }
                         Page.State.LOAD_PAGE, Page.State.DOWNLOAD_IMAGE -> {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                CircularProgressIndicator(
-                                    progress = page.progress.toFloat(),
-                                    modifier = Modifier.align(Alignment.Center)
+                            val surfaceColor = MaterialTheme.colorScheme.surface
+                            val primaryColor = MaterialTheme.colorScheme.primary
+                            val space = LocalSpacing.current
+
+                            val progress by page.progressFlow.collectAsStateWithLifecycle(0)
+
+                            Column(
+                                Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+
+                            ) {
+                                Column(
+                                    Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(page.chapter.chapter.title, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                                    Spacer(Modifier.height(space.xs))
+                                    Text(
+                                        remember(page.chapter.chapter.title) { "Vol. ${page.chapter.chapter.volume} Ch. ${page.chapter.chapter.chapter} - ${page.chapter.chapter.title}" },
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
+
+                                val widthPct by animateFloatAsState(
+                                    targetValue = progress.toFloat(),
+                                    label = "progress-anim"
                                 )
+
+                                Canvas(
+                                    modifier = Modifier
+                                        .padding(space.med)
+                                        .height(22.dp)
+                                        .fillMaxWidth()
+                                        .clip(CircleShape)
+                                ) {
+                                    drawRoundRect(
+                                        color = surfaceColor,
+                                        size = Size(this.size.width, this.size.height)
+                                    )
+                                    drawRoundRect(
+                                        color = primaryColor,
+                                        size = Size(this.size.width * (widthPct / 100), this.size.height)
+                                    )
+                                }
                             }
                         }
                         Page.State.ERROR -> {

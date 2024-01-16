@@ -57,6 +57,12 @@ class HistoryRepositoryImpl(
                 }
             }
 
+    override suspend fun delete(id: Long) =
+        withContext(dispatchers.io) { historyDao.delete(id) }
+
+    override suspend fun deleteAllForManga(id: String) =
+        withContext(dispatchers.io) { historyDao.deleteByMangaId(id) }
+
     override suspend fun clearHistory() =
         withContext(dispatchers.io) { historyDao.clear() }
 }

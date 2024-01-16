@@ -34,7 +34,7 @@ import io.silv.database.entity.manga.MangaToListRelation
         HistoryEntity::class,
     ],
     views = [HistoryView::class, UpdatesView::class],
-    version = 1,
+    version = 2,
 )
 @TypeConverters(Converters::class)
 abstract class AmadeusDatabase : RoomDatabase() {

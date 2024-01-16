@@ -18,6 +18,8 @@ object Converters {
 
     val OrientationConverter = PrefsConverter.create<ReaderOrientation, String>(
         convertTo = { it.toString() },
-        convertFrom = { ReaderOrientation.valueOf(it) }
+        convertFrom = {
+            ReaderOrientation.valueOf(it)
+        }
     )
 }

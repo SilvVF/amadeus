@@ -1,11 +1,13 @@
 package io.silv.manga.history
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.HistoryToggleOff
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,12 +41,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
 import io.silv.common.model.MangaCover
 import io.silv.common.time.localDateTimeNow
@@ -73,7 +79,9 @@ class RecentsScreen: Screen {
             searchText = screenModel.searchQuery,
             actions = RecentsActions(
                 searchChanged = screenModel::searchChanged,
-                clearHistory = screenModel::clearHistory
+                clearHistory = screenModel::clearHistory,
+                deleteHistory = screenModel::deleteItemFromHistory,
+                deleteHistoryForManga = screenModel::deleteHistoryByMangaId
             )
         )
     }
@@ -89,6 +97,13 @@ private fun RecentsScreenContent(
     preview: Boolean = false
 ) {
     val space = LocalSpacing.current
+    val topLevelNavigator = LocalTopLevelNavigator.current
+    val localNavigator = LocalNavigator.currentOrThrow
+
+    BackHandler {
+        (topLevelNavigator ?: localNavigator).pop()
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -107,7 +122,7 @@ private fun RecentsScreenContent(
                         containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                     ) {
                         IconButton(
-                            onClick = { /*TODO*/ },
+                            onClick = { actions.clearHistory() },
                             modifier = Modifier.tooltipAnchor()
                         ) {
                             Icon(
@@ -120,61 +135,73 @@ private fun RecentsScreenContent(
             )
         }
     ) { paddingValues ->
-
-        val topLevelNavigator = LocalTopLevelNavigator.current
-
-        ScrollbarLazyColumn(
-            contentPadding = paddingValues
-        ) {
-            state.groupedByEpochDays.fastForEach { (epochDay, historyItems) ->
-                stickyHeader {
-                    val text = remember {
-                        when(val dif = localDateTimeNow().date.toEpochDays() - epochDay) {
-                            0 -> "Today"
-                            1 -> "Yesterday"
-                            else -> "$dif days ago"
-                        }
-                    }
-                    Text(
-                        text,
-                        style = MaterialTheme.typography.labelLarge
-                            .copy(fontWeight = FontWeight.SemiBold),
-                        modifier = Modifier
-                            .animateItemPlacement()
-                            .padding(space.med)
-                    )
-                }
-                items(
-                    items = historyItems,
-                    key = { it.id }
-                ) { history ->
-
-
-                    val deleteAction = SwipeAction(
-                        onSwipe = { actions.deleteHistoryForManga(history.mangaId) },
-                        icon = rememberVectorPainter(image = Icons.Outlined.DeleteSweep),
-                        background = MaterialTheme.colorScheme.surfaceTint
-                    )
-
-                    SwipeableActionsBox(
-                        endActions = listOf(deleteAction)
-                    ) {
-                        MangaHistoryItem(
-                            history = history,
-                            onCoverClick = {
-                                topLevelNavigator.push(
-                                    SharedScreen.MangaView(history.mangaId)
-                                )
-                            },
-                            onClick = {
-                                topLevelNavigator.push(
-                                    SharedScreen.Reader(history.mangaId, history.chapterId)
-                                )
-                            },
-                            onDeleteClick = {
-                                actions.deleteHistory(history.id)
+        if (state.groupedByEpochDays.isEmpty()) {
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Filled.HistoryToggleOff,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.surfaceTint,
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight(0.2f)
+                )
+                Text(
+                    "No reading history",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+        } else {
+            ScrollbarLazyColumn(
+                contentPadding = paddingValues
+            ) {
+                state.groupedByEpochDays.fastForEach { (epochDay, historyItems) ->
+                    stickyHeader {
+                        val text = remember {
+                            when (val dif = localDateTimeNow().date.toEpochDays() - epochDay) {
+                                0 -> "Today"
+                                1 -> "Yesterday"
+                                else -> "$dif days ago"
                             }
+                        }
+                        Text(
+                            text,
+                            style = MaterialTheme.typography.labelLarge
+                                .copy(fontWeight = FontWeight.SemiBold),
+                            modifier = Modifier
+                                .animateItemPlacement()
+                                .padding(space.med)
                         )
+                    }
+                    items(
+                        items = historyItems,
+                        key = { it.id }
+                    ) { history ->
+
+                        val deleteAction = SwipeAction(
+                            onSwipe = { actions.deleteHistoryForManga(history.mangaId) },
+                            icon = rememberVectorPainter(image = Icons.Outlined.DeleteSweep),
+                            background = MaterialTheme.colorScheme.surfaceTint
+                        )
+
+                        SwipeableActionsBox(
+                            endActions = listOf(deleteAction)
+                        ) {
+                            MangaHistoryItem(
+                                history = history,
+                                onCoverClick = {
+                                    (topLevelNavigator ?: localNavigator).push(
+                                        SharedScreen.MangaView(history.mangaId)
+                                    )
+                                },
+                                onClick = {
+                                    (topLevelNavigator ?: localNavigator).push(
+                                        SharedScreen.Reader(history.mangaId, history.chapterId)
+                                    )
+                                },
+                                onDeleteClick = {
+                                    actions.deleteHistory(history.id)
+                                }
+                            )
+                        }
                     }
                 }
             }

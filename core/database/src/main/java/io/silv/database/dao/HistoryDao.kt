@@ -53,6 +53,15 @@ abstract class HistoryDao {
     @Delete
     abstract suspend fun delete(historyEntity: HistoryEntity)
 
+    @Query("DELETE FROM history WHERE id = :id")
+    abstract suspend fun delete(id: Long)
+
+    @Query("""
+        DELETE FROM history WHERE history.chapter_id in (
+            SELECT c.id FROM chapters AS C WHERE C.manga_id = :mangaId
+        )
+    """)
+    abstract suspend fun deleteByMangaId(mangaId: String)
 
     @Query("""
         SELECT *

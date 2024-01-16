@@ -185,7 +185,6 @@ internal class HttpPageLoader(
                     headers = listOf(HttpHeaders.CacheControl to CacheControl.NO_CACHE)
                 )
 
-
                 chapterCache.putImageToCache(imageUrl, imageResponse)
             }
             page.stream = { chapterCache.getImageFile(imageUrl).inputStream() }

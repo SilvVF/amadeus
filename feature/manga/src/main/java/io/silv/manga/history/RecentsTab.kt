@@ -32,7 +32,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.withContext
 
-val LocalTopLevelNavigator = compositionLocalOf<Navigator> { error("Not provided.") }
+val LocalTopLevelNavigator = compositionLocalOf<Navigator?> { null }
 
 object RecentsTab: ReselectTab {
 

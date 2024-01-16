@@ -1,7 +1,6 @@
 package io.silv.data.updates
 
 import androidx.room.withTransaction
-import io.silv.common.model.ProgressState
 import io.silv.common.model.Status
 import io.silv.common.time.epochMillis
 import io.silv.common.time.localDateTimeNow
@@ -21,10 +20,14 @@ class MangaUpdateJob internal constructor(
 ) {
 
     private fun shouldCheckForUpdates(mangaEntity: MangaEntity): Boolean {
-        return mangaEntity.lastSyncedForUpdates != null
-                && localDateTimeNow().epochMillis() - (mangaEntity.lastSyncedForUpdates?.epochMillis() ?: 0L) > 5.minutes.inWholeMilliseconds
-                && mangaEntity.status != Status.completed
-                && mangaEntity.progressState != ProgressState.NotStarted
+        return when {
+            mangaEntity.status == Status.completed -> false
+            mangaEntity.lastSyncedForUpdates == null -> true
+            else -> {
+                localDateTimeNow().epochMillis() -
+                        mangaEntity.lastSyncedForUpdates!!.epochMillis() > 5.minutes.inWholeMilliseconds
+            }
+        }
     }
 
     suspend fun update(forceUpdate: Boolean) {

@@ -2,6 +2,7 @@
 
 package io.silv.common.model
 
+import androidx.compose.runtime.Stable
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
@@ -123,6 +124,12 @@ enum class ReaderDirection {
     Rtl,
 }
 
+@Stable
 enum class AutomaticUpdatePeriod(val duration: Duration) {
-    Off(Duration.ZERO), H12(12.hours), H24(24.hours), H48(48.hours), H72(72.hours), W1(7.days)
+    Off(Duration.ZERO) { override fun toString(): String { return "Off" }},
+    H12(12.hours){ override fun toString(): String { return "Every 12 hours" }},
+    H24(24.hours){ override fun toString(): String { return "Daily" }},
+    H48(48.hours){ override fun toString(): String { return "Every 2 days" }},
+    H72(72.hours){ override fun toString(): String { return "Every 3 days" }},
+    W1(7.days){ override fun toString(): String { return "Weekly" }}
 }

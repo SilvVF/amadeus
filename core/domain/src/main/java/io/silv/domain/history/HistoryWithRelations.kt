@@ -25,9 +25,14 @@ data class HistoryWithRelations(
         get() {
             var h = lastRead.time.hour
             var isPm = false
-            if (h > 12) {
-                h -= 12
-                isPm = true
+
+            when (h) {
+                0 -> h = 12
+                12 -> isPm = true
+                in 12..24 -> {
+                    h -= 12
+                    isPm = true
+                }
             }
             val amPm = if (isPm) "PM" else "AM"
             val time = if (lastRead.time.minute < 10) {

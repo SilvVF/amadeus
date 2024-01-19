@@ -243,16 +243,6 @@ class DownloadManager internal constructor(
         return downloadProvider.findChapterDir(chapterName, chapterScanlator, mangaTitle, MangaDexSource) != null
     }
 
-
-    /**
-     * Returns the amount of downloaded chapters for a manga.
-     *
-     * @param manga the manga to check.
-     */
-    fun getDownloadCount(manga: MangaResource): Int {
-        return downloadCache.getDownloadCount(manga)
-    }
-
     fun cancelQueuedDownloads(downloads: List<Download>) {
         applicationScope.launch {
             removeFromDownloadQueue(downloads.map { it.chapter })

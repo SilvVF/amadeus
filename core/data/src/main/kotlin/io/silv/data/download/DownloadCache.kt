@@ -54,7 +54,7 @@ import kotlin.time.Duration.Companion.hours
  * delete the folders at any time without the app noticing.
  */
 @OptIn(ExperimentalSerializationApi::class, ExperimentalSerializationApi::class)
-internal class DownloadCache(
+class DownloadCache internal constructor(
     private val context: Context,
     private val provider: DownloadProvider,
     private val storageManager: StorageManager,
@@ -156,22 +156,28 @@ internal class DownloadCache(
         }
     }
 
-    /**
-     * Returns the amount of downloaded chapters for a manga.
-     *
-     * @param manga the manga to check.
-     */
-    fun getDownloadCount(manga: MangaResource): Int {
+    suspend fun nonLibraryMangaFiles(
+        library: List<MangaResource>
+    ): List<Triple<String, Long, Int>> {
         renewCache()
 
-        val sourceDir = rootDownloadsDir.sourceDirs[MangaDexSource.id]
-        if (sourceDir != null) {
-            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga.title)]
-            if (mangaDir != null) {
-                return mangaDir.chapterDirs.size
-            }
+        val libraryDirNames = library.map { provider.getMangaDirName(it.title) }
+
+        return buildList {
+            rootDownloadsDir.sourceDirs[MangaDexSource.id]
+                ?.mangaDirs
+                ?.forEach { (mangaDirName, mangaDirectory) ->
+                    if (mangaDirName !in libraryDirNames) {
+                        add(
+                            Triple(
+                                mangaDirName,
+                                mangaDirectory.dir?.size() ?: return@forEach,
+                                 mangaDirectory.chapterDirs.count()
+                            )
+                        )
+                    }
+                }
         }
-        return 0
     }
 
     /**
@@ -207,6 +213,20 @@ internal class DownloadCache(
         notifyChanges()
     }
 
+    /**
+     * Returns the total size of downloaded chapters for a manga.
+     *
+     * @param manga the manga to check.
+     */
+    fun getDownloadSize(manga: MangaResource): Long {
+        renewCache()
+
+        return rootDownloadsDir.sourceDirs[MangaDexSource.id]?.mangaDirs?.get(
+            provider.getMangaDirName(
+                manga.title,
+            ),
+        )?.dir?.size() ?: 0
+    }
     /**
      * Removes a chapter that has been deleted from this cache.
      *
@@ -266,6 +286,23 @@ internal class DownloadCache(
         notifyChanges()
     }
 
+    /**
+     * Removes a manga that has been deleted from this cache.
+     *
+     * @param manga the manga to remove.
+     */
+    suspend fun removeManga(title: String) {
+        rootDownloadsDirLock.withLock {
+            val sourceDir = rootDownloadsDir.sourceDirs[MangaDexSource.id] ?: return
+            val mangaDirName = provider.getMangaDirName(title)
+            if (sourceDir.mangaDirs.containsKey(mangaDirName)) {
+                sourceDir.mangaDirs -= mangaDirName
+            }
+        }
+
+        notifyChanges()
+    }
+
     suspend fun removeSource(source: Source) {
         rootDownloadsDirLock.withLock {
             rootDownloadsDir.sourceDirs -= source.id
@@ -280,6 +317,25 @@ internal class DownloadCache(
         diskCacheFile.delete()
         renewCache()
     }
+
+    /**
+     * Returns the amount of downloaded chapters for a manga.
+     *
+     * @param manga the manga to check.
+     */
+    fun getDownloadCount(manga: MangaResource): Int {
+        renewCache()
+
+        val sourceDir = rootDownloadsDir.sourceDirs[MangaDexSource.id]
+        if (sourceDir != null) {
+            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga.title)]
+            if (mangaDir != null) {
+                return mangaDir.chapterDirs.size
+            }
+        }
+        return 0
+    }
+
 
     /**
      * Renews the downloads cache.
@@ -435,4 +491,24 @@ private object UniFileAsStringSerializer : KSerializer<UniFile?>, KoinComponent 
             decoder.decodeNull()
         }
     }
+}
+
+/**
+ * Returns the size of a file or directory.
+ */
+fun UniFile.size(): Long {
+    var totalSize = 0L
+    if (isDirectory) {
+        listFiles()?.forEach { file ->
+            totalSize += if (file.isDirectory) {
+                file.size()
+            } else {
+                val length = file.length()
+                if (length > 0) length else 0
+            }
+        }
+    } else {
+        totalSize = length()
+    }
+    return totalSize
 }

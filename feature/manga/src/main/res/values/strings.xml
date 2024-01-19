@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="available_disk_space_info">Available: %1$s / Total: %2$s</string>
+    <string name="cache_deleted">Cache cleared, %1$d files deleted</string>
+    <string name="cache_delete_error">Error occurred while clearing</string>
+</resources>

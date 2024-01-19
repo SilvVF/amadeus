@@ -44,6 +44,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import io.silv.manga.download.DownloadQueueScreen
 import io.silv.manga.history.RecentsScreen
+import io.silv.manga.storeage.StorageScreen
 import io.silv.ui.ReselectTab
 import io.silv.ui.theme.LocalSpacing
 
@@ -107,7 +108,7 @@ fun MoreHomeScreen() {
             title = "Storage",
             icon = Icons.TwoTone.Storage
         ) {
-
+            navigator.push(StorageScreen())
         }
         Divider()
         MoreSelectionItem(

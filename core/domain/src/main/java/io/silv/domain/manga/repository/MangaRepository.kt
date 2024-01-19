@@ -13,6 +13,8 @@ interface MangaRepository {
 
     suspend fun updateManga(manga: Manga)
 
+    suspend fun getMangaByTitle(title: String): Manga?
+
     suspend fun upsertManga(update: MangaUpdate)
 
     suspend fun upsertManga(updates: List<MangaUpdate>, withTransaction: Boolean = true)
@@ -26,4 +28,8 @@ interface MangaRepository {
     fun observeManga(): Flow<List<Manga>>
 
     fun observeLibraryMangaWithChapters(): Flow<List<MangaWithChapters>>
+
+    suspend fun deleteUnused()
+
+    fun observeUnusedCount(): Flow<Int>
 }

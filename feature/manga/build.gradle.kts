@@ -50,6 +50,9 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.core)
     implementation(libs.voyager.screenModel)
 
+
+    implementation(libs.unifile)
+
     implementation(libs.sandwich)
 
     implementation("com.halilibo.compose-richtext:richtext-commonmark:0.17.0")

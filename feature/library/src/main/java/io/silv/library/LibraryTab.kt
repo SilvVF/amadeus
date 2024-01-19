@@ -660,7 +660,7 @@ fun UpdatesList(
         onRefresh = { actions.refreshUpdates() },
         paddingValues = paddingValues
     ) {
-        if (state.bookmarkedChapters.isEmpty()) {
+        if (state.updates.isEmpty()) {
             Column(
                 Modifier
                     .fillMaxSize()

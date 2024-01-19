@@ -147,8 +147,45 @@ abstract class MangaDao {
     @Delete
     abstract suspend fun delete(manga: MangaEntity)
 
+    @Query("""
+        DELETE 
+        FROM manga
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM chapters
+            WHERE manga.id = chapters.manga_id 
+            AND(chapters.last_page_read IS NOT NULL OR chapters.bookmarked = 1)
+        )
+        OR NOT EXISTS (
+            SELECT 1
+            FROM chapters
+            WHERE manga.id = chapters.manga_id
+        )
+    """)
+    abstract suspend fun deleteUnused()
+
+    @Query("""
+        SELECT COUNT(DISTINCT manga.id)
+        FROM manga
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM chapters
+            WHERE manga.id = chapters.manga_id 
+            AND(chapters.last_page_read IS NOT NULL OR chapters.bookmarked = 1)
+        )
+        OR NOT EXISTS (
+            SELECT 1
+            FROM chapters
+            WHERE manga.id = chapters.manga_id
+        )
+    """)
+    abstract fun observeUnusedMangaCount(): Flow<Int>
+
     @Query("SELECT * FROM MANGA WHERE id = :id LIMIT 1")
     abstract suspend fun getById(id: String): MangaEntity?
+
+    @Query("SELECT * FROM MANGA WHERE title LIKE :name LIMIT 1")
+    abstract suspend fun getMangaByTitle(name: String): MangaEntity?
 
     @Query("SELECT * FROM MANGA WHERE id in (:ids)")
     abstract suspend fun getByIds(ids: List<String>): List<MangaEntity>

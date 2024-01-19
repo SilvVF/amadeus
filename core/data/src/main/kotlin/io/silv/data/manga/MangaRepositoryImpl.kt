@@ -39,6 +39,9 @@ class MangaRepositoryImpl internal constructor(
             mangaDao.update(MangaMapper.toEntity(manga))
         }
 
+    override suspend fun getMangaByTitle(title: String): Manga? =
+        withContext(dispatchers.io) { mangaDao.getMangaByTitle(title)?.let(MangaMapper::mapManga) }
+
     override suspend fun upsertManga(update: MangaUpdate) =
         withContext(dispatchers.io) {
             mangaDao.upsert(
@@ -107,5 +110,12 @@ class MangaRepositoryImpl internal constructor(
         return mangaDao.observeLibraryMangaWithChapters().map {
             it.map(MangaMapper::mapMangaWithChapters)
         }
+    }
+
+    override suspend fun deleteUnused() =
+        withContext(dispatchers.io){ mangaDao.deleteUnused() }
+
+    override fun observeUnusedCount(): Flow<Int> {
+        return mangaDao.observeUnusedMangaCount()
     }
 }

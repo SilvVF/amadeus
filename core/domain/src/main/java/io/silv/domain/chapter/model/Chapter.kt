@@ -25,7 +25,7 @@ data class Chapter(
     val volume: Int,
     val chapter: Double,
     val pages: Int = 0,
-    val lastReadPage: Int?,
+    val lastReadPage: Int? = null,
     val translatedLanguage: String,
     val uploader: String,
     val scanlationGroupToId: Pair<String, String>? = null,

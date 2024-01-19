@@ -7,6 +7,7 @@ import io.silv.manga.download.DownloadQueueScreenModel
 import io.silv.manga.filter.MangaFilterScreenModel
 import io.silv.manga.history.RecentsScreenModel
 import io.silv.manga.settings.SettingsScreenModel
+import io.silv.manga.storeage.StorageScreenModel
 import io.silv.manga.view.MangaViewScreenModel
 import io.silv.reader.ReaderScreenModel
 import io.silv.sync.SeasonalMangaSyncWorkName
@@ -23,6 +24,8 @@ val screenModule =
         factory { (mangaId: String, initialChapterId: String) ->
             ReaderScreenModel(get(), get(), get(),get(), mangaId, initialChapterId)
         }
+
+        factoryOf(::StorageScreenModel)
 
         factoryOf(::RecentsScreenModel)
 

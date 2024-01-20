@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -220,8 +221,8 @@ private fun MangaSummary(
     expanded: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    var expandedHeight by remember { mutableStateOf(0) }
-    var shrunkHeight by remember { mutableStateOf(0) }
+    var expandedHeight by remember { mutableIntStateOf(0) }
+    var shrunkHeight by remember { mutableIntStateOf(0) }
     val heightDelta = remember(expandedHeight, shrunkHeight) { expandedHeight - shrunkHeight }
     val animProgress by animateFloatAsState(if (expanded) 1f else 0f, label = "progress")
     val scrimHeight = with(LocalDensity.current) { remember { 24.sp.roundToPx() } }

@@ -65,4 +65,8 @@ class HistoryRepositoryImpl(
 
     override suspend fun clearHistory() =
         withContext(dispatchers.io) { historyDao.clear() }
+
+    override suspend fun getTotalReadingTime(): Long = withContext(dispatchers.io){
+        historyDao.getTotalReadingTime()
+    }
 }

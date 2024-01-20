@@ -133,7 +133,7 @@ class StorageScreenModel(
 sealed class StorageScreenState {
 
     @Immutable
-    object Loading : StorageScreenState()
+    data object Loading : StorageScreenState()
 
     @Immutable
     data class Success(

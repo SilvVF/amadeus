@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class RecentsScreenModel(
     private val historyRepository: HistoryRepository,
-    private val dispatchers: AmadeusDispatchers
+    dispatchers: AmadeusDispatchers
 ): StateScreenModel<RecentsState>(RecentsState()) {
 
     var searchQuery by mutableStateOf("")

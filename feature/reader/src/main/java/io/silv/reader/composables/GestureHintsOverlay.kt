@@ -3,6 +3,7 @@ package io.silv.reader.composables
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
@@ -24,6 +25,7 @@ import kotlinx.coroutines.delay
 fun GestureHintOverlay(
     modifier: Modifier = Modifier,
     duration: Long = 2000,
+    vertical: Boolean = false,
     content: @Composable () -> Unit
 ) {
 
@@ -47,7 +49,41 @@ fun GestureHintOverlay(
         content()
 
         if (menuHintVisible) {
-            MenuHint { menuHintVisible = false }
+            if (vertical) {
+                VerticalMenuHint { menuHintVisible = false }
+            } else {
+                MenuHint { menuHintVisible = false }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VerticalMenuHint(
+    hide: () -> Unit
+) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .clickable { hide() }) {
+        val ld = LocalLayoutDirection.current
+        CenterBox(modifier = Modifier
+            .weight(1f)
+            .fillMaxSize()
+            .background(Color.Green.copy(alpha = 0.38f))) {
+            Text("Prev")
+        }
+        CenterBox(modifier = Modifier
+            .weight(1f)
+            .fillMaxSize()
+            .background(Color.Red.copy(alpha = 0.38f))) {
+            Text("Menu")
+        }
+        CenterBox(modifier = Modifier
+            .weight(1f)
+            .fillMaxSize()
+            .background(Color.Blue.copy(alpha = 0.38f))) {
+            Text("Next")
         }
     }
 }

@@ -49,7 +49,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
@@ -65,6 +64,7 @@ import io.silv.datastore.ReaderPrefs
 import io.silv.datastore.UserSettings
 import io.silv.datastore.collectAsState
 import io.silv.ui.Converters
+import io.silv.ui.ReaderLayout
 import io.silv.ui.composables.CardType
 import io.silv.ui.composables.SelectCardType
 import io.silv.ui.composables.UseList
@@ -290,13 +290,12 @@ fun ReaderOptions(
 
     var fullscreen by ReaderPrefs.fullscreen.collectAsState(true, scope)
     var showPageNumber by ReaderPrefs.showPageNumber.collectAsState(true, scope)
-    var layoutDirection by ReaderPrefs.layoutDirection.collectAsState(
-        defaultValue = LayoutDirection.Ltr,
+    var layout by ReaderPrefs.layoutDirection.collectAsState(
+        defaultValue = ReaderLayout.PagedRTL,
         converter = Converters.LayoutDirectionConverter,
         scope
     )
-    var backgroundColor by ReaderPrefs.backgroundColor.collectAsState(0, scope)
-    var scaleType by ReaderPrefs.scaleType.collectAsState(0, scope)
+    var backgroundColor by ReaderPrefs.backgroundColor.collectAsState(3, scope)
 
     Column(
         modifier.padding(space.med),
@@ -312,15 +311,21 @@ fun ReaderOptions(
                 verticalArrangement = Arrangement.Center
             ) {
                 FilterChip(
-                    selected = layoutDirection == LayoutDirection.Ltr,
-                    onClick = { layoutDirection = LayoutDirection.Ltr },
+                    selected = layout == ReaderLayout.PagedLTR,
+                    onClick = { layout = ReaderLayout.PagedLTR },
                     label = { Text("Paged (left to right)") },
                     modifier = Modifier.padding(space.small)
                 )
                 FilterChip(
-                    selected = layoutDirection == LayoutDirection.Rtl,
-                    onClick = { layoutDirection = LayoutDirection.Rtl },
+                    selected = layout == ReaderLayout.PagedRTL,
+                    onClick = { layout = ReaderLayout.PagedRTL },
                     label = { Text("Paged (right to left)") },
+                    modifier = Modifier.padding(space.small)
+                )
+                FilterChip(
+                    selected = layout == ReaderLayout.Vertical,
+                    onClick = { layout = ReaderLayout.Vertical },
+                    label = { Text("Vertical") },
                     modifier = Modifier.padding(space.small)
                 )
             }

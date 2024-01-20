@@ -114,6 +114,13 @@ internal class ChapterRepositoryImpl(
         }
     }
 
+    override suspend fun refetchChapters(mangaId: String) = withContext(dispatchers.io) {
+        updateDbChapters(
+            chapters = getChapterList.await(mangaId),
+            mangaId = mangaId
+        )
+    }
+
     override suspend fun getChapterById(id: String): Chapter? {
         return chapterDao.getChapterById(id)?.let(ChapterMapper::mapChapter)
     }
@@ -134,7 +141,7 @@ internal class ChapterRepositoryImpl(
 
     private suspend fun shouldUpdate(mangaId: String): Boolean = withContext(dispatchers.io) {
         val chapters = chapterDao.getChaptersByMangaId(mangaId).ifEmpty { null }
-        chapters == null || chapters.any { localDateTimeNow() - (it.savedLocalAt) > 12.hours }
+        chapters == null || chapters.any { localDateTimeNow() - (it.savedLocalAt) > 24.hours }
     }
 
     override fun observeChaptersByMangaId(mangaId: String): Flow<List<Chapter>> {

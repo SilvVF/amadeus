@@ -11,14 +11,12 @@ import io.silv.database.dao.SeasonalKeysDao
 import io.silv.database.dao.SeasonalListDao
 import io.silv.database.dao.TagDao
 import io.silv.database.dao.UpdatesDao
-import io.silv.database.dao.UserListDao
 import io.silv.database.entity.RecentSearchEntity
 import io.silv.database.entity.chapter.ChapterEntity
 import io.silv.database.entity.history.HistoryEntity
 import io.silv.database.entity.history.HistoryView
 import io.silv.database.entity.list.SeasonalListEntity
 import io.silv.database.entity.list.TagEntity
-import io.silv.database.entity.list.UserListEntity
 import io.silv.database.entity.manga.MangaEntity
 import io.silv.database.entity.manga.MangaToListRelation
 
@@ -30,11 +28,10 @@ import io.silv.database.entity.manga.MangaToListRelation
         SeasonalListEntity::class,
         TagEntity::class,
         RecentSearchEntity::class,
-        UserListEntity::class,
         HistoryEntity::class,
     ],
     views = [HistoryView::class, UpdatesView::class],
-    version = 2,
+    version = 1,
 )
 @TypeConverters(Converters::class)
 abstract class AmadeusDatabase : RoomDatabase() {
@@ -51,8 +48,6 @@ abstract class AmadeusDatabase : RoomDatabase() {
     abstract fun updatesDao(): UpdatesDao
 
     abstract fun recentSearchDao(): RecentSearchDao
-
-    abstract fun userListDao(): UserListDao
 
     abstract fun historyDao(): HistoryDao
 }

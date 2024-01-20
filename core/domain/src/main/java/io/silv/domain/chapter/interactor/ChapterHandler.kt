@@ -6,6 +6,10 @@ import io.silv.domain.chapter.repository.ChapterRepository
 class ChapterHandler(
     private val chapterRepository: ChapterRepository,
 ) {
+    suspend fun refreshList(mangaId: String) {
+       runCatching{ chapterRepository.refetchChapters(mangaId) }
+    }
+
     suspend fun toggleChapterBookmarked(id: String) =
         runCatching {
             chapterRepository.updateChapter(id) { chapter ->

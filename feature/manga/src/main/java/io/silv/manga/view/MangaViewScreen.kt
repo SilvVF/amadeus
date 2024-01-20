@@ -5,7 +5,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,8 +25,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Comment
@@ -53,8 +59,10 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -63,13 +71,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -77,19 +91,29 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import coil.compose.AsyncImage
+import com.skydoves.sandwich.message
+import com.skydoves.sandwich.onFailure
+import com.skydoves.sandwich.onSuccess
+import io.silv.data.manga.GetMangaCoverArtById
 import io.silv.manga.composables.MangaDescription
 import io.silv.manga.composables.MangaImageWithTitle
 import io.silv.manga.composables.chapterListItems
-import io.silv.manga.composables.volumePosterItems
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.CenterBox
 import io.silv.ui.collectEvents
+import io.silv.ui.composables.PullRefresh
 import io.silv.ui.isScrollingUp
 import io.silv.ui.layout.ScrollbarLazyColumn
 import io.silv.ui.openOnWeb
 import io.silv.ui.theme.LocalSpacing
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.launch
+import org.koin.compose.rememberKoinInject
 import org.koin.core.parameter.parametersOf
 
 class MangaViewScreen(
@@ -189,6 +213,7 @@ class MangaViewScreen(
                 read = screenModel::changeChapterReadStatus,
                 download = screenModel::downloadChapterImages,
                 delete = screenModel::deleteChapterImages,
+                refresh = screenModel::refreshChapterList
             ),
             mangaActions =
             MangaActions(
@@ -243,7 +268,7 @@ fun MangaViewScreenContent(
 private const val FILTER_BOTTOM_SHEET = 1
 private const val VOLUME_ART_BOTTOM_SHEET = 0
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MangaViewSuccessScreen(
     state: MangaViewState.Success,
@@ -379,86 +404,91 @@ fun MangaViewSuccessScreen(
             }
         },
     ) { paddingValues ->
-        ScrollbarLazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding =
-            PaddingValues(
-                start = paddingValues.calculateStartPadding(LocalLayoutDirection.current),
-                end = paddingValues.calculateEndPadding(LocalLayoutDirection.current),
-            ),
+        PullRefresh(
+            refreshing = state.refreshingChapters,
+            onRefresh = { chapterActions.refresh() }
         ) {
-            item(key = "manga-poster") {
-                MangaImageWithTitle(
-                    manga = state.manga,
-                    modifier = Modifier.fillMaxWidth(),
-                    padding = paddingValues,
-                    stats = state.statsUiState,
-                    viewOnWeb = {
-                        viewOnWeb("https://mangadex.org/title/${state.manga.id}")
-                    },
-                    addToLibrary = mangaActions.addToLibrary,
-                    showChapterArt = {
-                        currentBottomSheet = VOLUME_ART_BOTTOM_SHEET
-                    },
-                )
-            }
-            item("manga-info") {
-                Column {
-                    MangaDescription(
+            ScrollbarLazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding =
+                PaddingValues(
+                    start = paddingValues.calculateStartPadding(LocalLayoutDirection.current),
+                    end = paddingValues.calculateEndPadding(LocalLayoutDirection.current),
+                ),
+            ) {
+                item(key = "manga-poster") {
+                    MangaImageWithTitle(
                         manga = state.manga,
-                        onTagSelected = { tag ->
-                            state.manga.tagToId[tag]?.let { id ->
-                                navigator.push(SharedScreen.MangaFilter(tag, id))
-                            }
+                        modifier = Modifier.fillMaxWidth(),
+                        padding = paddingValues,
+                        stats = state.statsUiState,
+                        viewOnWeb = {
+                            viewOnWeb("https://mangadex.org/title/${state.manga.id}")
+                        },
+                        addToLibrary = mangaActions.addToLibrary,
+                        showChapterArt = {
+                            currentBottomSheet = VOLUME_ART_BOTTOM_SHEET
                         },
                     )
-                    Spacer(modifier = Modifier.height(22.dp))
-                    val maxChapterNum =
-                        remember(state.chapters) {
-                            state.chapters.maxOfOrNull { it.chapter } ?: 0
-                        }
-
-                    val missingChapters =
-                        remember(state.chapters) {
-                            var prevChapter: Double? = null
-                            state.chapters
-                                .distinctBy { it.chapter }
-                                .filter { it.validNumber }
-                                .sortedBy { it.chapter }
-                                .count { c ->
-                                    (c.chapter - 1 != prevChapter && prevChapter != null)
-                                        .also { prevChapter = c.chapter }
+                }
+                item("manga-info") {
+                    Column {
+                        MangaDescription(
+                            manga = state.manga,
+                            onTagSelected = { tag ->
+                                state.manga.tagToId[tag]?.let { id ->
+                                    navigator.push(SharedScreen.MangaFilter(tag, id))
                                 }
-                        }
+                            },
+                        )
+                        Spacer(modifier = Modifier.height(22.dp))
+                        val maxChapterNum =
+                            remember(state.chapters) {
+                                state.chapters.maxOfOrNull { it.chapter } ?: 0
+                            }
 
-                    Text(
-                        text = "$maxChapterNum chapters - missing $missingChapters",
-                        modifier = Modifier.padding(start = 12.dp),
+                        val missingChapters =
+                            remember(state.chapters) {
+                                var prevChapter: Double? = null
+                                state.chapters
+                                    .distinctBy { it.chapter }
+                                    .filter { it.validNumber }
+                                    .sortedBy { it.chapter }
+                                    .count { c ->
+                                        (c.chapter - 1 != prevChapter && prevChapter != null)
+                                            .also { prevChapter = c.chapter }
+                                    }
+                            }
+
+                        Text(
+                            text = "$maxChapterNum chapters - missing $missingChapters",
+                            modifier = Modifier.padding(start = 12.dp),
+                        )
+                    }
+                }
+                chapterListItems(
+                    mangaViewState = state,
+                    downloads = state.downloads,
+                    onDownloadClicked = chapterActions.download,
+                    onDeleteClicked = chapterActions.delete,
+                    onReadClicked = {
+                        navigator.push(SharedScreen.Reader(state.manga.id, it))
+                    },
+                    onBookmark = chapterActions.bookmark,
+                    onMarkAsRead = chapterActions.read,
+                    showFullTitle = showSourceTitle,
+                    downloadActions = downloadActions,
+                )
+                item(key = "padding-bottom") {
+                    // apply both top and bottom padding to raise chapter list above the FAB
+                    // top padding is ignored for manga cover art.
+                    Spacer(
+                        Modifier.height(
+                            paddingValues.calculateBottomPadding() + paddingValues.calculateTopPadding(),
+                        ),
                     )
                 }
-            }
-            chapterListItems(
-                mangaViewState = state,
-                downloads = state.downloads,
-                onDownloadClicked = chapterActions.download,
-                onDeleteClicked = chapterActions.delete,
-                onReadClicked = {
-                    navigator.push(SharedScreen.Reader(state.manga.id, it))
-                },
-                onBookmark = chapterActions.bookmark,
-                onMarkAsRead = chapterActions.read,
-                showFullTitle = showSourceTitle,
-                downloadActions = downloadActions,
-            )
-            item(key = "padding-bottom") {
-                // apply both top and bottom padding to raise chapter list above the FAB
-                // top padding is ignored for manga cover art.
-                Spacer(
-                    Modifier.height(
-                        paddingValues.calculateBottomPadding() + paddingValues.calculateTopPadding(),
-                    ),
-                )
             }
         }
     }
@@ -483,13 +513,118 @@ fun MangaViewSuccessScreen(
             )
         VOLUME_ART_BOTTOM_SHEET ->
             ModalBottomSheet(
+                windowInsets = WindowInsets(0),
                 onDismissRequest = { currentBottomSheet = null },
                 sheetState = sheetState,
+                modifier = Modifier
+                    .fillMaxHeight(0.6f)
+                    .fillMaxWidth()
             ) {
-                LazyColumn {
-                    volumePosterItems(state)
+
+                var coverImages by remember {
+                    mutableStateOf<ImmutableList<String>>(persistentListOf<String>())
+                }
+                var error by remember { mutableStateOf<String?>(null) }
+                var loading by remember { mutableStateOf(false) }
+                var loadingSem by remember { mutableIntStateOf(0) }
+                val getMangaCoverArtById = rememberKoinInject<GetMangaCoverArtById>()
+
+                LaunchedEffect(loadingSem) {
+                    loading = true
+                    getMangaCoverArtById.await(state.manga.id)
+                        .onSuccess {
+                            error = null
+                            coverImages = data.toImmutableSet().toImmutableList()
+                        }
+                        .onFailure {
+                            error = message()
+                        }
+                    loading = false
+                }
+
+                if (coverImages.isEmpty() || loading) {
+                    CenterBox(
+                        Modifier
+                            .height(400.dp)
+                            .fillMaxWidth()) {
+                        CircularProgressIndicator()
+                    }
+                } else if (error != null) {
+                    CenterBox(Modifier.height(400.dp)) {
+                        ClickableText(
+                            text = buildAnnotatedString {
+                                append("Error while loading manga click to retry")
+                            },
+                            onClick = { loadingSem++ }
+                        )
+                    }
+                } else {
+                    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.CenterHorizontally) {
+                        val pagerState = rememberPagerState { coverImages.size }
+                        HorizontalPager(
+                            state = pagerState,
+                            beyondBoundsPageCount = 2,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
+                            val space = LocalSpacing.current
+
+                            AsyncImage(
+                                model = coverImages.getOrNull(it),
+                                placeholder = ColorPainter(Color(0x1F888888)),
+                                contentDescription = null,
+                                modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(space.med),
+                                contentScale = ContentScale.Fit,
+                            )
+                        }
+                        PageIndicatorText(
+                            currentPage = pagerState.currentPage + 1,
+                            totalPages = pagerState.pageCount,
+                            modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars)
+                        )
+                    }
                 }
             }
+    }
+}
+
+@Composable
+fun PageIndicatorText(
+    modifier: Modifier = Modifier,
+    currentPage: Int,
+    totalPages: Int,
+) {
+    if (currentPage <= 0 || totalPages <= 0) return
+
+    val text = "$currentPage / $totalPages"
+
+    val style = TextStyle(
+        color = Color(235, 235, 235),
+        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.sp,
+    )
+    val strokeStyle = style.copy(
+        color = Color(45, 45, 45),
+        drawStyle = Stroke(width = 4f),
+    )
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+    ) {
+        Text(
+            text = text,
+            style = strokeStyle,
+        )
+        Text(
+            text = text,
+            style = style,
+        )
     }
 }
 

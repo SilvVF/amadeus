@@ -137,7 +137,7 @@ object StringStateListSaver : Saver<SnapshotStateList<String>, String> {
 }
 
 fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier =
-    composed {
+    this.composed {
         clickable(
             indication = null,
             interactionSource = remember { MutableInteractionSource() },

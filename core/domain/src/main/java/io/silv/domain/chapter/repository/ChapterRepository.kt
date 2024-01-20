@@ -20,6 +20,8 @@ interface ChapterRepository {
 
     suspend fun refetchChapter(id: String): Chapter?
 
+    suspend fun refetchChapters(mangaId: String)
+
     fun observeChaptersByMangaId(mangaId: String): Flow<List<Chapter>>
 
     suspend fun getChapterById(id: String): Chapter?

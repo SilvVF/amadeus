@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.HistoryToggleOff
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DeleteSweep
@@ -116,6 +117,9 @@ private fun RecentsScreenContent(
                 onSearchText = actions.searchChanged,
                 onForceSearch = {},
                 scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
+                navigationIcon = Icons.Filled.ArrowBack
+                    .takeIf { localNavigator.canPop },
+                onNavigationIconClicked = { (topLevelNavigator ?: localNavigator).pop() },
                 actions = {
                     PlainTooltipBox(
                         tooltip = { Text("Clear history", color = MaterialTheme.colorScheme.onSurface) },
@@ -141,7 +145,9 @@ private fun RecentsScreenContent(
                     imageVector = Icons.Filled.HistoryToggleOff,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.surfaceTint,
-                    modifier = Modifier.fillMaxWidth().fillMaxHeight(0.2f)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.2f)
                 )
                 Text(
                     "No reading history",

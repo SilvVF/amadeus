@@ -2,11 +2,11 @@
 plugins {
     id("com.android.application") version "8.2.1" apply false
     id("com.android.library") version "8.2.1" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.20" apply false
-    id("org.jetbrains.kotlin.jvm") version "1.9.20" apply false
-    id("com.google.devtools.ksp") version "1.9.20-1.0.14" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+    id("org.jetbrains.kotlin.jvm") version "1.9.22" apply false
+    id("com.google.devtools.ksp") version "1.9.22-1.0.17" apply false
     id("com.android.test") version "8.2.1" apply false
-    kotlin("plugin.serialization") version "1.9.20" apply false
+    kotlin("plugin.serialization") version "1.9.22" apply false
     id("org.jlleitschuh.gradle.ktlint") version "12.0.3" apply false
 }
 
@@ -25,7 +25,10 @@ subprojects {
         outputColorName.set("RED")
         ignoreFailures.set(true)
         disabledRules.set(
-            setOf("function-naming", "final-newline", "trailing-comma-on-declaration-site", "trailing-comma-on-call-site")
+            setOf(
+                "function-naming",
+                "final-newline",
+                "trailing-comma-on-declaration-site", "trailing-comma-on-call-site")
         )
 
         filter {

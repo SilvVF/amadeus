@@ -112,6 +112,9 @@ class MangaRepositoryImpl internal constructor(
         }
     }
 
+    override suspend fun getLibraryMangaWithChapters(): List<MangaWithChapters> =
+        withContext(dispatchers.io) { mangaDao.getLibraryMangaWithChapters().map(MangaMapper::mapMangaWithChapters) }
+
     override suspend fun deleteUnused() =
         withContext(dispatchers.io){ mangaDao.deleteUnused() }
 

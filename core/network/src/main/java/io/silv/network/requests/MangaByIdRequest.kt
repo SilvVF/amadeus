@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package io.silv.network.requests
 
 import io.silv.network.requests.query.QueryParam

@@ -36,7 +36,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 }
 
@@ -65,19 +65,17 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.material3)
     androidTestImplementation(libs.androidx.compose.ui.test.junit)
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
     implementation(libs.androidx.activity.compose)
-    implementation("androidx.compose.ui:ui-graphics")
-    debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.animation:animation-graphics")
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    implementation("androidx.palette:palette:1.0.0")
     // Paging 3
     implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.paging.runtime)

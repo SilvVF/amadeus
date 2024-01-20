@@ -52,7 +52,6 @@ import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.UpdateDisabled
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.outlined.More
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.twotone.Archive
 import androidx.compose.material.icons.twotone.Unarchive
@@ -84,7 +83,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -417,7 +415,6 @@ fun LibraryScreenContent(
                 peekContent = {
                     LibraryPeekContent(
                         stateProvider = stateProvider,
-                        currentTab = currentTab,
                         actions = actions
                     )
                 }
@@ -433,21 +430,6 @@ fun LibraryScreenContent(
                         }
                         .padding(space.small),
                 ) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { currentBottomSheet = LibraryBottomSheet.Filters }
-                            .padding(space.med),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.More,
-                            contentDescription = "Filter",
-                            modifier = Modifier.graphicsLayer { rotationX = 180f },
-                        )
-                        Spacer(modifier = Modifier.width(space.med))
-                        Text(text = "Filter manga by...")
-                    }
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -527,7 +509,6 @@ fun ErrorScreenContent(
 fun LibraryPeekContent(
     modifier: Modifier = Modifier,
     stateProvider: () -> LibraryState,
-    currentTab: LibTab,
     actions: LibraryActions,
 ) {
 

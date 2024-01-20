@@ -7,9 +7,9 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import com.skydoves.sandwich.ApiResponse
 import com.skydoves.sandwich.message
 import io.silv.common.model.Download
+import io.silv.data.download.CoverCache
 import io.silv.data.download.DownloadManager
 import io.silv.data.manga.GetMangaStatisticsById
-import io.silv.data.download.CoverCache
 import io.silv.datastore.model.Filters
 import io.silv.domain.chapter.interactor.ChapterHandler
 import io.silv.domain.chapter.model.Chapter
@@ -22,9 +22,7 @@ import io.silv.model.MangaStats
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ioCoroutineScope
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
@@ -46,6 +44,7 @@ class MangaViewScreenModel(
     private val coverCache: CoverCache,
     mangaId: String,
 ) : EventStateScreenModel<MangaViewEvent, MangaViewState>(MangaViewState.Loading) {
+
     private fun updateSuccess(block: (state: MangaViewState.Success) -> MangaViewState) {
         mutableState.update { state ->
             (state as? MangaViewState.Success)?.let(block) ?: state
@@ -123,6 +122,23 @@ class MangaViewScreenModel(
                 }
             }
             .launchIn(screenModelScope)
+    }
+
+    fun refreshChapterList() {
+        screenModelScope.launch {
+            state.value.success?.let {
+
+                updateSuccess {
+                    it.copy(refreshingChapters = true)
+                }
+
+                chapterHandler.refreshList(it.manga.id)
+
+                updateSuccess {
+                    it.copy(refreshingChapters = false)
+                }
+            }
+        }
     }
 
     fun toggleLibraryManga(id: String) {
@@ -317,6 +333,7 @@ data class ChapterActions(
     val read: (id: String) -> Unit,
     val download: (id: String) -> Unit,
     val delete: (id: String) -> Unit,
+    val refresh: () -> Unit
 )
 
 @Stable
@@ -339,19 +356,18 @@ sealed interface MangaViewState {
         val manga: Manga,
         val downloads: ImmutableList<Download> = persistentListOf(),
         val loadingArt: Boolean = false,
-        val volumeToArt: ImmutableMap<Int, String> = persistentMapOf(),
         val statsUiState: StatsUiState = StatsUiState.Loading,
         val chapters: ImmutableList<Chapter> = persistentListOf(),
         val filteredChapters: ImmutableList<Chapter> = persistentListOf(),
         val filters: Filters = Filters(),
-    ) : MangaViewState {
-        val volumeToArtList = this.volumeToArt.toList().toImmutableList()
-    }
+        val refreshingChapters: Boolean = false
+    ) : MangaViewState
 
     data class Error(val message: String) : MangaViewState
 
     val success: Success?
         get() = this as? Success
+
 }
 
 @Stable

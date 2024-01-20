@@ -35,7 +35,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 }
 
@@ -46,9 +46,9 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation("androidx.compose.foundation:foundation:1.6.0-alpha07")
+    implementation(libs.androidx.compose.foundation)
     implementation(libs.voyager.screenModel)
-    implementation("io.github.fornewid:material-motion-compose-core:1.1.0")
+    implementation(libs.material.motion.compose.core)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.junit)
@@ -57,7 +57,7 @@ dependencies {
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(libs.androidx.material3.window.size)
-    implementation("androidx.compose.ui:ui-util")
+    implementation(libs.androidx.compose.ui.util)
     implementation(composeBom)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.foundation)
@@ -68,8 +68,8 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.manifest)
     implementation(libs.androidx.activity.compose)
     implementation(libs.orbital)
-    implementation("androidx.compose.ui:ui-graphics")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation(libs.androidx.compose.ui.graphics)
+    debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
 

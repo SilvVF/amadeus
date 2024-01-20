@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi
 
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.core.graphics.drawable.toDrawable
 import coil.ImageLoader
 import coil.decode.DecodeResult
@@ -60,6 +61,7 @@ class TachiyomiImageDecoder(
             }
         }
 
+        @RequiresApi(Build.VERSION_CODES.P)
         override fun equals(other: Any?) = other is ImageDecoderDecoder.Factory
 
         override fun hashCode() = javaClass.hashCode()

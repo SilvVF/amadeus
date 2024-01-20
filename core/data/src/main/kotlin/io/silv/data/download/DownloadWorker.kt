@@ -4,11 +4,13 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
+import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import io.silv.common.model.NetworkConnectivity
+import io.silv.data.workers.createForegroundInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -63,6 +65,10 @@ class DownloadWorker(
             }
         }
 
+    }
+
+    override suspend fun getForegroundInfo(): ForegroundInfo {
+        return applicationContext.createForegroundInfo(102, "Manga download job")
     }
 
     companion object {

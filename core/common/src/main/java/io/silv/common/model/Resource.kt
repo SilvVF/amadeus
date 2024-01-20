@@ -4,7 +4,7 @@ import androidx.compose.runtime.Stable
 
 @Stable
 sealed class Resource<out T> {
-    object Loading : Resource<Nothing>()
+    data object Loading : Resource<Nothing>()
 
     data class Success<T>(val result: T) : Resource<T>()
 

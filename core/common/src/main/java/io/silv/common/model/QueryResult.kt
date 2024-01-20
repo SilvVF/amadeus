@@ -4,7 +4,7 @@ import androidx.compose.runtime.Stable
 
 @Stable
 sealed interface QueryResult<out T> {
-    object Loading : QueryResult<Nothing>
+    data object Loading : QueryResult<Nothing>
 
     data class Done<T>(val result: T) : QueryResult<T>
 }

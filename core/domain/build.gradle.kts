@@ -2,7 +2,7 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
-    kotlin("plugin.serialization") version "1.9.20"
+    kotlin("plugin.serialization") version "1.9.22"
     id("kotlin-parcelize")
 }
 
@@ -31,7 +31,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
     kotlinOptions {
         jvmTarget = "17"
@@ -57,7 +57,7 @@ dependencies {
     implementation(libs.flow.combinetuple.kt)
     implementation(libs.tuples.kt)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
 
     // KOTLIN
     implementation(libs.kotlinx.datetime)

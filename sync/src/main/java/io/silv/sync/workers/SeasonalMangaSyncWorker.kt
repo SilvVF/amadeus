@@ -10,13 +10,12 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
-import io.silv.domain.manga.repository.SeasonalMangaRepository
 import io.silv.data.workers.createForegroundInfo
+import io.silv.domain.manga.repository.SeasonalMangaRepository
 import io.silv.sync.SeasonalMangaSyncWorkName
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
+import java.util.concurrent.TimeUnit
 
 internal class SeasonalMangaSyncWorker(
     appContext: Context,
@@ -50,7 +49,8 @@ internal class SeasonalMangaSyncWorker(
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .setBackoffCriteria(
                     BackoffPolicy.EXPONENTIAL,
-                    15.seconds.toJavaDuration(),
+                    15,
+                    TimeUnit.SECONDS
                 )
                 .addTag(SeasonalMangaSyncWorkName)
                 .setConstraints(SyncConstraints)

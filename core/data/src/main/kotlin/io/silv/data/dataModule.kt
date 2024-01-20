@@ -8,6 +8,7 @@ import io.silv.data.di.mangaModule
 import io.silv.data.di.tagsModule
 import io.silv.data.di.workersModule
 import io.silv.data.history.HistoryRepositoryImpl
+import io.silv.data.manga.GetMangaCoverArtById
 import io.silv.data.manga.GetMangaStatisticsById
 import io.silv.data.manga.MangaPagingSourceFactoryImpl
 import io.silv.data.updates.MangaUpdateJob
@@ -62,6 +63,8 @@ val dataModule = module {
     singleOf(::MangaPagingSourceFactoryImpl)
 
     factoryOf(::GetMangaStatisticsById)
+
+    factoryOf(::GetMangaCoverArtById)
 
     singleOf(::RecentSearchRepositoryImpl) {
         bind<RecentSearchRepository>()

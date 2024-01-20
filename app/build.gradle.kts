@@ -46,6 +46,12 @@ android {
             // [END_EXCLUDE]
             proguardFiles("benchmark-rules.pro")
         }
+        create("benchmark1") {
+            initWith(buildTypes.getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
+        }
         getByName("debug") {
             isDebuggable = true
         }
@@ -61,7 +67,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
     packaging {
         resources {
@@ -91,15 +97,15 @@ dependencies {
 
     implementation(libs.coil.gif)
     implementation(libs.coil.svg)
-    implementation("io.github.fornewid:material-motion-compose-core:1.1.0")
+    implementation(libs.material.motion.compose.core)
 
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
-    implementation(libs.androidx.material3.window.size)
-    implementation("androidx.compose.ui:ui-util")
     implementation(composeBom)
     implementation(libs.voyager.screenModel)
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.util)
+    implementation(libs.androidx.material3.window.size)
     implementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
@@ -108,13 +114,13 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.manifest)
     implementation(libs.androidx.activity.compose)
     implementation(libs.orbital)
-    implementation("androidx.compose.ui:ui-graphics")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation(libs.androidx.compose.ui.graphics)
+    debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    implementation("androidx.compose.animation:animation")
-    implementation("androidx.compose.animation:animation-graphics")
+    implementation(libs.androidx.compose.ui.animation.core)
+    implementation(libs.androidx.compose.ui.animation)
 
     // Datastore
     implementation(libs.androidx.datastore.preferences)

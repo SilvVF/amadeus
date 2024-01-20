@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -68,9 +69,9 @@ import kotlinx.coroutines.withContext
 object ExploreTab : ReselectTab, GlobalSearchTab {
 
 
-    internal val reselectChannel = Channel<Unit>()
+    private val reselectChannel = Channel<Unit>()
 
-    internal val searchChannel = Channel<String?>(capacity = 1)
+    private val searchChannel = Channel<String?>(capacity = 1)
 
     override suspend fun onSearch(query: String?, navigator: TabNavigator) {
         searchChannel.trySend(query)
@@ -120,6 +121,7 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
 
         val pagingFlowFlow by screenModel.mangaPagingFlow.collectAsStateWithLifecycle()
         val state by screenModel.state.collectAsStateWithLifecycle()
+        val isOffline by appState.isOffline.collectAsStateWithLifecycle()
 
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
             state = rememberTopAppBarState()
@@ -166,6 +168,17 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
         }
 
         val snackbarHostState = remember{ SnackbarHostState() }
+
+        LaunchedEffect(isOffline) {
+            if (isOffline) {
+                snackbarHostState.showSnackbar(
+                    message = "No network connection",
+                    duration = SnackbarDuration.Indefinite,
+                )
+            } else {
+                snackbarHostState.currentSnackbarData?.dismiss()
+            }
+        }
 
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },

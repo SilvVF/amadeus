@@ -105,43 +105,67 @@ class StorageScreen: Screen {
                         CircularProgressIndicator()
                     }
                     is StorageScreenState.Success -> {
-                        Text(
-                            text = remember(storage.items) {
-                                storage.items.fastFold(0L) { acc, storageItem -> acc + storageItem.size }.toSize()
-                            },
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.CenterHorizontally)
-                        )
-                        storage.items.fastForEach {
-                            StorageItem(
-                                item = it,
-                                onDelete = screenModel::onDeleteItem
+                        if (storage.items.isEmpty()) {
+                            Text(
+                                text = "No downloaded chapters for library manga",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.CenterHorizontally)
                             )
-                            Spacer(modifier = Modifier.height(space.small))
+                        } else {
+                            Text(
+                                text = remember(storage.items) {
+                                    storage.items.fastFold(0L) { acc, storageItem -> acc + storageItem.size }.toSize()
+                                },
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.CenterHorizontally)
+                            )
+                            storage.items.fastForEach {
+                                StorageItem(
+                                    item = it,
+                                    onDelete = screenModel::onDeleteItem
+                                )
+                                Spacer(modifier = Modifier.height(space.small))
+                            }
                         }
-                        Text(
-                            text = remember(storage.nonLibraryItems) {
-                               storage.nonLibraryItems.fastFold(0L) { acc, storageItem -> acc + storageItem.size }.toSize()
-                            },
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.CenterHorizontally)
-                        )
-                        storage.nonLibraryItems.fastForEach { item ->
-                            StorageItem(
-                                item = item,
-                                onDelete = screenModel::onDeleteItem
-                                    .takeIf { item.id.isNotBlank() }
-                                    ?: { screenModel::deleteItemByTitle.invoke(item.title) }
+                        if (storage.nonLibraryItems.isEmpty()) {
+                            Text(
+                                text = "No downloaded chapters for non-library manga",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.CenterHorizontally)
                             )
-                            Spacer(modifier = Modifier.height(space.small))
+                        } else {
+                            Text(
+                                text = remember(storage.nonLibraryItems) {
+                                    storage.nonLibraryItems.fastFold(0L) { acc, storageItem -> acc + storageItem.size }.toSize()
+                                },
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.CenterHorizontally)
+                            )
+                            storage.nonLibraryItems.fastForEach { item ->
+                                StorageItem(
+                                    item = item,
+                                    onDelete = screenModel::onDeleteItem
+                                        .takeIf { item.id.isNotBlank() }
+                                        ?: { screenModel::deleteItemByTitle.invoke(item.title) }
+                                )
+                                Spacer(modifier = Modifier.height(space.small))
+                            }
                         }
                     }
                 }

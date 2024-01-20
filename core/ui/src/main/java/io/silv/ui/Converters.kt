@@ -1,9 +1,13 @@
 package io.silv.ui
 
-import androidx.compose.ui.unit.LayoutDirection
 import io.silv.common.PrefsConverter
-import io.silv.common.model.ReaderOrientation
 import io.silv.ui.composables.CardType
+
+enum class ReaderLayout {
+    PagedRTL,
+    PagedLTR,
+    Vertical
+}
 
 object Converters {
     val CardTypeToStringConverter = PrefsConverter.create<CardType, String>(
@@ -11,15 +15,8 @@ object Converters {
        convertTo = { it.toString() }
     )
 
-    val LayoutDirectionConverter = PrefsConverter.create<LayoutDirection, Int>(
+    val LayoutDirectionConverter = PrefsConverter.create<ReaderLayout, Int>(
         convertTo = { dir -> dir.ordinal },
-        convertFrom = {  v -> if (v == 1) LayoutDirection.Rtl else LayoutDirection.Ltr  }
-    )
-
-    val OrientationConverter = PrefsConverter.create<ReaderOrientation, String>(
-        convertTo = { it.toString() },
-        convertFrom = {
-            ReaderOrientation.valueOf(it)
-        }
+        convertFrom = { v -> ReaderLayout.entries[v] }
     )
 }

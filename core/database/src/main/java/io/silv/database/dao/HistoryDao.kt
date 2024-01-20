@@ -50,6 +50,9 @@ abstract class HistoryDao {
         }
     }
 
+    @Query("SELECT coalesce(SUM(time_read), 0) FROM HISTORY")
+    abstract suspend fun getTotalReadingTime(): Long
+
     @Delete
     abstract suspend fun delete(historyEntity: HistoryEntity)
 

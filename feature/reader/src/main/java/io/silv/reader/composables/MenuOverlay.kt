@@ -9,6 +9,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -38,7 +40,9 @@ import androidx.compose.material.icons.filled.Web
 import androidx.compose.material.icons.twotone.Archive
 import androidx.compose.material.icons.twotone.Unarchive
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +57,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,14 +72,15 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
 import io.silv.common.model.Download
-import io.silv.common.model.ReaderOrientation
 import io.silv.datastore.ReaderPrefs
 import io.silv.datastore.collectAsState
 import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.manga.model.Manga
 import io.silv.reader.loader.ReaderChapter
 import io.silv.ui.Converters
+import io.silv.ui.ReaderLayout
 import io.silv.ui.composables.ChapterDownloadAction
 import io.silv.ui.composables.ChapterDownloadIndicator
 import io.silv.ui.layout.DragAnchors
@@ -261,7 +267,7 @@ fun ReaderMenuOverlay(
                                 .fillMaxHeight(0.6f)
                                 .fillMaxWidth()
                         )
-                        MenuTabs.Options.ordinal -> Options(
+                        MenuTabs.Options.ordinal -> ReaderOptions(
                             modifier = Modifier
                                 .fillMaxHeight(0.6f)
                                 .fillMaxWidth()
@@ -273,29 +279,6 @@ fun ReaderMenuOverlay(
     }
 }
 
-@Composable
-private fun Options(
-    modifier: Modifier = Modifier,
-) {
-
-    val layoutDirection by ReaderPrefs.layoutDirection.collectAsState(
-        defaultValue = LayoutDirection.Rtl,
-        converter = Converters.LayoutDirectionConverter
-    )
-
-    val orientation by ReaderPrefs.readerOrientation.collectAsState(
-        defaultValue = ReaderOrientation.Horizontal,
-        converter = Converters.OrientationConverter
-    )
-
-    val fullscreen by ReaderPrefs.fullscreen.collectAsState(defaultValue = true)
-
-    val showPageNumber by ReaderPrefs.showPageNumber.collectAsState(defaultValue = true)
-
-    Column(modifier) {
-
-    }
-}
 
 @Composable
 fun ToggleItem(
@@ -559,5 +542,92 @@ private fun ChapterListItem(
                 }
             }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun ReaderOptions(
+    modifier: Modifier = Modifier
+) {
+    val scope = rememberCoroutineScope()
+    val space = LocalSpacing.current
+
+    var fullscreen by ReaderPrefs.fullscreen.collectAsState(true, scope)
+    var showPageNumber by ReaderPrefs.showPageNumber.collectAsState(true, scope)
+    var layout by ReaderPrefs.layoutDirection.collectAsState(
+        defaultValue = ReaderLayout.PagedRTL,
+        converter = Converters.LayoutDirectionConverter,
+        scope
+    )
+    var backgroundColor by ReaderPrefs.backgroundColor.collectAsState(3, scope)
+
+    Column(
+        modifier.padding(space.med),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
+    ) {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(text = "Reading mode")
+            FlowRow(
+                verticalArrangement = Arrangement.Center
+            ) {
+                FilterChip(
+                    selected = layout == ReaderLayout.PagedLTR,
+                    onClick = { layout = ReaderLayout.PagedLTR },
+                    label = { Text("Paged (left to right)") },
+                    modifier = Modifier.padding(space.small)
+                )
+                FilterChip(
+                    selected = layout == ReaderLayout.PagedRTL,
+                    onClick = { layout = ReaderLayout.PagedRTL },
+                    label = { Text("Paged (right to left)") },
+                    modifier = Modifier.padding(space.small)
+                )
+                FilterChip(
+                    selected = layout == ReaderLayout.Vertical,
+                    onClick = { layout = ReaderLayout.Vertical },
+                    label = { Text("Vertical") },
+                    modifier = Modifier.padding(space.small)
+                )
+            }
+        }
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(text = "Background color")
+            FlowRow(
+                verticalArrangement = Arrangement.Center
+            ) {
+                val colors = remember {
+                    persistentListOf(
+                        Color.Black to "Black",
+                        Color.Gray to "Gray",
+                        Color.White to "White",
+                        Color.Unspecified to "Default"
+                    )
+                }
+                colors.fastForEachIndexed { i, c ->
+                    FilterChip(
+                        selected = backgroundColor == i,
+                        onClick = { backgroundColor = i },
+                        label = { Text(c.second) },
+                        modifier = Modifier.padding(space.small)
+                    )
+                }
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = fullscreen, onCheckedChange = { fullscreen = it })
+            Text("Fullscreen")
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = showPageNumber, onCheckedChange = { showPageNumber = it })
+            Text("Show page number")
+        }
     }
 }

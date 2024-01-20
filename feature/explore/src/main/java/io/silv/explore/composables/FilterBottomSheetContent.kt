@@ -15,12 +15,10 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -32,17 +30,15 @@ import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -50,6 +46,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -219,17 +216,28 @@ fun FilterBottomSheetContent(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val space = LocalSpacing.current
 
-    val applyButton = @Composable {
-        ExtendedFloatingActionButton(
-            text = { Text(text = "Apply") },
-            containerColor = MaterialTheme.colorScheme.primary,
-            icon = { Icon(imageVector = Icons.Filled.Save, contentDescription = null) },
-            onClick = { onSaveQueryClick(state.queryFilters) },
-            expanded = true,
-        )
-    }
-
     Column {
+        Row(
+            modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(space.med),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            TextButton(
+                onClick = viewModel::resetFilter,
+            ){
+                Text("Reset")
+            }
+            Button(
+                onClick = {
+                    onSaveQueryClick(state.queryFilters)
+                },
+            ) {
+                Text("Apply")
+            }
+        }
         LazyColumn(
             Modifier
                 .weight(1f)
@@ -255,7 +263,7 @@ fun FilterBottomSheetContent(
                     Divider()
                 }
             }
-            item(key = "manga-type-filtesr") {
+            item(key = "manga-type-filters") {
                 Column(Modifier.animateItemPlacement()) {
                     mangaTypeFilter(
                         viewModel::updateFilter,
@@ -302,29 +310,6 @@ fun FilterBottomSheetContent(
                 )
                 Divider()
             }
-        }
-        Row(
-            modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(space.med),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End,
-        ) {
-            ExtendedFloatingActionButton(
-                text = { Text(text = "Reset") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                icon = {
-                    Icon(
-                        imageVector = Icons.Filled.Refresh,
-                        contentDescription = null,
-                    )
-                },
-                onClick = viewModel::resetFilter,
-                expanded = true,
-            )
-            Spacer(modifier = Modifier.width(space.med))
-            applyButton()
         }
     }
 }
@@ -486,7 +471,7 @@ fun DefaultStatusFilter(
     Column {
         Text(text = "Status")
         FlowRow {
-            val statuses = remember { Status.values().toList().toImmutableList() }
+            val statuses = remember { Status.entries.toImmutableList() }
 
             statuses.fastForEach { status ->
                 item(status)
@@ -539,7 +524,7 @@ fun DefaultContentRatingsFilter(
     Column {
         Text(text = "Content Ratings")
         FlowRow {
-            val contentRatings = remember { ContentRating.values().toList().toImmutableList() }
+            val contentRatings = remember { ContentRating.entries.toImmutableList() }
 
             contentRatings.fastForEach { contentRating ->
                 item(contentRating)
@@ -605,7 +590,7 @@ private fun LanguageSelection(
         mutableIntStateOf(0)
     }
 
-    val languages = remember { Language.values().toList().toImmutableList() }
+    val languages = remember { Language.entries.toImmutableList() }
 
     Column(
         modifier = modifier,
@@ -759,7 +744,6 @@ fun DefaultMangaTypeFilter(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DefaultPublicationDemographicFilter(
     updateFilter: (FilterAction.ChangePublicationDemographic) -> Unit,
@@ -769,7 +753,7 @@ fun DefaultPublicationDemographicFilter(
 
     val demographics =
         remember {
-            PublicationDemographic.values().toList().toImmutableList()
+            PublicationDemographic.entries.toImmutableList()
         }
 
     var expanded by rememberSaveable { mutableStateOf(false) }

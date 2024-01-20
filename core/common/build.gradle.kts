@@ -2,7 +2,7 @@
 plugins {
     id("java-library")
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
-    kotlin("plugin.serialization") version "1.9.20"
+    kotlin("plugin.serialization") version "1.9.22"
 }
 
 java {
@@ -14,6 +14,6 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlin.collections.immutable)
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
     compileOnly("com.github.skydoves:compose-stable-marker:1.0.3")
 }

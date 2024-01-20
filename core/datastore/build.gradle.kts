@@ -2,7 +2,7 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
-    kotlin("plugin.serialization") version "1.9.20"
+    kotlin("plugin.serialization") version "1.9.22"
 }
 
 android {
@@ -36,7 +36,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 }
 
@@ -44,19 +44,17 @@ dependencies {
 
     implementation(project(":core:common"))
 
-    implementation("androidx.compose.runtime:runtime:1.5.4")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
-
+    implementation("androidx.compose.runtime:runtime:1.5.4")
     // Datastore
     implementation(libs.androidx.datastore.preferences)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
     implementation(libs.kotlinx.serialization.json.okio)
 
     implementation(libs.koin.android)

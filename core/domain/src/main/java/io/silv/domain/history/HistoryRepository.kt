@@ -15,4 +15,6 @@ interface HistoryRepository {
     suspend fun deleteAllForManga(id: String)
 
     suspend fun clearHistory()
+
+    suspend fun getTotalReadingTime(): Long
 }

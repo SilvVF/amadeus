@@ -352,7 +352,7 @@ private fun Modifier.drawScrollbar(
         alpha: () -> Float,
     ) -> Unit,
 ): Modifier =
-    composed {
+    this.composed {
         val scrolled =
             remember {
                 MutableSharedFlow<Unit>(

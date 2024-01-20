@@ -213,6 +213,10 @@ abstract class MangaDao {
     abstract fun observeLibraryMangaWithChapters(): Flow<List<MangaEntityWithChapters>>
 
     @Transaction
+    @Query("SELECT * FROM MANGA WHERE favorite")
+    abstract suspend fun getLibraryMangaWithChapters(): List<MangaEntityWithChapters>
+
+    @Transaction
     @Query("SELECT * FROM MANGA WHERE id = :id")
     abstract fun observeMangaWithChaptersById(id: String): Flow<MangaEntityWithChapters>
 }

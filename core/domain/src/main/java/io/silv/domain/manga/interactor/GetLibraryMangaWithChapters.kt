@@ -14,4 +14,8 @@ class GetLibraryMangaWithChapters(
     fun subscribe(): Flow<List<MangaWithChapters>> {
         return mangaRepository.observeLibraryMangaWithChapters()
     }
+
+    suspend fun await(): List<MangaWithChapters> {
+        return mangaRepository.getLibraryMangaWithChapters()
+    }
 }

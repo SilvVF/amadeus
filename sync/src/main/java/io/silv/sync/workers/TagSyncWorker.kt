@@ -10,13 +10,12 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
-import io.silv.domain.TagRepository
 import io.silv.data.workers.createForegroundInfo
+import io.silv.domain.TagRepository
 import io.silv.sync.TagSyncWorkName
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import java.util.concurrent.TimeUnit
 
 internal class TagSyncWorker(
     appContext: Context,
@@ -49,7 +48,8 @@ internal class TagSyncWorker(
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .setBackoffCriteria(
                     BackoffPolicy.EXPONENTIAL,
-                    15.seconds.toJavaDuration(),
+                    15,
+                    TimeUnit.SECONDS
                 )
                 .setConstraints(SyncConstraints)
                 .build()

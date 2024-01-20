@@ -36,7 +36,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 }
 
@@ -55,6 +55,8 @@ dependencies {
 
     implementation(libs.sandwich)
 
+    implementation("br.com.devsrsouza.compose.icons:font-awesome:1.1.0")
+
     implementation("com.halilibo.compose-richtext:richtext-commonmark:0.17.0")
     implementation("com.halilibo.compose-richtext:richtext-ui-material3:0.17.0")
 
@@ -70,8 +72,6 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:navigation"))
     implementation(project(":sync"))
-
-    implementation("com.google.accompanist:accompanist-webview:0.30.1")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:name=".AmadeusApp"
@@ -15,23 +15,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Amadeus"
         tools:targetApi="31">
+        <profileable
+            android:shell="true"
+            tools:targetApi="29" />
 
         <activity
-            android:process=":error_handler"
             android:name=".crash.CrashActivity"
-            android:exported="false" />
-
+            android:exported="false"
+            android:process=":error_handler" />
         <activity
             android:name=".MainActivity"
-            android:windowSoftInputMode="adjustResize"
             android:exported="true"
-            android:theme="@style/Theme.Amadeus">
+            android:theme="@style/Theme.Amadeus"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -41,7 +44,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths" />
         </provider>
-
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"

@@ -2,7 +2,6 @@ package io.silv.data.updates
 
 import androidx.room.withTransaction
 import io.silv.common.model.Status
-import io.silv.common.time.epochMillis
 import io.silv.common.time.localDateTimeNow
 import io.silv.data.mappers.toChapterEntity
 import io.silv.data.util.GetChapterList
@@ -10,7 +9,6 @@ import io.silv.database.AmadeusDatabase
 import io.silv.database.dao.ChapterDao
 import io.silv.database.dao.MangaDao
 import io.silv.database.entity.manga.MangaEntity
-import kotlin.time.Duration.Companion.minutes
 
 class MangaUpdateJob internal constructor(
     private val database: AmadeusDatabase,
@@ -23,10 +21,7 @@ class MangaUpdateJob internal constructor(
         return when {
             mangaEntity.status == Status.completed -> false
             mangaEntity.lastSyncedForUpdates == null -> true
-            else -> {
-                localDateTimeNow().epochMillis() -
-                        mangaEntity.lastSyncedForUpdates!!.epochMillis() > 5.minutes.inWholeMilliseconds
-            }
+            else -> true
         }
     }
 

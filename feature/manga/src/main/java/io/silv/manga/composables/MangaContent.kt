@@ -14,16 +14,20 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedSuggestionChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -44,11 +48,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 import com.halilibo.richtext.markdown.Markdown
 import com.halilibo.richtext.ui.material3.Material3RichText
+import io.silv.common.model.ReadingStatus
 import io.silv.domain.manga.model.Manga
 import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.noRippleClickable
@@ -80,10 +86,12 @@ private data class MangaActionItem(
 @Composable
 fun MangaActions(
     modifier: Modifier,
+    readingStatus: ReadingStatus,
     inLibrary: Boolean,
     showChapterArt: () -> Unit,
     addToLibraryClicked: () -> Unit,
     viewOnWebClicked: () -> Unit,
+    changeStatus: (ReadingStatus) -> Unit
 ) {
     val space = LocalSpacing.current
     Row(
@@ -91,6 +99,11 @@ fun MangaActions(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
+
+        var statusDialogVisible by remember {
+            mutableStateOf(false)
+        }
+
         val items by remember(inLibrary) {
             derivedStateOf {
                 persistentListOf(
@@ -131,6 +144,51 @@ fun MangaActions(
                     text = label,
                     style = MaterialTheme.typography.labelMedium.copy(color = color),
                 )
+            }
+        }
+        Box {
+
+            val statuses = remember { ReadingStatus.entries.toImmutableList() }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                IconButton(
+                    onClick = {statusDialogVisible = !statusDialogVisible },
+                    modifier = Modifier.padding(horizontal = space.large),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CollectionsBookmark,
+                        contentDescription = "reading status",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+                Text(
+                    text = "Reading status",
+                    style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onBackground),
+                )
+            }
+            DropdownMenu(
+                expanded = statusDialogVisible,
+                offset = DpOffset(x = -(space.med), y = 0.dp),
+                onDismissRequest = { statusDialogVisible = false }
+            ) {
+                statuses.fastForEach { status ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(space.small),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = status == readingStatus,
+                            onClick = { changeStatus(status)  }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(status.toString()) },
+                            onClick = { changeStatus(status) }
+                        )
+                    }
+                }
             }
         }
     }

@@ -5,8 +5,6 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import java.time.Duration
-import kotlin.time.toKotlinDuration
 
 fun localDateTimeNow() = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
@@ -20,18 +18,6 @@ fun timeStringMinus(duration: kotlin.time.Duration): String {
     return Clock.System.now()
         .minus(
             duration,
-        )
-        .toString()
-        .replace(":", "%3A")
-        .takeWhile {
-            it != '.'
-        }
-}
-
-fun timeStringMinus(duration: Duration): String {
-    return Clock.System.now()
-        .minus(
-            duration.toKotlinDuration(),
         )
         .toString()
         .replace(":", "%3A")

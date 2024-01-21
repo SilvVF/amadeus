@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.silv.common.filterUnique
+import io.silv.common.model.ReadingStatus
 import io.silv.common.model.Status
 import io.silv.domain.manga.model.Manga
 import io.silv.manga.view.MangaStats
@@ -46,6 +47,7 @@ fun MangaImageWithTitle(
     showChapterArt: () -> Unit,
     addToLibrary: (String) -> Unit,
     viewOnWeb: () -> Unit,
+    changeStatus: (ReadingStatus) -> Unit
 ) {
     val space = LocalSpacing.current
 
@@ -92,7 +94,9 @@ fun MangaImageWithTitle(
                 addToLibraryClicked = {
                    addToLibrary(manga.id)
                 },
-                viewOnWebClicked = viewOnWeb
+                viewOnWebClicked = viewOnWeb,
+                changeStatus = changeStatus,
+                readingStatus = manga.readingStatus
             )
         }
     }

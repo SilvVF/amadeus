@@ -53,6 +53,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -116,6 +117,7 @@ fun ReaderMenuOverlay(
     changePage: (page: Int) -> Unit,
     onBackArrowClick: () -> Unit,
     onViewOnWebClick: () -> Unit,
+    chapterActions: ChapterActions,
     content: @Composable () -> Unit,
 ) {
     val space = LocalSpacing.current
@@ -265,7 +267,8 @@ fun ReaderMenuOverlay(
                             chapters = chapters,
                             modifier = Modifier
                                 .fillMaxHeight(0.6f)
-                                .fillMaxWidth()
+                                .fillMaxWidth(),
+                            actions = chapterActions
                         )
                         MenuTabs.Options.ordinal -> ReaderOptions(
                             modifier = Modifier
@@ -294,11 +297,23 @@ fun ToggleItem(
     }
 }
 
+@Stable
+data class ChapterActions(
+    val delete: (chapterId: String) -> Unit ,
+    val markRead: (chapterId: String) -> Unit,
+    val bookmark: (chapterId: String) -> Unit,
+    val cancelDownload: (download: Download) -> Unit,
+    val pauseDownloads: () -> Unit,
+    val download: (chapterId: String) -> Unit,
+
+)
+
 @Composable
 private fun ChapterList(
     modifier: Modifier = Modifier,
     expandableState: ExpandableState,
-    chapters: () -> ImmutableList<Chapter>
+    chapters: () -> ImmutableList<Chapter>,
+    actions: ChapterActions,
 ) {
     val lazyListState = rememberLazyListState()
     LazyColumn(
@@ -312,15 +327,15 @@ private fun ChapterList(
     ) {
         chapterListItems(
             chapters,
-            onReadClicked = {},
-            onDeleteClicked = {},
+            onReadClicked = { actions.markRead(it) },
+            onDeleteClicked = { actions.delete(it) },
             downloadsProvider =  { persistentListOf() },
             showFullTitle = true,
-            onMarkAsRead = {},
-            onBookmark = {},
-            onDownloadClicked = {},
-            onCancelClicked = {},
-            onPauseClicked = {}
+            onMarkAsRead = { actions.markRead(it) },
+            onBookmark = { actions.bookmark(it) },
+            onDownloadClicked = { actions.download(it) },
+            onCancelClicked = { actions.cancelDownload(it) },
+            onPauseClicked = { actions.pauseDownloads() }
         )
     }
 }

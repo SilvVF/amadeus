@@ -7,6 +7,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import com.skydoves.sandwich.ApiResponse
 import com.skydoves.sandwich.message
 import io.silv.common.model.Download
+import io.silv.common.model.ReadingStatus
 import io.silv.data.download.CoverCache
 import io.silv.data.download.DownloadManager
 import io.silv.data.manga.GetMangaStatisticsById
@@ -171,6 +172,14 @@ class MangaViewScreenModel(
                 .onSuccess {
                     sendEvent(MangaViewEvent.ReadStatusChanged(id, it.read))
                 }
+        }
+    }
+
+    fun updateMangaReadingStatus(readingStatus: ReadingStatus) {
+        screenModelScope.launch {
+            state.value.success?.let {
+                mangaHandler.updateMangaStatus(it.manga, readingStatus)
+            }
         }
     }
 
@@ -345,6 +354,7 @@ data class DownloadActions(
 @Stable
 data class MangaActions(
     val addToLibrary: (id: String) -> Unit,
+    val changeStatus: (ReadingStatus) -> Unit
 )
 
 @Stable

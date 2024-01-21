@@ -5,6 +5,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.silv.common.model.AppTheme
 import io.silv.common.model.AutomaticUpdatePeriod
 import io.silv.datastore.SettingsStore
 import io.silv.datastore.UserSettings
@@ -56,8 +57,17 @@ class SettingsScreenModel(
         }
     }
 
+    fun changeAppTheme(theme: AppTheme) {
+        screenModelScope.launch {
+            settingsStore.update { prev ->
+                prev.copy(theme = theme)
+            }
+        }
+    }
+
     companion object {
         const val UPDATE_PERIOD_KEY = "auto_update_period"
+        const val FILTER_DISPLAY_KEY = "filter_display_key"
         const val LIBRARY_DISPLAY_KEY = "library_display_key"
         const val EXPLORE_DISPLAY_KEY = "explore_display_key"
     }

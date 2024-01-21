@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import io.silv.common.model.AppTheme
 import io.silv.common.model.AutomaticUpdatePeriod
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -40,6 +41,7 @@ class SettingsStore(context: Context) {
             ?: UserSettings()
     }
 
+
     private fun encode(settings: UserSettings): String? {
         return try {
             Json.encodeToString(settings)
@@ -66,5 +68,6 @@ class SettingsStore(context: Context) {
 @Stable
 @Serializable
 data class UserSettings(
-    val updateInterval: AutomaticUpdatePeriod = AutomaticUpdatePeriod.Off
+    val updateInterval: AutomaticUpdatePeriod = AutomaticUpdatePeriod.Off,
+    val theme: AppTheme = AppTheme.DYNAMIC_COLOR_DEFAULT
 )

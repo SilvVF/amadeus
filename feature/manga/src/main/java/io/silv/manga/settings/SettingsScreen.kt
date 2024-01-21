@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Explore
@@ -57,8 +58,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import io.silv.common.model.AppTheme
 import io.silv.common.model.AutomaticUpdatePeriod
 import io.silv.datastore.ExplorePrefs
+import io.silv.datastore.FilterPrefs
 import io.silv.datastore.LibraryPrefs
 import io.silv.datastore.ReaderPrefs
 import io.silv.datastore.UserSettings
@@ -87,7 +90,8 @@ class SettingsScreen: Screen {
             state = state,
             actions = SettingsActions(
                 changeCurrentDialog = screenModel::changeCurrentDialog,
-                changeUpdatePeriod = screenModel::changeAutomaticUpdatePeriod
+                changeUpdatePeriod = screenModel::changeAutomaticUpdatePeriod,
+                changeTheme = screenModel::changeAppTheme
             )
         )
     }
@@ -96,11 +100,12 @@ class SettingsScreen: Screen {
 @Stable
 data class SettingsActions(
     val changeCurrentDialog: (String?) -> Unit,
-    val changeUpdatePeriod: (AutomaticUpdatePeriod) -> Unit
+    val changeUpdatePeriod: (AutomaticUpdatePeriod) -> Unit,
+    val changeTheme: (AppTheme) -> Unit
 )
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreenContent(
     state: SettingsState,
@@ -192,6 +197,27 @@ fun SettingsScreenContent(
                 title = "Explore display options"
             )
         }
+        SettingsScreenModel.FILTER_DISPLAY_KEY -> {
+            val scope = rememberCoroutineScope()
+            val cardType = FilterPrefs.cardTypePrefKey.collectAsState(
+                defaultValue = CardType.Compact,
+                converter = Converters.CardTypeToStringConverter,
+                scope = scope,
+            )
+            val gridCells = FilterPrefs.gridCellsPrefKey.collectAsState(
+                FilterPrefs.gridCellsDefault,
+                scope
+            )
+            val useList = FilterPrefs.useListPrefKey.collectAsState(false, scope)
+            DisplayPrefsDialogContent(
+                cardType = cardType,
+                useList = useList,
+                gridCells = gridCells,
+                animatePlacement = null,
+                onDismiss = { actions.changeCurrentDialog(null) },
+                title = "Filter display options"
+            )
+        }
         null -> Unit
     }
 
@@ -205,8 +231,33 @@ fun SettingsScreenContent(
     ) { paddingValues ->
         Column(
             Modifier
+                .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
         ) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "Theme",
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .78f)
+                    ),
+                    modifier = Modifier.padding(horizontal = space.large)
+                )
+                FlowRow(
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    AppTheme.entries.fastForEach {
+                        FilterChip(
+                            selected = settings.theme == it,
+                            onClick = { actions.changeTheme(it) },
+                            label = { Text(it.toString()) },
+                            modifier = Modifier.padding(space.small)
+                        )
+                    }
+                }
+            }
             Text(
                 "Global update",
                 style = MaterialTheme.typography.labelLarge.copy(
@@ -260,6 +311,12 @@ fun SettingsScreenContent(
                     description = "explore display options",
                     icon = Icons.Filled.Explore) {
                     actions.changeCurrentDialog(SettingsScreenModel.EXPLORE_DISPLAY_KEY)
+                }
+                SettingsItem(
+                    title = "Filter",
+                    description = "filter display options",
+                    icon = Icons.Filled.AccessTime) {
+                    actions.changeCurrentDialog(SettingsScreenModel.FILTER_DISPLAY_KEY)
                 }
             }
             Divider()

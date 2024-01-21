@@ -57,6 +57,8 @@ android {
         }
     }
     compileOptions {
+        // For AGP 4.1+
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -80,6 +82,8 @@ dependencies {
     implementation(libs.sandwich)
 
     implementation(libs.image.decoder)
+
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(project(":core:common"))
     implementation(project(":core:navigation"))

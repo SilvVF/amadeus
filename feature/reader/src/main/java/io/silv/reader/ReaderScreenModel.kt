@@ -10,10 +10,13 @@ import io.silv.common.model.Page
 import io.silv.data.download.DownloadManager
 import io.silv.domain.chapter.interactor.ChapterHandler
 import io.silv.domain.chapter.model.Chapter
+import io.silv.domain.chapter.model.toResource
 import io.silv.domain.history.HistoryRepository
 import io.silv.domain.history.HistoryUpdate
 import io.silv.domain.manga.interactor.GetMangaWithChapters
 import io.silv.domain.manga.model.Manga
+import io.silv.domain.manga.model.toResource
+import io.silv.reader.composables.ChapterActions
 import io.silv.reader.loader.ChapterLoader
 import io.silv.reader.loader.ReaderChapter
 import kotlinx.collections.immutable.ImmutableList
@@ -249,6 +252,46 @@ class ReaderScreenModel(
         super.onDispose()
     }
 
+    val chapterActions = ChapterActions(
+        delete = { chapterId ->
+            screenModelScope.launch {
+
+                val manga = state.value.manga ?: return@launch
+                val chapter = state.value.chapters.find { it.id == chapterId } ?: return@launch
+
+                downloadManager.deleteChapters(listOf(chapter.toResource()), manga.toResource())
+            }
+        },
+        markRead = { chapterId ->
+            screenModelScope.launch {
+                chapterHandler.toggleReadOrUnread(chapterId)
+            }
+        },
+        bookmark = { chapterId ->
+            screenModelScope.launch {
+                chapterHandler.toggleChapterBookmarked(chapterId)
+            }
+        },
+        cancelDownload = {download ->
+            screenModelScope.launch {
+                downloadManager.cancelQueuedDownloads(listOf(download))
+            }
+        },
+        pauseDownloads = {
+                         screenModelScope.launch {
+                             downloadManager.pauseDownloads()
+                         }
+        },
+        download = { chapterId ->
+            screenModelScope.launch {
+
+                val manga = state.value.manga ?: return@launch
+                val chapter = state.value.chapters.find { it.id == chapterId } ?: return@launch
+
+                downloadManager.downloadChapters(manga.toResource() ,listOf(chapter.toResource()))
+            }
+        }
+    )
 }
 
 data class ViewerChapters(

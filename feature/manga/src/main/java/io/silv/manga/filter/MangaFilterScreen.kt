@@ -222,10 +222,9 @@ class MangaFilterScreen(
                     }
                 }
                 useList -> {
-                    if (timePeriodItems.itemCount == 0)
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = paddingValues,
+                        contentPadding = paddingValues
                     ) {
                         mangaList(
                             manga = timePeriodItems,

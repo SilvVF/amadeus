@@ -2,6 +2,7 @@ package io.silv.ui.theme
 
 import android.app.Activity
 import android.os.Build
+import android.widget.Toast
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -11,12 +12,14 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import io.silv.common.model.AppTheme
 
 private val LightColors =
     lightColorScheme(
@@ -87,26 +90,49 @@ private val DarkColors =
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun AmadeusTheme(
-    useDarkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    appTheme: AppTheme = AppTheme.DYNAMIC_COLOR_DEFAULT,
+    systemInDarkTheme: Boolean = isSystemInDarkTheme(),
     content:
         @Composable()
         () -> Unit,
 ) {
+    val context = LocalContext.current
+    LaunchedEffect(appTheme) {
+        val dynamicColors = listOf(AppTheme.DYNAMIC_COLOR_DEFAULT, AppTheme.DYNAMIC_COLOR_DARK, AppTheme.DYNAMIC_COLOR_LIGHT)
+        if (appTheme in dynamicColors && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            Toast.makeText(context, "Unable to apply dynamic color sdk version to low.", Toast.LENGTH_LONG).show()
+        }
+    }
+
     val colors =
-        when {
-            dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                val context = LocalContext.current
-                if (useDarkTheme) {
+        when(appTheme) {
+            AppTheme.DYNAMIC_COLOR_DARK -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     dynamicDarkColorScheme(context)
                 } else {
-                    dynamicLightColorScheme(
-                        context
-                    )
+                    DarkColors
                 }
             }
-            useDarkTheme -> DarkColors
-            else -> LightColors
+            AppTheme.DYNAMIC_COLOR_LIGHT -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    dynamicLightColorScheme(context)
+                } else {
+                    LightColors
+                }
+            }
+            AppTheme.DYNAMIC_COLOR_DEFAULT -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (systemInDarkTheme)
+                        dynamicDarkColorScheme(context)
+                    else
+                        dynamicLightColorScheme(context)
+                } else {
+                    if (systemInDarkTheme) DarkColors else LightColors
+                }
+            }
+            AppTheme.SYSTEM_DEFAULT -> if (systemInDarkTheme) DarkColors else LightColors
+            AppTheme.DARK -> DarkColors
+            AppTheme.LIGHT -> LightColors
         }
 
     val view = LocalView.current
@@ -114,7 +140,7 @@ fun AmadeusTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = Color.Transparent.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = useDarkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = systemInDarkTheme
         }
     }
 

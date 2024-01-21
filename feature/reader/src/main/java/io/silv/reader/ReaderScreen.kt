@@ -74,6 +74,7 @@ import io.silv.datastore.ReaderPrefs
 import io.silv.datastore.collectAsState
 import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.manga.model.Manga
+import io.silv.reader.composables.ChapterActions
 import io.silv.reader.composables.GestureHintOverlay
 import io.silv.reader.composables.ReaderMenuOverlay
 import io.silv.reader.loader.ReaderChapter
@@ -183,7 +184,8 @@ class ReaderScreen(
                         loadPrevChapter = screenModel::loadPreviousChapter,
                         loadNextChapter = screenModel::loadNextChapter,
                         manga = state.manga,
-                        layoutDirection = LayoutDirection.Rtl
+                        layoutDirection = LayoutDirection.Rtl,
+                        chapterActions = screenModel.chapterActions
                     )
                     ReaderLayout.PagedLTR ->  HorizontalReader(
                         viewerChapters = state.viewerChapters,
@@ -192,7 +194,8 @@ class ReaderScreen(
                         loadPrevChapter = screenModel::loadPreviousChapter,
                         loadNextChapter = screenModel::loadNextChapter,
                         manga = state.manga,
-                        layoutDirection = LayoutDirection.Ltr
+                        layoutDirection = LayoutDirection.Ltr,
+                        chapterActions = screenModel.chapterActions
                     )
                     ReaderLayout.Vertical -> VerticalReader(
                         viewerChapters = state.viewerChapters,
@@ -201,6 +204,7 @@ class ReaderScreen(
                         loadPrevChapter = screenModel::loadPreviousChapter,
                         loadNextChapter = screenModel::loadNextChapter,
                         manga = state.manga,
+                        chapterActions = screenModel.chapterActions
                     )
                 }
             } else {
@@ -220,6 +224,7 @@ fun VerticalReader(
     onPageChange: (readerChapter: ReaderChapter, page: Page) -> Unit,
     loadNextChapter: () -> Unit,
     loadPrevChapter: () -> Unit,
+    chapterActions: ChapterActions,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -294,7 +299,8 @@ fun VerticalReader(
                 .onFailure {
                     Toast.makeText(context, "couldn't find a way to open chapter", Toast.LENGTH_SHORT).show()
                 }
-        }
+        },
+        chapterActions = chapterActions
     ) {
         GestureHintOverlay(vertical = true) {
             Box {
@@ -349,7 +355,8 @@ fun HorizontalReader(
     onPageChange: (readerChapter: ReaderChapter, page: Page) -> Unit,
     loadNextChapter: () -> Unit,
     loadPrevChapter: () -> Unit,
-    layoutDirection: LayoutDirection
+    layoutDirection: LayoutDirection,
+    chapterActions: ChapterActions
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -418,7 +425,8 @@ fun HorizontalReader(
                   .onFailure {
                       Toast.makeText(context, "couldn't find a way to open chapter", Toast.LENGTH_SHORT).show()
                   }
-        }
+        },
+        chapterActions = chapterActions
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             CompositionLocalProvider(

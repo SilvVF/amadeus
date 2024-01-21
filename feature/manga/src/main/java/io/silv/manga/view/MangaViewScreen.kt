@@ -218,6 +218,7 @@ class MangaViewScreen(
             mangaActions =
             MangaActions(
                 addToLibrary = screenModel::toggleLibraryManga,
+                changeStatus = screenModel::updateMangaReadingStatus
             ),
             downloadActions = DownloadActions(
                 pause = screenModel::pauseDownload,
@@ -430,6 +431,7 @@ fun MangaViewSuccessScreen(
                         showChapterArt = {
                             currentBottomSheet = VOLUME_ART_BOTTOM_SHEET
                         },
+                        changeStatus = { mangaActions.changeStatus(it) }
                     )
                 }
                 item("manga-info") {

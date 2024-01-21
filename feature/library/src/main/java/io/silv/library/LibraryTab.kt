@@ -58,6 +58,7 @@ import androidx.compose.material.icons.twotone.Unarchive
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -121,6 +122,7 @@ import io.silv.library.state.LibraryMangaState
 import io.silv.library.state.LibraryState
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
+import io.silv.ui.CenterBox
 import io.silv.ui.Converters
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
@@ -148,6 +150,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.number
 import kotlinx.parcelize.IgnoredOnParcel
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
@@ -210,7 +213,7 @@ object LibraryTab : ReselectTab {
                     appState.searchGlobal(it)
                 },
                 navigateToExploreTab = {
-                    appState.searchGlobal(null)
+                    appState.searchGlobal(it)
                 },
                 onDownload = screenModel::startDownload,
                 onCancelDownload = screenModel::cancelDownload,
@@ -391,12 +394,19 @@ fun LibraryScreenContent(
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
             when (val mangaState = stateProvider().libraryMangaState) {
-                LibraryMangaState.Loading -> {}
+                LibraryMangaState.Loading -> {
+                    CenterBox(Modifier.fillMaxSize()) {
+                        CircularProgressIndicator()
+                    }
+                }
                 is LibraryMangaState.Error -> {
                     ErrorScreenContent(
                         state = mangaState,
+                        query = searchTextProvider(),
                         paddingValues = paddingValues,
-                        navigateToExploreTab = actions.navigateToExploreTab
+                        navigateToExploreTab = {
+                            actions.navigateToExploreTab(searchTextProvider())
+                        }
                     )
                 }
                 is LibraryMangaState.Success -> {
@@ -453,6 +463,7 @@ fun LibraryScreenContent(
 @Composable
 fun ErrorScreenContent(
     state: LibraryMangaState.Error,
+    query: String,
     navigateToExploreTab: () -> Unit,
     paddingValues: PaddingValues
 ) {
@@ -474,20 +485,50 @@ fun ErrorScreenContent(
                 ),
             tint = MaterialTheme.colorScheme.primary
         )
+
         Text(
-            text = buildAnnotatedString { 
-                val libEmpty = "Your library is currently empty. Add manga using the "
+            text = buildAnnotatedString {
+                val libEmpty = "Your library is currently empty. "
+                val s = if (query.isNotBlank()) {
+                    "Search for "
+                } else {
+                    "Add manga using the "
+                }
+                val start = libEmpty + s
                 val tab = "Explore Tab"
-                addStyle(style = MaterialTheme.typography.labelLarge.toSpanStyle(), 0, libEmpty.length)
+                val end = if (query.isNotBlank()) {
+                    " using "
+                } else {
+                    " "
+                }
+
                 addStyle(
                     style = MaterialTheme.typography.labelLarge
                         .toSpanStyle().copy(
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold,
-                        ), 
-                    libEmpty.length, libEmpty.length + tab.length,
+                        ),
+                    start = start.length,
+                    end = start.length + query.length
                 )
-                append(libEmpty)
+
+                addStyle(
+                    style = MaterialTheme.typography.labelLarge.toSpanStyle(),
+                    start = start.length + query.length,
+                    start.length + query.length + end.length
+                )
+                addStyle(
+                    style = MaterialTheme.typography.labelLarge
+                        .toSpanStyle().copy(
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    start.length + query.length + end.length,
+                    start.length + query.length + end.length + tab.length
+                )
+                append(start)
+                append(query)
+                append(end)
                 append(tab)
             },
             modifier = Modifier
@@ -636,6 +677,29 @@ fun UpdatesList(
     val space = LocalSpacing.current
     val navigator = LocalNavigator.currentOrThrow
 
+    val timeText = remember(state.libraryLastUpdated) {
+        state.libraryLastUpdated?.let {
+
+            var h = it.time.hour
+            var isPm = false
+
+            when (h) {
+                0 -> h = 12
+                12 -> isPm = true
+                in 12..24 -> {
+                    h -= 12
+                    isPm = true
+                }
+            }
+            val amPm = if (isPm) "PM" else "AM"
+            val time = if (it.time.minute < 10) {
+                "0${it.time.minute}"
+            } else it.time.minute.toString()
+
+            "Library last updated at ${it.date.month.number}/${it.date.dayOfMonth}/${it.date.year} - $h:${time} $amPm"
+        }
+    }
+
     PullRefresh(
         refreshing = state.updatingLibrary,
         onRefresh = { actions.refreshUpdates() },
@@ -662,11 +726,27 @@ fun UpdatesList(
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.titleMedium
                 )
+                timeText?.let {
+                    Text(
+                        it,
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         } else {
             LazyColumn(
                 contentPadding = paddingValues
             ) {
+                item(key = "last-updated") {
+                    timeText?.let {
+                        Text(
+                            it,
+                            textAlign = TextAlign.Start,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
                 state.updates.fastForEach { (epochDay, updatesList) ->
                     item(key = epochDay) {
                         val text = remember {

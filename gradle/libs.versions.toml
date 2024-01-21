@@ -6,6 +6,7 @@ androidxTestEspressoCore = "3.5.1"
 appcompat = "1.6.1"
 coilGif = "2.5.0"
 datastorePreferences = "1.0.0"
+desugar_jdk_libs = "2.0.4"
 disklrucache = "2.0.2"
 flowCombinetupleKt = "1.2.0"
 imageDecoder = "fbd6601290"
@@ -54,6 +55,7 @@ kotlinCollectionsImmutable = "0.3.6"
 sandwich = "2.0.4"
 
 [libraries]
+desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 disklrucache = { module = "com.jakewharton:disklrucache", version.ref = "disklrucache" }
 image-decoder = { module = "com.github.tachiyomiorg:image-decoder", version.ref = "imageDecoder" }
 material-motion-compose-core = { module = "io.github.fornewid:material-motion-compose-core", version.ref = "materialMotionComposeCore" }

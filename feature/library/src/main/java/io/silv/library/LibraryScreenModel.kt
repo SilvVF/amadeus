@@ -13,6 +13,7 @@ import io.silv.domain.chapter.interactor.ChapterHandler
 import io.silv.domain.chapter.interactor.GetBookmarkedChapters
 import io.silv.domain.chapter.interactor.GetChapter
 import io.silv.domain.chapter.model.toResource
+import io.silv.domain.history.GetLibraryLastUpdated
 import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
 import io.silv.domain.manga.interactor.GetManga
 import io.silv.domain.manga.interactor.MangaHandler
@@ -53,6 +54,7 @@ data class UiChapterUpdate(
 class LibraryScreenModel(
     private val updatesRepository: UpdatesRepository,
     private val downloadManager: DownloadManager,
+    private val getLibraryLastUpdated: GetLibraryLastUpdated,
     private val getManga: GetManga,
     private val getBookmarkedChapters: GetBookmarkedChapters,
     private val getChapter: GetChapter,
@@ -178,6 +180,11 @@ class LibraryScreenModel(
             mutableState.update { state ->
                 state.copy(updatingLibrary = it)
             }
+        }
+            .launchIn(screenModelScope)
+
+        getLibraryLastUpdated.subscribe().onEach { time ->
+            mutableState.update { state -> state.copy(libraryLastUpdated = time) }
         }
             .launchIn(screenModelScope)
     }

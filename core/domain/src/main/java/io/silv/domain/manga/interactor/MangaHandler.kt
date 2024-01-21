@@ -1,5 +1,6 @@
 package io.silv.domain.manga.interactor
 
+import io.silv.common.model.ReadingStatus
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.repository.MangaRepository
 import kotlinx.datetime.LocalDateTime
@@ -25,6 +26,12 @@ class MangaHandler(
             manga.copy(
                 savedAtLocal = time
             )
+        )
+    }
+
+    suspend fun updateMangaStatus(manga: Manga, readingStatus: ReadingStatus) = runCatching {
+        mangaRepository.updateManga(
+            manga.copy(readingStatus = readingStatus)
         )
     }
 }

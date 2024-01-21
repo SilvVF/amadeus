@@ -41,7 +41,8 @@ data class Manga(
     val year: Int,
     val latestUploadedChapter: String?,
     val coverLastModified: Long,
-    val isStub: Boolean = false
+    val lastSyncedForUpdates: LocalDateTime?,
+    val isStub: Boolean = false,
 ) {
     val tags = tagToId.keys.toImmutableList()
     val tagIds = tagToId.values.toImmutableList()
@@ -88,6 +89,7 @@ data class Manga(
                 year = 2000,
                 latestUploadedChapter = null,
                 coverLastModified = 0L,
+                lastSyncedForUpdates = null,
                 isStub = true
             )
         }

@@ -9,6 +9,7 @@ import io.silv.library.UiChapterUpdate
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.datetime.LocalDateTime
 
 @Stable
 data class LibraryTag(
@@ -18,11 +19,15 @@ data class LibraryTag(
 )
 
 sealed interface LibraryError {
+    @Stable
     data object NoFavoritedChapters: LibraryError
+    @Stable
     data class Generic(val reason: String): LibraryError
 }
 
+@Stable
 data class LibraryState(
+    val libraryLastUpdated: LocalDateTime? = null,
     val updatingLibrary: Boolean = false,
     val bookmarkedChapters: ImmutableList<Pair<Manga, ImmutableList<Chapter>>> = persistentListOf(),
     val updates: ImmutableList<Pair<Int, ImmutableList<UiChapterUpdate>>> = persistentListOf(),
@@ -31,12 +36,15 @@ data class LibraryState(
 
 sealed interface LibraryMangaState {
 
+    @Stable
     data object Loading: LibraryMangaState
 
+    @Stable
     data class Error(
         val error: LibraryError
     ): LibraryMangaState
 
+    @Stable
     data class Success(
         val mangaWithChapters: ImmutableList<MangaWithChapters> = persistentListOf(),
         val filteredTagIds: ImmutableList<String> = persistentListOf(),
@@ -77,7 +85,7 @@ data class LibraryActions(
     val filterByTag: (id: String) -> Unit = {_-> },
     val searchChanged: (search: String) -> Unit = {_ ->},
     val searchOnMangaDex: (query: String) -> Unit = { _ -> },
-    val navigateToExploreTab: () -> Unit = {},
+    val navigateToExploreTab: (query: String?) -> Unit = {},
     val refreshUpdates: () -> Unit = {},
     val markUpdatesAsSeen: (mangaId: String, chapterId: String) -> Unit = { _, _ ->},
     val onDownload: (mangaId: String, chapterId: String) -> Unit = {_, _ ->},

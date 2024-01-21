@@ -4,6 +4,7 @@ import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaUpdate
 import io.silv.domain.manga.model.MangaWithChapters
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.LocalDateTime
 
 interface MangaRepository {
 
@@ -34,4 +35,6 @@ interface MangaRepository {
     suspend fun deleteUnused()
 
     fun observeUnusedCount(): Flow<Int>
+
+    fun observeLastLibrarySynced(): Flow<LocalDateTime?>
 }

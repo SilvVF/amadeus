@@ -14,6 +14,7 @@ import io.silv.domain.manga.repository.MangaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.LocalDateTime
 
 class MangaRepositoryImpl internal constructor(
     private val mangaDao: MangaDao,
@@ -38,6 +39,10 @@ class MangaRepositoryImpl internal constructor(
         withContext(dispatchers.io) {
             mangaDao.update(MangaMapper.toEntity(manga))
         }
+
+    override fun observeLastLibrarySynced(): Flow<LocalDateTime?> {
+        return mangaDao.observeLastSyncedTime()
+    }
 
     override suspend fun getMangaByTitle(title: String): Manga? =
         withContext(dispatchers.io) { mangaDao.getMangaByTitle(title)?.let(MangaMapper::mapManga) }

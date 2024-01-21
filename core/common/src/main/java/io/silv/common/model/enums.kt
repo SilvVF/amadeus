@@ -125,6 +125,40 @@ enum class ReaderDirection {
 }
 
 @Stable
+enum class AppTheme {
+    DYNAMIC_COLOR_DARK{
+        override fun toString(): String {
+            return "Dynamic (dark)"
+        }
+    },
+    DYNAMIC_COLOR_LIGHT{
+        override fun toString(): String {
+            return "Dynamic (light)"
+        }
+    },
+    DYNAMIC_COLOR_DEFAULT{
+        override fun toString(): String {
+            return "Dynamic (system default))"
+        }
+    },
+    SYSTEM_DEFAULT {
+        override fun toString(): String {
+            return "System default"
+        }
+    },
+    DARK {
+        override fun toString(): String {
+            return "Dark"
+        }
+    },
+    LIGHT {
+        override fun toString(): String {
+            return "Light"
+        }
+    }
+}
+
+@Stable
 enum class AutomaticUpdatePeriod(val duration: Duration) {
     Off(Duration.ZERO) { override fun toString(): String { return "Off" }},
     H12(12.hours){ override fun toString(): String { return "Every 12 hours" }},

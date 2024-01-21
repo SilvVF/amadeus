@@ -106,7 +106,9 @@ object MangaMapper {
                 year = year,
                 artists = artists,
                 authors = authors,
-                latestUploadedChapter = latestUploadedChapter
+                latestUploadedChapter = latestUploadedChapter,
+                coverLastModified = manga.coverLastModified,
+                lastSyncedForUpdates = manga.lastSyncedForUpdates
             )
         }
     }
@@ -140,7 +142,8 @@ object MangaMapper {
             artists = entity.artists,
             authors = entity.authors,
             latestUploadedChapter = entity.latestUploadedChapter,
-            coverLastModified = entity.coverLastModified
+            coverLastModified = entity.coverLastModified,
+            lastSyncedForUpdates = entity.lastSyncedForUpdates
         )
     }
 

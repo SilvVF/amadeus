@@ -1030,8 +1030,10 @@ fun LibraryManga(
     state: LibraryMangaState.Success,
     actions: LibraryActions,
 ) {
+
     val space = LocalSpacing.current
     val navigator = LocalNavigator.currentOrThrow
+
     if (useList) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -1066,6 +1068,9 @@ fun LibraryManga(
                             animateItemPlacement()
                         }
                         .padding(space.small),
+                    onClick = {
+                        navigator.push(SharedScreen.MangaView(it.id))
+                    },
                     onFavoriteClick = {},
                 )
             }

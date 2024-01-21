@@ -1,4 +1,6 @@
-# amadeus
+# amadeus 
+[GooglePlay](https://play.google.com/store/apps/details?id=io.silv.amadeus)
+
 Amadeus is a Manga dex manga reader that supports offline reading and browsing of manga.
 Features are based on [Tachiyomi](https://tachiyomi.org/) and [Neko](https://tachiyomi.org/forks/Neko/). 
 Rip tachiyomi [o7]("https://www.youtube.com/watch?v=EAk8PjCsXQ8")

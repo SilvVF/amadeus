@@ -153,16 +153,19 @@ abstract class MangaDao {
     @Query("""
         DELETE 
         FROM manga
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM chapters
-            WHERE manga.id = chapters.manga_id 
-            AND(chapters.last_page_read IS NOT NULL OR chapters.bookmarked = 1)
-        )
-        OR NOT EXISTS (
-            SELECT 1
-            FROM chapters
-            WHERE manga.id = chapters.manga_id
+        WHERE NOT manga.favorite  
+        AND (
+            NOT EXISTS (
+                SELECT 1
+                FROM chapters
+                WHERE manga.id = chapters.manga_id 
+                AND(chapters.last_page_read IS NOT NULL OR chapters.bookmarked = 1)
+            )
+            OR NOT EXISTS (
+                SELECT 1
+                FROM chapters
+                WHERE manga.id = chapters.manga_id
+            )
         )
     """)
     abstract suspend fun deleteUnused()
@@ -170,16 +173,19 @@ abstract class MangaDao {
     @Query("""
         SELECT COUNT(DISTINCT manga.id)
         FROM manga
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM chapters
-            WHERE manga.id = chapters.manga_id 
-            AND(chapters.last_page_read IS NOT NULL OR chapters.bookmarked = 1)
-        )
-        OR NOT EXISTS (
-            SELECT 1
-            FROM chapters
-            WHERE manga.id = chapters.manga_id
+        WHERE NOT manga.favorite 
+        AND (
+            NOT EXISTS (
+                SELECT 1
+                FROM chapters
+                WHERE manga.id = chapters.manga_id 
+                AND(chapters.last_page_read IS NOT NULL OR chapters.bookmarked = 1)
+            )
+            OR NOT EXISTS (
+                SELECT 1
+                FROM chapters
+                WHERE manga.id = chapters.manga_id
+            )
         )
     """)
     abstract fun observeUnusedMangaCount(): Flow<Int>

@@ -15,8 +15,8 @@ android {
         applicationId = "io.silv.amadeus"
         minSdk = 24
         targetSdk = 34
-        versionCode = 5
-        versionName = "5"
+        versionCode = 8
+        versionName = "8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

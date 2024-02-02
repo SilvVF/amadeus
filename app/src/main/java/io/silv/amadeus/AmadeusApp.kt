@@ -11,13 +11,14 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
-import coil.disk.DiskCache
 import coil.util.DebugLogger
 import com.skydoves.sandwich.SandwichInitializer
 import eu.kanade.tachiyomi.MangaCoverFetcher
-import eu.kanade.tachiyomi.MangaCoverKeyer
-import eu.kanade.tachiyomi.MangaKeyer
 import eu.kanade.tachiyomi.TachiyomiImageDecoder
+import io.ktor.client.HttpClient
+import io.silv.amadeus.coil.CoilDiskCache
+import io.silv.amadeus.coil.CoilMemoryCache
+import io.silv.amadeus.coil.addDiskFetcher
 import io.silv.data.download.CoverCache
 import io.silv.manga.download.DownloadQueueScreen
 import io.silv.manga.filter.MangaFilterScreen
@@ -28,7 +29,6 @@ import io.silv.reader.ReaderScreen
 import io.silv.sync.Sync
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import okhttp3.OkHttpClient
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -79,25 +79,30 @@ class AmadeusApp : Application(), ImageLoaderFactory {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun newImageLoader(): ImageLoader {
-        return ImageLoader.Builder(this).apply {
-            val callFactoryInit = lazy { OkHttpClient.Builder().build() }
-            val diskCacheInit = { CoilDiskCache.get(this@AmadeusApp) }
 
-            components {
+        val client by inject<HttpClient>()
+        val cache by lazy { CoverCache(this) }
+
+        val diskCache = { CoilDiskCache.get(this) }
+        val memCache = { CoilMemoryCache.get(this) }
+
+        val mangaCoverFetcher = MangaCoverFetcher(client, cache, this)
+
+        val coverFetcher = mangaCoverFetcher.coverFetcher
+        val mangaFetcher = mangaCoverFetcher.mangaFetcher
+
+        return ImageLoader.Builder(this)
+            .components {
+                addDiskFetcher(coverFetcher, diskCache, memCache)
+                addDiskFetcher(mangaFetcher, diskCache, memCache)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     add(ImageDecoderDecoder.Factory())
                 } else {
                     add(GifDecoder.Factory())
                 }
                 add(TachiyomiImageDecoder.Factory())
-                add(MangaCoverFetcher.MangaFactory(callFactoryInit, lazy(diskCacheInit)))
-                add(MangaCoverFetcher.MangaCoverFactory(callFactoryInit, lazy(diskCacheInit)))
-                add(MangaKeyer())
-                add(MangaCoverKeyer(coverCache = inject<CoverCache>().value))
             }
-            callFactory { callFactoryInit.value }
-            diskCache(diskCacheInit)
-            crossfade(
+            .crossfade(
                 (
                     300 *
                         Settings.Global.getFloat(
@@ -107,33 +112,14 @@ class AmadeusApp : Application(), ImageLoaderFactory {
                         )
                     ).toInt(),
             )
-            allowRgb565(isLowRamDevice(this@AmadeusApp))
-            logger(DebugLogger())
-
+            .allowRgb565(isLowRamDevice(this@AmadeusApp))
+            .diskCache(diskCache)
+            .memoryCache(memCache)
             // Coil spawns a new thread for every image load by default
-            fetcherDispatcher(Dispatchers.IO.limitedParallelism(8))
-            decoderDispatcher(Dispatchers.IO.limitedParallelism(2))
-            transformationDispatcher(Dispatchers.IO.limitedParallelism(2))
-        }.build()
-    }
-}
-
-/**
- * Direct copy of Coil's internal SingletonDiskCache so that [MangaCoverFetcher] can access it.
- */
-private object CoilDiskCache {
-    private const val FOLDER_NAME = "image_cache"
-    private var instance: DiskCache? = null
-
-    @Synchronized
-    fun get(context: Context): DiskCache {
-        return instance ?: run {
-            val safeCacheDir = context.cacheDir.apply { mkdirs() }
-            // Create the singleton disk cache instance.
-            DiskCache.Builder()
-                .directory(safeCacheDir.resolve(FOLDER_NAME))
-                .build()
-                .also { instance = it }
-        }
+            .fetcherDispatcher(Dispatchers.IO.limitedParallelism(8))
+            .decoderDispatcher(Dispatchers.IO.limitedParallelism(2))
+            .transformationDispatcher(Dispatchers.IO.limitedParallelism(2))
+            .logger(DebugLogger())
+            .build()
     }
 }

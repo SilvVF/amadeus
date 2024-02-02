@@ -1,34 +1,30 @@
 package eu.kanade.tachiyomi
 
-import android.util.Log
-import coil.ImageLoader
-import coil.annotation.ExperimentalCoilApi
+import android.content.Context
 import coil.decode.DataSource
 import coil.decode.ImageSource
 import coil.disk.DiskCache
 import coil.fetch.FetchResult
 import coil.fetch.Fetcher
 import coil.fetch.SourceResult
-import coil.network.HttpException
+import coil.key.Keyer
 import coil.request.Options
-import coil.request.Parameters
 import eu.kanade.tachiyomi.MangaCoverFetcher.Companion.USE_CUSTOM_COVER
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.http.CacheControl.NoCache
+import io.ktor.http.CacheControl.NoStore
+import io.ktor.http.CacheControl.Visibility
+import io.ktor.http.HttpHeaders
+import io.silv.amadeus.coil.DiskBackedFetcher
+import io.silv.amadeus.coil.FetcherDiskStore
+import io.silv.amadeus.coil.FetcherDiskStoreImageFile
 import io.silv.common.model.MangaCover
 import io.silv.data.download.CoverCache
-import io.silv.data.download.await
 import io.silv.domain.manga.model.Manga
-import okhttp3.CacheControl
-import okhttp3.Call
-import okhttp3.Request
-import okhttp3.Response
 import okio.Path.Companion.toOkioPath
-import okio.Source
-import okio.buffer
-import okio.sink
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import java.io.File
-import java.net.HttpURLConnection.HTTP_NOT_MODIFIED
 
 /**
  * A [Fetcher] that fetches cover image for [Manga] object.
@@ -41,299 +37,94 @@ import java.net.HttpURLConnection.HTTP_NOT_MODIFIED
  * - [USE_CUSTOM_COVER]: Use custom cover if set by user, default is true
  */
 class MangaCoverFetcher(
-    private val url: String?,
-    private val isLibraryManga: Boolean,
-    private val options: Options,
-    private val coverFileLazy: Lazy<File?>,
-    private val customCoverFileLazy: Lazy<File>,
-    private val diskCacheKeyLazy: Lazy<String>,
-    private val callFactoryLazy: Lazy<Call.Factory>,
-    private val diskCacheLazy: Lazy<DiskCache>,
-) : Fetcher {
-    private val diskCacheKey: String
-        get() = diskCacheKeyLazy.value
+    private val client: HttpClient,
+    private val coverCache: CoverCache,
+    private val ctx: Context,
+) {
 
-    override suspend fun fetch(): FetchResult {
+    private val mangaKeyer = MangaKeyer()
+    private val coverKeyer = MangaCoverKeyer(coverCache)
+
+    val coverFetcher: DiskBackedFetcher<MangaCover> = object: DiskBackedFetcher<MangaCover> {
+        override val context: Context = ctx
+        override val keyer: Keyer<MangaCover> = coverKeyer
+        override val diskStore: FetcherDiskStore<MangaCover> =
+            FetcherDiskStoreImageFile { data, _ ->
+                if (data.isMangaFavorite) {
+                    coverCache.getCoverFile(data.url)
+                } else {
+                    null
+                }
+            }
+        override suspend fun fetch(options: Options, data: MangaCover): ByteArray = fetchManga(options, data.url)
+        override suspend fun overrideFetch(options: Options, data: MangaCover): FetchResult? {
+            return customCoverOverride(options, data.mangaId, coverKeyer.key(data, options))
+        }
+    }
+
+    val mangaFetcher: DiskBackedFetcher<Manga> = object: DiskBackedFetcher<Manga> {
+        override val context: Context = ctx
+        override val keyer: Keyer<Manga> = mangaKeyer
+        override val diskStore: FetcherDiskStore<Manga> =
+            FetcherDiskStoreImageFile { data, _ ->
+                if (data.inLibrary) {
+                    coverCache.getCoverFile(data.coverArt)
+                } else {
+                    null
+                }
+            }
+        override suspend fun fetch(options: Options, data: Manga): ByteArray = fetchManga(options, data.coverArt)
+        override suspend fun overrideFetch(options: Options, data: Manga): FetchResult? {
+            return customCoverOverride(options, data.id, mangaKeyer.key(data, options))
+        }
+    }
+
+
+    suspend fun fetchManga(options: Options, url: String): ByteArray {
+        return client
+            .get(url) {
+                for (header in options.headers) {
+                    header(header.first, header.second)
+                }
+                when {
+                    options.networkCachePolicy.readEnabled -> {
+                        // don't take up okhttp cache
+                        header(HttpHeaders.CacheControl, CACHE_CONTROL_NO_STORE)
+                    }
+                    else -> {
+                        // This causes the request to fail with a 504 Unsatisfiable Request.
+                        header(HttpHeaders.CacheControl, CACHE_CONTROL_NO_CACHE)
+                        header(HttpHeaders.CacheControl, CACHE_CONTROL_NO_NETWORK)
+                    }
+                }
+            }
+            .body()
+    }
+
+    fun customCoverOverride(options: Options, id: String, key: String): FetchResult? {
         // Use custom cover if exists
         val useCustomCover = options.parameters.value(USE_CUSTOM_COVER) ?: true
         if (useCustomCover) {
-            val customCoverFile = customCoverFileLazy.value
+            val customCoverFile = coverCache.getCustomCoverFile(id)
             if (customCoverFile.exists()) {
-                return fileLoader(customCoverFile)
-            }
-        }
-
-        // diskCacheKey is thumbnail_url
-        if (url == null) error("No cover specified")
-        return when (getResourceType(url)) {
-            Type.URL -> httpLoader()
-            Type.File -> fileLoader(File(url.substringAfter("file://")))
-            null -> error("Invalid image")
-        }
-    }
-
-    private fun fileLoader(file: File): FetchResult {
-        return SourceResult(
-            source = ImageSource(file = file.toOkioPath(), diskCacheKey = diskCacheKey),
-            mimeType = "image/*",
-            dataSource = DataSource.DISK,
-        )
-    }
-
-    @OptIn(ExperimentalCoilApi::class)
-    private suspend fun httpLoader(): FetchResult {
-        // Only cache separately if it's a library item
-        val libraryCoverCacheFile =
-            if (isLibraryManga) {
-                coverFileLazy.value ?: error("No cover specified")
-            } else {
-                null
-            }
-        if (libraryCoverCacheFile?.exists() == true && options.diskCachePolicy.readEnabled) {
-            return fileLoader(libraryCoverCacheFile)
-        }
-
-        var snapshot = readFromDiskCache()
-        try {
-            // Fetch from disk cache
-            if (snapshot != null) {
-                val snapshotCoverCache = moveSnapshotToCoverCache(snapshot, libraryCoverCacheFile)
-                if (snapshotCoverCache != null) {
-                    // Read from cover cache after added to library
-                    return fileLoader(snapshotCoverCache)
-                }
-
-                // Read from snapshot
                 return SourceResult(
-                    source = snapshot.toImageSource(),
+                    source = ImageSource(
+                        file = customCoverFile.toOkioPath(),
+                        diskCacheKey = key
+                    ),
                     mimeType = "image/*",
                     dataSource = DataSource.DISK,
                 )
             }
-
-            // Fetch from network
-            val response = executeNetworkRequest()
-            val responseBody = checkNotNull(response.body) { "Null response source" }
-            try {
-                // Read from cover cache after library manga cover updated
-                val responseCoverCache = writeResponseToCoverCache(response, libraryCoverCacheFile)
-                if (responseCoverCache != null) {
-                    return fileLoader(responseCoverCache)
-                }
-
-                // Read from disk cache
-                snapshot = writeToDiskCache(response)
-                if (snapshot != null) {
-                    return SourceResult(
-                        source = snapshot.toImageSource(),
-                        mimeType = "image/*",
-                        dataSource = DataSource.NETWORK,
-                    )
-                }
-
-                // Read from response if cache is unused or unusable
-                return SourceResult(
-                    source = ImageSource(source = responseBody.source(), context = options.context),
-                    mimeType = "image/*",
-                    dataSource = if (response.cacheResponse != null) DataSource.DISK else DataSource.NETWORK,
-                )
-            } catch (e: Exception) {
-                responseBody.close()
-                throw e
-            }
-        } catch (e: Exception) {
-            snapshot?.close()
-            throw e
         }
-    }
-
-    private suspend fun executeNetworkRequest(): Response {
-        val client = callFactoryLazy.value
-        val response = client.newCall(newRequest()).await()
-        if (!response.isSuccessful && response.code != HTTP_NOT_MODIFIED) {
-            response.close()
-            throw HttpException(response)
-        }
-        return response
-    }
-
-    private fun newRequest(): Request {
-        val request =
-            Request.Builder()
-                .url(url!!)
-                .headers(options.headers)
-                // Support attaching custom data to the network request.
-                .tag(Parameters::class.java, options.parameters)
-
-        when {
-            options.networkCachePolicy.readEnabled -> {
-                // don't take up okhttp cache
-                request.cacheControl(CACHE_CONTROL_NO_STORE)
-            }
-            else -> {
-                // This causes the request to fail with a 504 Unsatisfiable Request.
-                request.cacheControl(CACHE_CONTROL_NO_NETWORK_NO_CACHE)
-            }
-        }
-
-        return request.build()
-    }
-
-    @OptIn(ExperimentalCoilApi::class)
-    private fun moveSnapshotToCoverCache(
-        snapshot: DiskCache.Snapshot,
-        cacheFile: File?,
-    ): File? {
-        if (cacheFile == null) return null
-        return try {
-            diskCacheLazy.value.run {
-                fileSystem.source(snapshot.data).use { input ->
-                    writeSourceToCoverCache(input, cacheFile)
-                }
-                remove(diskCacheKey)
-            }
-            cacheFile.takeIf { it.exists() }
-        } catch (e: Exception) {
-            Log.e(
-                "moveSnapshotToCoverCache",
-                "Failed to write snapshot data to cover cache ${cacheFile.name}"
-            )
-            null
-        }
-    }
-
-    private fun writeResponseToCoverCache(
-        response: Response,
-        cacheFile: File?,
-    ): File? {
-        if (cacheFile == null || !options.diskCachePolicy.writeEnabled) return null
-        return try {
-            response.peekBody(Long.MAX_VALUE).source().use { input ->
-                writeSourceToCoverCache(input, cacheFile)
-            }
-            cacheFile.takeIf { it.exists() }
-        } catch (e: Exception) {
-            Log.e(
-                "writeResponseToCoverCache",
-                "Failed to write response data to cover cache ${cacheFile.name}"
-            )
-            null
-        }
-    }
-
-    private fun writeSourceToCoverCache(
-        input: Source,
-        cacheFile: File,
-    ) {
-        cacheFile.parentFile?.mkdirs()
-        cacheFile.delete()
-        try {
-            cacheFile.sink().buffer().use { output ->
-                output.writeAll(input)
-            }
-        } catch (e: Exception) {
-            cacheFile.delete()
-            throw e
-        }
-    }
-
-    @OptIn(ExperimentalCoilApi::class)
-    private fun readFromDiskCache(): DiskCache.Snapshot? {
-        return if (options.diskCachePolicy.readEnabled) {
-            diskCacheLazy.value.openSnapshot(diskCacheKey)
-        } else {
-            null
-        }
-    }
-
-    @OptIn(ExperimentalCoilApi::class)
-    private fun writeToDiskCache(response: Response): DiskCache.Snapshot? {
-        val editor = diskCacheLazy.value.openEditor(diskCacheKey) ?: return null
-        try {
-            diskCacheLazy.value.fileSystem.write(editor.data) {
-                response.body!!.source().readAll(this)
-            }
-            return editor.commitAndOpenSnapshot()
-        } catch (e: Exception) {
-            try {
-                editor.abort()
-            } catch (ignored: Exception) {
-            }
-            throw e
-        }
-    }
-
-    @OptIn(ExperimentalCoilApi::class)
-    private fun DiskCache.Snapshot.toImageSource(): ImageSource {
-        return ImageSource(file = data, diskCacheKey = diskCacheKey, closeable = this)
-    }
-
-    private fun getResourceType(cover: String?): Type? {
-        return when {
-            cover.isNullOrEmpty() -> null
-            cover.startsWith("http", true) || cover.startsWith("Custom-", true) -> Type.URL
-            cover.startsWith("/") || cover.startsWith("file://") -> Type.File
-            else -> null
-        }
-    }
-
-    private enum class Type {
-        File,
-        URL
-    }
-
-    class MangaFactory(
-        private val callFactoryLazy: Lazy<Call.Factory>,
-        private val diskCacheLazy: Lazy<DiskCache>,
-    ) : Fetcher.Factory<Manga>, KoinComponent {
-        private val coverCache: CoverCache by inject()
-
-        override fun create(
-            data: Manga,
-            options: Options,
-            imageLoader: ImageLoader,
-        ): Fetcher {
-            return MangaCoverFetcher(
-                url = data.coverArt,
-                isLibraryManga = data.inLibrary,
-                options = options,
-                coverFileLazy = lazy { coverCache.getCoverFile(data.coverArt) },
-                customCoverFileLazy = lazy { coverCache.getCustomCoverFile(data.id) },
-                diskCacheKeyLazy = lazy { MangaKeyer().key(data, options) },
-                callFactoryLazy = callFactoryLazy,
-                diskCacheLazy = diskCacheLazy,
-            )
-        }
-    }
-
-    class MangaCoverFactory(
-        private val callFactoryLazy: Lazy<Call.Factory>,
-        private val diskCacheLazy: Lazy<DiskCache>,
-    ) : Fetcher.Factory<MangaCover>, KoinComponent {
-        private val coverCache: CoverCache by inject()
-
-        override fun create(
-            data: MangaCover,
-            options: Options,
-            imageLoader: ImageLoader,
-        ): Fetcher {
-            return MangaCoverFetcher(
-                url = data.url,
-                isLibraryManga = data.isMangaFavorite,
-                options = options,
-                coverFileLazy = lazy { coverCache.getCoverFile(data.url) },
-                customCoverFileLazy = lazy { coverCache.getCustomCoverFile(data.mangaId) },
-                diskCacheKeyLazy = lazy { MangaCoverKeyer(coverCache).key(data, options) },
-                callFactoryLazy = callFactoryLazy,
-                diskCacheLazy = diskCacheLazy,
-            )
-        }
+        return null
     }
 
     companion object {
         const val USE_CUSTOM_COVER = "use_custom_cover"
 
-        private val CACHE_CONTROL_NO_STORE = CacheControl.Builder().noStore().build()
-        private val CACHE_CONTROL_NO_NETWORK_NO_CACHE = CacheControl.Builder().noCache().onlyIfCached().build()
+        private val CACHE_CONTROL_NO_STORE = NoStore(visibility = Visibility.Public)
+        private val CACHE_CONTROL_NO_CACHE = NoCache(visibility = Visibility.Public)
+        private const val CACHE_CONTROL_NO_NETWORK = "only-if-cached, max-stale=${Int.MAX_VALUE}"
     }
 }

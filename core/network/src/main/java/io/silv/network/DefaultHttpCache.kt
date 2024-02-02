@@ -57,7 +57,7 @@ private class LruCacheStorage(
 
         Log.d(
             "HttpCacheImpl",
-            "writing to cache caches ${caches.size}"
+            "writing to cache caches $url"
         )
         writeCache(urlHex, caches)
     }
@@ -99,6 +99,7 @@ private class LruCacheStorage(
         urlHex: String,
         caches: List<CachedResponseData>
     ) = coroutineScope {
+        Log.d("HttpCacheImpl", "writing to cache $urlHex")
         // Initialize the editor (edits the values for an entry).
         var editor: DiskLruCache.Editor? = null
         val channel = ByteChannel()
@@ -121,7 +122,7 @@ private class LruCacheStorage(
         } catch (cause: Exception) {
             Log.e(
                 "HttpCacheImpl",
-                "Exception during saving a cache to a file: ${cause.stackTraceToString()}"
+                "Exception during saving a cache to a file: ${cause.message}"
             )
         } finally {
             editor?.abortUnlessCommitted()
@@ -141,7 +142,7 @@ private class LruCacheStorage(
                 return caches
             }
         } catch (cause: Exception) {
-            Log.e("HttpCacheImpl", "Exception during reading a file: ${cause.stackTraceToString()}")
+            Log.e("HttpCacheImpl", "Exception during reading a file: ${cause.message}")
             emptySet()
         }
     }

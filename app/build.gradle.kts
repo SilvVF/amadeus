@@ -154,4 +154,6 @@ dependencies {
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
+
+    implementation(libs.ktor.core)
 }

@@ -16,7 +16,10 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okio.FileSystem
 import okio.IOException
+import okio.Path
+import okio.Path.Companion.toPath
 import okio.buffer
 import okio.sink
 import java.io.File
@@ -34,11 +37,13 @@ class ChapterCache(
     private val json: Json,
 ) {
 
+    private val fileSystem = FileSystem.SYSTEM
+
     /** Cache class used for cache management. */
     private val diskCache by lazy {
         runBlocking {
             FileKache(
-                File(context.cacheDir, "chapter_disk_cache").path,
+                cacheDir.path,
                 maxSize = 100L * 1024 * 1024,
             ) {
                 strategy = KacheStrategy.LRU
@@ -76,11 +81,13 @@ class ChapterCache(
 
         // Convert JSON string to list of objects. Throws an exception if snapshot is null
         return diskCache.get(key)!!.let { filePath ->
+
             json.decodeFromString<List<Page>>(
-                File(filePath).readBytes().decodeToString()
-            ).also {
-                Log.d("Pages", it.toString())
-            }
+                fileSystem.source(filePath.toPath())
+                    .buffer()
+                    .readByteArray()
+                    .decodeToString()
+            )
         }
     }
 
@@ -100,12 +107,12 @@ class ChapterCache(
 
             diskCache.put(key) { filePath ->
                 runCatching {
-                    File(filePath).sink().buffer().use {
-                        it.write(cachedValue.toByteArray())
-                        it.flush()
+                    fileSystem.sink(filePath.toPath()).buffer().use { sink ->
+
+                        sink.write(cachedValue.toByteArray())
+                        sink.flush()
                     }
                 }
-                    .onFailure { it.printStackTrace() }
                     .isSuccess
             }
         } catch (e: Exception) {
@@ -122,10 +129,7 @@ class ChapterCache(
      */
     suspend fun isImageInCache(imageUrl: String): Boolean {
         return try {
-            (diskCache.get(DiskUtil.hashKeyForDisk(imageUrl)) != null)
-                .also {
-                    Log.d("Chapter", "found $it")
-                }
+            diskCache.get(DiskUtil.hashKeyForDisk(imageUrl)) != null
         } catch (e: IOException) {
             false
         }
@@ -137,13 +141,26 @@ class ChapterCache(
      * @param imageUrl url of image.
      * @return path of image.
      */
-    suspend fun getImageFile(imageUrl: String): File {
+    suspend fun getImageFile(imageUrl: String): okio.Source {
         // Get file from md5 key.
         val imageName = DiskUtil.hashKeyForDisk(imageUrl)
 
         val path = diskCache.get(imageName)
 
-        return File(path!!)
+        return fileSystem.source(path!!.toPath())
+    }
+
+    /**
+     * Get image file from url.
+     *
+     * @param imageUrl url of image.
+     * @return path of image.
+     */
+    suspend fun getImageFilePath(imageUrl: String): Path {
+        // Get file from md5 key.
+        val imageName = DiskUtil.hashKeyForDisk(imageUrl)
+
+        return diskCache.get(imageName)!!.toPath()
     }
 
     /**

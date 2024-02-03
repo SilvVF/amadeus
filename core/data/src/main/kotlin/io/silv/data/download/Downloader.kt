@@ -456,7 +456,11 @@ internal class Downloader(
                 imageFile != null -> imageFile
                 chapterCache.isImageInCache(
                     page.imageUrl!!,
-                ) -> copyImageFromCache(chapterCache.getImageFile(page.imageUrl!!)!!, tmpDir, filename)
+                ) -> copyImageFromCache(
+                    chapterCache.getImageFilePath(page.imageUrl!!).toFile(),
+                    tmpDir,
+                    filename
+                )
                 else -> downloadImage(page, tmpDir, filename)
             }
 
@@ -532,7 +536,11 @@ internal class Downloader(
      * @param tmpDir the temporary directory of the download.
      * @param filename the filename of the image.
      */
-    private fun copyImageFromCache(cacheFile: File, tmpDir: UniFile, filename: String): UniFile {
+    private fun copyImageFromCache(
+        cacheFile: File,
+        tmpDir: UniFile,
+        filename: String
+    ): UniFile {
         val tmpFile = tmpDir.createFile("$filename.tmp")!!
         cacheFile.inputStream().use { input ->
             tmpFile.openOutputStream().use { output ->

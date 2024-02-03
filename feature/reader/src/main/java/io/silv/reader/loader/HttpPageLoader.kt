@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import okio.buffer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.concurrent.PriorityBlockingQueue
@@ -206,7 +207,7 @@ internal class HttpPageLoader(
             val imageFile = chapterCache.getImageFile(imageUrl)
 
 
-            page.stream = { imageFile.inputStream() }
+            page.stream = { imageFile.buffer().inputStream() }
             page.status = Page.State.READY
         } catch (e: Throwable) {
             e.printStackTrace()

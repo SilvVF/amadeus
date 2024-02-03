@@ -12,27 +12,21 @@ import io.ktor.http.Url
 import io.ktor.util.date.GMTDate
 import io.ktor.util.flattenEntries
 import io.ktor.util.hex
-import io.ktor.utils.io.ByteChannel
-import io.ktor.utils.io.ByteReadChannel
-import io.ktor.utils.io.close
 import io.ktor.utils.io.core.use
-import io.ktor.utils.io.discard
-import io.ktor.utils.io.jvm.javaio.copyTo
-import io.ktor.utils.io.jvm.javaio.toByteReadChannel
-import io.ktor.utils.io.readFully
-import io.ktor.utils.io.readUTF8Line
-import io.ktor.utils.io.writeFully
-import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import okhttp3.internal.discard
+import okio.BufferedSink
+import okio.BufferedSource
+import okio.FileSystem
+import okio.Path.Companion.toPath
 import okio.buffer
-import okio.sink
 import java.io.File
 import java.security.MessageDigest
+import java.util.concurrent.TimeUnit
 
 internal class DefaultHttpCache internal constructor(
     directory: File,
@@ -48,11 +42,12 @@ internal class DefaultHttpCache internal constructor(
             strategy = KacheStrategy.LRU
         }
     },
-    dispatcher
+    dispatcher = dispatcher
 )
 
 private class LruCacheStorage(
     private val diskCacheInit: suspend () -> FileKache,
+    private val fileSystem: FileSystem = FileSystem.SYSTEM,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : CacheStorage {
 
@@ -110,7 +105,7 @@ private class LruCacheStorage(
         }.also {
             Log.d(
                 "HttpCacheImpl",
-                "found $it"
+                "found ${it?.url.toString()}"
             )
         }
     }
@@ -124,20 +119,20 @@ private class LruCacheStorage(
     ) = coroutineScope {
         Log.d("HttpCacheImpl", "writing to cache $urlHex")
         // Initialize the editor (edits the values for an entry).
-        val channel = ByteChannel()
         try {
             diskCache.put(urlHex) { fileName ->
-               File(fileName).outputStream().sink().buffer().use {
-                   launch {
-                       channel.writeInt(caches.size)
-                       for (cache in caches) {
-                           writeCache(channel, cache)
-                       }
-                       channel.close()
-                   }
-                   channel.copyTo(it.outputStream())
-               }
-               true
+                runCatching {
+
+                    fileSystem.sink(fileName.toPath()).buffer().use { sink ->
+
+                        sink.writeInt(caches.size)
+
+                        for (cache in caches) {
+                            writeCache(sink, cache)
+                        }
+                    }
+                }
+                    .isSuccess
            }
         } catch (cause: Exception) {
             Log.e(
@@ -150,13 +145,13 @@ private class LruCacheStorage(
     private suspend fun readCache(urlHex: String): Set<CachedResponseData> {
         return try {
             val container = diskCache.get(urlHex)!!
-            val channel = File(container).inputStream().buffered().toByteReadChannel()
-            val requestsCount = channel.readInt()
+            val source =  fileSystem.source(container.toPath()).buffer()
+            val requestsCount = source.readInt()
             val caches = mutableSetOf<CachedResponseData>()
             for (i in 0 until requestsCount) {
-                caches.add(readCache(channel))
+                caches.add(readCache(source))
             }
-            channel.discard()
+            source.discard(10, TimeUnit.SECONDS)
             caches
         } catch (cause: Exception) {
             Log.e("HttpCacheImpl", "Exception during reading a file: ${cause.message}")
@@ -165,55 +160,54 @@ private class LruCacheStorage(
     }
 }
 
-@Suppress("DEPRECATION")
-private suspend fun writeCache(channel: ByteChannel, cache: CachedResponseData) {
-    channel.writeStringUtf8(cache.url.toString() + "\n")
-    channel.writeInt(cache.statusCode.value)
-    channel.writeStringUtf8(cache.statusCode.description + "\n")
-    channel.writeStringUtf8(cache.version.toString() + "\n")
+private fun writeCache(sink: BufferedSink, cache: CachedResponseData) {
+    sink.writeUtf8(cache.url.toString() + "\n")
+    sink.writeInt(cache.statusCode.value)
+    sink.writeUtf8(cache.statusCode.description + "\n")
+    sink.writeUtf8(cache.version.toString() + "\n")
     val headers = cache.headers.flattenEntries()
-    channel.writeInt(headers.size)
+    sink.writeInt(headers.size)
     for ((key, value) in headers) {
-        channel.writeStringUtf8(key + "\n")
-        channel.writeStringUtf8(value + "\n")
+        sink.writeUtf8(key + "\n")
+        sink.writeUtf8(value + "\n")
     }
-    channel.writeLong(cache.requestTime.timestamp)
-    channel.writeLong(cache.responseTime.timestamp)
-    channel.writeLong(cache.expires.timestamp)
-    channel.writeInt(cache.varyKeys.size)
+    sink.writeLong(cache.requestTime.timestamp)
+    sink.writeLong(cache.responseTime.timestamp)
+    sink.writeLong(cache.expires.timestamp)
+    sink.writeInt(cache.varyKeys.size)
     for ((key, value) in cache.varyKeys) {
-        channel.writeStringUtf8(key + "\n")
-        channel.writeStringUtf8(value + "\n")
+        sink.writeUtf8(key + "\n")
+        sink.writeUtf8(value + "\n")
     }
-    channel.writeInt(cache.body.size)
-    channel.writeFully(cache.body)
+    sink.writeInt(cache.body.size)
+    sink.write(cache.body)
 }
 
-private suspend fun readCache(channel: ByteReadChannel): CachedResponseData {
-    val url = channel.readUTF8Line()!!
-    val status = HttpStatusCode(channel.readInt(), channel.readUTF8Line()!!)
-    val version = HttpProtocolVersion.parse(channel.readUTF8Line()!!)
-    val headersCount = channel.readInt()
+private fun readCache(source: BufferedSource): CachedResponseData {
+    val url = source.readUtf8Line()!!
+    val status = HttpStatusCode(source.readInt(), source.readUtf8Line()!!)
+    val version = HttpProtocolVersion.parse(source.readUtf8Line()!!)
+    val headersCount = source.readInt()
     val headers = HeadersBuilder()
     for (j in 0 until headersCount) {
-        val key = channel.readUTF8Line()!!
-        val value = channel.readUTF8Line()!!
+        val key = source.readUtf8Line()!!
+        val value = source.readUtf8Line()!!
         headers.append(key, value)
     }
-    val requestTime = GMTDate(channel.readLong())
-    val responseTime = GMTDate(channel.readLong())
-    val expirationTime = GMTDate(channel.readLong())
-    val varyKeysCount = channel.readInt()
+    val requestTime = GMTDate(source.readLong())
+    val responseTime = GMTDate(source.readLong())
+    val expirationTime = GMTDate(source.readLong())
+    val varyKeysCount = source.readInt()
     val varyKeys = buildMap {
         for (j in 0 until varyKeysCount) {
-            val key = channel.readUTF8Line()!!
-            val value = channel.readUTF8Line()!!
+            val key = source.readUtf8Line()!!
+            val value = source.readUtf8Line()!!
             put(key, value)
         }
     }
-    val bodyCount = channel.readInt()
+    val bodyCount = source.readInt()
     val body = ByteArray(bodyCount)
-    channel.readFully(body)
+    source.readFully(body)
     return CachedResponseData(
         url = Url(url),
         statusCode = status,

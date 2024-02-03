@@ -104,6 +104,11 @@ class HttpSource(
      * Check the token map to see if the MD@Home host is still valid.
      */
     private suspend fun getValidImageUrlForPage(page: Page): String {
+
+        if (!page.url.contains("api.mangadex.org")) {
+            return page.imageUrl!!
+        }
+
         val (host, tokenRequestUrl, time) = page.url.split(",")
 
         val mdAtHomeServerUrl =
@@ -130,16 +135,9 @@ class HttpSource(
     suspend fun getImage(
         page: Page,
         headers: List<Pair<String, String>>,
-        mangaDexSource: Boolean = true
     ): HttpResponse {
         return client.get {
-                url(
-                    if (mangaDexSource) {
-                        getValidImageUrlForPage(page)
-                    } else {
-                        page.imageUrl
-                    }
-                )
+                url(getValidImageUrlForPage(page))
                 headers {
                     headers.forEach { (name, value) ->
                         set(name, value)

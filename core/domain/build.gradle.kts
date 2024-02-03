@@ -45,7 +45,6 @@ dependencies {
     implementation(libs.sandwich)
 
     compileOnly("com.github.skydoves:compose-stable-marker:1.0.3")
-    implementation(libs.disklrucache)
     implementation(libs.okio)
     implementation(libs.okhttp)
     implementation(libs.androidx.work.runtime.ktx)

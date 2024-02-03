@@ -195,22 +195,18 @@ internal class HttpPageLoader(
 
                 page.status = Page.State.DOWNLOAD_IMAGE
 
-                val imageResponse = if (page.chapter.chapter.url.isNotBlank()){
-                    source.getImage(
-                        page,
-                        headers = emptyList(),
-                        mangaDexSource = false
-                    )
-                } else {
-                    source.getImage(
+                val imageResponse = source
+                    .getImage(
                         page,
                         headers = listOf(HttpHeaders.CacheControl to CacheControl.NO_CACHE)
                     )
-                }
 
                 chapterCache.putImageToCache(imageUrl, imageResponse)
             }
-            page.stream = { chapterCache.getImageFile(imageUrl).inputStream() }
+            val imageFile = chapterCache.getImageFile(imageUrl)
+
+
+            page.stream = { imageFile.inputStream() }
             page.status = Page.State.READY
         } catch (e: Throwable) {
             e.printStackTrace()

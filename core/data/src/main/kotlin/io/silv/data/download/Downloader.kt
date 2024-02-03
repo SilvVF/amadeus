@@ -456,7 +456,7 @@ internal class Downloader(
                 imageFile != null -> imageFile
                 chapterCache.isImageInCache(
                     page.imageUrl!!,
-                ) -> copyImageFromCache(chapterCache.getImageFile(page.imageUrl!!), tmpDir, filename)
+                ) -> copyImageFromCache(chapterCache.getImageFile(page.imageUrl!!)!!, tmpDir, filename)
                 else -> downloadImage(page, tmpDir, filename)
             }
 

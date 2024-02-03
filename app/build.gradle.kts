@@ -130,8 +130,6 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.androidx.navigation.compose)
-
-    implementation(libs.disklrucache)
     implementation(libs.okio)
 
     // VOYAGER

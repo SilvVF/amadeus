@@ -8,6 +8,7 @@ coilGif = "2.5.0"
 datastorePreferences = "1.0.0"
 desugar_jdk_libs = "2.0.4"
 disklrucache = "2.0.2"
+kache = "2.1.0-beta05"
 flowCombinetupleKt = "1.2.0"
 imageDecoder = "fbd6601290"
 jsoup = "1.17.1"
@@ -56,6 +57,7 @@ sandwich = "2.0.4"
 
 [libraries]
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
+kache = { module = "com.mayakapps.kache:file-kache", version.ref = "kache" }
 disklrucache = { module = "com.jakewharton:disklrucache", version.ref = "disklrucache" }
 image-decoder = { module = "com.github.tachiyomiorg:image-decoder", version.ref = "imageDecoder" }
 material-motion-compose-core = { module = "io.github.fornewid:material-motion-compose-core", version.ref = "materialMotionComposeCore" }

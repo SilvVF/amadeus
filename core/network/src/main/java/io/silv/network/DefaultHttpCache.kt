@@ -27,6 +27,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okio.buffer
 import okio.sink
@@ -51,9 +52,16 @@ internal class DefaultHttpCache internal constructor(
 )
 
 private class LruCacheStorage(
-    private val diskCache: suspend () -> FileKache,
+    private val diskCacheInit: suspend () -> FileKache,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : CacheStorage {
+
+    /** Cache class used for cache management. */
+    private val diskCache by lazy {
+        runBlocking {
+            diskCacheInit()
+        }
+    }
 
     override suspend fun store(url: Url, data: CachedResponseData): Unit = withContext(dispatcher) {
         val urlHex = key(url)
@@ -107,7 +115,6 @@ private class LruCacheStorage(
         Log.d("HttpCacheImpl", "writing to cache $urlHex")
         // Initialize the editor (edits the values for an entry).
         val channel = ByteChannel()
-        val diskCache = diskCache()
         try {
             diskCache.put(urlHex) { fileName ->
                File(fileName).outputStream().sink().buffer().use {
@@ -127,13 +134,10 @@ private class LruCacheStorage(
                 "HttpCacheImpl",
                 "Exception during saving a cache to a file: ${cause.message}"
             )
-        } finally {
-            diskCache.close()
         }
     }
 
     private suspend fun readCache(urlHex: String): Set<CachedResponseData> {
-        val diskCache = diskCache()
         return try {
             val container = diskCache.get(urlHex)!!
             val channel = File(container).inputStream().buffered().toByteReadChannel()
@@ -145,7 +149,6 @@ private class LruCacheStorage(
             channel.discard()
             caches
         } catch (cause: Exception) {
-            diskCache.close()
             Log.e("HttpCacheImpl", "Exception during reading a file: ${cause.message}")
             emptySet()
         }

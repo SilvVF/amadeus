@@ -14,7 +14,7 @@ import io.silv.network.util.rateLimit
 import kotlinx.serialization.json.Json
 import okhttp3.Cache
 import okhttp3.OkHttpClient
-import org.koin.core.module.dsl.factoryOf
+import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -84,7 +84,7 @@ val networkModule =
                 .build()
         }
 
-        factoryOf(::ImageSourceFactory)
+        singleOf(::ImageSourceFactory)
 
         single {
             HttpSource(

@@ -81,4 +81,6 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.work.multiprocess)
     implementation(libs.androidx.work.gcm)
+
+    implementation(libs.kache)
 }

@@ -52,9 +52,6 @@ dependencies {
     implementation(libs.ktor.serialization.json)
     implementation(libs.ktor.logging)
     implementation(libs.ktor.contentnegotiation)
-
-    implementation(libs.token.bucket)
-
     // For persistent cache
     implementation(libs.kache)
     // KOTLIN

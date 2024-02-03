@@ -45,8 +45,7 @@ val networkModule =
             }
                 .rateLimit(
                     permits = 40,
-                    period = 1,
-                    unit = TimeUnit.MINUTES
+                    seconds = 60,
                 )
         }
 
@@ -78,8 +77,7 @@ val networkModule =
             }
                 .rateLimit(
                     permits = 300,
-                    period = 1,
-                    unit = TimeUnit.MINUTES
+                    seconds = 60,
                 )
         }
 

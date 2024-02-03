@@ -1,7 +1,8 @@
 package io.silv.network
 
 import android.util.Log
-import com.jakewharton.disklrucache.DiskLruCache
+import com.mayakapps.kache.FileKache
+import com.mayakapps.kache.KacheStrategy
 import io.ktor.client.plugins.cache.storage.CacheStorage
 import io.ktor.client.plugins.cache.storage.CachedResponseData
 import io.ktor.http.HeadersBuilder
@@ -27,6 +28,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okio.buffer
+import okio.sink
 import java.io.File
 import java.security.MessageDigest
 
@@ -36,17 +39,19 @@ internal class DefaultHttpCache internal constructor(
     maxSize: Long =  5L * 1024 * 1024,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): CacheStorage by LruCacheStorage(
-    DiskLruCache.open(
-        directory,
-        1,
-        1,
-        maxSize
-    ),
+    {
+        FileKache(
+            directoryPath = directory.path,
+            maxSize = maxSize
+        ) {
+            strategy = KacheStrategy.LRU
+        }
+    },
     dispatcher
 )
 
 private class LruCacheStorage(
-    private val diskCache: DiskLruCache,
+    private val diskCache: suspend () -> FileKache,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : CacheStorage {
 
@@ -101,47 +106,46 @@ private class LruCacheStorage(
     ) = coroutineScope {
         Log.d("HttpCacheImpl", "writing to cache $urlHex")
         // Initialize the editor (edits the values for an entry).
-        var editor: DiskLruCache.Editor? = null
         val channel = ByteChannel()
-
+        val diskCache = diskCache()
         try {
-            editor = diskCache.edit(urlHex)
-            editor.newOutputStream(0).use {
-                launch {
-                    channel.writeInt(caches.size)
-                    for (cache in caches) {
-                        writeCache(channel, cache)
-                    }
-                    channel.close()
-                }
-                channel.copyTo(it)
-            }
-            diskCache.flush()
-            editor.commit()
-            editor.abortUnlessCommitted()
+            diskCache.put(urlHex) { fileName ->
+               File(fileName).outputStream().sink().buffer().use {
+                   launch {
+                       channel.writeInt(caches.size)
+                       for (cache in caches) {
+                           writeCache(channel, cache)
+                       }
+                       channel.close()
+                   }
+                   channel.copyTo(it.outputStream())
+               }
+               true
+           }
         } catch (cause: Exception) {
             Log.e(
                 "HttpCacheImpl",
                 "Exception during saving a cache to a file: ${cause.message}"
             )
         } finally {
-            editor?.abortUnlessCommitted()
+            diskCache.close()
         }
     }
 
     private suspend fun readCache(urlHex: String): Set<CachedResponseData> {
+        val diskCache = diskCache()
         return try {
-            diskCache.get(urlHex).use {
-                val channel = it.getInputStream(0).toByteReadChannel()
-                val requestsCount = channel.readInt()
-                val caches = mutableSetOf<CachedResponseData>()
-                for (i in 0 until requestsCount) {
-                    caches.add(readCache(channel))
-                }
-                channel.discard()
-                return caches
+            val container = diskCache.get(urlHex)!!
+            val channel = File(container).inputStream().buffered().toByteReadChannel()
+            val requestsCount = channel.readInt()
+            val caches = mutableSetOf<CachedResponseData>()
+            for (i in 0 until requestsCount) {
+                caches.add(readCache(channel))
             }
+            channel.discard()
+            caches
         } catch (cause: Exception) {
+            diskCache.close()
             Log.e("HttpCacheImpl", "Exception during reading a file: ${cause.message}")
             emptySet()
         }

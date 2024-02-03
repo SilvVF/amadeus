@@ -55,6 +55,8 @@ dependencies {
 
     implementation(libs.token.bucket)
 
+    // For persistent cache
+    implementation("com.mayakapps.kache:file-kache:2.1.0-beta05")
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")

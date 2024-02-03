@@ -1,7 +1,7 @@
 package io.silv.network.requests
 
-import io.silv.network.requests.query.QueryParam
-import io.silv.network.requests.query.QueryParams
+import io.silv.network.query.QueryParam
+import io.silv.network.query.QueryParams
 
 data class MangaByIdRequest(
     val includes: List<String>? = null,

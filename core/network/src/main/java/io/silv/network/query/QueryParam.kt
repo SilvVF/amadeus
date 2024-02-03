@@ -1,4 +1,4 @@
-package io.silv.network.requests.query
+package io.silv.network.query
 
 /**
  * @param name key for a query parameter

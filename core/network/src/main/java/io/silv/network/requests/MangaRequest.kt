@@ -1,8 +1,8 @@
 package io.silv.network.requests
 
 import io.silv.common.model.TagsMode
-import io.silv.network.requests.query.QueryParam
-import io.silv.network.requests.query.QueryParams
+import io.silv.network.query.QueryParam
+import io.silv.network.query.QueryParams
 
 data class MangaRequest(
     val limit: Int = 10,

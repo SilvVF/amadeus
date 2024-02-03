@@ -1,4 +1,4 @@
-package io.silv.network.requests.query
+package io.silv.network.query
 
 /**
  * Interface that marks a class as representing query parameters for a request.

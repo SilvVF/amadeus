@@ -12,13 +12,13 @@ import io.silv.network.model.manga.MangaByIdResponse
 import io.silv.network.model.manga.MangaListResponse
 import io.silv.network.model.statistics.StatisticsByMangaIdResponse
 import io.silv.network.model.tags.TagResponse
+import io.silv.network.query.createQuery
 import io.silv.network.requests.AuthorListRequest
 import io.silv.network.requests.ChapterListRequest
 import io.silv.network.requests.CoverArtRequest
 import io.silv.network.requests.MangaByIdRequest
 import io.silv.network.requests.MangaFeedRequest
 import io.silv.network.requests.MangaRequest
-import io.silv.network.requests.query.createQuery
 import kotlinx.coroutines.withContext
 
 internal typealias AtHomeClient = HttpClient

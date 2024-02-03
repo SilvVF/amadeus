@@ -76,6 +76,12 @@ private class LruCacheStorage(
     }
 
     override suspend fun findAll(url: Url): Set<CachedResponseData> {
+        // even with no-cache headers still trying to read from cache
+        // doesn't try to write to cache though
+        if (url.toString().startsWith("https://uploads.mangadex.org/covers")) {
+            return emptySet()
+        }
+
         Log.d(
             "HttpCacheImpl",
             "findAll from cache $url"
@@ -89,7 +95,11 @@ private class LruCacheStorage(
     }
 
     override suspend fun find(url: Url, varyKeys: Map<String, String>): CachedResponseData? {
-
+        // even with no-cache headers still trying to read from cache
+        // doesn't try to write to cache though
+        if (url.toString().startsWith("https://uploads.mangadex.org/covers")) {
+            return null
+        }
         Log.d(
             "HttpCacheImpl",
             "find from cache $url"

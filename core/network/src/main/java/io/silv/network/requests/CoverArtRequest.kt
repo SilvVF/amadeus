@@ -3,8 +3,8 @@ package io.silv.network.requests
 import io.silv.common.model.CoverIncludesFilter
 import io.silv.common.model.Order
 import io.silv.common.model.OrderBy
-import io.silv.network.requests.query.QueryParam
-import io.silv.network.requests.query.QueryParams
+import io.silv.network.query.QueryParam
+import io.silv.network.query.QueryParams
 
 /**
  * @param manga Manga ids (limited to 100 per request)

@@ -2,6 +2,7 @@ package io.silv.amadeus.ui.screens
 
 import io.silv.explore.ExploreScreenModel
 import io.silv.explore.FilterScreenViewModel
+import io.silv.explore.UiPagedType
 import io.silv.library.LibraryScreenModel
 import io.silv.manga.download.DownloadQueueScreenModel
 import io.silv.manga.filter.MangaFilterScreenModel
@@ -40,14 +41,15 @@ val screenModule =
 
         factoryOf(::SettingsScreenModel)
 
-        factory {
+        factory {(savedStatePagedType: UiPagedType?) ->
             ExploreScreenModel(
                 subscribeToPagingData = get(),
                 seasonalManga = get(),
                 mangaHandler = get(),
                 coverCache = get(),
                 recentSearchHandler = get(),
-                seasonalMangaSyncManager = get(qualifier = named(SeasonalMangaSyncWorkName))
+                seasonalMangaSyncManager = get(qualifier = named(SeasonalMangaSyncWorkName)),
+                savedStatePagedType = savedStatePagedType
             )
         }
 

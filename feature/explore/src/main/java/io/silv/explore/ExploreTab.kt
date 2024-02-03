@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -50,8 +51,8 @@ import io.silv.navigation.push
 import io.silv.ui.GlobalSearchTab
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
-import io.silv.ui.composables.PullRefresh
 import io.silv.ui.layout.ExpandableInfoLayout
+import io.silv.ui.layout.PullRefresh
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.openOnWeb
 import kotlinx.coroutines.Dispatchers
@@ -60,6 +61,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.core.parameter.parametersOf
 
 object ExploreTab : ReselectTab, GlobalSearchTab {
 
@@ -67,6 +69,8 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
     private val reselectChannel = Channel<Unit>()
 
     private val searchChannel = Channel<String?>(capacity = 1)
+
+    private var savedStatePagedType: UiPagedType? = null
 
     override suspend fun onSearch(query: String?, navigator: TabNavigator) {
         searchChannel.trySend(query)
@@ -96,7 +100,7 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
     override fun Content() {
         val appState = LocalAppState.current
         val tabNavigator = LocalTabNavigator.current
-        val screenModel = getScreenModel<ExploreScreenModel>()
+        val screenModel = getScreenModel<ExploreScreenModel>() { parametersOf(savedStatePagedType) }
 
         val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -129,7 +133,7 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
             lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 withContext(Dispatchers.Main.immediate) {
                     reselectChannel.receiveAsFlow().collectLatest {
-                        expandableState.toggleProgress()
+                        expandableState.toggle()
                     }
                 }
             }
@@ -163,6 +167,12 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
         }
 
         val snackbarHostState = remember{ SnackbarHostState() }
+
+        LaunchedEffect(Unit) {
+            snapshotFlow { state.pagedType }.collect {
+                savedStatePagedType = state.pagedType
+            }
+        }
 
         LaunchedEffect(isOffline) {
             if (isOffline) {

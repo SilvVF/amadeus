@@ -1,21 +1,24 @@
 package io.silv.network.sources
 
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
 
 internal class MangaHotHandler(
-    private val client: OkHttpClient,
+    private val client: HttpClient,
 ) : ImageSource() {
     private val baseUrl = "https://mangahot.jp"
     private val apiUrl = "https://api.mangahot.jp"
 
-    private fun pageListParse(response: Response): List<String> {
-        return Json.parseToJsonElement(response.body!!.string())
+    private suspend fun pageListParse(response: HttpResponse): List<String> {
+        return Json.parseToJsonElement(response.bodyAsText())
             .jsonObject["content"]!!.jsonObject["contentUrls"]!!
             .jsonArray.mapIndexed { index, element ->
                 val url = element.jsonPrimitive.content
@@ -28,14 +31,11 @@ internal class MangaHotHandler(
             externalUrl.substringBefore("?").replace(baseUrl, apiUrl)
                 .replace("viewer", "v1/works/storyDetail")
 
-        val request =
-            Request.Builder()
-                .headers(headers)
-                .url(url)
-                .build()
-
         return pageListParse(
-            client.newCall(request).execute(),
+            client.get {
+                url(url)
+                headers(requestHeaders)
+            }
         )
     }
 }

@@ -1,76 +1,75 @@
 package io.silv.network.sources
 
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.url
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.client.statement.request
+import io.ktor.http.headers
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
 import org.jsoup.Jsoup
 
 class ComikeyHandler(
-    private val client: OkHttpClient,
+    private val client: HttpClient,
 ) : ImageSource() {
+
     private val baseUrl = "https://comikey.com"
     private val apiUrl = "$baseUrl/sapi"
 
     override suspend fun fetchImageUrls(externalUrl: String): List<String> {
         val httpUrl = externalUrl.toHttpUrl()
         val mangaId = getMangaId(httpUrl.pathSegments[1])
-        val response =
-            client.newCall(
-                pageListRequest(mangaId, httpUrl.pathSegments[2]),
-            )
-                .execute()
-        val request =
-            getActualPageList(response) ?: error("page not available for free")
-        return pageListParse(client.newCall(request).execute())
+        val response = client.pageListRequest(mangaId, httpUrl.pathSegments[2])
+
+        return pageListParse(
+            client.getActualPageList(response) ?: error("page not available for free")
+        )
     }
 
-    private fun getMangaId(mangaUrl: String): Int {
+    private suspend fun getMangaId(mangaUrl: String): Int {
         val response =
-            client.newCall(
-                Request.Builder()
-                    .url("$baseUrl/read/$mangaUrl")
-                    .headers(headers)
-                    .build(),
-            )
-                .execute()
+            client.get {
+                url("$baseUrl/read/$mangaUrl")
+                headers(requestHeaders)
+            }
 
         val url =
-            Jsoup.parse(response.body?.string()!!, response.request.url.toString())
+            Jsoup.parse(response.bodyAsText(), response.request.url.toString())
                 .selectFirst("meta[property=og:url]")!!.attr("content")
         return url.trimEnd('/').substringAfterLast('/').toInt()
     }
 
-    private fun pageListRequest(
+    private suspend fun HttpClient.pageListRequest(
         mangaId: Int,
         chapterGuid: String,
-    ): Request {
-        return Request.Builder()
-            .url("$apiUrl/comics/$mangaId/read?format=json&content=EPI-$chapterGuid")
-            .headers(headers)
-            .build()
+    ): HttpResponse {
+        return get {
+            url("$apiUrl/comics/$mangaId/read?format=json&content=EPI-$chapterGuid")
+            headers(requestHeaders)
+        }
     }
 
-    private fun getActualPageList(response: Response): Request? {
-        val element = Json.parseToJsonElement(response.body!!.string()).jsonObject
+    private suspend fun HttpClient.getActualPageList(response: HttpResponse): HttpResponse? {
+        val element = Json.parseToJsonElement(response.bodyAsText()).jsonObject
         val ok = element["ok"]?.jsonPrimitive?.booleanOrNull ?: false
         if (ok.not()) {
             return null
         }
         val url = element["href"]?.jsonPrimitive!!.content
-        return Request.Builder()
-            .url(url)
-            .headers(headers)
-            .build()
+        return get {
+            url(url)
+            headers(requestHeaders)
+        }
     }
 
-    private fun pageListParse(response: Response): List<String> {
-        return Json.parseToJsonElement(response.body!!.string())
+    private suspend fun pageListParse(response: HttpResponse): List<String> {
+        return Json.parseToJsonElement(response.bodyAsText())
             .jsonObject["readingOrder"]!!
             .jsonArray.mapIndexed { index, element ->
                 val url = element.jsonObject["href"]!!.jsonPrimitive.content

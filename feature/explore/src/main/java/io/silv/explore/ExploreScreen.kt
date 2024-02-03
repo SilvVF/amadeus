@@ -225,7 +225,11 @@ fun BrowseMangaContent(
     val useList by ExplorePrefs.useListPrefKey.collectAsState(false, scope)
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
-    val refreshing = pagedType is UiPagedType.Seasonal && refreshingSeasonal || mangaList.loadState.refresh is LoadState.Loading
+    val refreshing = if (pagedType is UiPagedType.Seasonal) {
+        refreshingSeasonal
+    } else {
+        (mangaList.loadState.refresh is LoadState.Loading)
+    }
 
     when {
         refreshing ->

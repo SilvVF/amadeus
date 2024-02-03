@@ -132,11 +132,11 @@ import io.silv.ui.composables.ChapterDownloadIndicator
 import io.silv.ui.composables.ChapterListItem
 import io.silv.ui.composables.MangaGridItem
 import io.silv.ui.composables.MangaListItem
-import io.silv.ui.composables.PullRefresh
 import io.silv.ui.composables.SearchTextField
 import io.silv.ui.conditional
 import io.silv.ui.layout.ExpandableInfoLayout
 import io.silv.ui.layout.ExpandableState
+import io.silv.ui.layout.PullRefresh
 import io.silv.ui.layout.ScrollbarLazyColumn
 import io.silv.ui.layout.TopAppBarWithBottomContent
 import io.silv.ui.layout.rememberExpandableState
@@ -193,7 +193,7 @@ object LibraryTab : ReselectTab {
             lifeCycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 withContext(Dispatchers.Main.immediate) {
                     reselectChannel.receiveAsFlow().collectLatest {
-                        expandableState.toggleProgress()
+                        expandableState.toggle()
                     }
                 }
             }
@@ -381,7 +381,7 @@ fun LibraryScreenContent(
                 actions = actions,
                 onOptionsClick = {
                     scope.launch {
-                        expandableState.toggleProgress()
+                        expandableState.toggle()
                     }
                 },
                 searchText = searchTextProvider,

@@ -1,4 +1,4 @@
-package io.silv.ui.composables
+package io.silv.ui.layout
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,9 +19,6 @@ import androidx.compose.ui.platform.inspectable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
-import io.silv.ui.layout.PullRefreshIndicator
-import io.silv.ui.layout.PullRefreshState
-import io.silv.ui.layout.rememberPullRefreshState
 
 fun Modifier.pullRefresh(
     state: PullRefreshState,

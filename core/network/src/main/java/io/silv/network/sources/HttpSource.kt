@@ -130,9 +130,16 @@ class HttpSource(
     suspend fun getImage(
         page: Page,
         headers: List<Pair<String, String>>,
+        mangaDexSource: Boolean = true
     ): HttpResponse {
         return client.get {
-                url(getValidImageUrlForPage(page))
+                url(
+                    if (mangaDexSource) {
+                        getValidImageUrlForPage(page)
+                    } else {
+                        page.imageUrl
+                    }
+                )
                 headers {
                     headers.forEach { (name, value) ->
                         set(name, value)
@@ -147,6 +154,7 @@ class HttpSource(
     }
 
     suspend fun getPageList(chapter: ChapterResource): List<Page> {
+
         val response = mangaDexApi.getChapterImages(chapter.id).getOrThrow()
         val host = response.baseUrl
         val atHomeRequestUrl = "https://api.mangadex.org/at-home/server/${chapter.id}"

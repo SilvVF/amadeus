@@ -86,15 +86,12 @@ class AmadeusApp : Application(), ImageLoaderFactory {
         val diskCache = { CoilDiskCache.get(this) }
         val memCache = { CoilMemoryCache.get(this) }
 
-        val mangaCoverFetcher = MangaCoverFetcher(client, cache, this)
-
-        val coverFetcher = mangaCoverFetcher.coverFetcher
-        val mangaFetcher = mangaCoverFetcher.mangaFetcher
-
+        val diskBackedFetcher = MangaCoverFetcher(client, cache, this)
+        
         return ImageLoader.Builder(this)
             .components {
-                addDiskFetcher(coverFetcher, diskCache, memCache)
-                addDiskFetcher(mangaFetcher, diskCache, memCache)
+                addDiskFetcher(diskBackedFetcher.coverFetcher, diskCache, memCache)
+                addDiskFetcher(diskBackedFetcher.mangaFetcher, diskCache, memCache)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     add(ImageDecoderDecoder.Factory())
                 } else {

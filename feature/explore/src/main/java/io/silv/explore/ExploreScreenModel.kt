@@ -21,6 +21,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -35,10 +36,9 @@ class ExploreScreenModel(
     private val coverCache: CoverCache,
     private val recentSearchHandler: RecentSearchHandler,
     private val seasonalMangaSyncManager: SyncManager,
-) : EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState()) {
+    savedStatePagedType: UiPagedType?
+) : EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState(pagedType = savedStatePagedType ?: UiPagedType.Popular)) {
     init {
-        state.onEach { Log.d("ExploreState", "updated $it") }.launchIn(screenModelScope)
-
         seasonalMangaSyncManager.isSyncing
             .onEach { refreshing ->
                 mutableState.update { state ->
@@ -103,6 +103,7 @@ class ExploreScreenModel(
             ),
             scope = ioCoroutineScope,
         )
+            .stateInUi(emptyFlow())
 
     fun changePagingType(type: UiPagedType) {
         screenModelScope.launch {
@@ -152,8 +153,11 @@ class ExploreScreenModel(
 }
 
 sealed interface RecentSearchUiState {
+
+    @Stable
     data object Loading : RecentSearchUiState
 
+    @Stable
     data class Success(
         val recentQueries: ImmutableList<RecentSearch> = persistentListOf(),
     ) : RecentSearchUiState

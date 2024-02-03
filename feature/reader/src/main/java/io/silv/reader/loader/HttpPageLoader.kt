@@ -7,6 +7,7 @@ import io.silv.common.model.Page
 import io.silv.data.download.ChapterCache
 import io.silv.domain.chapter.model.toResource
 import io.silv.network.sources.HttpSource
+import io.silv.network.sources.ImageSourceFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +35,7 @@ internal class HttpPageLoader(
     private val chapterCache: ChapterCache by inject()
     private val applicationScope: ApplicationScope by inject()
     private val source: HttpSource by inject()
+    private val imageSourceFactory: ImageSourceFactory by inject()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -69,7 +71,20 @@ internal class HttpPageLoader(
             if (e is CancellationException) {
                 throw e
             }
-            source.getPageList(chapter.chapter.toResource())
+            if (chapter.chapter.url.isNotBlank()) {
+                imageSourceFactory
+                    .getSource(chapter.chapter.url)
+                    .fetchImageUrls(chapter.chapter.url)
+                    .mapIndexed { index, data ->
+                        Page(
+                            index = index,
+                            url = chapter.chapter.url,
+                            imageUrl = data,
+                        )
+                    }
+            } else {
+                source.getPageList(chapter.chapter.toResource())
+            }
         }
         return pages.mapIndexed { index, page ->
             // Don't trust sources and use our own indexing
@@ -180,10 +195,18 @@ internal class HttpPageLoader(
 
                 page.status = Page.State.DOWNLOAD_IMAGE
 
-                val imageResponse = source.getImage(
-                    page,
-                    headers = listOf(HttpHeaders.CacheControl to CacheControl.NO_CACHE)
-                )
+                val imageResponse = if (page.chapter.chapter.url.isNotBlank()){
+                    source.getImage(
+                        page,
+                        headers = emptyList(),
+                        mangaDexSource = false
+                    )
+                } else {
+                    source.getImage(
+                        page,
+                        headers = listOf(HttpHeaders.CacheControl to CacheControl.NO_CACHE)
+                    )
+                }
 
                 chapterCache.putImageToCache(imageUrl, imageResponse)
             }

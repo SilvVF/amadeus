@@ -4,6 +4,7 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.skydoves.sandwich.getOrThrow
 import io.silv.common.model.MangaResource
+import io.silv.domain.manga.model.MangaUpdate
 import io.silv.domain.manga.repository.MangaRepository
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
@@ -45,16 +46,7 @@ class QueryPagingSource(
 
                 mangaRepository.upsertManga(updates)
 
-                updates.map {
-                    object : MangaResource {
-                        override val id: String = it.id
-                        override val coverArt: String = it.coverArt
-                        override val title: String = it.title
-                        override val version: Int = it.version
-                        override val createdAt: LocalDateTime = it.createdAt
-                        override val updatedAt: LocalDateTime = it.updatedAt
-                    }
-                } to result.limit
+                updates.map { it.toResource() } to result.limit
             }
 
 
@@ -71,6 +63,18 @@ class QueryPagingSource(
             )
         } catch (e: Exception) {
             LoadResult.Error(e)
+        }
+    }
+
+    private fun MangaUpdate.toResource(): MangaResource {
+        val update = this
+        return object : MangaResource {
+            override val id: String = update.id
+            override val coverArt: String = update.coverArt
+            override val title: String = update.title
+            override val version: Int = update.version
+            override val createdAt: LocalDateTime = update.createdAt
+            override val updatedAt: LocalDateTime = update.updatedAt
         }
     }
 }

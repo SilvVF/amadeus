@@ -1,26 +1,15 @@
 package io.silv.ui
 
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyGridItemScope
-import androidx.compose.foundation.lazy.grid.LazyGridScope
-import androidx.compose.runtime.Composable
+import androidx.annotation.FloatRange
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.DpSize
+import kotlin.math.roundToInt
 
-fun LazyGridScope.header(
-    key: Any? = null,
-    content: @Composable LazyGridItemScope.() -> Unit,
-) {
-    item(
-        key = key,
-        span = { GridItemSpan(this.maxLineSpan) },
-        content = content,
-    )
-}
 
 fun Modifier.vertical() =
     layout { measurable, constraints ->
@@ -33,17 +22,40 @@ fun Modifier.vertical() =
         }
     }
 
-fun Modifier.getSize(onChange: (DpSize) -> Unit) =
-    composed {
-        val density = LocalDensity.current
-        onGloballyPositioned {
-            with(density) {
-                onChange(
-                    DpSize(
-                        width = it.size.width.toDp(),
-                        height = it.size.height.toDp(),
-                    ),
-                )
+
+context(BoxScope)
+fun Modifier.fillMaxSizeAfterMeasure(
+    @FloatRange(0.0, 1.0, true, true) size: Float,
+) = this
+        .matchParentSize()
+        .layout { measurable, constraints ->
+            // Measure the composable
+            val placeable = measurable.measure(constraints)
+
+            layout(placeable.width, placeable.height) {
+                placeable.place(0, -(constraints.maxHeight * (1f - size)).roundToInt())
             }
+        }
+
+
+fun Modifier.conditional(
+    condition: Boolean,
+    modifier: Modifier.() -> Modifier,
+): Modifier {
+    return if (condition) {
+        then(modifier(Modifier))
+    } else {
+        this
+    }
+}
+
+
+fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier =
+    this.composed {
+        clickable(
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() },
+        ) {
+            onClick()
         }
     }

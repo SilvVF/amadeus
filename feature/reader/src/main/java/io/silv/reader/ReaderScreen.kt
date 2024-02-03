@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -57,6 +58,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -495,18 +497,46 @@ fun ReaderPageImageItem(
 
     when (status) {
         Page.State.READY -> {
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(
-                        page.stream?.let {
-                            ByteBuffer.wrap(it().readBytes())
-                        }
-                    )
-                    .build(),
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentDescription = null
-            )
+
+            var hasError by remember { mutableStateOf(false) }
+
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(
+                            page.stream?.let {
+                                ByteBuffer.wrap(it().readBytes())
+                            }
+                        )
+                        .build(),
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentDescription = null,
+                    onError = { hasError = true },
+                    onSuccess = { hasError = false }
+                )
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(18.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            "A problem occurred while loading the page",
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Icon(
+                            imageVector = Icons.Default.ErrorOutline,
+                            contentDescription = "error",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
         }
 
         Page.State.QUEUE -> {
@@ -578,16 +608,26 @@ fun ReaderPageImageItem(
         }
 
         Page.State.ERROR -> {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ErrorOutline,
-                    contentDescription = "error"
-                )
-                Text("A problem occurred while loading the page")
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        "A problem occurred while loading the page",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Icon(
+                        imageVector = Icons.Default.ErrorOutline,
+                        contentDescription = "error",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }

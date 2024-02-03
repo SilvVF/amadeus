@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -66,7 +65,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
@@ -86,7 +84,7 @@ import io.silv.ui.composables.ChapterDownloadAction
 import io.silv.ui.composables.ChapterDownloadIndicator
 import io.silv.ui.layout.DragAnchors
 import io.silv.ui.layout.ExpandableInfoLayout
-import io.silv.ui.layout.ExpandableState
+import io.silv.ui.layout.ExpandableScope
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.ImmutableList
@@ -263,7 +261,6 @@ fun ReaderMenuOverlay(
                 ) {
                     when(it) {
                         MenuTabs.Chapters.ordinal -> ChapterList(
-                            expandableState = expandableState,
                             chapters = chapters,
                             modifier = Modifier
                                 .fillMaxHeight(0.6f)
@@ -309,21 +306,15 @@ data class ChapterActions(
 )
 
 @Composable
-private fun ChapterList(
+private fun ExpandableScope.ChapterList(
     modifier: Modifier = Modifier,
-    expandableState: ExpandableState,
     chapters: () -> ImmutableList<Chapter>,
     actions: ChapterActions,
 ) {
     val lazyListState = rememberLazyListState()
     LazyColumn(
         state = lazyListState,
-        modifier = modifier
-            .nestedScroll(
-                remember {
-                    expandableState.nestedScrollConnection(lazyListState)
-                }
-            )
+        modifier = modifier.nestedScroll(lazyListState)
     ) {
         chapterListItems(
             chapters,
@@ -339,28 +330,6 @@ private fun ChapterList(
         )
     }
 }
-
-@Composable
-fun MenuIconsList(
-    modifier: Modifier = Modifier,
-    icons: @Composable RowScope.() -> Unit,
-) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-        shape = RoundedCornerShape(
-            topStart = 8.dp,
-            topEnd = 8.dp
-        )
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            icons()
-        }
-    }
-}
-
 
 
 fun LazyListScope.chapterListItems(

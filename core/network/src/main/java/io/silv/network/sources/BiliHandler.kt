@@ -1,26 +1,24 @@
 package io.silv.network.sources
 
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.ExperimentalSerializationApi
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.headers
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.HeadersBuilder
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.okio.decodeFromBufferedSource
 import kotlinx.serialization.json.put
-import kotlinx.serialization.serializer
-import okhttp3.Headers
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
 
 class BiliHandler(
-    private val client: OkHttpClient,
-    private val json: Json,
+    private val client: HttpClient
 ) : ImageSource() {
     private val baseUrl = "https://www.bilibilicomics.com"
 
@@ -28,12 +26,11 @@ class BiliHandler(
         return fetchPageList(externalUrl)
     }
 
-    override val headers =
-        Headers.Builder()
-            .add("Accept", ACCEPT_JSON)
-            .add("Origin", baseUrl)
-            .add("Referer", "$baseUrl/")
-            .build()
+    override val requestHeaders: HeadersBuilder.() -> Unit = {
+        append("Accept", ACCEPT_JSON)
+        append("Origin", baseUrl)
+        append("Referer", "$baseUrl/")
+    }
 
     private fun getChapterUrl(externalUrl: String): String {
         val comicId =
@@ -47,32 +44,31 @@ class BiliHandler(
         return "/mc$comicId/$episodeId"
     }
 
-    private fun fetchPageList(chapterUrl: String): List<String> {
-        val response = client.newCall(pageListRequest(getChapterUrl(chapterUrl))).execute()
+    private suspend fun fetchPageList(chapterUrl: String): List<String> {
+        val response = client.pageListRequest(getChapterUrl(chapterUrl))
         return pageListParse(response)
     }
 
-    private fun pageListRequest(chapterUrl: String): Request {
+    private suspend fun HttpClient.pageListRequest(chapterUrl: String): HttpResponse {
         val chapterId = chapterUrl.substringAfterLast("/").toInt()
 
         val jsonPayload = buildJsonObject { put("ep_id", chapterId) }
         val requestBody = jsonPayload.toString().toRequestBody(JSON_MEDIA_TYPE)
 
-        val newHeaders =
-            headers
-                .newBuilder()
-                .set("Referer", baseUrl + chapterUrl)
-                .build()
+        val newHeaders: HeadersBuilder.() -> Unit = {
+            set("Referer", baseUrl + chapterUrl)
+        }
 
-        return Request.Builder()
-            .url("$baseUrl/$BASE_API_ENDPOINT/GetImageIndex?device=pc&platform=web")
-            .headers(newHeaders)
-            .method("POST", requestBody)
-            .build()
+        return post {
+            url("$baseUrl/$BASE_API_ENDPOINT/GetImageIndex?device=pc&platform=web")
+            headers(requestHeaders)
+            headers(newHeaders)
+            setBody(requestBody)
+        }
     }
 
-    private fun pageListParse(response: Response): List<String> {
-        val result = response.parseAs<BilibiliResultDto<BilibiliReader>>()
+    private suspend fun pageListParse(response: HttpResponse): List<String> {
+        val result = response.body<BilibiliResultDto<BilibiliReader>>()
         if (result.message.contains("need buy episode")) {
             throw Exception(
                 "Chapter is unavailable, requires reading and/or purchasing on BililBili"
@@ -83,33 +79,20 @@ class BiliHandler(
         }
         val baseUrls = result.data!!.images.map { it.path }
 
-        val imageResponse = client.newCall(imageUrlRequest(baseUrls)).execute()
+        val imageResponse = client.imageUrlRequest(baseUrls)
 
         return imageUrlParse(imageResponse)
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    fun <T> Json.decodeFromJsonResponse(
-        deserializer: DeserializationStrategy<T>,
-        response: Response,
-    ): T {
-        return response.body!!.source().use {
-            decodeFromBufferedSource(deserializer, it)
-        }
-    }
 
-    private inline fun <reified T> Response.parseAs(): T {
-        return json.decodeFromJsonResponse(serializer(), this)
-    }
-
-    private fun imageUrlParse(response: Response): List<String> {
-        val result = response.parseAs<BilibiliResultDto<List<BilibiliPageDto>>>()
+    private suspend fun imageUrlParse(response: HttpResponse): List<String> {
+        val result = response.body<BilibiliResultDto<List<BilibiliPageDto>>>()
         return result.data!!.mapIndexed { index, page ->
             "${page.url}?token=${page.token}"
         }
     }
 
-    private fun imageUrlRequest(baseUrls: List<String>): Request {
+    private suspend fun HttpClient.imageUrlRequest(baseUrls: List<String>): HttpResponse {
         val jsonPayload =
             buildJsonObject {
                 put(
@@ -121,17 +104,17 @@ class BiliHandler(
             }
         val requestBody = jsonPayload.toString().toRequestBody(JSON_MEDIA_TYPE)
 
-        val newHeaders =
-            headers.newBuilder()
-                .add("Content-Length", requestBody.contentLength().toString())
-                .add("Content-Type", requestBody.contentType().toString())
-                .build()
+        val newHeaders: HeadersBuilder.() -> Unit = {
+            append("Content-Length", requestBody.contentLength().toString())
+            append("Content-Type", requestBody.contentType().toString())
+        }
 
-        return Request.Builder()
-            .url("$baseUrl/$BASE_API_ENDPOINT/ImageToken?device=pc&platform=web")
-            .headers(newHeaders)
-            .method("POST", requestBody)
-            .build()
+        return post {
+            url("$baseUrl/$BASE_API_ENDPOINT/ImageToken?device=pc&platform=web")
+            headers(requestHeaders)
+            headers(newHeaders)
+            setBody(requestBody)
+        }
     }
 
     @Serializable

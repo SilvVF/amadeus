@@ -1,88 +1,67 @@
 package io.silv.network.sources
 
-import java.util.UUID
+import io.ktor.client.HttpClient
+import io.ktor.client.call.HttpClientCall
+import io.ktor.client.call.body
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpSend
+import io.ktor.client.plugins.Sender
+import io.ktor.client.plugins.observer.wrapWithContent
+import io.ktor.client.plugins.plugin
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.HeadersBuilder
+import io.ktor.util.toByteArray
+import io.ktor.utils.io.ByteReadChannel
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import okhttp3.Headers
-import okhttp3.Interceptor
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import okhttp3.ResponseBody.Companion.toResponseBody
+import java.util.UUID
 
-class MangaPlusHandler(
-    client: OkHttpClient,
-    private val json: Json,
-) : ImageSource() {
+class MangaPlusHandler: ImageSource() {
     private val baseUrl = "https://jumpg-webapi.tokyo-cdn.com/api"
 
-    private val client =
-        client.newBuilder()
-            .addInterceptor { imageIntercept(it) }
-            .build()
+    private val client = HttpClient(OkHttp)
 
-    override val headers =
-        Headers.Builder()
-            .add("Origin", WEB_URL)
-            .add("Referer", WEB_URL)
-            .add("User-Agent", USER_AGENT)
-            .add("SESSION-TOKEN", UUID.randomUUID().toString()).build()
-
-//    override suspend fun fetchImageUrls(
-//        externalUrl: String
-//    ): List<String> {
-//
-//        val mangaPlusApiId = externalUrl.takeLastWhile { c -> c != '/' }
-//
-//        val request = Request.Builder()
-//            .headers(headers)
-//            .url("https://jumpg-webapi.tokyo-cdn.com/api/manga_viewer?chapter_id=$mangaPlusApiId&split=yes&img_quality=high")
-//            .build()
-//
-//        val response = client.newCall(request).execute()
-//        val stringBody = response.body?.string() ?: ""
-//
-//        return buildList {
-//            for (substring in  stringBody.split("https://mangaplus.shueisha.co.jp/drm/title/")) {
-//                if (substring.contains("chapter_thumbnail")) { continue }
-//                val endIdx = substring.indexOf("&duration=").takeIf { it != -1 } ?: continue
-//                val duration = substring.substring(endIdx + "&duration=".length, substring.length)
-//                    .takeWhile { c -> c.isDigit() }
-//                add(
-//                    "https://mangaplus.shueisha.co.jp/drm/title/" +
-//                            substring.substring(0, endIdx) + "&duration=" +
-//                            duration.runCatching { duration.take(5) }.getOrDefault(duration)
-//                )
-//            }
-//        }
-//    }
+    override val requestHeaders: HeadersBuilder.() -> Unit = {
+        append("Origin", WEB_URL)
+        append("Referer", WEB_URL)
+        append("User-Agent", USER_AGENT)
+        append("SESSION-TOKEN", UUID.randomUUID().toString())
+    }
 
     override suspend fun fetchImageUrls(externalUrl: String): List<String> {
-        val response =
-            client.newCall(
-                pageListRequest(externalUrl.substringAfterLast("/")),
-            ).execute()
+        val httpSend = client.plugin(HttpSend)
+
+        httpSend.intercept { request -> imageIntercept(request) }
+
+        val chapterId = externalUrl.substringAfterLast("/")
+
+        val response = client.get {
+            url("$baseUrl/manga_viewer?chapter_id=$chapterId&split=yes&img_quality=high&format=json")
+            headers(requestHeaders)
+        }
+
         return pageListParse(response)
     }
 
-    private fun pageListRequest(chapterId: String): Request {
-        return Request.Builder()
-            .url(
-                "$baseUrl/manga_viewer?chapter_id=$chapterId&split=yes&img_quality=high&format=json"
-            )
-            .headers(headers)
-            .build()
-    }
 
-    private fun Response.asMangaPlusResponse(): MangaPlusResponse =
-        use {
-            json.decodeFromString(body!!.string())
+    private suspend fun pageListParse(response: HttpResponse): List<String> {
+        val r = response.bodyAsChannel()
+
+        r.awaitContent()
+
+        val json =  Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+            prettyPrint = true
         }
 
-    private fun pageListParse(response: Response): List<String> {
-        val result = response.asMangaPlusResponse()
+        val result = json.decodeFromString<MangaPlusResponse>(r.toByteArray().decodeToString())
 
         checkNotNull(result.success) {
             result.error!!.popups
@@ -98,25 +77,20 @@ class MangaPlusHandler(
             }
     }
 
-    private fun imageIntercept(chain: Interceptor.Chain): Response {
-        var request = chain.request()
+    private suspend fun Sender.imageIntercept(request: HttpRequestBuilder): HttpClientCall {
 
-        if (!request.url.queryParameterNames.contains("encryptionKey")) {
-            return chain.proceed(request)
+        if (!request.url.parameters.contains("encryptionKey")) {
+            return execute(request)
         }
 
-        val encryptionKey = request.url.queryParameter("encryptionKey")!!
+        val response = execute(request)
 
+        val encryptionKey = response.request.url.parameters["encryptionKey"]!!
+        val image = decodeImage(encryptionKey, response.body())
         // Change the url and remove the encryptionKey to avoid detection.
-        val newUrl = request.url.newBuilder().removeAllQueryParameters("encryptionKey").build()
-        request = request.newBuilder().url(newUrl).build()
+        request.url.parameters.remove("encryptionKey")
 
-        val response = chain.proceed(request)
-
-        val image = decodeImage(encryptionKey, response.body!!.bytes())
-
-        val body = image.toResponseBody("image/jpeg".toMediaTypeOrNull())
-        return response.newBuilder().body(body).build()
+        return response.wrapWithContent(ByteReadChannel(image))
     }
 
     private fun decodeImage(

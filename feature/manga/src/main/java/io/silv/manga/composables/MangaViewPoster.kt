@@ -35,7 +35,7 @@ import io.silv.common.model.Status
 import io.silv.domain.manga.model.Manga
 import io.silv.manga.view.MangaStats
 import io.silv.manga.view.StatsUiState
-import io.silv.ui.fillMaxAfterMesaure
+import io.silv.ui.fillMaxSizeAfterMeasure
 import io.silv.ui.theme.LocalSpacing
 
 @Composable
@@ -56,7 +56,7 @@ fun MangaImageWithTitle(
             modifier =
             Modifier
                 .fillMaxWidth()
-                .fillMaxAfterMesaure(this, 1f)
+                .fillMaxSizeAfterMeasure(1f)
                 .align(TopStart),
             manga = manga,
         )

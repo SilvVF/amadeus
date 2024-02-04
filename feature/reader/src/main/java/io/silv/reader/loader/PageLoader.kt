@@ -22,7 +22,7 @@ abstract class PageLoader {
 
     /**
      * Loads the page. May also preload other pages.
-     * Progress of the page loading should be followed via [io.silv.reader.loader.ReaderPage.statusFlow].
+     * Progress of the page loading should be followed via [ReaderPage.statusFlow].
      * [loadPage] is not currently guaranteed to complete, so it should be launched asynchronously.
      */
     open suspend fun loadPage(page: ReaderPage) {}
@@ -31,14 +31,14 @@ abstract class PageLoader {
      * Retries the given [page] in case it failed to load. This method only makes sense when an
      * online source is used.
      */
-    open fun retryPage(page: ReaderPage) {}
+    open suspend fun retryPage(page: ReaderPage) {}
 
     /**
      * Recycles this loader. Implementations must override this method to clean up any active
      * resources.
      */
     @CallSuper
-    open fun recycle() {
+    open suspend fun recycle() {
         isRecycled = true
     }
 }

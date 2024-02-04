@@ -29,7 +29,7 @@ data class ReaderChapter(
         references++
     }
 
-    fun unref() {
+    suspend fun unref() {
         references--
         if (references == 0) {
             pageLoader?.recycle()

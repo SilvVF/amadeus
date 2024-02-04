@@ -9,6 +9,7 @@ internal class PriorityPage(
     val page: ReaderPage,
     val priority: Int,
 ) : Comparable<PriorityPage> {
+
     companion object {
         private val idGenerator = AtomicInteger()
     }

@@ -3,6 +3,7 @@ package io.silv.reader.loader
 import io.ktor.client.utils.CacheControl
 import io.ktor.http.HttpHeaders
 import io.silv.common.ApplicationScope
+import io.silv.common.coroutine.ConcurrentPriorityQueue
 import io.silv.common.model.Page
 import io.silv.data.download.ChapterCache
 import io.silv.domain.chapter.model.toResource
@@ -13,13 +14,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import okio.buffer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.concurrent.PriorityBlockingQueue
@@ -43,7 +44,8 @@ internal class HttpPageLoader(
     /**
      * A queue used to manage requests one by one while allowing priorities.
      */
-    private val queue = PriorityBlockingQueue<PriorityPage>()
+    private val queue = ConcurrentPriorityQueue<PriorityPage>(comparator = PriorityPage::compareTo)
+    private val q = PriorityBlockingQueue<Int>()
 
     private val preloadSize = 4
 
@@ -51,7 +53,7 @@ internal class HttpPageLoader(
         scope.launch(Dispatchers.IO) {
             flow {
                 while (true) {
-                    emit(runInterruptible { queue.take() }.page)
+                    emit(coroutineScope { queue.await() }.page)
                 }
             }
                 .filter { it.status == Page.State.QUEUE }
@@ -119,7 +121,7 @@ internal class HttpPageLoader(
             continuation.invokeOnCancellation {
                 queuedPages.forEach {
                     if (it.page.status == Page.State.QUEUE) {
-                        queue.remove(it)
+                        runBlocking { queue.remove(it) }
                     }
                 }
             }
@@ -129,14 +131,14 @@ internal class HttpPageLoader(
     /**
      * Retries a page. This method is only called from user interaction on the viewer.
      */
-    override fun retryPage(page: ReaderPage) {
+    override suspend fun retryPage(page: ReaderPage) {
         if (page.status == Page.State.ERROR) {
             page.status = Page.State.QUEUE
         }
         queue.offer(PriorityPage(page, 2))
     }
 
-    override fun recycle() {
+    override suspend fun recycle() {
         super.recycle()
         scope.cancel()
         queue.clear()
@@ -162,7 +164,7 @@ internal class HttpPageLoader(
      *
      * @return a list of [PriorityPage] that were added to the [queue]
      */
-    private fun preloadNextPages(currentPage: ReaderPage, amount: Int): List<PriorityPage> {
+    private suspend fun preloadNextPages(currentPage: ReaderPage, amount: Int): List<PriorityPage> {
         val pageIndex = currentPage.index
         val pages = currentPage.chapter.pages ?: return emptyList()
         if (pageIndex == pages.lastIndex) return emptyList()
@@ -204,10 +206,11 @@ internal class HttpPageLoader(
 
                 chapterCache.putImageToCache(imageUrl, imageResponse)
             }
-            val imageFile = chapterCache.getImageFile(imageUrl)
+            val imageFile = chapterCache.getImageFilePath(imageUrl)
 
+            val file = imageFile.toFile()
 
-            page.stream = { imageFile.buffer().inputStream() }
+            page.stream = { file.inputStream() }
             page.status = Page.State.READY
         } catch (e: Throwable) {
             e.printStackTrace()

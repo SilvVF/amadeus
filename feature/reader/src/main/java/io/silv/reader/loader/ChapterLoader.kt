@@ -23,7 +23,6 @@ class ChapterLoader(
 
         chapter.state = ReaderChapter.State.Loading
         withContext(Dispatchers.IO) {
-            // logcat { "Loading pages for ${chapter.chapter.name}" }
             try {
                 val loader = getPageLoader(chapter)
                 chapter.pageLoader = loader

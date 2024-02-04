@@ -70,6 +70,7 @@ import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import io.silv.common.model.Page
 import io.silv.datastore.ReaderPrefs
@@ -503,6 +504,7 @@ fun ReaderPageImageItem(
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
+                        .memoryCachePolicy(CachePolicy.DISABLED)
                         .data(
                             page.stream?.let {
                                 ByteBuffer.wrap(it().readBytes())
@@ -513,6 +515,7 @@ fun ReaderPageImageItem(
                         .fillMaxSize(),
                     contentDescription = null,
                     onError = { hasError = true },
+                    onLoading = { hasError = false },
                     onSuccess = { hasError = false }
                 )
                 if (hasError) {

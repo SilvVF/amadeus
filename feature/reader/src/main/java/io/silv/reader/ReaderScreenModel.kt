@@ -244,7 +244,9 @@ class ReaderScreenModel(
     override fun onDispose() {
         val currentChapters = state.value.viewerChapters
         if (currentChapters != null) {
-            currentChapters.unref()
+            screenModelScope.launch(NonCancellable) {
+                currentChapters.unref()
+            }
             chapterToDownload?.let {
                 downloadManager.addDownloadsToStartOfQueue(listOf(it))
             }
@@ -278,9 +280,9 @@ class ReaderScreenModel(
             }
         },
         pauseDownloads = {
-                         screenModelScope.launch {
-                             downloadManager.pauseDownloads()
-                         }
+            screenModelScope.launch {
+                downloadManager.pauseDownloads()
+            }
         },
         download = { chapterId ->
             screenModelScope.launch {
@@ -306,7 +308,7 @@ data class ViewerChapters(
         nextChapter?.ref()
     }
 
-    fun unref() {
+    suspend fun unref() {
         currChapter.unref()
         prevChapter?.unref()
         nextChapter?.unref()

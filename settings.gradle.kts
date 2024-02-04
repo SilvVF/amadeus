@@ -13,6 +13,10 @@ dependencyResolutionManagement {
         gradlePluginPortal()
         mavenCentral()
         maven("https://jitpack.io")
+        maven {
+            name = "Github Packages"
+            url = uri("https://maven.pkg.github.com/silvvf/tokenbucket")
+        }
     }
 }
 

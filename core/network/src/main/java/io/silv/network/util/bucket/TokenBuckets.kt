@@ -1,9 +1,9 @@
-package io.silv.network.util.buckets
+package io.silv.network.util.bucket
 
 import kotlinx.coroutines.delay
 
 /** Static utility methods pertaining to creating [TokenBucketImpl] instances.  */
-object TokenBuckets {
+public object TokenBuckets {
 
     /** Create a new builder for token buckets.  */
     fun builder(): Builder {
@@ -13,8 +13,8 @@ object TokenBuckets {
     private val YIELDING_SLEEP_STRATEGY: TokenBucket.SleepStrategy =
         object : TokenBucket.SleepStrategy {
             override suspend fun sleep() {
-                // Sleep for the smallest unit of time possible just to relinquish control
-                // and to allow other threads to run.
+                // Sleep for the smallest unit of time possible
+                // internally anything less than 1 millisecond will be rounded
                 delay(1)
             }
         }
@@ -30,7 +30,7 @@ object TokenBuckets {
         private var initialTokens: Long = 0
         private var refillStrategy: TokenBucket.RefillStrategy? = null
         private var sleepStrategy = YIELDING_SLEEP_STRATEGY
-        private val ticker = KTicker.systemTicker()
+        private val ticker = Ticker.systemTicker()
 
         /** Specify the overall capacity of the token bucket.  */
         fun withCapacity(numTokens: Long): Builder {

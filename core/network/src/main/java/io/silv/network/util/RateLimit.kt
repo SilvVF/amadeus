@@ -3,6 +3,7 @@ package io.silv.network.util
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.plugin
+import io.silv.network.util.bucket.TokenBuckets
 import kotlinx.coroutines.ensureActive
 
 fun HttpClient.rateLimit(
@@ -10,7 +11,7 @@ fun HttpClient.rateLimit(
     seconds: Int = 1,
 ): HttpClient {
     val bucket =
-        io.silv.network.util.buckets.TokenBuckets
+        TokenBuckets
             .builder()
             .withCapacity(permits.toLong())
             .withFixedIntervalRefillStrategy(

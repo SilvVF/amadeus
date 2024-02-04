@@ -1,4 +1,4 @@
-package io.silv.network.util.buckets
+package io.silv.network.util.bucket
 
 
 /**
@@ -8,7 +8,7 @@ package io.silv.network.util.buckets
  *
  * @see [Leaky Bucket on Wikipedia](http://en.wikipedia.org/wiki/Leaky_bucket)
  */
-interface TokenBucket {
+public interface TokenBucket {
     /**
      * Returns the capacity of this token bucket.  This is the maximum number of tokens that the bucket can hold at
      * any one time.
@@ -22,7 +22,7 @@ interface TokenBucket {
      *
      * @return The current number of tokens in the bucket.
      */
-    val numTokens: Long
+    suspend fun numTokens(): Long
 
     /**
      * Returns the amount of time in the specified time unit until the next group of tokens can be added to the token
@@ -40,7 +40,7 @@ interface TokenBucket {
      *
      * @return `true` if a token was consumed, `false` otherwise.
      */
-    fun tryConsume(): Boolean
+    suspend fun tryConsume(): Boolean
 
     /**
      * Attempt to consume a specified number of tokens from the bucket.  If the tokens were consumed then `true`
@@ -49,7 +49,7 @@ interface TokenBucket {
      * @param numTokens The number of tokens to consume from the bucket, must be a positive number.
      * @return `true` if the tokens were consumed, `false` otherwise.
      */
-    fun tryConsume(numTokens: Long): Boolean
+    suspend fun tryConsume(numTokens: Long): Boolean
 
     /**
      * Consume a single token from the bucket.  If no token is currently available then this method will block until a
@@ -61,7 +61,7 @@ interface TokenBucket {
      * Consumes multiple tokens from the bucket.  If enough tokens are not currently available then this method will block
      * until
      *
-     * @param numTokens The number of tokens to consume from teh bucket, must be a positive number.
+     * @param numTokens The number of tokens to consume from the bucket, must be a positive number.
      */
     suspend fun consume(numTokens: Long)
 
@@ -71,16 +71,16 @@ interface TokenBucket {
      *
      * @param numTokens The number of tokens to add to the bucket.
      */
-    fun refill(numTokens: Long)
+    suspend fun refill(numTokens: Long)
 
     /** Encapsulation of a refilling strategy for a token bucket.  */
-    interface RefillStrategy {
+    public interface RefillStrategy {
         /**
          * Returns the number of tokens to add to the token bucket.
          *
          * @return The number of tokens to add to the token bucket.
          */
-        fun refill(): Long
+        suspend fun refill(): Long
 
         /**
          * Returns the amount of time in the specified time unit until the next group of tokens can be added to the token
@@ -91,14 +91,14 @@ interface TokenBucket {
          * be added to the token bucket is less than a single unit of the passed in time unit then this method will
          * return 0.
          *
-         * @return The amount of time until the next group of tokens can be added to the token bucket.
+         * @return The amount of time in nanoseconds until the next group of tokens can be added to the token bucket.
          */
         @Throws(UnsupportedOperationException::class)
         fun getNanosUntilNextRefill(): Long
     }
 
     /** Encapsulation of a strategy for relinquishing control of the CPU.  */
-    interface SleepStrategy {
+    public interface SleepStrategy {
         /**
          * Sleep for a short period of time to allow other threads and system processes to execute.
          */

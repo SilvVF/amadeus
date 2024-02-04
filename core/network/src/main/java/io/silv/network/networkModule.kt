@@ -9,8 +9,8 @@ import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
 import io.silv.network.sources.HttpSource
 import io.silv.network.sources.ImageSourceFactory
+import io.silv.network.util.bucket.TokenBucketPlugin
 import io.silv.network.util.dohCloudflare
-import io.silv.network.util.rateLimit
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
@@ -36,6 +36,15 @@ val networkModule =
                         dohCloudflare()
                     }
                 }
+                install(TokenBucketPlugin) {
+                    bucket = {
+                        withCapacity(40L)
+                        withFixedIntervalRefillStrategy(
+                            refillTokens = 40L,
+                            periodNanos = 60 * 1_000_000_000L
+                        )
+                    }
+                }
                 install(ContentNegotiation) {
                     json(
                         json = get(),
@@ -43,10 +52,6 @@ val networkModule =
                     )
                 }
             }
-                .rateLimit(
-                    permits = 40,
-                    seconds = 60,
-                )
         }
 
         single<MangaDexClient> {
@@ -68,6 +73,15 @@ val networkModule =
                         )
                     )
                 }
+                install(TokenBucketPlugin) {
+                    bucket = {
+                        withCapacity(300L)
+                        withFixedIntervalRefillStrategy(
+                            refillTokens = 300L,
+                            periodNanos = 60 * 1_000_000_000L
+                        )
+                    }
+                }
                 install(ContentNegotiation) {
                     json(
                         json = get(),
@@ -75,10 +89,6 @@ val networkModule =
                     )
                 }
             }
-                .rateLimit(
-                    permits = 300,
-                    seconds = 60,
-                )
         }
 
         singleOf(::ImageSourceFactory)

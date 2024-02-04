@@ -23,7 +23,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import java.util.concurrent.PriorityBlockingQueue
 import kotlin.math.min
 
 
@@ -45,7 +44,6 @@ internal class HttpPageLoader(
      * A queue used to manage requests one by one while allowing priorities.
      */
     private val queue = ConcurrentPriorityQueue<PriorityPage>(comparator = PriorityPage::compareTo)
-    private val q = PriorityBlockingQueue<Int>()
 
     private val preloadSize = 4
 

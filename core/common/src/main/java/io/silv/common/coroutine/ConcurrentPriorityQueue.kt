@@ -6,6 +6,11 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.coroutineContext
 
+/**
+ *  Priority queue backed by a mutex.
+ *  All methods are safe to concurrently.
+ *  [original source](https://github.com/badoo/Reaktive/blob/665a29646ecfd0e41b0337366b217a6391de0196/reaktive/src/commonMain/kotlin/com/badoo/reaktive/utils/queue/PriorityQueue.kt#L4)
+ */
 class ConcurrentPriorityQueue<T>(
     private val comparator: Comparator<in T>
 ) : Iterable<T> {
@@ -19,6 +24,9 @@ class ConcurrentPriorityQueue<T>(
     suspend fun peek(): T? =
         mutex.withLock { array?.takeUnless { isEmpty }?.get(0) }
 
+    /**
+     * @param item the item to add to the queue
+     */
     suspend fun offer(item: T) {
         mutex.withLock {
             var arr: Array<T?>? = array
@@ -36,6 +44,10 @@ class ConcurrentPriorityQueue<T>(
         }
     }
 
+    /**
+     * @param item the item to remove from the queue
+     * @return true if the item was removed false if the item doesn't exist or couldn't be removed.
+     */
     suspend fun remove(item: T): Boolean {
         mutex.withLock {
             val arr = array
@@ -58,6 +70,9 @@ class ConcurrentPriorityQueue<T>(
         }
     }
 
+    /**
+     * @return the item with the highest priority.
+     */
     suspend fun poll(): T? {
         mutex.withLock {
             val arr = array
@@ -76,6 +91,12 @@ class ConcurrentPriorityQueue<T>(
         }
     }
 
+    /**
+     * Suspends until poll returns a non null value.
+     * This respects cancellation through [ensureActive].
+     *
+     * @return first item returned from [poll]
+     */
     suspend fun await(): T {
         while (true) {
             coroutineContext.ensureActive()
@@ -89,6 +110,9 @@ class ConcurrentPriorityQueue<T>(
         }
     }
 
+    /**
+     * clear all items from the queue
+     */
     suspend fun clear() {
         mutex.withLock {
             array = null

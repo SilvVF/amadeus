@@ -21,7 +21,6 @@ import okio.IOException
 import okio.Path
 import okio.Path.Companion.toPath
 import okio.buffer
-import okio.sink
 import java.io.File
 
 /**
@@ -141,21 +140,6 @@ class ChapterCache(
      * @param imageUrl url of image.
      * @return path of image.
      */
-    suspend fun getImageFile(imageUrl: String): okio.Source {
-        // Get file from md5 key.
-        val imageName = DiskUtil.hashKeyForDisk(imageUrl)
-
-        val path = diskCache.get(imageName)
-
-        return fileSystem.source(path!!.toPath())
-    }
-
-    /**
-     * Get image file from url.
-     *
-     * @param imageUrl url of image.
-     * @return path of image.
-     */
     suspend fun getImageFilePath(imageUrl: String): Path {
         // Get file from md5 key.
         val imageName = DiskUtil.hashKeyForDisk(imageUrl)
@@ -180,9 +164,9 @@ class ChapterCache(
             val responseBody: ByteArray = response.body()
 
             // Get OutputStream and write image with Okio.
-            diskCache.put(key) {
+            diskCache.put(key) {path ->
                 runCatching {
-                    File(it).sink().buffer().use { os ->
+                    fileSystem.sink(path.toPath()).buffer().use { os ->
                         os.write(responseBody)
                         os.flush()
                     }

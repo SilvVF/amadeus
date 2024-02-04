@@ -68,9 +68,10 @@ class HttpSource(
         return HttpRequestBuilder().apply {
             url(tokenRequestUrl)
             headers {
-                headers.build()
-
-                set(HttpHeaders.CacheControl, cacheControl)
+                headers.build().forEach { s, strings ->
+                    appendAll(s, strings)
+                }
+                append(HttpHeaders.CacheControl, cacheControl)
             }
         }
     }
@@ -86,17 +87,6 @@ class HttpSource(
         val request = mdAtHomeRequest(tokenRequestUrl, headers, cacheControl)
         val response = client.get(request)
 
-        // This check is for the error that causes pages to fail to load.
-        // It should never be entered, but in case it is, we retry the request.
-        if (response.status.value == 504) {
-            return getMdAtHomeUrl(
-                tokenRequestUrl,
-                client,
-                headers,
-                CacheControl.NO_CACHE
-            )
-        }
-
         return response.body<AtHomeDto>().baseUrl
     }
 
@@ -105,7 +95,7 @@ class HttpSource(
      */
     private suspend fun getValidImageUrlForPage(page: Page): String {
 
-        if (!page.url.contains("api.mangadex.org")) {
+        if (!page.url.contains("mangadex")) {
             return page.imageUrl!!
         }
 
@@ -121,14 +111,15 @@ class HttpSource(
                     } else {
                         CacheControl.ONLY_IF_CACHED
                     }
-                    getMdAtHomeUrl(tokenRequestUrl, client, reqHeader, cacheControl)
+                    runCatching { getMdAtHomeUrl(tokenRequestUrl, client, reqHeader, cacheControl) }.getOrNull()
                 }
             }
-        return page.imageUrl!!.replaceBefore("/data", mdAtHomeServerUrl).also { Log.d("Source", it) }
+
+        return page.imageUrl!!.replaceBefore("/data", mdAtHomeServerUrl ?: "https://api.mangadex.org/at-home/server").also { Log.d("Source", it) }
     }
 
     private val reqHeader =  HeadersBuilder().apply {
-        set("Referer", "${mangaDexApi.mangaDexUrl}/")
+        append("Referer", "${mangaDexApi.mangaDexUrl}/")
     }
 
 

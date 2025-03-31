@@ -35,12 +35,13 @@ import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
+import tachiyomi.decoder.BuildConfig
 
 class AmadeusApp : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
 
-        SandwichInitializer.sandwichOperators += MangaDexApiLogger<Any>()
+        //SandwichInitializer.sandwichOperators += MangaDexApiLogger<Any>()
 
         startKoin {
             androidLogger(Level.DEBUG)
@@ -87,11 +88,11 @@ class AmadeusApp : Application(), ImageLoaderFactory {
         val memCache = { CoilMemoryCache.get(this) }
 
         val diskBackedFetcher = MangaCoverFetcher(client, cache, this)
-        
-        return ImageLoader.Builder(this)
+
+        val builder = ImageLoader.Builder(this)
             .components {
-                addDiskFetcher(diskBackedFetcher.coverFetcher, diskCache, memCache)
-                addDiskFetcher(diskBackedFetcher.mangaFetcher, diskCache, memCache)
+                addDiskFetcher(diskBackedFetcher.coverFetcher, diskCache)
+                addDiskFetcher(diskBackedFetcher.mangaFetcher, diskCache)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     add(ImageDecoderDecoder.Factory())
                 } else {
@@ -101,13 +102,13 @@ class AmadeusApp : Application(), ImageLoaderFactory {
             }
             .crossfade(
                 (
-                    300 *
-                        Settings.Global.getFloat(
-                            this@AmadeusApp.contentResolver,
-                            Settings.Global.ANIMATOR_DURATION_SCALE,
-                            1f,
-                        )
-                    ).toInt(),
+                        300 *
+                                Settings.Global.getFloat(
+                                    this@AmadeusApp.contentResolver,
+                                    Settings.Global.ANIMATOR_DURATION_SCALE,
+                                    1f,
+                                )
+                        ).toInt(),
             )
             .allowRgb565(isLowRamDevice(this@AmadeusApp))
             .diskCache(diskCache)
@@ -116,7 +117,12 @@ class AmadeusApp : Application(), ImageLoaderFactory {
             .fetcherDispatcher(Dispatchers.IO.limitedParallelism(8))
             .decoderDispatcher(Dispatchers.IO.limitedParallelism(2))
             .transformationDispatcher(Dispatchers.IO.limitedParallelism(2))
-            .logger(DebugLogger())
+        return if (true) {
+            // TODO(remove this)
+            builder.logger(DebugLogger())
+        } else {
+            builder
+        }
             .build()
     }
 }

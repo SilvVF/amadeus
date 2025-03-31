@@ -7,7 +7,6 @@ import coil.memory.MemoryCache
 inline fun <reified T: Any> ComponentRegistry.Builder.addDiskFetcher(
     fetcher: DiskBackedFetcher<T>,
     noinline diskCache: () -> DiskCache,
-    noinline memoryCache: () -> MemoryCache
 ) {
 
     val realFetcher =  DiskBackedFetcherImpl(
@@ -17,7 +16,6 @@ inline fun <reified T: Any> ComponentRegistry.Builder.addDiskFetcher(
         overrideCall = { options, data ->  fetcher.overrideFetch(options, data) },
         fetch = { options, data ->  fetcher.fetch(options, data) },
         diskCacheInit = diskCache,
-        memoryCacheInit = memoryCache
     )
 
     this.add(realFetcher.factory)

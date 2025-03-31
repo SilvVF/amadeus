@@ -25,8 +25,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.More
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.outlined.More
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -176,7 +176,7 @@ fun ExpandableInfoLayoutContent(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = Icons.Outlined.More,
+                imageVector = Icons.AutoMirrored.Outlined.More,
                 contentDescription = "Filter",
                 modifier = Modifier.graphicsLayer { rotationX = 180f },
             )
@@ -322,7 +322,7 @@ fun BrowseMangaContent(
                             },
                             onTagClick = { manga, name ->
                                 manga.tagToId[name]?.let { id ->
-                                    navigator?.push(
+                                    navigator.push(
                                         SharedScreen.MangaFilter(name, id),
                                     )
                                 }

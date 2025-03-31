@@ -7,7 +7,7 @@ import org.koin.dsl.module
 val databaseModule =
     module {
 
-        single {
+        single<AmadeusDatabase> {
             Room.databaseBuilder(
                 androidContext(),
                 AmadeusDatabase::class.java,

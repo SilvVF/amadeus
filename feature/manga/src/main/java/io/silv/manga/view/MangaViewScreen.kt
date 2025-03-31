@@ -29,14 +29,14 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.StarRate
+import androidx.compose.material.icons.filled.Web
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -53,6 +53,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -88,6 +89,7 @@ import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -103,8 +105,8 @@ import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.CenterBox
 import io.silv.ui.collectEvents
-import io.silv.ui.layout.PullRefresh
 import io.silv.ui.isScrollingUp
+import io.silv.ui.layout.PullRefresh
 import io.silv.ui.layout.ScrollbarLazyColumn
 import io.silv.ui.openOnWeb
 import io.silv.ui.theme.LocalSpacing
@@ -113,12 +115,14 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.launch
-import org.koin.compose.rememberKoinInject
+import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 class MangaViewScreen(
     private val mangaId: String,
 ) : Screen {
+
+    override val key: ScreenKey = "MangaViewScreen_$mangaId"
 
     @Composable
     override fun Content() {
@@ -330,7 +334,10 @@ fun MangaViewSuccessScreen(
                     IconButton(onClick = {
                         navigator.pop()
                     }) {
-                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = null)
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null
+                        )
                     }
                 },
                 actions = {
@@ -354,6 +361,16 @@ fun MangaViewSuccessScreen(
                                 tint = tint
                             )
                         }
+                    }
+                    IconButton(
+                        onClick = {
+                            viewOnWeb("https://mangadex.org/title/${state.manga.id}")
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Web,
+                            contentDescription = "View on web",
+                        )
                     }
                     IconButton(
                         onClick = { currentBottomSheet = FILTER_BOTTOM_SHEET },
@@ -515,7 +532,7 @@ fun MangaViewSuccessScreen(
             )
         VOLUME_ART_BOTTOM_SHEET ->
             ModalBottomSheet(
-                windowInsets = WindowInsets(0),
+                contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
                 onDismissRequest = { currentBottomSheet = null },
                 sheetState = sheetState,
                 modifier = Modifier
@@ -529,7 +546,7 @@ fun MangaViewSuccessScreen(
                 var error by remember { mutableStateOf<String?>(null) }
                 var loading by remember { mutableStateOf(false) }
                 var loadingSem by remember { mutableIntStateOf(0) }
-                val getMangaCoverArtById = rememberKoinInject<GetMangaCoverArtById>()
+                val getMangaCoverArtById = koinInject<GetMangaCoverArtById>()
 
                 LaunchedEffect(loadingSem) {
                     loading = true
@@ -553,19 +570,22 @@ fun MangaViewSuccessScreen(
                     }
                 } else if (error != null) {
                     CenterBox(Modifier.height(400.dp)) {
-                        ClickableText(
-                            text = buildAnnotatedString {
-                                append("Error while loading manga click to retry")
-                            },
+                        TextButton(
                             onClick = { loadingSem++ }
-                        )
+                        ) {
+                            Text(
+                                buildAnnotatedString {
+                                    append("Error while loading manga click to retry")
+                                }
+                            )
+                        }
                     }
                 } else {
                     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.CenterHorizontally) {
                         val pagerState = rememberPagerState { coverImages.size }
                         HorizontalPager(
                             state = pagerState,
-                            beyondBoundsPageCount = 2,
+                            beyondViewportPageCount = 2,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
@@ -658,7 +678,7 @@ fun MangaStats(
         ) {
             val space = LocalSpacing.current
             Icon(
-                imageVector = Icons.Filled.Comment,
+                imageVector = Icons.AutoMirrored.Filled.Comment,
                 contentDescription = "comments",
                 Modifier.size(22.dp)
             )

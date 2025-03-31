@@ -1,9 +1,11 @@
 package io.silv.reader.loader
 
+import android.util.Log
 import io.ktor.client.utils.CacheControl
 import io.ktor.http.HttpHeaders
 import io.silv.common.ApplicationScope
 import io.silv.common.coroutine.ConcurrentPriorityQueue
+import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.Page
 import io.silv.data.download.ChapterCache
 import io.silv.domain.chapter.model.toResource
@@ -51,7 +53,8 @@ internal class HttpPageLoader(
         scope.launch(Dispatchers.IO) {
             flow {
                 while (true) {
-                    emit(coroutineScope { queue.await() }.page)
+                    val page = suspendRunCatching { queue.await().page }
+                    emit(page.getOrNull() ?: continue)
                 }
             }
                 .filter { it.status == Page.State.QUEUE }
@@ -100,7 +103,10 @@ internal class HttpPageLoader(
         val imageUrl = page.imageUrl
 
         // Check if the image has been deleted
-        if (page.status == Page.State.READY && imageUrl != null && !chapterCache.isImageInCache(imageUrl)) {
+        if (page.status == Page.State.READY && imageUrl != null && !chapterCache.isImageInCache(
+                imageUrl
+            )
+        ) {
             page.status = Page.State.QUEUE
         }
 
@@ -198,8 +204,11 @@ internal class HttpPageLoader(
 
                 val imageResponse = source
                     .getImage(
-                        page,
-                        headers = listOf(HttpHeaders.CacheControl to CacheControl.NO_CACHE)
+                        page = page,
+                        headers = listOf(
+                            HttpHeaders.CacheControl to CacheControl.NO_CACHE,
+                            HttpHeaders.CacheControl to CacheControl.MUST_REVALIDATE
+                        )
                     )
 
                 chapterCache.putImageToCache(imageUrl, imageResponse)
@@ -208,7 +217,7 @@ internal class HttpPageLoader(
 
             val file = imageFile.toFile()
 
-            page.stream = { file.inputStream() }
+            page.stream = { file.inputStream().buffered() }
             page.status = Page.State.READY
         } catch (e: Throwable) {
             e.printStackTrace()

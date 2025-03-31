@@ -90,7 +90,6 @@ fun MangaActions(
     inLibrary: Boolean,
     showChapterArt: () -> Unit,
     addToLibraryClicked: () -> Unit,
-    viewOnWebClicked: () -> Unit,
     changeStatus: (ReadingStatus) -> Unit
 ) {
     val space = LocalSpacing.current
@@ -113,7 +112,6 @@ fun MangaActions(
                         selected = inLibrary,
                         action = addToLibraryClicked,
                     ),
-                    MangaActionItem(Icons.Filled.TravelExplore, "View on web", viewOnWebClicked),
                     MangaActionItem(Icons.Filled.Image, "Cover art", showChapterArt),
                 )
             }

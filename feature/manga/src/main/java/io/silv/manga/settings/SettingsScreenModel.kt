@@ -53,6 +53,7 @@ class SettingsScreenModel(
                             it
                         )
                     }
+                    ?: workManager.cancelUniqueWork(MangaSyncPeriodicWorkName)
             }
         }
     }

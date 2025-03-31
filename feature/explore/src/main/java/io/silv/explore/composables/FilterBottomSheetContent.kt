@@ -41,6 +41,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -109,7 +110,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FilterBottomSheetContent(
     hide: () -> Unit,
@@ -246,52 +246,52 @@ fun FilterBottomSheetContent(
             horizontalAlignment = Alignment.Start,
         ) {
             item(key = "content-rating-filters") {
-                Column(Modifier.animateItemPlacement()) {
+                Column(Modifier.animateItem()) {
                     contentRatingFilters(
                         state.queryFilters.contentRating,
                         viewModel::updateFilter,
                     )
-                    Divider()
+                    HorizontalDivider()
                 }
             }
             item(key = "status-filters") {
-                Column(Modifier.animateItemPlacement()) {
+                Column(Modifier.animateItem()) {
                     statusFilters(
                         state.queryFilters.status,
                         viewModel::updateFilter,
                     )
-                    Divider()
+                    HorizontalDivider()
                 }
             }
             item(key = "manga-type-filters") {
-                Column(Modifier.animateItemPlacement()) {
+                Column(Modifier.animateItem()) {
                     mangaTypeFilter(
                         viewModel::updateFilter,
                         state.queryFilters.originalLanguage,
                     )
-                    Divider()
+                    HorizontalDivider()
                 }
             }
             item(key = "publication-demographic-filters") {
-                Column(Modifier.animateItemPlacement()) {
+                Column(Modifier.animateItem()) {
                     publicationDemographicFilters(
                         viewModel::updateFilter,
                         state.queryFilters.publicationDemographic,
                     )
-                    Divider()
+                    HorizontalDivider()
                 }
             }
             item(key = "language-filters") {
-                Column(Modifier.animateItemPlacement()) {
+                Column(Modifier.animateItem()) {
                     languagesFilter(
                         state.queryFilters.availableTranslatedLanguage,
                         viewModel::updateFilter,
                     )
-                    Divider()
+                    HorizontalDivider()
                 }
             }
             item(key = "tags-filters") {
-                Column(Modifier.animateItemPlacement()) {
+                Column(Modifier.animateItem()) {
                     tagsFilter(
                         state.queryFilters.includedTags,
                         state.queryFilters.excludedTags,
@@ -300,7 +300,7 @@ fun FilterBottomSheetContent(
                         state.queryFilters.excludedTagsMode,
                         viewModel::updateFilter,
                     )
-                    Divider()
+                    HorizontalDivider()
                 }
             }
             item(key = "available-chapters") {
@@ -308,7 +308,7 @@ fun FilterBottomSheetContent(
                     state.queryFilters.hasAvailableChapters,
                     viewModel::updateFilter,
                 )
-                Divider()
+                HorizontalDivider()
             }
         }
     }
@@ -571,6 +571,8 @@ fun StateFilterChip(
         FilterChipDefaults.filterChipBorder(
             borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             selectedBorderColor = MaterialTheme.colorScheme.surfaceColorAtElevation(8.dp),
+            selected = state,
+            enabled = true
         ),
     )
 }
@@ -1042,7 +1044,7 @@ private fun AuthorSearchBar(
                                     },
                                     onClick = { onAuthorSelected(it) },
                                 )
-                                Divider()
+                                HorizontalDivider()
                             }
                         }
                         QueryResult.Loading -> {
@@ -1101,6 +1103,8 @@ fun TriStateFilterChip(
         FilterChipDefaults.filterChipBorder(
             borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             selectedBorderColor = MaterialTheme.colorScheme.surfaceColorAtElevation(8.dp),
+            selected = state == ToggleableState.On || state == ToggleableState.Indeterminate,
+            enabled = true
         ),
     )
 }

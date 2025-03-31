@@ -2,6 +2,7 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
     id("kotlin-parcelize")
 }
 
@@ -31,12 +32,27 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs += arrayOf(
+            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
+            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
+            "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi",
+            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
+            "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
+            "-opt-in=androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
+            "-opt-in=coil.annotation.ExperimentalCoilApi",
+            "-opt-in=kotlinx.coroutines.FlowPreview",
+            "-Xcontext-receivers"
+        )
     }
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
+    composeCompiler {
+        reportsDestination = layout.buildDirectory.dir("compose_compiler")
+        stabilityConfigurationFile = rootProject.layout.projectDirectory.file("stability_config.conf")
     }
 }
 
@@ -55,14 +71,14 @@ dependencies {
 
     implementation(libs.sandwich)
 
-    implementation("br.com.devsrsouza.compose.icons:font-awesome:1.1.0")
+    implementation(libs.font.awesome)
 
-    implementation("com.halilibo.compose-richtext:richtext-commonmark:0.17.0")
-    implementation("com.halilibo.compose-richtext:richtext-ui-material3:0.17.0")
+    implementation(libs.richtext.commonmark)
+    implementation(libs.richtext.ui.material3)
 
-    implementation("me.saket.swipe:swipe:1.2.0")
+    implementation(libs.swipe)
 
-    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+    implementation(libs.reorderable)
 
 
     implementation(project(":core:ui"))
@@ -83,7 +99,7 @@ dependencies {
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(libs.androidx.material3.window.size)
-    implementation("androidx.compose.ui:ui-util")
+    implementation(libs.androidx.compose.ui.ui.util)
     implementation(composeBom)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling)
@@ -94,10 +110,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.manifest)
     implementation(libs.androidx.activity.compose)
     implementation(libs.orbital)
-    implementation("androidx.compose.ui:ui-graphics")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    implementation("androidx.compose.animation:animation")
-    implementation("androidx.compose.animation:animation-graphics")
+    implementation(libs.ui.graphics)
+    debugImplementation(libs.ui.tooling)
+    implementation(libs.androidx.compose.animation.animation)
+    implementation(libs.androidx.compose.animation.animation.graphics)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
@@ -133,24 +149,4 @@ dependencies {
     // COIL
     implementation(libs.coil.compose)
     implementation(libs.coil)
-}
-
-tasks {
-    // See https://kotlinlang.org/docs/reference/experimental.html#experimental-status-of-experimental-api(-markers)
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.freeCompilerArgs += listOf(
-            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
-            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
-            "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi",
-            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
-            "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
-            "-opt-in=androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
-            "-opt-in=coil.annotation.ExperimentalCoilApi",
-            "-opt-in=kotlinx.coroutines.FlowPreview",
-            "-Xcontext-receivers"
-        )
-    }
 }

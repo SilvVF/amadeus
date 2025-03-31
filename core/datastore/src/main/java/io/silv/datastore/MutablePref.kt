@@ -11,9 +11,11 @@ import androidx.datastore.preferences.core.edit
 import io.silv.common.PrefsConverter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
@@ -28,11 +30,7 @@ class PreferenceMutableState<T>(
     private val dataStore by inject<DataStore<Preferences>>()
 
     private val state =
-        mutableStateOf(
-            runBlocking {
-                dataStore.data.first()[key] ?: return@runBlocking defaultValue
-            },
-        )
+        mutableStateOf(defaultValue)
 
     init {
         dataStore.data.map { it[key] }
@@ -66,13 +64,7 @@ class PreferenceMutableStateWithConversion<T, V>(
     private val dataStore by inject<DataStore<Preferences>>()
 
     private val state =
-        mutableStateOf(
-            runBlocking {
-                converter.convertFrom(
-                    dataStore.data.first()[key] ?: return@runBlocking defaultValue,
-                )
-            },
-        )
+        mutableStateOf(defaultValue)
 
     init {
         dataStore.data.map { it[key] }

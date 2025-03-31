@@ -31,8 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -55,11 +55,13 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.IgnoredOnParcel
-import org.koin.compose.rememberKoinInject
+import org.koin.compose.koinInject
 import soup.compose.material.motion.animation.materialFadeThroughIn
 import soup.compose.material.motion.animation.materialFadeThroughOut
 
 object NavHost : Screen {
+
+    private fun readResolve(): Any = NavHost
 
     @IgnoredOnParcel
     internal val bottomBarVisibility = Channel<Boolean>()
@@ -141,7 +143,7 @@ object NavHost : Screen {
 @Composable
 fun AmadeusBottomBar(modifier: Modifier = Modifier) {
 
-    val getUpdateCount = rememberKoinInject<GetUpdateCount>()
+    val getUpdateCount = koinInject<GetUpdateCount>()
 
     val mangaWithUpdates by produceState(initialValue = 0) {
         getUpdateCount.subscribe().collect { value = it }
@@ -166,7 +168,7 @@ fun AmadeusNavRail(
     modifier: Modifier = Modifier,
     visible: Boolean = true,
 ) {
-    val getUpdateCount = rememberKoinInject<GetUpdateCount>()
+    val getUpdateCount = koinInject<GetUpdateCount>()
 
     val mangaWithUpdates by produceState(initialValue = 0) {
         getUpdateCount.subscribe().collect { value = it }

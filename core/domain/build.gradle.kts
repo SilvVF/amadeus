@@ -44,19 +44,19 @@ dependencies {
 
     implementation(libs.sandwich)
 
-    compileOnly("com.github.skydoves:compose-stable-marker:1.0.3")
+    compileOnly(libs.compose.stable.marker)
     implementation(libs.okio)
     implementation(libs.okhttp)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.work.multiprocess)
     implementation(libs.androidx.work.gcm)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.6")
+    implementation(libs.kotlin.collections.immutable)
 
     implementation(libs.flow.combinetuple.kt)
     implementation(libs.tuples.kt)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
+    implementation(libs.kotlin.serialization)
 
     // KOTLIN
     implementation(libs.kotlinx.datetime)

@@ -1,7 +1,10 @@
 package io.silv.ui.composables
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Indication
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.ElevatedSuggestionChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -64,6 +67,7 @@ enum class CardType(val string: String) {
     ExtraCompact("Extra-Compact Card"),
 }
 
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MangaListItem(
@@ -74,11 +78,12 @@ fun MangaListItem(
 ) {
     val space = LocalSpacing.current
     val haptics = LocalHapticFeedback.current
+
     Row(
         modifier = modifier
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = rememberRipple(color = MaterialTheme.colorScheme.primary),
+                indication = ripple(color = MaterialTheme.colorScheme.primary),
                 onLongClick = {
                     onFavoriteClick()
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -318,6 +323,7 @@ fun GenreTagsWithBookmark(
                 ),
                 border =
                 SuggestionChipDefaults.suggestionChipBorder(
+                    enabled = true,
                     borderColor = textColor,
                 ),
                 modifier = Modifier.padding(horizontal = space.small),

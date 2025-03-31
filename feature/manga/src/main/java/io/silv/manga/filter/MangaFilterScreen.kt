@@ -2,7 +2,6 @@ package io.silv.manga.filter
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,7 +11,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.ElevatedFilterChip
@@ -67,9 +66,9 @@ class MangaFilterScreen(
     private val tagId: String,
 ) : Screen {
     override val key: ScreenKey
-        get() = super.key + tag + tagId
+        get() = "MangaFilterScreen_${tag}_${tagId}"
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val sm = getScreenModel<MangaFilterScreenModel> { parametersOf(tagId) }
@@ -108,7 +107,7 @@ class MangaFilterScreen(
                             modifier = Modifier.padding(space.small),
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = null,
                             )
                         }

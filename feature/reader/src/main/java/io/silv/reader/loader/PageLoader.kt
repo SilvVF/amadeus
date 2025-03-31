@@ -38,7 +38,7 @@ abstract class PageLoader {
      * resources.
      */
     @CallSuper
-    open suspend fun recycle() {
+    open fun recycle() {
         isRecycled = true
     }
 }

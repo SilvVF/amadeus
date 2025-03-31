@@ -1,6 +1,6 @@
 package io.silv.data.util
 
-import ChapterListResponse
+import io.silv.network.model.chapter.ChapterListResponse
 import com.skydoves.sandwich.getOrThrow
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching

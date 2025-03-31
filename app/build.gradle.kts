@@ -5,16 +5,21 @@ plugins {
     kotlin("plugin.serialization")
     id("com.google.devtools.ksp")
     id("kotlin-parcelize")
+    alias(libs.plugins.compose.compiler)
+}
+
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(17)) // Ensure Java targets 17
 }
 
 android {
     namespace = "io.silv.amadeus"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "io.silv.amadeus"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 8
         versionName = "8"
 
@@ -64,12 +69,30 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+        compileOptions {
+            freeCompilerArgs += arrayOf(
+                "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
+                "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
+                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+                "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
+                "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi",
+                "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+                "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
+                "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
+                "-opt-in=androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
+                "-opt-in=coil.annotation.ExperimentalCoilApi",
+                "-opt-in=kotlinx.coroutines.FlowPreview",
+                "-Xcontext-receivers"
+            )
+        }
     }
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
+    composeCompiler {
+        reportsDestination = layout.buildDirectory.dir("compose_compiler")
+        stabilityConfigurationFile =
+            rootProject.layout.projectDirectory.file("stability_config.conf")
     }
     packaging {
         resources {
@@ -81,9 +104,9 @@ dependencies {
 
     implementation(libs.sandwich)
 
-    implementation(libs.image.decoder)
-
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    implementation(libs.image.decoder)
 
     implementation(project(":core:common"))
     implementation(project(":core:navigation"))
@@ -138,6 +161,12 @@ dependencies {
     implementation(libs.voyager.transitions)
     implementation(libs.voyager.tabNavigator)
 
+    // ROOM
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
+    implementation(libs.room.coroutines)
+    testImplementation(libs.room.test)
+
     // KOIN
     implementation(libs.koin.compose)
     implementation(libs.koin.android)
@@ -154,25 +183,4 @@ dependencies {
     implementation(libs.kotlin.serialization)
 
     implementation(libs.ktor.core)
-}
-
-
-tasks {
-    // See https://kotlinlang.org/docs/reference/experimental.html#experimental-status-of-experimental-api(-markers)
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.freeCompilerArgs += listOf(
-            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
-            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
-            "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi",
-            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
-            "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
-            "-opt-in=androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
-            "-opt-in=coil.annotation.ExperimentalCoilApi",
-            "-opt-in=kotlinx.coroutines.FlowPreview",
-            "-Xcontext-receivers"
-        )
-    }
 }

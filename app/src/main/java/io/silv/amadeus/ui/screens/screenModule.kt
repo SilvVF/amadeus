@@ -13,8 +13,8 @@ import io.silv.manga.storeage.StorageScreenModel
 import io.silv.manga.view.MangaViewScreenModel
 import io.silv.reader.ReaderScreenModel
 import io.silv.sync.SeasonalMangaSyncWorkName
-import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.core.module.dsl.factoryOf
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 

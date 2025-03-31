@@ -55,7 +55,6 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.twotone.Archive
 import androidx.compose.material.icons.twotone.Unarchive
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -68,6 +67,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.ripple
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -88,7 +88,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -98,6 +97,7 @@ import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import cafe.adriel.voyager.koin.getScreenModel
@@ -157,6 +157,9 @@ import me.saket.swipe.SwipeableActionsBox
 
 object LibraryTab : ReselectTab {
 
+    private fun readResolve(): Any = LibraryTab
+
+    @Transient
     @IgnoredOnParcel
     internal val reselectChannel = Channel<Unit>()
 
@@ -536,7 +539,7 @@ fun ErrorScreenContent(
                 .padding(12.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
-                    indication = rememberRipple(color = MaterialTheme.colorScheme.primary)
+                    indication = ripple(color = MaterialTheme.colorScheme.primary)
                 ) {
                     navigateToExploreTab()
                 },
@@ -574,7 +577,7 @@ fun LibraryPeekContent(
                             )
                         },
                         modifier = Modifier
-                            .animateItemPlacement()
+                            .animateItem()
                             .padding(space.small)
                     )
                 }
@@ -589,7 +592,7 @@ fun LibraryPeekContent(
                         onClick = { actions.filterByTag(id) },
                         label = { Text(tag) },
                         modifier = Modifier
-                            .animateItemPlacement()
+                            .animateItem()
                             .padding(space.small)
                     )
                 }
@@ -761,7 +764,7 @@ fun UpdatesList(
                             style = MaterialTheme.typography.labelLarge
                                 .copy(fontWeight = FontWeight.SemiBold),
                             modifier = Modifier
-                                .animateItemPlacement()
+                                .animateItem()
                                 .padding(space.med)
                         )
                     }
@@ -781,7 +784,7 @@ fun UpdatesList(
 
                         SwipeableActionsBox(
                             endActions = listOf(markSeen),
-                            modifier = Modifier.animateItemPlacement()
+                            modifier = Modifier.animateItem()
                         ) {
                             MangaUpdateItem(
                                 update = update,
@@ -840,7 +843,7 @@ fun LazyItemScope.MangaUpdateItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(space.med)
-            .animateItemPlacement()
+            .animateItem()
             .clickable {
                 onClick()
             },
@@ -982,7 +985,7 @@ fun BookmarkedChapters(
                     SwipeableActionsBox(
                         startActions = listOf(archive),
                         endActions = listOf(read),
-                        modifier = Modifier.animateItemPlacement()
+                        modifier = Modifier.animateItem()
                     ) {
                         ChapterListItem(
                             modifier =
@@ -1065,7 +1068,7 @@ fun LibraryManga(
                     manga = manga,
                     modifier = Modifier
                         .conditional(animatePlacement) {
-                            animateItemPlacement()
+                            animateItem()
                         }
                         .padding(space.small),
                     onClick = {
@@ -1111,7 +1114,7 @@ fun LibraryManga(
                             navigator.push(SharedScreen.MangaView(manga.id))
                         }
                         .conditional(animatePlacement) {
-                            animateItemPlacement()
+                            animateItem()
                         }
                         .padding(space.small)
                         .aspectRatio(2f / 3f),

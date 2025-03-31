@@ -35,7 +35,11 @@ class DownloadWorker(
     private val downloadManager by inject<DownloadManager>()
     private val connectivityManager by inject<NetworkConnectivity>()
 
-    private val isOnline = connectivityManager.online.stateIn(CoroutineScope(Dispatchers.Default), SharingStarted.Eagerly, true)
+    private val isOnline = connectivityManager.online.stateIn(
+        CoroutineScope(Dispatchers.Default),
+        SharingStarted.Eagerly,
+        true
+    )
 
     override suspend fun doWork(): Result {
 
@@ -88,13 +92,12 @@ class DownloadWorker(
                 .cancelUniqueWork(TAG)
         }
 
-        fun isRunning(context: Context): Boolean {
-            return runBlocking {
-                WorkManager.getInstance(context)
-                    .getWorkInfosByTagFlow(TAG)
-                    .first()
-                    .let { list -> list.count { it.state == WorkInfo.State.RUNNING } == 1 }
-            }
+        suspend fun isRunning(context: Context): Boolean {
+            return WorkManager.getInstance(context)
+                .getWorkInfosByTagFlow(TAG)
+                .first()
+                .let { list -> list.count { it.state == WorkInfo.State.RUNNING } == 1 }
+
         }
 
         fun isRunningFlow(context: Context): Flow<Boolean> {

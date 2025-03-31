@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import io.silv.database.entity.chapter.ChapterEntity
+import io.silv.database.entity.manga.MangaEntityWithChapters
 import kotlinx.coroutines.flow.Flow
 
 @Dao

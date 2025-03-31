@@ -2,6 +2,7 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
     id("kotlin-parcelize")
 }
 
@@ -35,8 +36,9 @@ android {
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
+    composeCompiler {
+        reportsDestination = layout.buildDirectory.dir("compose_compiler")
+        stabilityConfigurationFile = rootProject.layout.projectDirectory.file("stability_config.conf")
     }
 }
 
@@ -52,13 +54,13 @@ dependencies {
     implementation(project(":core:navigation"))
 
     implementation(libs.androidx.core.ktx)
-    implementation("me.saket.swipe:swipe:1.2.0")
+    implementation(libs.swipe)
 
     implementation(libs.voyager.screenModel)
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(libs.androidx.material3.window.size)
-    implementation("androidx.compose.ui:ui-util")
+    implementation(libs.ui.util)
     implementation(composeBom)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling)
@@ -68,10 +70,10 @@ dependencies {
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
     implementation(libs.androidx.activity.compose)
-    implementation("androidx.compose.ui:ui-graphics")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    implementation("androidx.compose.animation:animation")
-    implementation("androidx.compose.animation:animation-graphics")
+    implementation(libs.androidx.ui.graphics)
+    debugImplementation(libs.androidx.ui.tooling)
+    implementation(libs.animation)
+    implementation(libs.animation.graphics)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
 

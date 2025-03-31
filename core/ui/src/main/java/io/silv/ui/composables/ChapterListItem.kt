@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.silv.common.model.Download
 import io.silv.domain.chapter.model.Chapter
 import io.silv.ui.theme.LocalSpacing
@@ -111,33 +112,43 @@ fun ChapterListItem(
                 ),
             )
         }
-        val status by remember(download) {
-            download?.statusFlow
-                ?: flowOf(
-                    if (chapter.downloaded) Download.State.DOWNLOADED else Download.State.NOT_DOWNLOADED
-                )
-        }
-            .collectAsState(Download.State.NOT_DOWNLOADED)
 
-        val progress by remember(download) {
-            download?.progressFlow ?: flowOf(0)
-        }
-            .collectAsState(0)
-
-        ChapterDownloadIndicator(
-            enabled = true,
-            downloadStateProvider = { status },
-            downloadProgressProvider = { progress },
-            onClick = { action ->
-                when (action) {
-                    ChapterDownloadAction.START -> onDownloadClicked()
-                    ChapterDownloadAction.START_NOW -> Unit
-                    ChapterDownloadAction.CANCEL -> onCancelClicked(
-                        download ?: return@ChapterDownloadIndicator
-                    )
-                    ChapterDownloadAction.DELETE -> onDeleteClicked()
+        if (download != null) {
+            val status by download.statusFlow.collectAsStateWithLifecycle(Download.State.NOT_DOWNLOADED)
+            val progress by download.progressFlow.collectAsStateWithLifecycle(0)
+            ChapterDownloadIndicator(
+                enabled = true,
+                downloadStateProvider = { status },
+                downloadProgressProvider = { progress },
+                onClick = { action ->
+                    when (action) {
+                        ChapterDownloadAction.START -> onDownloadClicked()
+                        ChapterDownloadAction.START_NOW -> Unit
+                        ChapterDownloadAction.CANCEL -> onCancelClicked(download)
+                        ChapterDownloadAction.DELETE -> onDeleteClicked()
+                    }
                 }
-            }
-        )
+            )
+        } else {
+            ChapterDownloadIndicator(
+                enabled = true,
+                downloadStateProvider = {
+                    if (chapter.downloaded) {
+                        Download.State.DOWNLOADED
+                    } else {
+                        Download.State.NOT_DOWNLOADED
+                    }
+                 },
+                downloadProgressProvider = { 0 },
+                onClick = { action ->
+                    when (action) {
+                        ChapterDownloadAction.START -> onDownloadClicked()
+                        ChapterDownloadAction.START_NOW -> Unit
+                        ChapterDownloadAction.CANCEL -> Unit
+                        ChapterDownloadAction.DELETE -> onDeleteClicked()
+                    }
+                }
+            )
+        }
     }
 }

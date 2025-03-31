@@ -42,9 +42,10 @@ dependencies {
     api(project(":core:datastore"))
     api(project(":core:domain"))
 
+    implementation(libs.image.decoder)
+
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.disklrucache)
-    implementation(libs.image.decoder)
     implementation(libs.unifile)
     implementation(libs.sandwich.ktor)
     implementation(libs.androidx.core.ktx)
@@ -70,7 +71,6 @@ dependencies {
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.common)
 
-    // ROOM
     implementation(libs.room.runtime)
     annotationProcessor(libs.room.compiler)
     implementation(libs.room.coroutines)

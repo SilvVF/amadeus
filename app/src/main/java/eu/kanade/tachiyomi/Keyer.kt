@@ -18,23 +18,13 @@ fun Manga.asMangaCover(): MangaCover {
     )
 }
 
-private val LocalDateTime.epochSeconds
-    get() = toInstant(TimeZone.currentSystemDefault()).epochSeconds
-
-fun Manga.hasCustomCover(): Boolean {
-    return false
-}
 
 class MangaKeyer : Keyer<Manga> {
     override fun key(
         data: Manga,
         options: Options,
     ): String {
-        return if (data.hasCustomCover()) {
-            "${data.id};${data.coverLastModified}"
-        } else {
-            "${data.coverArt};${data.coverLastModified}"
-        }
+        return "${data.coverArt};${data.coverLastModified}"
     }
 }
 

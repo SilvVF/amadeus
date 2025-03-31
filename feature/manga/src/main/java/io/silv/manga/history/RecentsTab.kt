@@ -14,9 +14,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.util.fastAll
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
@@ -35,6 +35,8 @@ import kotlinx.coroutines.withContext
 val LocalTopLevelNavigator = compositionLocalOf<Navigator?> { null }
 
 object RecentsTab: ReselectTab {
+
+    private fun readResolve(): Any = RecentsTab
 
     private val recentsReselectChannel = Channel<Unit>(UNLIMITED)
 

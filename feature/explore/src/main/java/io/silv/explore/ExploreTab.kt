@@ -31,8 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -64,7 +64,7 @@ import kotlinx.coroutines.withContext
 import org.koin.core.parameter.parametersOf
 
 object ExploreTab : ReselectTab, GlobalSearchTab {
-
+    private fun readResolve(): Any = ExploreTab
 
     private val reselectChannel = Channel<Unit>()
 

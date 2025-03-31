@@ -48,14 +48,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -64,12 +65,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import io.silv.common.model.Page
 import io.silv.datastore.ReaderPrefs
 import io.silv.datastore.collectAsState
@@ -94,6 +97,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
 import org.koin.core.parameter.parametersOf
 import java.nio.ByteBuffer
 import kotlin.math.roundToInt
@@ -102,6 +106,8 @@ class ReaderScreen(
     val mangaId: String,
     val chapterId: String,
 ) : Screen {
+
+    override val key: ScreenKey = "ReaderScreen_${mangaId}_${chapterId}"
 
     @Stable
     private var savedStateChapterId = chapterId
@@ -116,9 +122,14 @@ class ReaderScreen(
 
         DisposableEffect(lifecycle.lifecycle) {
 
-            val observer = LifecycleEventObserver { source, event ->
+            val observer = LifecycleEventObserver { _, event ->
                 when (event) {
-                    Lifecycle.Event.ON_RESUME -> screenModel.restartReadTimer()
+                    Lifecycle.Event.ON_RESUME -> {
+                        screenModel.initialChapterId = savedStateChapterId
+                        screenModel.mangaId = mangaId
+                        screenModel.initializeReader()
+                        screenModel.restartReadTimer()
+                    }
                     Lifecycle.Event.ON_PAUSE -> screenModel.flushReadTimer()
                     else -> Unit
                 }
@@ -127,12 +138,12 @@ class ReaderScreen(
             lifecycle.lifecycle.addObserver(
                 observer = observer
             )
-            onDispose { lifecycle.lifecycle.removeObserver(observer) }
+            onDispose {
+                lifecycle.lifecycle.removeObserver(observer)
+                screenModel.flushReadTimer()
+            }
         }
 
-        DisposableEffect(Unit) {
-            onDispose { screenModel.flushReadTimer() }
-        }
 
 
         LaunchedEffect(key1 = Unit) {
@@ -250,25 +261,26 @@ fun VerticalReader(
     fun scrollToNextPage() {
         scope.launch {
             lazyListState.animateScrollToItem(
-                lazyListState.firstVisibleItemIndex + lazyListState.layoutInfo.visibleItemsInfo.size
+                (lazyListState.firstVisibleItemIndex + lazyListState.layoutInfo.visibleItemsInfo.size)
+                    .coerceAtMost(readerChapter.pages?.size ?: 0)
             )
         }
     }
 
     var menuVisible by remember { mutableStateOf(false) }
     val showPageNumber by ReaderPrefs.showPageNumber.collectAsState(defaultValue = true)
-    val pageHeight = (LocalConfiguration.current.screenHeightDp * 0.7).dp
+    val pageHeight = LocalConfiguration.current.screenHeightDp.dp
 
     fun scrollToPage(page: Int) {
         scope.launch {
-            lazyListState.animateScrollToItem(page)
+            lazyListState.animateScrollToItem(page.coerceIn(0..(readerChapter.pages?.size ?: 0)))
         }
     }
 
     fun scrollToPrevPage() {
         scope.launch {
             lazyListState.animateScrollToItem(
-                index = lazyListState.firstVisibleItemIndex - 1,
+                index = (lazyListState.firstVisibleItemIndex - 1).coerceAtLeast(0),
             )
         }
     }
@@ -303,6 +315,7 @@ fun VerticalReader(
         },
         chapterActions = chapterActions
     ) {
+        val density = LocalDensity.current
         GestureHintOverlay(vertical = true) {
             Box {
                 LazyColumn(
@@ -322,7 +335,23 @@ fun VerticalReader(
                             CenterBox(Modifier.height(pageHeight)) {
                                 ReaderPageImageItem(
                                     page = it,
-                                    readerChapter = readerChapter
+                                    readerChapter = readerChapter,
+                                    onClick = {
+
+                                        val pageHeightPx = with(density) { pageHeight.toPx() }
+                                        val zoneSplit = pageHeightPx / 3
+
+                                        val zone = when(it.y) {
+                                            in 0f..zoneSplit -> VerticalZone.Top
+                                            in zoneSplit..(pageHeightPx - zoneSplit) -> VerticalZone.MIDDLE
+                                            else -> VerticalZone.Bottom
+                                        }
+                                        when (zone) {
+                                            VerticalZone.Top -> scrollToPrevPage()
+                                            VerticalZone.MIDDLE -> menuVisible = !menuVisible
+                                            VerticalZone.Bottom -> scrollToNextPage()
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -429,6 +458,8 @@ fun HorizontalReader(
         },
         chapterActions = chapterActions
     ) {
+        val density = LocalDensity.current
+        val screenWidthDp = LocalConfiguration.current.screenWidthDp
         Box(modifier = Modifier.fillMaxSize()) {
             CompositionLocalProvider(
                 LocalLayoutDirection provides layoutDirection
@@ -436,7 +467,7 @@ fun HorizontalReader(
                 GestureHintOverlay {
                     HorizontalPager(
                         state = pagerState,
-                        beyondBoundsPageCount = 1,
+                        beyondViewportPageCount = 1,
                         modifier = Modifier
                             .fillMaxSize()
                             .zoneClickable {
@@ -458,7 +489,31 @@ fun HorizontalReader(
                        readerChapter.pages?.getOrNull(i)?.let {
                             ReaderPageImageItem(
                                 page = it,
-                                readerChapter = readerChapter
+                                readerChapter = readerChapter,
+                                onClick = {
+                                    val pageWidthPx = with(density) { screenWidthDp.dp.toPx() }
+                                    val zoneSplit = pageWidthPx / 3
+
+                                    val zone = when(it.x){
+                                        in 0f..zoneSplit -> Zone.LEFT
+                                        in zoneSplit..(pageWidthPx - zoneSplit) -> Zone.MIDDLE
+                                        else -> Zone.RIGHT
+                                    }
+
+                                    when (layoutDirection) {
+                                        LayoutDirection.Ltr -> when (zone) {
+                                            Zone.LEFT -> scrollToPrevPage()
+                                            Zone.MIDDLE -> menuVisible = !menuVisible
+                                            Zone.RIGHT -> scrollToNextPage()
+                                        }
+
+                                        LayoutDirection.Rtl -> when (zone) {
+                                            Zone.LEFT -> scrollToNextPage()
+                                            Zone.MIDDLE -> menuVisible = !menuVisible
+                                            Zone.RIGHT -> scrollToPrevPage()
+                                        }
+                                    }
+                                }
                             )
                         }
                             ?: CenterBox(modifier = Modifier.fillMaxSize()) {
@@ -483,11 +538,12 @@ fun HorizontalReader(
 @Composable
 fun ReaderPageImageItem(
     page: ReaderPage,
-    readerChapter: ReaderChapter
+    readerChapter: ReaderChapter,
+    onClick: (offset: Offset) -> Unit
 ) {
     val status by page.statusFlow.collectAsState()
 
-    LaunchedEffect(page) {
+    LaunchedEffect(page, readerChapter.pageLoader) {
         withContext(Dispatchers.IO) {
             readerChapter.pageLoader?.loadPage(page)
         }
@@ -498,15 +554,29 @@ fun ReaderPageImageItem(
 
             var hasError by remember { mutableStateOf(false) }
 
+            val imageData by remember(page.stream) {
+                derivedStateOf {
+                    page.stream?.let { ByteBuffer.wrap(it().readBytes()) }
+                }
+            }
+
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                AsyncImage(
-                    model = page.stream?.let { ByteBuffer.wrap(it().readBytes()) },
+                ZoomableAsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(imageData)
+                        .listener(
+                            onSuccess = { _, _ -> hasError = false },
+                            onStart = { hasError = false },
+                            onCancel = { hasError = false    },
+                            onError = { _, _ -> hasError = true }
+                        )
+                        .build(),
                     modifier = Modifier
                         .fillMaxSize(),
                     contentDescription = null,
-                    onError = { hasError = true },
-                    onLoading = { hasError = false },
-                    onSuccess = { hasError = false }
+                    onClick = { offset ->
+                        onClick(offset)
+                    }
                 )
                 if (hasError) {
                     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {

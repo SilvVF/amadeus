@@ -23,8 +23,6 @@ val domainModule =
 
         factoryOf(::GetChapter)
 
-        factoryOf(::GetMangaWithChapters)
-
         factoryOf(::SubscribeToPagingData)
 
         factoryOf(::MangaHandler)

@@ -21,7 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.twotone.Download
 import androidx.compose.material.icons.twotone.History
@@ -29,8 +29,8 @@ import androidx.compose.material.icons.twotone.Info
 import androidx.compose.material.icons.twotone.QueryStats
 import androidx.compose.material.icons.twotone.Settings
 import androidx.compose.material.icons.twotone.Storage
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -65,6 +65,7 @@ import io.silv.ui.openOnWeb
 import io.silv.ui.theme.LocalSpacing
 
 object MoreTab: ReselectTab {
+    private fun readResolve(): Any = MoreTab
 
     override suspend fun onReselect(navigator: Navigator) {
         navigator.push(SettingsScreen())
@@ -96,7 +97,7 @@ fun MoreHomeScreen() {
             .windowInsetsPadding(WindowInsets.systemBars)
     ) {
         Image(
-            painter = painterResource(io.silv.ui.R.drawable.amadeuslogo),
+            painter = painterResource(io.silv.data.R.drawable.amadeuslogo),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -106,7 +107,7 @@ fun MoreHomeScreen() {
                 .clip(CircleShape)
                 .align(Alignment.CenterHorizontally)
         )
-        Divider()
+        HorizontalDivider()
         MoreSelectionItem(
             title = "History",
             icon = Icons.TwoTone.History
@@ -131,7 +132,7 @@ fun MoreHomeScreen() {
         ) {
             navigator.push(StorageScreen())
         }
-        Divider()
+        HorizontalDivider()
         MoreSelectionItem(
             title = "Settings",
             icon = Icons.TwoTone.Settings
@@ -162,7 +163,7 @@ class AboutScreen: Screen {
                     title = { Text("About") },
                     navigationIcon = {
                         IconButton(onClick = { navigator.pop() }) {
-                            Icon(imageVector = Icons.Filled.ArrowBack, null)
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, null)
                         }
                     }
                 )
@@ -176,7 +177,7 @@ class AboutScreen: Screen {
             ) {
 
                 Image(
-                    painter = painterResource(io.silv.ui.R.drawable.amadeuslogo),
+                    painter = painterResource(io.silv.data.R.drawable.amadeuslogo),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -186,7 +187,7 @@ class AboutScreen: Screen {
                         .clip(CircleShape)
                         .align(Alignment.CenterHorizontally)
                 )
-                Divider()
+                HorizontalDivider()
                 Spacer(Modifier.height(space.xlarge))
                 Row(
                     Modifier

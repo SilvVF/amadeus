@@ -28,8 +28,8 @@ class ChapterLoader(
                 chapter.pageLoader = loader
 
                 val pages =
-                    loader.getPages()
-                        .onEach { it.chapter = chapter }
+                    loader.getPages().onEach { it.chapter = chapter }
+
 
                 if (pages.isEmpty()) {
                     throw Exception("empty page list")
@@ -66,6 +66,7 @@ class ChapterLoader(
                 chapter.chapter.scanlator,
                 manga.titleEnglish,
             ) -> DownloadPageLoader(chapter, manga, downloadManager)
+
             else -> HttpPageLoader(chapter)
         }
     }

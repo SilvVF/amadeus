@@ -1,6 +1,7 @@
 package io.silv.ui.layout
 
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.splineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
@@ -35,7 +36,6 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun rememberExpandableState(
     startProgress: DragAnchors = DragAnchors.End,
@@ -85,9 +85,11 @@ class ExpandableState(
 
     internal val anchoredDraggableState = AnchoredDraggableState(
         initialValue = startProgress,
+        anchors = DraggableAnchors {},
         positionalThreshold = { distance: Float -> distance * 0.5f },
         velocityThreshold = { with(density) { 100.dp.toPx() } },
-        animationSpec = tween(),
+        snapAnimationSpec = tween(),
+        decayAnimationSpec = splineBasedDecay(density),
     )
 
     internal fun nestedScrollConnection(

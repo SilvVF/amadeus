@@ -70,7 +70,7 @@ fun FilterDisplayOptionsBottomSheet(
 
     ModalBottomSheet(
         sheetState = sheetState,
-        windowInsets = WindowInsets(0),
+        contentWindowInsets = { WindowInsets(0,  0, 0, 0) },
         onDismissRequest = onDismissRequest,
         containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
     ) {

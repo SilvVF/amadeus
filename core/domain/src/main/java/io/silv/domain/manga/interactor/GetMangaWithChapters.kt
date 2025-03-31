@@ -17,20 +17,12 @@ import kotlinx.coroutines.flow.firstOrNull
  */
 class GetMangaWithChapters(
     private val mangaRepository: MangaRepository,
-    private val chapterInfoRepository: ChapterRepository,
 ) {
     fun subscribe(id: String): Flow<MangaWithChapters> {
-        return combine(
-            mangaRepository.observeMangaById(id).filterNotNull(),
-            chapterInfoRepository.observeChaptersByMangaId(id),
-        ) { manga, chapterInfo ->
-            MangaWithChapters(
-                manga = manga,
-                chapters = chapterInfo.toImmutableList()
-            )
-        }
-            .conflate()
+        return mangaRepository.observeMangaWithChaptersById(id)
     }
 
-    suspend fun await(id: String): MangaWithChapters? = subscribe(id).firstOrNull()
+    suspend fun await(id: String): MangaWithChapters? {
+        return mangaRepository.getMangaWithChaptersById(id)
+    }
 }

@@ -23,34 +23,17 @@ import androidx.compose.ui.unit.dp
 fun Modifier.pullRefresh(
     state: PullRefreshState,
     enabled: Boolean = true,
-) = inspectable(
-    inspectorInfo =
-    debugInspectorInfo {
-        name = "pullRefresh"
-        properties["state"] = state
-        properties["enabled"] = enabled
-    },
-) {
-    Modifier.pullRefresh(state::onPull, state::onRelease, enabled)
-}
+) = pullRefresh(state::onPull, state::onRelease, enabled)
+
 
 fun Modifier.pullRefresh(
     onPull: (pullDelta: Float) -> Float,
     onRelease: suspend (flingVelocity: Float) -> Float,
     enabled: Boolean = true,
-) = inspectable(
-    inspectorInfo =
-    debugInspectorInfo {
-        name = "pullRefresh"
-        properties["onPull"] = onPull
-        properties["onRelease"] = onRelease
-        properties["enabled"] = enabled
-    },
-) {
-    Modifier.nestedScroll(
-        PullRefreshNestedScrollConnection(onPull, onRelease, enabled),
-    )
-}
+) = nestedScroll(
+    PullRefreshNestedScrollConnection(onPull, onRelease, enabled),
+)
+
 
 private class PullRefreshNestedScrollConnection(
     private val onPull: (pullDelta: Float) -> Float,
@@ -63,7 +46,7 @@ private class PullRefreshNestedScrollConnection(
     ): Offset =
         when {
             !enabled -> Offset.Zero
-            source == Drag && available.y < 0 -> Offset(0f, onPull(available.y)) // Swiping up
+            source == NestedScrollSource.UserInput && available.y < 0 -> Offset(0f, onPull(available.y)) // Swiping up
             else -> Offset.Zero
         }
 
@@ -74,7 +57,7 @@ private class PullRefreshNestedScrollConnection(
     ): Offset =
         when {
             !enabled -> Offset.Zero
-            source == Drag && available.y > 0 -> Offset(0f, onPull(available.y)) // Pulling down
+            source == NestedScrollSource.UserInput && available.y > 0 -> Offset(0f, onPull(available.y)) // Pulling down
             else -> Offset.Zero
         }
 

@@ -75,7 +75,7 @@ fun FilterBottomSheet(
 
     if (visible) {
         ModalBottomSheet(
-            windowInsets = WindowInsets(0),
+            contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
             onDismissRequest = onDismiss,
             sheetState = sheetState,
             dragHandle = {},

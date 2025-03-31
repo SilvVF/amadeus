@@ -49,23 +49,6 @@ class CoverCache(private val context: Context) {
     }
 
     /**
-     * Saves the given stream as the manga's custom cover to cache.
-     *
-     * @param manga the manga.
-     * @param inputStream the stream to copy.
-     * @throws IOException if there's any error.
-     */
-    @Throws(IOException::class)
-    fun setCustomCoverToCache(
-        manga: MangaResource,
-        inputStream: InputStream,
-    ) {
-        getCustomCoverFile(manga.id).outputStream().use {
-            inputStream.copyTo(it)
-        }
-    }
-
-    /**
      * Delete the cover files of the manga from the cache.
      *
      * @param manga the manga.

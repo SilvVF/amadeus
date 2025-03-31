@@ -32,6 +32,10 @@ interface MangaRepository {
 
     suspend fun getLibraryMangaWithChapters(): List<MangaWithChapters>
 
+    fun observeMangaWithChaptersById(id: String): Flow<MangaWithChapters>
+
+    suspend fun getMangaWithChaptersById(id: String): MangaWithChapters?
+
     suspend fun deleteUnused()
 
     fun observeUnusedCount(): Flow<Int>

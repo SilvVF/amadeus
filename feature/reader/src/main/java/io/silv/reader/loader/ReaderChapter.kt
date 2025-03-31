@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 data class ReaderChapter(
     val chapter: Chapter,
 ) {
-    val stateFlow = MutableStateFlow<State>(State.Wait)
+    private val stateFlow = MutableStateFlow<State>(State.Wait)
 
     var state: State
         get() = stateFlow.value
@@ -29,7 +29,7 @@ data class ReaderChapter(
         references++
     }
 
-    suspend fun unref() {
+    fun unref() {
         references--
         if (references == 0) {
             pageLoader?.recycle()

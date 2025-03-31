@@ -1,5 +1,4 @@
-
-import io.silv.network.model.chapter.ChapterDto
+package io.silv.network.model.chapter
 import kotlinx.serialization.Serializable
 
 @Serializable

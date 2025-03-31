@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="available_disk_space_info">Available: %1$s / Total: %2$s</string>
-    <string name="cache_deleted">Cache cleared, %1$d files deleted</string>
+    <string name="cache_deleted">Cache cleared, %1$d file\'s deleted</string>
     <string name="cache_delete_error">Error occurred while clearing</string>
 
 
@@ -13,15 +13,8 @@
     <string name="in_library">In library</string>
     <string name="label_completed_titles">Completed entries</string>
     <string name="label_read_duration">Read duration</string>
-    <string name="label_titles_section">Entries</string>
-    <string name="label_titles_in_global_update">In global update</string>
     <string name="label_total_chapters">Total</string>
     <string name="label_read_chapters">Read</string>
-    <string name="label_tracker_section">Trackers</string>
-    <string name="label_tracked_titles">Tracked entries</string>
-    <string name="label_mean_score">Mean score</string>
-    <string name="label_used">Used</string>
-    <string name="not_applicable">N/A</string>
     <string name="day_short">%dd</string>
     <string name="hour_short">%dh</string>
     <string name="minute_short">%dm</string>

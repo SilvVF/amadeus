@@ -3,6 +3,7 @@ package io.silv.data.manga
 import androidx.room.withTransaction
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.time.epochSeconds
+import io.silv.data.chapter.ChapterMapper
 import io.silv.data.download.CoverCache
 import io.silv.data.util.deleteOldCoverFromCache
 import io.silv.database.AmadeusDatabase
@@ -11,6 +12,7 @@ import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaUpdate
 import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.domain.manga.repository.MangaRepository
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -119,6 +121,24 @@ class MangaRepositoryImpl internal constructor(
 
     override suspend fun getLibraryMangaWithChapters(): List<MangaWithChapters> =
         withContext(dispatchers.io) { mangaDao.getLibraryMangaWithChapters().map(MangaMapper::mapMangaWithChapters) }
+
+    override fun observeMangaWithChaptersById(id: String): Flow<MangaWithChapters> {
+        return mangaDao.observeMangaWithChaptersById(id).map { (manga, chapters) ->
+            MangaWithChapters(
+                MangaMapper.mapManga(manga),
+                chapters.map(ChapterMapper::mapChapter).toImmutableList()
+            )
+        }
+    }
+
+    override suspend fun getMangaWithChaptersById(id: String): MangaWithChapters? {
+        return mangaDao.getMangaWithChaptersById(id)?.let { (manga, chapters) ->
+            MangaWithChapters(
+                MangaMapper.mapManga(manga),
+                chapters.map(ChapterMapper::mapChapter).toImmutableList()
+            )
+        }
+    }
 
     override suspend fun deleteUnused() =
         withContext(dispatchers.io){ mangaDao.deleteUnused() }

@@ -496,7 +496,7 @@ internal class Downloader(
                     }
                     onDownload { bytesSentTotal, contentLength ->
                         runCatching {
-                            page.update(bytesSentTotal, contentLength, bytesSentTotal >= contentLength)
+                            page.update(bytesSentTotal, contentLength!!, bytesSentTotal >= contentLength)
                         }
                     }
                 }

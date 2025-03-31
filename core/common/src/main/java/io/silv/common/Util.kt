@@ -20,8 +20,8 @@ interface PrefsConverter<T, V> {
             convertTo: (obj: T) -> V,
             convertFrom: (obj: V) -> T
         ): PrefsConverter<T, V> {
-            return object: PrefsConverter<T, V> {
-                override fun convertFrom(value: V): T  = convertFrom(value)
+            return object : PrefsConverter<T, V> {
+                override fun convertFrom(value: V): T = convertFrom(value)
                 override fun convertTo(value: T): V = convertTo(value)
             }
         }
@@ -30,11 +30,9 @@ interface PrefsConverter<T, V> {
 
 @OptIn(ExperimentalContracts::class)
 suspend inline fun <T, R> Iterable<T>.pmap(crossinline transform: suspend (T) -> R): List<R> {
-    contract { callsInPlace(transform) }
-    val list = this
     return buildList {
         coroutineScope {
-            for (item in list) {
+            for (item in this@pmap) {
                 add(
                     async { transform(item) },
                 )
@@ -44,15 +42,13 @@ suspend inline fun <T, R> Iterable<T>.pmap(crossinline transform: suspend (T) ->
         .awaitAll()
 }
 
-inline fun <T> emptyImmutableList(): ImmutableList<T> = persistentListOf()
+fun <T> emptyImmutableList(): ImmutableList<T> = persistentListOf()
 
-@OptIn(ExperimentalContracts::class)
+
 suspend inline fun <T, R> Sequence<T>.pmap(crossinline transform: suspend (T) -> R): List<R> {
-    contract { callsInPlace(transform) }
-    val list = this
     return buildList {
         coroutineScope {
-            for (item in list) {
+            for (item in this@pmap) {
                 add(
                     async { transform(item) },
                 )
@@ -61,24 +57,6 @@ suspend inline fun <T, R> Sequence<T>.pmap(crossinline transform: suspend (T) ->
     }
         .awaitAll()
 }
-
-// @OptIn(ExperimentalContracts::class)
-// suspend inline fun <T, R> Array<T>.pmapIndexed(
-//    crossinline transform: suspend (Int, T) -> R
-// ): List<R> {
-//    contract { callsInPlace(transform) }
-//    val list = this
-//    return buildList {
-//        coroutineScope {
-//            for ((i, item) in list.withIndex()) {
-//                add(
-//                    async { transform(i, item) }
-//                )
-//            }
-//        }
-//    }
-//        .awaitAll()
-// }
 
 fun <T, R> Iterable<T>.filterUnique(item: (T) -> R): List<T> {
     val seen = mutableSetOf<R>()
@@ -91,12 +69,10 @@ fun <T, R> Iterable<T>.filterUnique(item: (T) -> R): List<T> {
     }
 }
 
-@OptIn(ExperimentalContracts::class)
 fun <T> Iterable<T>.pForEach(
     scope: CoroutineScope,
     action: suspend (T) -> Unit,
 ) {
-    contract { callsInPlace(action, InvocationKind.AT_MOST_ONCE) }
     for (item in this) {
         scope.launch {
             action(item)

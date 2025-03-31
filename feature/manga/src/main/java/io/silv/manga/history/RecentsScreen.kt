@@ -2,6 +2,7 @@ package io.silv.manga.history
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,7 +18,7 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.HistoryToggleOff
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DeleteSweep
@@ -25,10 +26,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PlainTooltipBox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -117,17 +120,20 @@ private fun RecentsScreenContent(
                 onSearchText = actions.searchChanged,
                 onForceSearch = {},
                 scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
-                navigationIcon = Icons.Filled.ArrowBack
+                navigationIcon = Icons.AutoMirrored.Filled.ArrowBack
                     .takeIf { localNavigator.canPop },
                 onNavigationIconClicked = { (topLevelNavigator ?: localNavigator).pop() },
                 actions = {
-                    PlainTooltipBox(
+                    TooltipBox(
                         tooltip = { Text("Clear history", color = MaterialTheme.colorScheme.onSurface) },
-                        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        state = rememberTooltipState(),
+                        modifier = Modifier.background(
+                            MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                        )
                     ) {
                         IconButton(
                             onClick = { actions.clearHistory() },
-                            modifier = Modifier.tooltipAnchor()
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.DeleteSweep,
@@ -173,7 +179,7 @@ private fun RecentsScreenContent(
                             style = MaterialTheme.typography.labelLarge
                                 .copy(fontWeight = FontWeight.SemiBold),
                             modifier = Modifier
-                                .animateItemPlacement()
+                                .animateItem()
                                 .padding(space.med)
                         )
                     }
@@ -229,7 +235,7 @@ fun LazyItemScope.MangaHistoryItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(space.med)
-            .animateItemPlacement()
+            .animateItem()
             .clickable {
                 onClick()
             },

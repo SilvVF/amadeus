@@ -1,9 +1,11 @@
 package io.silv.network
 
 import android.content.Context
+import com.mayakapps.kache.InMemoryKache
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.cache.HttpCache
+import io.ktor.client.plugins.cache.storage.CacheStorage
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
@@ -97,14 +99,6 @@ val networkModule =
             HttpSource(
                 mangaDexApi = get(),
                 client = HttpClient(OkHttp) {
-                    install(HttpCache) {
-                        publicStorage(
-                            DefaultHttpCache(
-                                File(get<Context>().cacheDir, "chapter_url_cache"),
-                                2L * 1024 * 1024
-                            )
-                        )
-                    }
                     engine {
                         config {
                             callTimeout(1, TimeUnit.MINUTES)

@@ -56,6 +56,6 @@ dependencies {
     implementation(libs.kache)
     // KOTLIN
     implementation(libs.kotlinx.datetime)
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
+    implementation(libs.kotlin.serialization)
 }
 

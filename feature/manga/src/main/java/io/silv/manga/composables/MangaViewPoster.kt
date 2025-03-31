@@ -94,7 +94,6 @@ fun MangaImageWithTitle(
                 addToLibraryClicked = {
                    addToLibrary(manga.id)
                 },
-                viewOnWebClicked = viewOnWeb,
                 changeStatus = changeStatus,
                 readingStatus = manga.readingStatus
             )

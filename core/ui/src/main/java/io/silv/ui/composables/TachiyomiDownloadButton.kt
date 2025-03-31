@@ -11,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -19,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -52,11 +53,11 @@ fun CircularProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.circularColor,
     strokeWidth: Dp = ProgressIndicatorDefaults.CircularStrokeWidth,
-    trackColor: Color = ProgressIndicatorDefaults.circularTrackColor,
+    trackColor: Color = ProgressIndicatorDefaults.circularDeterminateTrackColor,
     strokeCap: StrokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
 ) {
     CircularProgressIndicator(
-        progress = progress(),
+        progress = progress,
         modifier,
         color,
         strokeWidth,
@@ -176,14 +177,14 @@ private fun DownloadingIndicator(
         }
         DropdownMenu(expanded = isMenuExpanded, onDismissRequest = { isMenuExpanded = false }) {
             DropdownMenuItem(
-                text = { Text(text = "Start download immediately") },
+                text = { Text(text = stringResource(R.string.start_download_immediately)) },
                 onClick = {
                     onClick(ChapterDownloadAction.START_NOW)
                     isMenuExpanded = false
                 },
             )
             DropdownMenuItem(
-                text = { Text(text = "Cancel download") },
+                text = { Text(text = stringResource(R.string.cancel_download)) },
                 onClick = {
                     onClick(ChapterDownloadAction.CANCEL)
                     isMenuExpanded = false
@@ -224,7 +225,7 @@ private fun DownloadedIndicator(
         )
         DropdownMenu(expanded = isMenuExpanded, onDismissRequest = { isMenuExpanded = false }) {
             DropdownMenuItem(
-                text = { Text(text = "Delete chapter") },
+                text = { Text(text = stringResource(R.string.delete_chapter)) },
                 onClick = {
                     onClick(ChapterDownloadAction.DELETE)
                     isMenuExpanded = false
@@ -276,7 +277,7 @@ private fun Modifier.commonClickable(
         onClick = onClick,
         role = Role.Button,
         interactionSource = remember { MutableInteractionSource() },
-        indication = rememberRipple(
+        indication = ripple(
             bounded = false,
             radius = 40.0.dp / 2,
         ),

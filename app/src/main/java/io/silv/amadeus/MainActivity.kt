@@ -1,12 +1,9 @@
-@file:OptIn(ExperimentalAnimationApi::class)
-
 package io.silv.amadeus
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -16,7 +13,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.FadeTransition
@@ -31,6 +28,7 @@ import io.silv.ui.theme.AmadeusTheme
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.koin.android.ext.android.inject
+import org.koin.compose.KoinContext
 
 class MainActivity : ComponentActivity() {
 
@@ -46,31 +44,32 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            val windowSizeClass = calculateWindowSizeClass(this)
-            val lifecycle = LocalLifecycleOwner.current
+            KoinContext {
+                val windowSizeClass = calculateWindowSizeClass(this)
 
-            val appState =
-                rememberAppState(
-                    windowSizeClass = windowSizeClass,
-                    networkConnectivity = connectivity,
-                    searchChannel = NavHost.globalSearchChannel,
-                    bottomBarVisibilityChannel = NavHost.bottomBarVisibility
-                )
+                val appState =
+                    rememberAppState(
+                        windowSizeClass = windowSizeClass,
+                        networkConnectivity = connectivity,
+                        searchChannel = NavHost.globalSearchChannel,
+                        bottomBarVisibilityChannel = NavHost.bottomBarVisibility
+                    )
 
-            val theme by produceState(initialValue = AppTheme.DYNAMIC_COLOR_DEFAULT) {
-                settingsStore.observe().onEach { value = it.theme }.launchIn(this)
-            }
+                val theme by produceState(initialValue = AppTheme.DYNAMIC_COLOR_DEFAULT) {
+                    settingsStore.observe().onEach { value = it.theme }.launchIn(this)
+                }
 
-            AmadeusTheme(theme) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background,
-                ) {
-                    CompositionLocalProvider(
-                        LocalAppState provides appState,
+                AmadeusTheme(theme) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background,
                     ) {
-                        Navigator(NavHost) {
-                            FadeTransition(it)
+                        CompositionLocalProvider(
+                            LocalAppState provides appState,
+                        ) {
+                            Navigator(NavHost) {
+                                FadeTransition(it)
+                            }
                         }
                     }
                 }

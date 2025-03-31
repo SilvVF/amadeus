@@ -1,7 +1,14 @@
 package io.silv.common.coroutine
 
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.coroutineContext
@@ -20,6 +27,8 @@ class ConcurrentPriorityQueue<T>(
     private var array: Array<T?>? = null
     private var _size: Int = 0
     val isEmpty: Boolean get() = _size == 0
+
+    private val eventCh = Channel<Unit>(1)
 
     suspend fun peek(): T? =
         mutex.withLock { array?.takeUnless { isEmpty }?.get(0) }
@@ -41,6 +50,8 @@ class ConcurrentPriorityQueue<T>(
             arr[lastIndex] = item
             @Suppress("UNCHECKED_CAST")
             (arr as Array<T>).heapifyUp(lastIndex, comparator)
+
+            eventCh.send(Unit)
         }
     }
 
@@ -98,16 +109,9 @@ class ConcurrentPriorityQueue<T>(
      * @return first item returned from [poll]
      */
     suspend fun await(): T {
-        while (true) {
-            coroutineContext.ensureActive()
+        eventCh.receiveAsFlow().take(1)
 
-            val element = poll()
-            if(element != null) {
-                return element
-            }
-
-            delay(1)
-        }
+        return poll()!!
     }
 
     /**

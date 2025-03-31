@@ -31,9 +31,9 @@ import java.util.concurrent.TimeUnit
 internal class DefaultHttpCache internal constructor(
     directory: File,
     // 5 MiB
-    maxSize: Long =  5L * 1024 * 1024,
+    maxSize: Long = 5L * 1024 * 1024,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
-): CacheStorage by LruCacheStorage(
+) : CacheStorage by LruCacheStorage(
     {
         FileKache(
             directoryPath = directory.path,
@@ -59,9 +59,18 @@ private class LruCacheStorage(
     }
 
     override suspend fun store(url: Url, data: CachedResponseData): Unit = withContext(dispatcher) {
+        if (
+            url.toString().startsWith("https://uploads.mangadex.org/covers") ||
+            url.toString().startsWith("https://api.mangadex.org/at-home/server/") ||
+            url.toString().contains(".png") || url.toString().contains(".jpg")
+        ) {
+            return@withContext
+        }
+
         val urlHex = key(url)
         val caches = readCache(urlHex)
             .filterNot { it.varyKeys == data.varyKeys } + data
+
 
         Log.d(
             "HttpCacheImpl",
@@ -73,7 +82,11 @@ private class LruCacheStorage(
     override suspend fun findAll(url: Url): Set<CachedResponseData> {
         // even with no-cache headers still trying to read from cache
         // doesn't try to write to cache though
-        if (url.toString().startsWith("https://uploads.mangadex.org/covers")) {
+        if (
+            url.toString().startsWith("https://uploads.mangadex.org/covers") ||
+            url.toString().startsWith("https://api.mangadex.org/at-home/server/") ||
+            url.toString().contains(".png") || url.toString().contains(".jpg")
+        ) {
             return emptySet()
         }
 
@@ -92,7 +105,11 @@ private class LruCacheStorage(
     override suspend fun find(url: Url, varyKeys: Map<String, String>): CachedResponseData? {
         // even with no-cache headers still trying to read from cache
         // doesn't try to write to cache though
-        if (url.toString().startsWith("https://uploads.mangadex.org/covers")) {
+        if (
+            url.toString().startsWith("https://uploads.mangadex.org/covers") ||
+            url.toString().startsWith("https://api.mangadex.org/at-home/server/") ||
+            url.toString().contains(".png") || url.toString().contains(".jpg")
+        ) {
             return null
         }
         Log.d(
@@ -133,7 +150,7 @@ private class LruCacheStorage(
                     }
                 }
                     .isSuccess
-           }
+            }
         } catch (cause: Exception) {
             Log.e(
                 "HttpCacheImpl",
@@ -145,7 +162,7 @@ private class LruCacheStorage(
     private suspend fun readCache(urlHex: String): Set<CachedResponseData> {
         return try {
             val container = diskCache.get(urlHex)!!
-            val source =  fileSystem.source(container.toPath()).buffer()
+            val source = fileSystem.source(container.toPath()).buffer()
             val requestsCount = source.readInt()
             val caches = mutableSetOf<CachedResponseData>()
             for (i in 0 until requestsCount) {

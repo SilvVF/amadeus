@@ -17,7 +17,7 @@ object DiskUtil {
      * Returns the root folders of all the available external storages.
      */
     fun getExternalStorages(context: Context): List<File> {
-        return ContextCompat.getExternalFilesDirs(context, null)
+        return context.getExternalFilesDirs(null)
             .filterNotNull()
             .mapNotNull {
                 val file = File(it.absolutePath.substringBefore("/Android/"))
@@ -32,18 +32,6 @@ object DiskUtil {
 
     fun hashKeyForDisk(key: String): String {
         return Hash.md5(key)
-    }
-
-    fun getDirectorySize(f: File): Long {
-        var size: Long = 0
-        if (f.isDirectory) {
-            for (file in f.listFiles().orEmpty()) {
-                size += getDirectorySize(file)
-            }
-        } else {
-            size = f.length()
-        }
-        return size
     }
 
     /**
@@ -98,7 +86,7 @@ object DiskUtil {
     /**
      * Scans the given file so that it can be shown in gallery apps, for example.
      */
-    fun scanMedia(context: Context, uri: Uri) {
+    private fun scanMedia(context: Context, uri: Uri) {
         MediaScannerConnection.scanFile(context, arrayOf(uri.path), null, null)
     }
 
@@ -138,7 +126,7 @@ object DiskUtil {
         }
     }
 
-    const val NOMEDIA_FILE = ".nomedia"
+    private const val NOMEDIA_FILE = ".nomedia"
 
     // Safe theoretical max filename size is 255 bytes and 1 char = 2-4 bytes (UTF-8)
     const val MAX_FILE_NAME_BYTES = 250

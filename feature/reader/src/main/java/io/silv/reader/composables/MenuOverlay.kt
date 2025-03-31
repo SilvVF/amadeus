@@ -30,7 +30,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Tune
@@ -156,7 +156,7 @@ fun ReaderMenuOverlay(
                 navigationIcon = {
                     IconButton(onClick = onBackArrowClick) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Default.ArrowBack,
                             contentDescription = null
                         )
                     }
@@ -253,7 +253,7 @@ fun ReaderMenuOverlay(
             ) {
                 HorizontalPager(
                     state = menuPagerState,
-                    beyondBoundsPageCount = 0,
+                    beyondViewportPageCount = 0,
                     modifier = Modifier
                         .animateContentSize()
                         .fillMaxWidth()

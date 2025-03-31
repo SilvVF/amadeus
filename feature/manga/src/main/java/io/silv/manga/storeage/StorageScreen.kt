@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -54,11 +54,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.koin.compose.rememberKoinInject
+import org.koin.compose.koinInject
 import java.io.File
 
 
-class StorageScreen: Screen {
+class StorageScreen : Screen {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
@@ -74,7 +74,7 @@ class StorageScreen: Screen {
                     navigationIcon = {
                         IconButton(onClick = { navigator.pop() }) {
                             Icon(
-                                imageVector = Icons.Filled.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = null
                             )
                         }
@@ -83,9 +83,10 @@ class StorageScreen: Screen {
                 )
             }
         ) { paddingValues ->
-            Column(modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(paddingValues)
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(paddingValues)
             ) {
                 StorageInfo(
                     Modifier
@@ -100,10 +101,14 @@ class StorageScreen: Screen {
                 UnusedMangaInfo(
                     modifier = Modifier.fillMaxWidth()
                 )
-                when(val storage = state.value) {
-                    StorageScreenState.Loading -> Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                when (val storage = state.value) {
+                    StorageScreenState.Loading -> Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         CircularProgressIndicator()
                     }
+
                     is StorageScreenState.Success -> {
                         if (storage.items.isEmpty()) {
                             Text(
@@ -118,7 +123,8 @@ class StorageScreen: Screen {
                         } else {
                             Text(
                                 text = remember(storage.items) {
-                                    storage.items.fastFold(0L) { acc, storageItem -> acc + storageItem.size }.toSize()
+                                    storage.items.fastFold(0L) { acc, storageItem -> acc + storageItem.size }
+                                        .toSize()
                                 },
                                 style = MaterialTheme.typography.headlineLarge,
                                 fontWeight = FontWeight.Bold,
@@ -148,7 +154,8 @@ class StorageScreen: Screen {
                         } else {
                             Text(
                                 text = remember(storage.nonLibraryItems) {
-                                    storage.nonLibraryItems.fastFold(0L) { acc, storageItem -> acc + storageItem.size }.toSize()
+                                    storage.nonLibraryItems.fastFold(0L) { acc, storageItem -> acc + storageItem.size }
+                                        .toSize()
                                 },
                                 style = MaterialTheme.typography.headlineLarge,
                                 fontWeight = FontWeight.Bold,
@@ -178,8 +185,9 @@ class StorageScreen: Screen {
 fun UnusedMangaInfo(
     modifier: Modifier = Modifier
 ) {
-    val mangaRepository = rememberKoinInject<MangaRepository>()
-    val unusedCount by mangaRepository.observeUnusedCount().collectAsStateWithLifecycle(initialValue = 0)
+    val mangaRepository = koinInject<MangaRepository>()
+    val unusedCount by mangaRepository.observeUnusedCount()
+        .collectAsStateWithLifecycle(initialValue = 0)
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -224,11 +232,11 @@ fun UnusedMangaInfo(
 @Composable
 private fun ChapterCacheInfo(
     modifier: Modifier = Modifier
-)  {
+) {
     val context = LocalContext.current
     val space = LocalSpacing.current
 
-    val chapterCache = rememberKoinInject<ChapterCache>()
+    val chapterCache = koinInject<ChapterCache>()
     var cacheReadableSizeSema by remember { mutableIntStateOf(0) }
     val cacheReadableSize = remember(cacheReadableSizeSema) { chapterCache.readableSize }
     val scope = rememberCoroutineScope()
@@ -312,7 +320,7 @@ private fun StorageInfo(
                 .clip(MaterialTheme.shapes.small)
                 .fillMaxWidth()
                 .height(12.dp),
-            progress = (1 - (available / total.toFloat())),
+            progress = { (1 - (available / total.toFloat())) },
         )
 
         Text(

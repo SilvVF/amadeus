@@ -32,12 +32,8 @@ class DiskBackedFetcherImpl<T: Any>(
     val context: Context,
     val overrideCall: suspend (options: Options, data: T) -> FetchResult? = { _, _ -> null },
     val fetch: suspend (options: Options, data: T) -> ByteArray,
-    val memoryCacheInit: () -> MemoryCache,
     val diskCacheInit: () -> DiskCache
 ) {
-
-    internal val memCache
-        get() = memoryCacheInit()
 
     internal val diskCache
         get() = diskCacheInit()
@@ -87,45 +83,12 @@ class DiskBackedFetcherImpl<T: Any>(
 
         override suspend fun fetch(): FetchResult {
 
-            if (options.memoryCachePolicy.readEnabled) {
-
-                memCache[memCacheKey]?.let { cachedValue ->
-
-                    return DrawableResult(
-                        drawable = cachedValue.bitmap.toDrawable(context.resources),
-                        isSampled = options.size.isOriginal,
-                        dataSource = DataSource.MEMORY_CACHE
-                    )
-                }
-            }
-
             val overrideData = overrideCall(options, data)
-
-            if (overrideData != null) {
-
-                overrideData.toBytes()?.let {
-                    CoilDiskUtils.writeToMemCache(
-                        options = options,
-                        bytes = it,
-                        memCacheKey = memCacheKey,
-                        memCache = memCache
-                    )
-                }
-                return overrideData
-            }
 
             val imageCacheFile = diskStore.getImageFile(data, options)
 
             // Check if the file path already has an existing file meaning the image exists
             if (imageCacheFile?.exists() == true && options.diskCachePolicy.readEnabled) {
-
-                CoilDiskUtils.writeToMemCache(
-                    options,
-                    imageCacheFile.readBytes(),
-                    memCacheKey,
-                    memCache
-                )
-
                 return fileLoader(imageCacheFile, diskCacheKey)
             }
 
@@ -143,22 +106,10 @@ class DiskBackedFetcherImpl<T: Any>(
                     )
 
                     if (snapshotCoverCache != null) {
-                        CoilDiskUtils.writeToMemCache(
-                            options,
-                            snapshotCoverCache.readBytes(),
-                            memCacheKey,
-                            memCache
-                        )
                         // Read from cover cache after added to library
                         return fileLoader(snapshotCoverCache, diskCacheKey)
                     }
 
-                    CoilDiskUtils.writeToMemCache(
-                        options,
-                        snapshot.data.toFile().readBytes(),
-                        memCacheKey,
-                        memCache
-                    )
                     // Read from snapshot
                     return SourceResult(
                         source = snapshot.toImageSource(diskCacheKey),
@@ -176,37 +127,18 @@ class DiskBackedFetcherImpl<T: Any>(
                         options
                     )
                     if (responseCoverCache != null) {
-                        CoilDiskUtils.writeToMemCache(
-                            options,
-                            responseCoverCache.readBytes(),
-                            memCacheKey,
-                            memCache
-                        )
                         return fileLoader(responseCoverCache, diskCacheKey)
                     }
 
                     // Read from disk cache
                     snapshot = CoilDiskUtils.writeToDiskCache(response, diskCache, diskCacheKey)
                     if (snapshot != null) {
-                        CoilDiskUtils.writeToMemCache(
-                            options,
-                            snapshot.data.toFile().readBytes(),
-                            memCacheKey,
-                            memCache
-                        )
                         return SourceResult(
                             source = snapshot.toImageSource(diskCacheKey),
                             mimeType = "image/*",
                             dataSource = DataSource.NETWORK,
                         )
                     }
-
-                    CoilDiskUtils.writeToMemCache(
-                        options,
-                        response,
-                        memCacheKey,
-                        memCache
-                    )
                     // Read from response if cache is unused or unusable
                     return SourceResult(
                         source = ImageSource(

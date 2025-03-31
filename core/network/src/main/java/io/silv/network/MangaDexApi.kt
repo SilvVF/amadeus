@@ -1,6 +1,6 @@
 package io.silv.network
 
-import ChapterListResponse
+import io.silv.network.model.chapter.ChapterListResponse
 import com.skydoves.sandwich.ktor.getApiResponse
 import io.ktor.client.HttpClient
 import io.silv.common.AmadeusDispatchers

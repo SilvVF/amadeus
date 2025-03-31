@@ -265,6 +265,7 @@ class MangaViewScreenModel(
                     it.manga.toResource(),
                 )
             }
+
         }
     }
 

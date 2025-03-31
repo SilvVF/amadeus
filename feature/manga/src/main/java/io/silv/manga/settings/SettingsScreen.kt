@@ -19,15 +19,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -118,7 +118,7 @@ fun SettingsScreenContent(
 
     when (state.dialogkey) {
         SettingsScreenModel.UPDATE_PERIOD_KEY -> {
-            AlertDialog(
+            BasicAlertDialog(
                 onDismissRequest = { actions.changeCurrentDialog(null) },
                 properties = DialogProperties(),
                 modifier = Modifier.fillMaxWidth()
@@ -283,7 +283,7 @@ fun SettingsScreenContent(
                     )
                 )
             }
-            Divider()
+            HorizontalDivider()
             Text(
                 "Display options",
                 style = MaterialTheme.typography.labelLarge.copy(
@@ -319,7 +319,7 @@ fun SettingsScreenContent(
                     actions.changeCurrentDialog(SettingsScreenModel.FILTER_DISPLAY_KEY)
                 }
             }
-            Divider()
+            HorizontalDivider()
             Text(
                 "Reader options",
                 style = MaterialTheme.typography.labelLarge.copy(
@@ -436,7 +436,7 @@ fun DisplayPrefsDialogContent(
     onDismiss: () -> Unit
 ) {
     val space = LocalSpacing.current
-    AlertDialog(
+    BasicAlertDialog(
         onDismissRequest = onDismiss,
         modifier = modifier.fillMaxWidth(),
     ) {
@@ -574,7 +574,7 @@ fun SettingsTopBar(
         title = { Text(text = title) },
         navigationIcon = {
             IconButton(onClick = onBackClicked) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null)
+                Icon(imageVector = Icons.AutoMirrored.Default.ArrowBack, contentDescription = null)
             }
         }
     )

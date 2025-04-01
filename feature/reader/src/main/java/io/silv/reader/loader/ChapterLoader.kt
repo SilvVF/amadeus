@@ -1,16 +1,32 @@
 package io.silv.reader.loader
 
+import android.content.Context
+import io.silv.common.DependencyAccessor
+import io.silv.common.appDeps
+import io.silv.common.model.MangaDexSource
+import io.silv.data.download.ChapterCache
 import io.silv.data.download.DownloadManager
+import io.silv.di.dataDeps
+import io.silv.di.downloadDeps
 import io.silv.domain.manga.model.Manga
+import io.silv.network.networkDeps
+import io.silv.network.sources.HttpSource
+import io.silv.network.sources.ImageSourceFactory
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
  * Loader used to retrieve the [PageLoader] for a given chapter.
  */
-class ChapterLoader(
-    private val downloadManager: DownloadManager,
+class ChapterLoader @OptIn(DependencyAccessor::class) constructor(
     private val manga: Manga,
+    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
+    private val imageSourceFactory: ImageSourceFactory = downloadDeps.imageSourceFactory,
+    private val chapterCache: ChapterCache = downloadDeps.chapterCache,
+    private val source: HttpSource = HttpSource(networkDeps.mangaDexApi, networkDeps.mangaDexClient),
+    private val applicationScope: CoroutineScope = appDeps.applicationScope,
+    private val context: Context = dataDeps.context,
 ) {
     /**
      * Assigns the chapter's page loader and loads the its pages. Returns immediately if the chapter
@@ -65,9 +81,15 @@ class ChapterLoader(
                 chapter.chapter.title,
                 chapter.chapter.scanlator,
                 manga.titleEnglish,
-            ) -> DownloadPageLoader(chapter, manga, downloadManager)
+            ) -> DownloadPageLoader(chapter, manga, downloadManager, context)
 
-            else -> HttpPageLoader(chapter)
+            else -> HttpPageLoader(
+                chapter,
+                chapterCache,
+                applicationScope,
+                source,
+                imageSourceFactory
+            )
         }
     }
 }

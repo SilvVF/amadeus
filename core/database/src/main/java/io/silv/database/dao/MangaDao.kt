@@ -77,7 +77,6 @@ abstract class MangaDao {
     @Query("SELECT MAX(last_synced_for_updates) FROM manga WHERE favorite")
     abstract fun observeLastSyncedTime(): Flow<LocalDateTime?>
 
-    @Transaction
     suspend fun upsert(
         id: String,
         coverArt: String?,

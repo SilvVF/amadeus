@@ -9,7 +9,7 @@ import io.silv.domain.history.HistoryWithRelations
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
-class HistoryRepositoryImpl(
+internal class HistoryRepositoryImpl(
     private val historyDao: HistoryDao,
     private val dispatchers: AmadeusDispatchers
 ): HistoryRepository {

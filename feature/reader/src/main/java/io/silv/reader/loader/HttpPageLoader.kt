@@ -8,6 +8,8 @@ import io.silv.common.coroutine.ConcurrentPriorityQueue
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.Page
 import io.silv.data.download.ChapterCache
+import io.silv.di.dataDeps
+import io.silv.di.downloadDeps
 import io.silv.domain.chapter.model.toResource
 import io.silv.network.sources.HttpSource
 import io.silv.network.sources.ImageSourceFactory
@@ -16,15 +18,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import kotlin.math.min
 
 
@@ -33,12 +33,11 @@ import kotlin.math.min
  */
 internal class HttpPageLoader(
     private val chapter: ReaderChapter,
-) : PageLoader(), KoinComponent {
-
-    private val chapterCache: ChapterCache by inject()
-    private val applicationScope: ApplicationScope by inject()
-    private val source: HttpSource by inject()
-    private val imageSourceFactory: ImageSourceFactory by inject()
+    private val chapterCache: ChapterCache,
+    private val applicationScope: CoroutineScope,
+    private val source: HttpSource,
+    private val imageSourceFactory: ImageSourceFactory
+) : PageLoader() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -52,8 +51,8 @@ internal class HttpPageLoader(
     init {
         scope.launch(Dispatchers.IO) {
             flow {
-                while (true) {
-                    val page = suspendRunCatching { queue.await().page }
+                while (isActive) {
+                    val page = suspendRunCatching { queue.pollUntilAvailable()?.page }
                     emit(page.getOrNull() ?: continue)
                 }
             }
@@ -142,10 +141,10 @@ internal class HttpPageLoader(
         queue.offer(PriorityPage(page, 2))
     }
 
-    override suspend fun recycle() {
+    override fun recycle() {
         super.recycle()
         scope.cancel()
-        queue.clear()
+        runBlocking { queue.clear() }
 
         // Cache current page list progress for online chapters to allow a faster reopen
         chapter.pages?.let { pages ->

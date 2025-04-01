@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlin.time.Duration.Companion.days
 
-class YearlyTopMangaFetcher(
+internal class YearlyTopMangaFetcher(
     private val mangaDexApi: MangaDexApi,
     private val mangaRepository: MangaRepository,
     private val getManga: GetManga,

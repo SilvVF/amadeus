@@ -50,9 +50,4 @@ dependencies {
     androidTestImplementation(libs.androidx.work.testing)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.work.multiprocess)
-
-    // KOIN
-    implementation(libs.koin.android)
-    implementation(libs.koin.core)
-    implementation(libs.koin.workmanager)
 }

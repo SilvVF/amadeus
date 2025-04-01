@@ -13,27 +13,20 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.FadeTransition
 import io.silv.amadeus.crash.CrashActivity
 import io.silv.amadeus.crash.GlobalExceptionHandler
+import io.silv.amadeus.dependency.rememberDataDependency
 import io.silv.common.model.AppTheme
-import io.silv.common.model.NetworkConnectivity
-import io.silv.datastore.SettingsStore
 import io.silv.ui.LocalAppState
 import io.silv.ui.rememberAppState
 import io.silv.ui.theme.AmadeusTheme
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import org.koin.android.ext.android.inject
-import org.koin.compose.KoinContext
 
 class MainActivity : ComponentActivity() {
-
-    private val connectivity by inject<NetworkConnectivity>()
-    private val settingsStore by inject<SettingsStore>()
 
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalVoyagerApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,32 +37,32 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            KoinContext {
-                val windowSizeClass = calculateWindowSizeClass(this)
+            val windowSizeClass = calculateWindowSizeClass(this)
+            val settingsStore = rememberDataDependency { settingsStore }
+            val connectivity = rememberDataDependency { connectivity }
 
-                val appState =
-                    rememberAppState(
-                        windowSizeClass = windowSizeClass,
-                        networkConnectivity = connectivity,
-                        searchChannel = NavHost.globalSearchChannel,
-                        bottomBarVisibilityChannel = NavHost.bottomBarVisibility
-                    )
+            val appState =
+                rememberAppState(
+                    windowSizeClass = windowSizeClass,
+                    networkConnectivity = connectivity,
+                    searchChannel = NavHost.globalSearchChannel,
+                    bottomBarVisibilityChannel = NavHost.bottomBarVisibility
+                )
 
-                val theme by produceState(initialValue = AppTheme.DYNAMIC_COLOR_DEFAULT) {
-                    settingsStore.observe().onEach { value = it.theme }.launchIn(this)
-                }
+            val theme by produceState(initialValue = AppTheme.DYNAMIC_COLOR_DEFAULT) {
+                settingsStore.observe().onEach { value = it.theme }.launchIn(this)
+            }
 
-                AmadeusTheme(theme) {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background,
+            AmadeusTheme(theme) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background,
+                ) {
+                    CompositionLocalProvider(
+                        LocalAppState provides appState,
                     ) {
-                        CompositionLocalProvider(
-                            LocalAppState provides appState,
-                        ) {
-                            Navigator(NavHost) {
-                                FadeTransition(it)
-                            }
+                        Navigator(NavHost) {
+                            FadeTransition(it)
                         }
                     }
                 }

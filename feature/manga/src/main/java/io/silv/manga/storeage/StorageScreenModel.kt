@@ -4,10 +4,13 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.silv.common.DependencyAccessor
 import io.silv.common.model.MangaCover
 import io.silv.common.model.MangaDexSource
 import io.silv.data.download.DownloadCache
 import io.silv.data.download.DownloadManager
+import io.silv.di.dataDeps
+import io.silv.di.downloadDeps
 import io.silv.domain.manga.interactor.GetManga
 import io.silv.domain.manga.model.toResource
 import io.silv.domain.manga.repository.MangaRepository
@@ -18,11 +21,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-class StorageScreenModel(
-    mangaRepository: MangaRepository,
-    private val downloadCache: DownloadCache,
-    private val getManga: GetManga,
-    private val downloadManager: DownloadManager,
+class StorageScreenModel @OptIn(DependencyAccessor::class) constructor(
+    mangaRepository: MangaRepository = dataDeps.mangaRepository,
+    private val downloadCache: DownloadCache = downloadDeps.downloadCache,
+    private val getManga: GetManga = dataDeps.getManga,
+    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
 ) : StateScreenModel<StorageScreenState>(StorageScreenState.Loading) {
 
     init {

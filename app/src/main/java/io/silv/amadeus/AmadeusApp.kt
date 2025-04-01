@@ -12,43 +12,44 @@ import coil.ImageLoaderFactory
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.util.DebugLogger
-import com.skydoves.sandwich.SandwichInitializer
 import eu.kanade.tachiyomi.MangaCoverFetcher
 import eu.kanade.tachiyomi.TachiyomiImageDecoder
-import io.ktor.client.HttpClient
 import io.silv.amadeus.coil.CoilDiskCache
 import io.silv.amadeus.coil.CoilMemoryCache
 import io.silv.amadeus.coil.addDiskFetcher
+import io.silv.amadeus.dependency.CommonDependencies
+import io.silv.common.DependencyAccessor
+import io.silv.amadeus.dependency.commonDeps
+import io.silv.common.AppDependencies
+import io.silv.common.appDeps
+import io.silv.di.DownloadDependencies
+import io.silv.di.downloadDeps
 import io.silv.data.download.CoverCache
+import io.silv.database.DaosModule
+import io.silv.database.DatabaseModule
+import io.silv.datastore.DataStoreModule
+import io.silv.datastore.DataStoreModuleImpl
+import io.silv.datastore.dataStore
+import io.silv.datastore.dataStoreDeps
+import io.silv.di.DataDependencies
+import io.silv.di.dataDeps
 import io.silv.manga.download.DownloadQueueScreen
 import io.silv.manga.filter.MangaFilterScreen
 import io.silv.manga.view.MangaViewScreen
 import io.silv.navigation.SharedScreen
-import io.silv.network.util.MangaDexApiLogger
+import io.silv.network.NetworkDependencies
+import io.silv.network.networkDeps
 import io.silv.reader.ReaderScreen
 import io.silv.sync.Sync
+import io.silv.sync.SyncDependencies
+import io.silv.sync.syncDependencies
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.koin.android.ext.android.inject
-import org.koin.android.ext.koin.androidContext
-import org.koin.android.ext.koin.androidLogger
-import org.koin.androidx.workmanager.koin.workManagerFactory
-import org.koin.core.context.startKoin
-import org.koin.core.logger.Level
-import tachiyomi.decoder.BuildConfig
 
 class AmadeusApp : Application(), ImageLoaderFactory {
+    @OptIn(DependencyAccessor::class)
     override fun onCreate() {
         super.onCreate()
-
-        //SandwichInitializer.sandwichOperators += MangaDexApiLogger<Any>()
-
-        startKoin {
-            androidLogger(Level.DEBUG)
-            androidContext(this@AmadeusApp)
-            workManagerFactory()
-            modules(appModule)
-        }
 
         ScreenRegistry {
             register<SharedScreen.Reader> {
@@ -68,6 +69,36 @@ class AmadeusApp : Application(), ImageLoaderFactory {
             }
         }
 
+        appDeps = object : AppDependencies() {}
+
+        val databaseModule = DatabaseModule(this)
+        val daosModule = DaosModule(databaseModule)
+
+        dataStoreDeps = DataStoreModuleImpl(this)
+
+        networkDeps = object:  NetworkDependencies() {
+            override val context: Context get() = this@AmadeusApp
+        }
+
+        dataDeps = object: DataDependencies() {
+            override val databaseModule: DatabaseModule = databaseModule
+            override val context: Context get() = this@AmadeusApp
+            override val daosModule: DaosModule = daosModule
+        }
+
+        downloadDeps = object: DownloadDependencies() {
+            override val context: Context get() = this@AmadeusApp
+            override val dataStoreModule: DataStoreModule get() = dataStoreDeps
+        }
+
+        commonDeps = object : CommonDependencies(){
+            override val application: Application get() = this@AmadeusApp
+        }
+
+        syncDependencies = object : SyncDependencies() {
+            override val application: Application get() = this@AmadeusApp
+        }
+
         Sync.init(this)
     }
 
@@ -78,10 +109,10 @@ class AmadeusApp : Application(), ImageLoaderFactory {
         return totalMemBytes < 3L * 1024 * 1024 * 1024
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, DependencyAccessor::class)
     override fun newImageLoader(): ImageLoader {
 
-        val client by inject<HttpClient>()
+        val client = networkDeps.mangaDexClient
         val cache by lazy { CoverCache(this) }
 
         val diskCache = { CoilDiskCache.get(this) }

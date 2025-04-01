@@ -100,7 +100,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -185,7 +185,7 @@ object LibraryTab : ReselectTab {
 
         val appState = LocalAppState.current
 
-        val screenModel = getScreenModel<LibraryScreenModel>()
+        val screenModel = rememberScreenModel { LibraryScreenModel() }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
 

@@ -8,6 +8,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import io.silv.common.DependencyAccessor
 import io.silv.common.PrefsConverter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
@@ -18,16 +19,15 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 class PreferenceMutableState<T>(
     defaultValue: T,
     private val key: Preferences.Key<T>,
     private val scope: CoroutineScope,
-) : MutableState<T>, KoinComponent {
+) : MutableState<T> {
 
-    private val dataStore by inject<DataStore<Preferences>>()
+    @OptIn(DependencyAccessor::class)
+    private val dataStore = dataStoreDeps.dataStore
 
     private val state =
         mutableStateOf(defaultValue)
@@ -60,8 +60,10 @@ class PreferenceMutableStateWithConversion<T, V>(
     private val converter: PrefsConverter<T, V>,
     private val key: Preferences.Key<V>,
     private val scope: CoroutineScope,
-) : MutableState<T>, KoinComponent {
-    private val dataStore by inject<DataStore<Preferences>>()
+) : MutableState<T>  {
+
+    @OptIn(DependencyAccessor::class)
+    private val dataStore = dataStoreDeps.dataStore
 
     private val state =
         mutableStateOf(defaultValue)

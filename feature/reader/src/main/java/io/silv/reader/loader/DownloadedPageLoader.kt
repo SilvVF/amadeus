@@ -9,16 +9,14 @@ import io.silv.data.download.DownloadManager
 import io.silv.domain.chapter.model.toResource
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.toResource
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 internal class DownloadPageLoader(
     private val chapter: ReaderChapter,
     private val manga: Manga,
     private val downloadManager: DownloadManager,
-) : PageLoader(), KoinComponent {
+    private val context: Context,
+) : PageLoader() {
     private val source = MangaDexSource
-    private val context by inject<Context>()
 
     override var isLocal: Boolean = true
 

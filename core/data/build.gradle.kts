@@ -40,9 +40,10 @@ dependencies {
     api(project(":core:database"))
     api(project(":core:common"))
     api(project(":core:datastore"))
-    api(project(":core:domain"))
 
     implementation(libs.image.decoder)
+
+    compileOnly(libs.compose.stable.marker)
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.disklrucache)
@@ -61,11 +62,6 @@ dependencies {
     implementation(libs.kotlin.serialization)
     implementation(libs.kotlinx.serialization.json.okio)
     implementation(libs.kotlin.collections.immutable)
-
-    // KOIN
-    implementation(libs.koin.android)
-    implementation(libs.koin.core)
-    implementation(libs.koin.workmanager)
 
     // Paging 3
     implementation(libs.androidx.paging.runtime)

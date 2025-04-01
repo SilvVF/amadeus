@@ -7,8 +7,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.silv.common.DependencyAccessor
+import io.silv.common.createTrigger
 import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
+import io.silv.di.dataDeps
+import io.silv.di.downloadDeps
 import io.silv.domain.chapter.interactor.ChapterHandler
 import io.silv.domain.chapter.interactor.GetBookmarkedChapters
 import io.silv.domain.chapter.interactor.GetChapter
@@ -51,16 +55,16 @@ data class UiChapterUpdate(
     val download: Download?
 )
 
-class LibraryScreenModel(
-    private val updatesRepository: UpdatesRepository,
-    private val downloadManager: DownloadManager,
-    private val getLibraryLastUpdated: GetLibraryLastUpdated,
-    private val getManga: GetManga,
-    private val getBookmarkedChapters: GetBookmarkedChapters,
-    private val getChapter: GetChapter,
-    private val mangaHandler: MangaHandler,
-    private val chapterHandler: ChapterHandler,
-    getLibraryMangaWithChapters: GetLibraryMangaWithChapters,
+class LibraryScreenModel @OptIn(DependencyAccessor::class) constructor(
+    updatesRepository: UpdatesRepository = dataDeps.updatesRepository,
+    getLibraryLastUpdated: GetLibraryLastUpdated = dataDeps.getLibraryLastUpdated,
+    getBookmarkedChapters: GetBookmarkedChapters = dataDeps.getBookmarkedChapters,
+    getLibraryMangaWithChapters: GetLibraryMangaWithChapters = dataDeps.getLibraryMangaWithChapters,
+    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
+    private val getManga: GetManga = dataDeps.getManga,
+    private val getChapter: GetChapter = dataDeps.getChapter,
+    private val mangaHandler: MangaHandler = dataDeps.mangaHandler,
+    private val chapterHandler: ChapterHandler = dataDeps.chapterHandler,
 ): EventStateScreenModel<LibraryEvent, LibraryState>(LibraryState()) {
 
     var mangaSearchText by mutableStateOf("")
@@ -72,11 +76,10 @@ class LibraryScreenModel(
         .distinctUntilChanged()
         .onStart { emit("") }
 
-    private val downloadTrigger = combine(
+    private val downloadTrigger = createTrigger(
         downloadManager.queueState,
         downloadManager.cacheChanges,
-    ) { _, _ -> Unit }
-        .onStart { emit(Unit) }
+    )
 
     private val libraryMangaWithDownloadState = getLibraryMangaWithChapters.subscribe()
         .map { list ->

@@ -58,7 +58,4 @@ dependencies {
 
     implementation(libs.kotlin.serialization)
     implementation(libs.kotlinx.serialization.json.okio)
-
-    implementation(libs.koin.android)
-    implementation(libs.koin.core)
 }

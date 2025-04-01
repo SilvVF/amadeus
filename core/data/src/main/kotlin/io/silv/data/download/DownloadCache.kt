@@ -3,10 +3,14 @@ package io.silv.data.download
 import android.content.Context
 import android.net.Uri
 import com.hippo.unifile.UniFile
+import io.silv.common.DependencyAccessor
+import io.silv.common.appDeps
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.MangaDexSource
 import io.silv.common.model.MangaResource
 import io.silv.common.model.Source
+import io.silv.datastore.dataStoreDeps
+import io.silv.di.dataDeps
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,10 +46,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.Json.Default.encodeToString
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.serializer
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
 import java.io.File
 import kotlin.time.Duration.Companion.hours
+import androidx.core.net.toUri
 
 /**
  * Cache where we dump the downloads directory from the filesystem. This class is needed because
@@ -471,7 +474,7 @@ private class MangaDirectory(
     var chapterDirs: MutableSet<String> = mutableSetOf(),
 )
 
-private object UniFileAsStringSerializer : KSerializer<UniFile?>, KoinComponent {
+private object UniFileAsStringSerializer : KSerializer<UniFile?> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UniFile", PrimitiveKind.STRING)
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -483,10 +486,10 @@ private object UniFileAsStringSerializer : KSerializer<UniFile?>, KoinComponent 
         }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
+    @OptIn(ExperimentalSerializationApi::class, DependencyAccessor::class)
     override fun deserialize(decoder: Decoder): UniFile? {
         return if (decoder.decodeNotNullMark()) {
-            UniFile.fromUri(get(), Uri.parse(decoder.decodeString()))
+            UniFile.fromUri(dataDeps.context, decoder.decodeString().toUri())
         } else {
             decoder.decodeNull()
         }

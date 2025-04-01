@@ -1,4 +1,4 @@
-package io.silv
+package io.silv.data.domain
 
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone

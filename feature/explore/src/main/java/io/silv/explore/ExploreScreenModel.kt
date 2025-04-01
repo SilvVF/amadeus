@@ -5,8 +5,10 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.silv.common.DependencyAccessor
 import io.silv.common.model.PagedType
 import io.silv.data.download.CoverCache
+import io.silv.di.dataDeps
 import io.silv.domain.manga.SubscribeToPagingData
 import io.silv.domain.manga.interactor.MangaHandler
 import io.silv.domain.manga.model.toResource
@@ -15,6 +17,7 @@ import io.silv.domain.search.RecentSearchHandler
 import io.silv.model.DomainSeasonalList
 import io.silv.model.RecentSearch
 import io.silv.sync.SyncManager
+import io.silv.sync.syncDependencies
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ioCoroutineScope
 import kotlinx.collections.immutable.ImmutableList
@@ -29,14 +32,14 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class ExploreScreenModel(
-    subscribeToPagingData: SubscribeToPagingData,
-    seasonalManga: SeasonalMangaRepository,
-    private val mangaHandler: MangaHandler,
-    private val coverCache: CoverCache,
-    private val recentSearchHandler: RecentSearchHandler,
-    private val seasonalMangaSyncManager: SyncManager,
-    savedStatePagedType: UiPagedType?
+class ExploreScreenModel @OptIn(DependencyAccessor::class) constructor(
+    savedStatePagedType: UiPagedType?,
+    subscribeToPagingData: SubscribeToPagingData = dataDeps.subscribeToPagingData,
+    seasonalManga: SeasonalMangaRepository = dataDeps.seasonalMangaRepository,
+    private val mangaHandler: MangaHandler = dataDeps.mangaHandler,
+    private val coverCache: CoverCache = dataDeps.coverCache,
+    private val recentSearchHandler: RecentSearchHandler = dataDeps.recentSearchHandler,
+    private val seasonalMangaSyncManager: SyncManager = syncDependencies.seasonalMangaSyncManager
 ) : EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState(pagedType = savedStatePagedType ?: UiPagedType.Popular)) {
     init {
         seasonalMangaSyncManager.isSyncing

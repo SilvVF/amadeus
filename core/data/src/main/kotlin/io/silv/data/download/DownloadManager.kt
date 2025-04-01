@@ -13,6 +13,7 @@ import io.silv.domain.chapter.interactor.GetChapter
 import io.silv.domain.chapter.model.toResource
 import io.silv.domain.manga.interactor.GetManga
 import io.silv.domain.manga.model.toResource
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +28,7 @@ import kotlinx.coroutines.launch
 
 class DownloadManager internal constructor(
     private val context: Context,
-    private val applicationScope: ApplicationScope,
+    private val applicationScope: CoroutineScope,
     private val downloadProvider: DownloadProvider,
     private val downloader: Downloader,
     private val downloadCache: DownloadCache,

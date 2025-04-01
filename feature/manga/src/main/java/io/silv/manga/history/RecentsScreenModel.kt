@@ -9,6 +9,9 @@ import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.AmadeusDispatchers
+import io.silv.common.DependencyAccessor
+import io.silv.common.appDeps
+import io.silv.di.dataDeps
 import io.silv.domain.history.HistoryRepository
 import io.silv.domain.history.HistoryWithRelations
 import kotlinx.collections.immutable.ImmutableList
@@ -29,9 +32,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-class RecentsScreenModel(
-    private val historyRepository: HistoryRepository,
-    dispatchers: AmadeusDispatchers
+class RecentsScreenModel @OptIn(DependencyAccessor::class) constructor(
+    private val historyRepository: HistoryRepository = dataDeps.historyRepository,
+    dispatchers: AmadeusDispatchers = appDeps.dispatchers
 ): StateScreenModel<RecentsState>(RecentsState()) {
 
     var searchQuery by mutableStateOf("")

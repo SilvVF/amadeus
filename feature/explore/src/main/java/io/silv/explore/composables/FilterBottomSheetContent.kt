@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,7 +34,6 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -89,6 +87,8 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.screen.Screen
 import io.silv.common.model.ContentRating
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.QueryResult
@@ -108,10 +108,9 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
-import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun FilterBottomSheetContent(
+fun Screen.FilterBottomSheetContent(
     hide: () -> Unit,
     onQueryFilterChange: (UiQueryFilters) -> Unit,
     onSaveQueryClick: (UiQueryFilters) -> Unit,
@@ -199,7 +198,7 @@ fun FilterBottomSheetContent(
         }
     },
 ) {
-    val viewModel = koinViewModel<FilterScreenViewModel>()
+    val viewModel = rememberScreenModel { FilterScreenViewModel() }
 
     BackHandler {
         hide()

@@ -36,7 +36,6 @@ android {
 dependencies {
     api(project(":core:common"))
 
-    implementation(libs.koin.core)
     implementation(libs.okhttp)
     implementation(libs.sandwich.ktor)
     implementation(libs.disklrucache)

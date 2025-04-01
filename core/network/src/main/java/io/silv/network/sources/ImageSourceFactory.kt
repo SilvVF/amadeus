@@ -5,7 +5,6 @@ import kotlinx.serialization.json.Json
 
 class ImageSourceFactory(
     private val client: HttpClient,
-    private val json: Json,
 ) {
     fun getSource(url: String): ImageSource {
         return when {

@@ -6,7 +6,7 @@ import io.silv.domain.update.UpdatesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-class UpdatesRepositoryImpl(
+internal class UpdatesRepositoryImpl(
     private val updatesDao: UpdatesDao,
 ): UpdatesRepository {
 

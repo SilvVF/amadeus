@@ -39,6 +39,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
+import io.silv.amadeus.dependency.rememberDataDependency
 import io.silv.domain.update.GetUpdateCount
 import io.silv.explore.ExploreTab
 import io.silv.library.LibraryTab
@@ -55,7 +56,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.IgnoredOnParcel
-import org.koin.compose.koinInject
 import soup.compose.material.motion.animation.materialFadeThroughIn
 import soup.compose.material.motion.animation.materialFadeThroughOut
 
@@ -143,7 +143,7 @@ object NavHost : Screen {
 @Composable
 fun AmadeusBottomBar(modifier: Modifier = Modifier) {
 
-    val getUpdateCount = koinInject<GetUpdateCount>()
+    val getUpdateCount = rememberDataDependency { getUpdateCount }
 
     val mangaWithUpdates by produceState(initialValue = 0) {
         getUpdateCount.subscribe().collect { value = it }
@@ -168,7 +168,7 @@ fun AmadeusNavRail(
     modifier: Modifier = Modifier,
     visible: Boolean = true,
 ) {
-    val getUpdateCount = koinInject<GetUpdateCount>()
+    val getUpdateCount = rememberDataDependency { getUpdateCount }
 
     val mangaWithUpdates by produceState(initialValue = 0) {
         getUpdateCount.subscribe().collect { value = it }

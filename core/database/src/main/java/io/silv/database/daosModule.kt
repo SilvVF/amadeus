@@ -1,41 +1,17 @@
 package io.silv.database
 
-import org.koin.dsl.module
+class DaosModule(
+    private val databaseModule: DatabaseModule
+) {
+    val db get() = databaseModule.database
 
-val daosModule =
-    module {
+    val chapterDao by lazy { db.chapterDao() }
+    val seasonRemoteKeys by lazy { db.seasonalRemoteKeysDao() }
+    val seasonalListDao by lazy { db.seasonalListDao() }
+    val tagDao by lazy { db.tagDao() }
+    val sourceMangaDao by lazy { db.sourceMangaDao() }
+    val updatesDao by lazy { db.updatesDao() }
+    val recentSearchDao by lazy { db.recentSearchDao() }
+    val historyDao by lazy { db.historyDao() }
+}
 
-        includes(databaseModule)
-
-        single {
-            get<AmadeusDatabase>().chapterDao()
-        }
-
-        single {
-            get<AmadeusDatabase>().seasonalRemoteKeysDao()
-        }
-
-        single {
-            get<AmadeusDatabase>().seasonalListDao()
-        }
-
-        single {
-            get<AmadeusDatabase>().tagDao()
-        }
-
-        single {
-            get<AmadeusDatabase>().sourceMangaDao()
-        }
-
-        single {
-            get<AmadeusDatabase>().updatesDao()
-        }
-
-        single {
-            get<AmadeusDatabase>().recentSearchDao()
-        }
-
-        single {
-            get<AmadeusDatabase>().historyDao()
-        }
-    }

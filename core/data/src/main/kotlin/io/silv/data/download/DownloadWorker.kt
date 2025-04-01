@@ -9,8 +9,12 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import io.silv.common.DependencyAccessor
 import io.silv.common.model.NetworkConnectivity
 import io.silv.data.workers.createForegroundInfo
+import io.silv.di.dataDeps
+import io.silv.di.downloadDeps
+import io.silv.network.networkDeps
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -19,21 +23,19 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.runBlocking
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * This worker is used to manage the downloader. The system can decide to stop the worker, in
  * which case the downloader is also stopped. It's also stopped while there's no network available.
  */
+@OptIn(DependencyAccessor::class)
 class DownloadWorker(
     applicationContext: Context,
     workerParams: WorkerParameters
-) : CoroutineWorker(applicationContext, workerParams), KoinComponent {
+) : CoroutineWorker(applicationContext, workerParams) {
 
-    private val downloadManager by inject<DownloadManager>()
-    private val connectivityManager by inject<NetworkConnectivity>()
+    private val downloadManager = downloadDeps.downloadManager
+    private val connectivityManager = dataDeps.connectivity
 
     private val isOnline = connectivityManager.online.stateIn(
         CoroutineScope(Dispatchers.Default),

@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
 
 
-class NetworkConnectivityImpl(
+internal class NetworkConnectivityImpl(
     private val context: Context
 ): NetworkConnectivity {
 

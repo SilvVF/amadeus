@@ -43,13 +43,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import io.silv.common.DependencyAccessor
 import io.silv.common.model.ReadingStatus
 import io.silv.data.download.DownloadManager
+import io.silv.di.dataDeps
+import io.silv.di.downloadDeps
 import io.silv.domain.history.HistoryRepository
 import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
 import io.silv.manga.R
@@ -62,10 +65,10 @@ import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-class StatsScreenModel(
-    private val downloadManager: DownloadManager,
-    private val historyRepository: HistoryRepository,
-    private val getLibraryMangaWithChapters: GetLibraryMangaWithChapters,
+class StatsScreenModel @OptIn(DependencyAccessor::class) constructor(
+    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
+    private val historyRepository: HistoryRepository = dataDeps.historyRepository,
+    private val getLibraryMangaWithChapters: GetLibraryMangaWithChapters = dataDeps.getLibraryMangaWithChapters,
 ) : StateScreenModel<StatsScreenState>(StatsScreenState.Loading) {
 
     init {
@@ -129,7 +132,7 @@ class StatsScreen: Screen {
     @Composable
     override fun Content() {
 
-        val screenModel = getScreenModel<StatsScreenModel>()
+        val screenModel = rememberScreenModel { StatsScreenModel() }
         val navigator = LocalNavigator.currentOrThrow
 
         Scaffold(

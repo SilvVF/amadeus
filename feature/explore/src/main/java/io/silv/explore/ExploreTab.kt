@@ -36,7 +36,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
-import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -61,7 +61,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.koin.core.parameter.parametersOf
 
 object ExploreTab : ReselectTab, GlobalSearchTab {
     private fun readResolve(): Any = ExploreTab
@@ -82,7 +81,6 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
         reselectChannel.send(Unit)
     }
 
-    @OptIn(ExperimentalAnimationGraphicsApi::class)
     override val options: TabOptions
         @Composable
         get() {
@@ -100,7 +98,7 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
     override fun Content() {
         val appState = LocalAppState.current
         val tabNavigator = LocalTabNavigator.current
-        val screenModel = getScreenModel<ExploreScreenModel>() { parametersOf(savedStatePagedType) }
+        val screenModel = rememberScreenModel { ExploreScreenModel(savedStatePagedType) }
 
         val lifecycleOwner = LocalLifecycleOwner.current
 

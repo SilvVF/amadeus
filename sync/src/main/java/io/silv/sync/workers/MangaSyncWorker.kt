@@ -13,26 +13,26 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import io.silv.common.DependencyAccessor
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.AutomaticUpdatePeriod
 import io.silv.data.updates.MangaUpdateJob
 import io.silv.data.workers.createForegroundInfo
+import io.silv.di.dataDeps
 import io.silv.sync.MangaSyncPeriodicWorkName
 import io.silv.sync.MangaSyncWorkName
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
-import org.koin.core.component.inject
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
+@OptIn(DependencyAccessor::class)
 class MangaSyncWorker(
     appContext: Context,
     workerParams: WorkerParameters,
-) : CoroutineWorker(appContext, workerParams), KoinComponent {
+) : CoroutineWorker(appContext, workerParams) {
 
-    private val mangaUpdateJob by inject<MangaUpdateJob>()
+    private val mangaUpdateJob = dataDeps.mangaUpdateJob
 
     override suspend fun doWork(): Result {
 
@@ -60,9 +60,7 @@ class MangaSyncWorker(
                     .build()
 
         val isRunning: Flow<Boolean> = run {
-            val koin = object : KoinComponent {}
-            val workManager = koin.get<WorkManager>()
-            workManager
+            dataDeps.workManager
                 .getWorkInfosByTagFlow(MangaSyncWorkName)
                 .map {
                     it.toList()
@@ -72,11 +70,7 @@ class MangaSyncWorker(
         }
 
         fun enqueueOneTimeWork() {
-
-            val koin = object : KoinComponent {}
-            val workManager = koin.get<WorkManager>()
-
-            workManager.enqueue(
+            dataDeps.workManager.enqueue(
                 OneTimeWorkRequestBuilder<MangaSyncWorker>()
                     .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                     .setBackoffCriteria(

@@ -10,19 +10,20 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
+import io.silv.common.DependencyAccessor
 import io.silv.data.workers.createForegroundInfo
+import io.silv.di.dataDeps
 import io.silv.domain.manga.repository.SeasonalMangaRepository
 import io.silv.sync.SeasonalMangaSyncWorkName
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.util.concurrent.TimeUnit
 
+@OptIn(DependencyAccessor::class)
 internal class SeasonalMangaSyncWorker(
     appContext: Context,
     workerParams: WorkerParameters,
-) : CoroutineWorker(appContext, workerParams), KoinComponent {
+) : CoroutineWorker(appContext, workerParams) {
 
-    private val seasonalMangaRepository by inject<SeasonalMangaRepository>()
+    private val seasonalMangaRepository = dataDeps.seasonalMangaRepository
 
     override suspend fun doWork(): Result {
         return if (seasonalMangaRepository.sync()) {

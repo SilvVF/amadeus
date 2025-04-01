@@ -6,12 +6,13 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import cafe.adriel.voyager.core.screen.Screen
 import io.silv.explore.UiQueryFilters
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FiltersBottomSheet(
+fun Screen.FiltersBottomSheet(
     onSaveQuery: (UiQueryFilters) -> Unit,
     onDismissRequest: () -> Unit,
 ) {

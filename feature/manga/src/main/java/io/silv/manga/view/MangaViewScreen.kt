@@ -88,16 +88,18 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
 import com.skydoves.sandwich.message
 import com.skydoves.sandwich.onFailure
 import com.skydoves.sandwich.onSuccess
+import io.silv.common.DependencyAccessor
 import io.silv.data.manga.GetMangaCoverArtById
+import io.silv.di.dataDeps
 import io.silv.manga.composables.MangaDescription
 import io.silv.manga.composables.MangaImageWithTitle
 import io.silv.manga.composables.chapterListItems
@@ -115,8 +117,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
-import org.koin.core.parameter.parametersOf
 
 class MangaViewScreen(
     private val mangaId: String,
@@ -126,7 +126,7 @@ class MangaViewScreen(
 
     @Composable
     override fun Content() {
-        val screenModel = getScreenModel<MangaViewScreenModel> { parametersOf(mangaId) }
+        val screenModel = rememberScreenModel { MangaViewScreenModel(mangaId = mangaId) }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
 
@@ -273,7 +273,7 @@ fun MangaViewScreenContent(
 private const val FILTER_BOTTOM_SHEET = 1
 private const val VOLUME_ART_BOTTOM_SHEET = 0
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, DependencyAccessor::class)
 @Composable
 fun MangaViewSuccessScreen(
     state: MangaViewState.Success,
@@ -546,7 +546,7 @@ fun MangaViewSuccessScreen(
                 var error by remember { mutableStateOf<String?>(null) }
                 var loading by remember { mutableStateOf(false) }
                 var loadingSem by remember { mutableIntStateOf(0) }
-                val getMangaCoverArtById = koinInject<GetMangaCoverArtById>()
+                val getMangaCoverArtById = remember { dataDeps.getMangaCoverArtById }
 
                 LaunchedEffect(loadingSem) {
                     loading = true

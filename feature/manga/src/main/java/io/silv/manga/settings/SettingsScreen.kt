@@ -55,8 +55,8 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.common.model.AppTheme
 import io.silv.common.model.AutomaticUpdatePeriod
@@ -80,7 +80,7 @@ class SettingsScreen: Screen {
     @Composable
     override fun Content() {
 
-        val screenModel = getScreenModel<SettingsScreenModel>()
+        val screenModel = rememberScreenModel { SettingsScreenModel() }
 
         val settings by screenModel.settingsPrefs.collectAsStateWithLifecycle()
         val state by screenModel.state.collectAsStateWithLifecycle()

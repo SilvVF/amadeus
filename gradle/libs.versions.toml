@@ -122,12 +122,6 @@ kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "kotlinxCoroutinesGuava" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxdatetime" }
 
-koin-core = { module = "io.insert-koin:koin-core", version.ref = "koinVersion" }
-koin-android = { module = "io.insert-koin:koin-android", version.ref = "koinVersion" }
-koin-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinCompose" }
-koin-navigation = { module = "io.insert-koin:koin-androidx-navigation", version.ref = "koinVersion" }
-koin-workmanager = { module = "io.insert-koin:koin-androidx-workmanager", version.ref = "koinVersion" }
-
 kotlin-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinCollectionsImmutable" }
 
 kotlinx-serialization-json-okio = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-okio", version.ref = "kotlinxSerializationJsonOkio" }
@@ -152,7 +146,6 @@ voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.
 voyager-screenModel = { module = "cafe.adriel.voyager:voyager-screenmodel", version.ref = "voyager" }
 voyager-tabNavigator = { module = "cafe.adriel.voyager:voyager-tab-navigator", version.ref = "voyager" }
 voyager-transitions = { module = "cafe.adriel.voyager:voyager-transitions", version.ref = "voyager" }
-voyager-koin = { module = "cafe.adriel.voyager:voyager-koin", version.ref = "voyager" }
 coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 
@@ -169,6 +162,22 @@ ktor-contentnegotiation = { module = "io.ktor:ktor-client-content-negotiation", 
 uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
 benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmark-macro-junit4" }
 zoomable-image-coil = { module = "me.saket.telephoto:zoomable-image-coil", version.ref = "zoomableImageCoil" }
+[bundles]
+compose-ui = [
+    "androidx-compose-bom",
+    "androidx-material3-window-size",
+    "androidx-compose-ui-util",
+    "androidx-compose-ui",
+    "androidx-compose-ui-tooling",
+    "androidx-compose-foundation",
+    "androidx-compose-material3",
+    "androidx-compose-ui-graphics",
+    "androidx-compose-ui-animation-core",
+    "androidx-material-icons-extended",
+    "androidx-lifecycle-runtime-compose",
+    "androidx-activity-compose",
+    "androidx-compose-ui-manifest",
+]
 
 [plugins]
 com-android-test = { id = "com.android.test", version.ref = "agp" }

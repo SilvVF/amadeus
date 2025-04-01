@@ -65,11 +65,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.request.ImageRequest
@@ -98,7 +99,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
-import org.koin.core.parameter.parametersOf
 import java.nio.ByteBuffer
 import kotlin.math.roundToInt
 
@@ -115,7 +115,9 @@ class ReaderScreen(
     @Composable
     override fun Content() {
 
-        val screenModel = getScreenModel<ReaderScreenModel> { parametersOf(mangaId, savedStateChapterId) }
+        val screenModel = rememberScreenModel {
+            ReaderScreenModel(SavedStateHandle())
+        }
 
         val state = screenModel.state.collectAsStateWithLifecycle().value
         val lifecycle = LocalLifecycleOwner.current
@@ -125,12 +127,12 @@ class ReaderScreen(
             val observer = LifecycleEventObserver { _, event ->
                 when (event) {
                     Lifecycle.Event.ON_RESUME -> {
-                        screenModel.initialChapterId = savedStateChapterId
-                        screenModel.mangaId = mangaId
-                        screenModel.initializeReader()
-                        screenModel.restartReadTimer()
+//                        screenModel.initialChapterId = savedStateChapterId
+//                        screenModel.mangaId = mangaId
+//                        screenModel.initializeReader()
+//                        screenModel.restartReadTimer()
                     }
-                    Lifecycle.Event.ON_PAUSE -> screenModel.flushReadTimer()
+//                    Lifecycle.Event.ON_PAUSE -> screenModel.flushReadTimer()
                     else -> Unit
                 }
             }
@@ -140,7 +142,7 @@ class ReaderScreen(
             )
             onDispose {
                 lifecycle.lifecycle.removeObserver(observer)
-                screenModel.flushReadTimer()
+//                screenModel.flushReadTimer()
             }
         }
 
@@ -189,35 +191,36 @@ class ReaderScreen(
         ) {
             if (state.viewerChapters != null && state.manga != null) {
                 when (layout) {
-                    ReaderLayout.PagedRTL ->  HorizontalReader(
-                        viewerChapters = state.viewerChapters,
-                        onPageChange = screenModel::pageChanged,
-                        chapterList = state.chapters,
-                        loadPrevChapter = screenModel::loadPreviousChapter,
-                        loadNextChapter = screenModel::loadNextChapter,
-                        manga = state.manga,
-                        layoutDirection = LayoutDirection.Rtl,
-                        chapterActions = screenModel.chapterActions
-                    )
-                    ReaderLayout.PagedLTR ->  HorizontalReader(
-                        viewerChapters = state.viewerChapters,
-                        onPageChange = screenModel::pageChanged,
-                        chapterList = state.chapters,
-                        loadPrevChapter = screenModel::loadPreviousChapter,
-                        loadNextChapter = screenModel::loadNextChapter,
-                        manga = state.manga,
-                        layoutDirection = LayoutDirection.Ltr,
-                        chapterActions = screenModel.chapterActions
-                    )
-                    ReaderLayout.Vertical -> VerticalReader(
-                        viewerChapters = state.viewerChapters,
-                        onPageChange = screenModel::pageChanged,
-                        chapterList = state.chapters,
-                        loadPrevChapter = screenModel::loadPreviousChapter,
-                        loadNextChapter = screenModel::loadNextChapter,
-                        manga = state.manga,
-                        chapterActions = screenModel.chapterActions
-                    )
+//                    ReaderLayout.PagedRTL ->  HorizontalReader(
+//                        viewerChapters = state.viewerChapters,
+//                        onPageChange = screenModel::pageChanged,
+//                        chapterList = state.chapters,
+//                        loadPrevChapter = screenModel::loadPreviousChapter,
+//                        loadNextChapter = screenModel::loadNextChapter,
+//                        manga = state.manga,
+//                        layoutDirection = LayoutDirection.Rtl,
+//                        chapterActions = screenModel.chapterActions
+//                    )
+//                    ReaderLayout.PagedLTR ->  HorizontalReader(
+//                        viewerChapters = state.viewerChapters,
+//                        onPageChange = screenModel::pageChanged,
+//                        chapterList = state.chapters,
+//                        loadPrevChapter = screenModel::loadPreviousChapter,
+//                        loadNextChapter = screenModel::loadNextChapter,
+//                        manga = state.manga,
+//                        layoutDirection = LayoutDirection.Ltr,
+//                        chapterActions = screenModel.chapterActions
+//                    )
+//                    ReaderLayout.Vertical -> VerticalReader(
+//                        viewerChapters = state.viewerChapters,
+//                        onPageChange = screenModel::pageChanged,
+//                        chapterList = state.chapters,
+//                        loadPrevChapter = screenModel::loadPreviousChapter,
+//                        loadNextChapter = screenModel::loadNextChapter,
+//                        manga = state.manga,
+//                        chapterActions = screenModel.chapterActions
+//                    )
+                    else -> Unit
                 }
             } else {
                 CenterBox(Modifier.fillMaxSize()) {

@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDateTime
 
-class MangaRepositoryImpl internal constructor(
+internal class MangaRepositoryImpl internal constructor(
     private val mangaDao: MangaDao,
     private val dispatchers: AmadeusDispatchers,
     private val database: AmadeusDatabase,
@@ -51,37 +51,39 @@ class MangaRepositoryImpl internal constructor(
 
     override suspend fun upsertManga(update: MangaUpdate) =
         withContext(dispatchers.io) {
-            mangaDao.upsert(
-                id = update.id,
-                coverArt = update.coverArt,
-                title = update.title,
-                version = update.version,
-                updatedAt = update.updatedAt,
-                description = update.description,
-                alternateTitles = update.alternateTitles,
-                originalLanguage = update.originalLanguage,
-                availableTranslatedLanguages = update.availableTranslatedLanguages,
-                status = update.status,
-                tagToId = update.tagToId,
-                contentRating = update.contentRating,
-                lastVolume = update.lastVolume,
-                lastChapter = update.lastChapter,
-                publicationDemographic = update.publicationDemographic,
-                year = update.year,
-                latestUploadedChapter = update.latestUploadedChapter,
-                authors = update.authors,
-                artists = update.artists,
-                createdAt = update.createdAt,
-                progressState = update.progressState,
-                favorite = update.favorite,
-                readingStatus = update.readingStatus,
-            ) { existing ->
-                runCatching {
-                    existing?.deleteOldCoverFromCache(coverCache, update)
-                        ?.takeIf { deleted -> deleted }
-                        ?.let { epochSeconds() }
+            database.withTransaction {
+                mangaDao.upsert(
+                    id = update.id,
+                    coverArt = update.coverArt,
+                    title = update.title,
+                    version = update.version,
+                    updatedAt = update.updatedAt,
+                    description = update.description,
+                    alternateTitles = update.alternateTitles,
+                    originalLanguage = update.originalLanguage,
+                    availableTranslatedLanguages = update.availableTranslatedLanguages,
+                    status = update.status,
+                    tagToId = update.tagToId,
+                    contentRating = update.contentRating,
+                    lastVolume = update.lastVolume,
+                    lastChapter = update.lastChapter,
+                    publicationDemographic = update.publicationDemographic,
+                    year = update.year,
+                    latestUploadedChapter = update.latestUploadedChapter,
+                    authors = update.authors,
+                    artists = update.artists,
+                    createdAt = update.createdAt,
+                    progressState = update.progressState,
+                    favorite = update.favorite,
+                    readingStatus = update.readingStatus,
+                ) { existing ->
+                    runCatching {
+                        existing?.deleteOldCoverFromCache(coverCache, update)
+                            ?.takeIf { deleted -> deleted }
+                            ?.let { epochSeconds() }
+                    }
+                        .getOrNull()
                 }
-                    .getOrNull()
             }
         }
 

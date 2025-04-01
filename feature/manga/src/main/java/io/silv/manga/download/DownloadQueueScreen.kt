@@ -59,8 +59,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.model.Download
@@ -81,7 +81,7 @@ class DownloadQueueScreen: Screen {
 
     @Composable
     override fun Content() {
-        val screenModel = getScreenModel<DownloadQueueScreenModel>()
+        val screenModel = rememberScreenModel { DownloadQueueScreenModel() }
 
         val downloads by screenModel.state.collectAsStateWithLifecycle()
         val running by screenModel.isDownloaderRunning.collectAsStateWithLifecycle()

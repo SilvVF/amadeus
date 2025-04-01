@@ -11,10 +11,8 @@ import io.silv.data.util.DiskUtil
  * This class is used to provide the directories where the downloads should be saved.
  * It uses the following path scheme: /<root downloads dir>/<source name>/<manga>/<chapter>
  *
- * @param context the application context.
  */
 internal class DownloadProvider(
-    private val context: Context,
     storageManager: StorageManager,
 ) {
 

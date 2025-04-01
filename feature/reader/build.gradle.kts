@@ -54,7 +54,7 @@ dependencies {
     implementation(libs.voyager.screenModel)
     implementation(project(":core:ui"))
     implementation(project(":core:common"))
-    implementation(project(":core:domain"))
+    implementation(project(":core:data"))
     implementation(project(":core:datastore"))
     implementation(project(":core:data"))
     implementation(project(":sync"))
@@ -70,23 +70,11 @@ dependencies {
 
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
-    implementation(libs.androidx.material3.window.size)
-    implementation(libs.androidx.compose.ui.util)
     implementation(composeBom)
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.material3)
+    implementation(libs.bundles.compose.ui)
     androidTestImplementation(libs.androidx.compose.ui.test.junit)
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.compose.ui.graphics)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.ui.animation.core)
-    implementation(libs.androidx.material.icons.extended)
-    implementation(libs.androidx.lifecycle.runtime.compose)
 
     implementation(libs.swipe)
     implementation(libs.zoomable.image.coil)
@@ -105,20 +93,12 @@ dependencies {
     // Datastore
     implementation(libs.androidx.datastore.preferences)
 
-    // KOIN
-    implementation(libs.koin.compose)
-    implementation(libs.koin.android)
-    implementation(libs.koin.core)
-    implementation(libs.koin.navigation)
-    implementation(libs.koin.workmanager)
-
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
     implementation(libs.kotlin.collections.immutable)
 
     // VOYAGER
-    implementation(libs.voyager.koin)
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)
     implementation(libs.voyager.tabNavigator)

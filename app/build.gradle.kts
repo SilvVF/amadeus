@@ -112,7 +112,6 @@ dependencies {
     implementation(project(":core:navigation"))
     implementation(project(":core:data"))
     implementation(project(":core:datastore"))
-    implementation(project(":core:domain"))
     implementation(project(":core:ui"))
 
     implementation(project(":sync"))
@@ -156,7 +155,6 @@ dependencies {
     implementation(libs.okio)
 
     // VOYAGER
-    implementation(libs.voyager.koin)
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)
     implementation(libs.voyager.tabNavigator)
@@ -167,12 +165,6 @@ dependencies {
     implementation(libs.room.coroutines)
     testImplementation(libs.room.test)
 
-    // KOIN
-    implementation(libs.koin.compose)
-    implementation(libs.koin.android)
-    implementation(libs.koin.core)
-    implementation(libs.koin.navigation)
-    implementation(libs.koin.workmanager)
 
     // COIL
     implementation(libs.coil.compose)

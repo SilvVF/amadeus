@@ -40,9 +40,9 @@ import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.model.TimePeriod
@@ -59,7 +59,6 @@ import io.silv.ui.composables.mangaList
 import io.silv.ui.layout.TopAppBarWithBottomContent
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.collections.immutable.persistentListOf
-import org.koin.core.parameter.parametersOf
 
 class MangaFilterScreen(
     private val tag: String,
@@ -71,7 +70,7 @@ class MangaFilterScreen(
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        val sm = getScreenModel<MangaFilterScreenModel> { parametersOf(tagId) }
+        val sm = rememberScreenModel { MangaFilterScreenModel(tagId = tagId) }
         val navigator = LocalNavigator.currentOrThrow
         val space = LocalSpacing.current
 

@@ -16,7 +16,7 @@ import io.silv.network.requests.MangaRequest
 import kotlin.time.Duration.Companion.days
 
 
-class MangaPagingSourceFactoryImpl(
+internal class MangaPagingSourceFactoryImpl(
     private val mangaRepository: MangaRepository,
     private val mangaDexApi: MangaDexApi,
 ): MangaPagingSourceFactory {

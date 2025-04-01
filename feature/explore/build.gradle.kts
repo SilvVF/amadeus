@@ -64,7 +64,7 @@ dependencies {
     implementation(project(":core:navigation"))
     implementation(project(":core:ui"))
     implementation(project(":core:common"))
-    implementation(project(":core:domain"))
+    implementation(project(":core:data"))
     implementation(project(":core:data"))
     implementation(project(":core:datastore"))
     implementation(project(":sync"))
@@ -103,20 +103,12 @@ dependencies {
     // Datastore
     implementation(libs.androidx.datastore.preferences)
 
-    // KOIN
-    implementation(libs.koin.compose)
-    implementation(libs.koin.android)
-    implementation(libs.koin.core)
-    implementation(libs.koin.navigation)
-    implementation(libs.koin.workmanager)
 
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
     implementation(libs.kotlin.collections.immutable)
 
-    // VOYAGER
-    implementation(libs.voyager.koin)
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)
     implementation(libs.voyager.tabNavigator)

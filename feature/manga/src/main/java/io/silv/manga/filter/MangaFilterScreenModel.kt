@@ -2,9 +2,11 @@ package io.silv.manga.filter
 
 import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.silv.common.DependencyAccessor
 import io.silv.common.model.PagedType
 import io.silv.common.model.TimePeriod
 import io.silv.data.download.CoverCache
+import io.silv.di.dataDeps
 import io.silv.domain.manga.SubscribeToPagingData
 import io.silv.domain.manga.interactor.MangaHandler
 import io.silv.domain.manga.model.toResource
@@ -16,10 +18,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class MangaFilterScreenModel(
-    private val mangaHandler: MangaHandler,
-    subscribeToPagingData: SubscribeToPagingData,
-    private val coverCache: CoverCache,
+class MangaFilterScreenModel @OptIn(DependencyAccessor::class) constructor(
+    private val mangaHandler: MangaHandler = dataDeps.mangaHandler,
+    subscribeToPagingData: SubscribeToPagingData = dataDeps.subscribeToPagingData,
+    private val coverCache: CoverCache = dataDeps.coverCache,
     tagId: String,
 ) : EventStateScreenModel<MangaFilterEvent, YearlyFilteredUiState>(YearlyFilteredUiState()) {
 

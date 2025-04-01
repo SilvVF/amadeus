@@ -88,7 +88,7 @@ internal class Downloader(
     private val store: DownloadStore,
     private val getChapter: GetChapter,
     private val getManga: GetManga,
-    applicationScope: ApplicationScope,
+    applicationScope: CoroutineScope,
 ) {
 
 

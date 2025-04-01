@@ -50,8 +50,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
@@ -74,7 +74,7 @@ class RecentsScreen: Screen {
     @Composable
     override fun Content() {
 
-        val screenModel = getScreenModel<RecentsScreenModel>()
+        val screenModel = rememberScreenModel { RecentsScreenModel() }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
 

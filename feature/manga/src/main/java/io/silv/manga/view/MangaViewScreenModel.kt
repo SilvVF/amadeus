@@ -6,12 +6,15 @@ import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.skydoves.sandwich.ApiResponse
 import com.skydoves.sandwich.message
+import io.silv.common.DependencyAccessor
 import io.silv.common.model.Download
 import io.silv.common.model.ReadingStatus
 import io.silv.data.download.CoverCache
 import io.silv.data.download.DownloadManager
 import io.silv.data.manga.GetMangaStatisticsById
 import io.silv.datastore.model.Filters
+import io.silv.di.dataDeps
+import io.silv.di.downloadDeps
 import io.silv.domain.chapter.interactor.ChapterHandler
 import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.chapter.model.toResource
@@ -36,13 +39,13 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class MangaViewScreenModel(
-    getMangaWithChapters: GetMangaWithChapters,
-    getMangaStatisticsById: GetMangaStatisticsById,
-    private val mangaHandler: MangaHandler,
-    private val chapterHandler: ChapterHandler,
-    private val downloadManager: DownloadManager,
-    private val coverCache: CoverCache,
+class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
+    getMangaWithChapters: GetMangaWithChapters = dataDeps.getMangaWithChapters,
+    getMangaStatisticsById: GetMangaStatisticsById = dataDeps.getMangaStatisticsById,
+    private val mangaHandler: MangaHandler = dataDeps.mangaHandler,
+    private val chapterHandler: ChapterHandler = dataDeps.chapterHandler,
+    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
+    private val coverCache: CoverCache = dataDeps.coverCache,
     mangaId: String,
 ) : EventStateScreenModel<MangaViewEvent, MangaViewState>(MangaViewState.Loading) {
 

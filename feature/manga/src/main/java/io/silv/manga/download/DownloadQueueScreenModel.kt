@@ -3,8 +3,11 @@ package io.silv.manga.download
 import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.silv.common.DependencyAccessor
 import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
+import io.silv.di.dataDeps
+import io.silv.di.downloadDeps
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -19,8 +22,8 @@ import kotlinx.coroutines.launch
 @Stable
 data class DownloadItem(val download: Download)
 
-class DownloadQueueScreenModel(
-    private val downloadManager: DownloadManager,
+class DownloadQueueScreenModel @OptIn(DependencyAccessor::class) constructor(
+    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
 ) : StateScreenModel<ImmutableList<DownloadItem>>(persistentListOf()) {
 
     init {

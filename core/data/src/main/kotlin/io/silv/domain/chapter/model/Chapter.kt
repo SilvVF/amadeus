@@ -1,18 +1,17 @@
 package io.silv.domain.chapter.model
 
 import androidx.compose.runtime.Stable
-import io.silv.DateTimeAsLongSerializer
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.ProgressState
 import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.minus
+import io.silv.domain.DateTimeAsLongSerializer
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
 import java.util.UUID
-
 
 @Stable
 data class Chapter(

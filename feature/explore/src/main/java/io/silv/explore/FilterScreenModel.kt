@@ -2,8 +2,9 @@ package io.silv.explore
 
 import android.util.Log
 import androidx.compose.runtime.Stable
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
+import io.silv.common.DependencyAccessor
 import io.silv.common.model.ContentRating
 import io.silv.common.model.Order
 import io.silv.common.model.OrderBy
@@ -11,6 +12,7 @@ import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.QueryFilters
 import io.silv.common.model.Status
 import io.silv.common.model.TagsMode
+import io.silv.di.dataDeps
 import io.silv.domain.TagRepository
 import io.silv.model.DomainTag
 import io.silv.ui.Language
@@ -28,9 +30,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 
-class FilterScreenViewModel(
-    tagRepository: TagRepository,
-) : ViewModel() {
+class FilterScreenViewModel @OptIn(DependencyAccessor::class) constructor(
+    tagRepository: TagRepository = dataDeps.tagRepository,
+) : ScreenModel {
     private val mutableState = MutableStateFlow(FilterState())
     val state = mutableState.asStateFlow()
 
@@ -48,7 +50,7 @@ class FilterScreenViewModel(
                 )
             }
         }
-            .launchIn(viewModelScope)
+            .launchIn(screenModelScope)
     }
 
     private fun <T> List<T>.toggleItem(item: T): ImmutableList<T> {
@@ -74,14 +76,14 @@ class FilterScreenViewModel(
     }
 
     fun resetFilter() {
-        viewModelScope.launch {
+        screenModelScope.launch {
             mutableState.emit(FilterState())
         }
     }
 
     fun updateFilter(action: FilterAction) {
         Log.d("Filter", "Updating $action")
-        viewModelScope.launch {
+        screenModelScope.launch {
             when (action) {
                 is FilterAction.ChangeArtist ->
                     updateFilters {

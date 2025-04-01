@@ -10,18 +10,20 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
+import io.silv.common.DependencyAccessor
 import io.silv.data.workers.createForegroundInfo
+import io.silv.di.dataDeps
 import io.silv.domain.TagRepository
 import io.silv.sync.TagSyncWorkName
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.util.concurrent.TimeUnit
 
+@OptIn(DependencyAccessor::class)
 internal class TagSyncWorker(
     appContext: Context,
     workerParams: WorkerParameters,
-) : CoroutineWorker(appContext, workerParams), KoinComponent {
-    private val tagRepository by inject<TagRepository>()
+) : CoroutineWorker(appContext, workerParams) {
+
+    private val tagRepository = dataDeps.tagsRepository
 
     override suspend fun doWork(): Result {
         return if (tagRepository.sync()) {

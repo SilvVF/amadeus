@@ -5,10 +5,12 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.silv.common.DependencyAccessor
 import io.silv.common.model.AppTheme
 import io.silv.common.model.AutomaticUpdatePeriod
 import io.silv.datastore.SettingsStore
 import io.silv.datastore.UserSettings
+import io.silv.di.dataDeps
 import io.silv.sync.MangaSyncPeriodicWorkName
 import io.silv.sync.workers.MangaSyncWorker
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,9 +19,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class SettingsScreenModel(
-    private val workManager: WorkManager,
-    private val settingsStore: SettingsStore
+class SettingsScreenModel @OptIn(DependencyAccessor::class) constructor(
+    private val workManager: WorkManager = dataDeps.workManager,
+    private val settingsStore: SettingsStore = dataDeps.settingsStore
 ): StateScreenModel<SettingsState>(SettingsState()) {
 
     val settingsPrefs = settingsStore.observe()

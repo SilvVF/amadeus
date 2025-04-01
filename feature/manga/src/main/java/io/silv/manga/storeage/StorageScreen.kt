@@ -41,12 +41,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFold
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import io.silv.common.DependencyAccessor
 import io.silv.data.download.ChapterCache
 import io.silv.data.util.DiskUtil
+import io.silv.di.dataDeps
+import io.silv.di.downloadDeps
 import io.silv.domain.manga.repository.MangaRepository
 import io.silv.manga.R
 import io.silv.ui.theme.LocalSpacing
@@ -54,7 +57,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.koin.compose.koinInject
 import java.io.File
 
 
@@ -65,7 +67,7 @@ class StorageScreen : Screen {
     override fun Content() {
         val space = LocalSpacing.current
         val navigator = LocalNavigator.currentOrThrow
-        val screenModel = getScreenModel<StorageScreenModel>()
+        val screenModel = rememberScreenModel { StorageScreenModel() }
         val state = screenModel.state.collectAsStateWithLifecycle()
 
         Scaffold(
@@ -181,11 +183,12 @@ class StorageScreen : Screen {
     }
 }
 
+@OptIn(DependencyAccessor::class)
 @Composable
 fun UnusedMangaInfo(
     modifier: Modifier = Modifier
 ) {
-    val mangaRepository = koinInject<MangaRepository>()
+    val mangaRepository = remember { dataDeps.mangaRepository }
     val unusedCount by mangaRepository.observeUnusedCount()
         .collectAsStateWithLifecycle(initialValue = 0)
 
@@ -229,6 +232,7 @@ fun UnusedMangaInfo(
     }
 }
 
+@OptIn(DependencyAccessor::class)
 @Composable
 private fun ChapterCacheInfo(
     modifier: Modifier = Modifier
@@ -236,7 +240,7 @@ private fun ChapterCacheInfo(
     val context = LocalContext.current
     val space = LocalSpacing.current
 
-    val chapterCache = koinInject<ChapterCache>()
+    val chapterCache = remember { downloadDeps.chapterCache }
     var cacheReadableSizeSema by remember { mutableIntStateOf(0) }
     val cacheReadableSize = remember(cacheReadableSizeSema) { chapterCache.readableSize }
     val scope = rememberCoroutineScope()

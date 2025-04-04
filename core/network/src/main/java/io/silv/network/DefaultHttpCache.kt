@@ -12,7 +12,6 @@ import io.ktor.http.Url
 import io.ktor.util.date.GMTDate
 import io.ktor.util.flattenEntries
 import io.ktor.util.hex
-import io.ktor.utils.io.core.use
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -51,6 +50,13 @@ private class LruCacheStorage(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : CacheStorage {
 
+    fun canCache(url: Url): Boolean {
+        val urlString = url.toString()
+        return !(urlString.startsWith("https://uploads.mangadex.org/covers") ||
+                urlString.startsWith("https://api.mangadex.org/at-home/server/") ||
+                urlString.contains(".png") || urlString.contains(".jpg")) || urlString.contains(".webp")
+    }
+
     /** Cache class used for cache management. */
     private val diskCache by lazy {
         runBlocking {
@@ -59,19 +65,10 @@ private class LruCacheStorage(
     }
 
     override suspend fun store(url: Url, data: CachedResponseData): Unit = withContext(dispatcher) {
-        if (
-            url.toString().startsWith("https://uploads.mangadex.org/covers") ||
-            url.toString().startsWith("https://api.mangadex.org/at-home/server/") ||
-            url.toString().contains(".png") || url.toString().contains(".jpg")
-        ) {
-            return@withContext
-        }
 
         val urlHex = key(url)
         val caches = readCache(urlHex)
             .filterNot { it.varyKeys == data.varyKeys } + data
-
-
         Log.d(
             "HttpCacheImpl",
             "writing to cache caches $url"
@@ -82,11 +79,7 @@ private class LruCacheStorage(
     override suspend fun findAll(url: Url): Set<CachedResponseData> {
         // even with no-cache headers still trying to read from cache
         // doesn't try to write to cache though
-        if (
-            url.toString().startsWith("https://uploads.mangadex.org/covers") ||
-            url.toString().startsWith("https://api.mangadex.org/at-home/server/") ||
-            url.toString().contains(".png") || url.toString().contains(".jpg")
-        ) {
+        if (!canCache(url)) {
             return emptySet()
         }
 
@@ -103,13 +96,7 @@ private class LruCacheStorage(
     }
 
     override suspend fun find(url: Url, varyKeys: Map<String, String>): CachedResponseData? {
-        // even with no-cache headers still trying to read from cache
-        // doesn't try to write to cache though
-        if (
-            url.toString().startsWith("https://uploads.mangadex.org/covers") ||
-            url.toString().startsWith("https://api.mangadex.org/at-home/server/") ||
-            url.toString().contains(".png") || url.toString().contains(".jpg")
-        ) {
+        if (!canCache(url)) {
             return null
         }
         Log.d(
@@ -165,7 +152,7 @@ private class LruCacheStorage(
             val source = fileSystem.source(container.toPath()).buffer()
             val requestsCount = source.readInt()
             val caches = mutableSetOf<CachedResponseData>()
-            for (i in 0 until requestsCount) {
+            repeat(requestsCount) {
                 caches.add(readCache(source))
             }
             source.discard(10, TimeUnit.SECONDS)

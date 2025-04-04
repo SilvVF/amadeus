@@ -2,14 +2,13 @@ package io.silv.di
 
 import android.content.Context
 import io.silv.common.DependencyAccessor
-import io.silv.common.appDeps
+import io.silv.common.commonDeps
 import io.silv.data.download.ChapterCache
 import io.silv.data.download.DownloadCache
 import io.silv.data.download.DownloadManager
 import io.silv.data.download.DownloadProvider
 import io.silv.data.download.Downloader
-import io.silv.data.download.StorageManager
-import io.silv.datastore.DataStoreModule
+import io.silv.datastore.dataStoreDeps
 import io.silv.network.networkDeps
 import io.silv.network.sources.ImageSourceFactory
 
@@ -20,24 +19,21 @@ public lateinit var downloadDeps: DownloadDependencies
 abstract class DownloadDependencies {
 
     abstract val context: Context
-    abstract val dataStoreModule: DataStoreModule
 
     val chapterCache = ChapterCache(context, networkDeps.json)
 
     val imageSourceFactory = ImageSourceFactory(networkDeps.mangaDexClient)
 
-    private val storageManager = StorageManager(context)
-    private val downloadProvider = DownloadProvider(storageManager)
+    val downloadProvider = DownloadProvider(context)
 
     val downloadCache = DownloadCache(
         context,
-        downloadProvider,
-        storageManager
+        downloadProvider
     )
 
     val downloadManager = DownloadManager(
         context,
-        appDeps.applicationScope,
+        commonDeps.applicationScope,
         downloadProvider,
         Downloader(
             context,
@@ -47,10 +43,10 @@ abstract class DownloadDependencies {
             imageSourceFactory,
             networkDeps.mangaDexApi,
             networkDeps.mangaDexClient,
-            dataStoreModule.downloadStore,
+            dataStoreDeps.downloadStore,
             dataDeps.getChapter,
             dataDeps.getManga,
-            appDeps.applicationScope
+            commonDeps.dispatchers
         ),
         downloadCache,
         dataDeps.getManga,

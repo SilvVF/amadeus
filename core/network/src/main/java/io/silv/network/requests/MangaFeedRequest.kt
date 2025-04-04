@@ -5,6 +5,7 @@ import io.silv.common.model.Order
 import io.silv.common.model.OrderBy
 import io.silv.network.query.QueryParam
 import io.silv.network.query.QueryParams
+import io.silv.network.query.queryParamsOf
 
 /**
  * @param includes Available values : manga, scanlation_group, user
@@ -33,7 +34,7 @@ data class MangaFeedRequest(
     val includeExternalUrl: Int? = null,
 ) : QueryParams {
     override fun createQueryParams(): List<QueryParam> {
-        return listOf(
+        return queryParamsOf(
             Pair("limit", limit),
             Pair("offset", offset),
             Pair("translatedLanguage", translatedLanguage),
@@ -52,9 +53,5 @@ data class MangaFeedRequest(
             Pair("includeFuturePublishAt", includeFuturePublishAt),
             Pair("includeExternalUrl", includeExternalUrl),
         )
-            .filter { it.second != null }
-            .map {
-                QueryParam(it.first, it.second.toString())
-            }
     }
 }

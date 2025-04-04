@@ -73,6 +73,7 @@ import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import io.silv.common.model.Download
+import io.silv.data.download.QItem
 import io.silv.datastore.ReaderPrefs
 import io.silv.datastore.collectAsState
 import io.silv.domain.chapter.model.Chapter
@@ -87,9 +88,9 @@ import io.silv.ui.layout.ExpandableInfoLayout
 import io.silv.ui.layout.ExpandableScope
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
+
+
+
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import me.saket.swipe.SwipeAction
@@ -105,7 +106,7 @@ private enum class MenuTabs(val icon: ImageVector) {
 fun ReaderMenuOverlay(
     readerChapter: () -> ReaderChapter,
     manga: () -> Manga,
-    chapters: () -> ImmutableList<Chapter>,
+    chapters: () -> List<Chapter>,
     menuVisible: () -> Boolean,
     currentPage: () -> Int,
     layoutDirection: LayoutDirection,
@@ -137,7 +138,7 @@ fun ReaderMenuOverlay(
     }
 
     val tabs = remember {
-        MenuTabs.values().toList().toImmutableList()
+        MenuTabs.values().toList().toList()
     }
 
     val menuPagerState = rememberPagerState { tabs.size }
@@ -308,7 +309,7 @@ data class ChapterActions(
 @Composable
 private fun ExpandableScope.ChapterList(
     modifier: Modifier = Modifier,
-    chapters: () -> ImmutableList<Chapter>,
+    chapters: () -> List<Chapter>,
     actions: ChapterActions,
 ) {
     val lazyListState = rememberLazyListState()
@@ -320,7 +321,7 @@ private fun ExpandableScope.ChapterList(
             chapters,
             onReadClicked = { actions.markRead(it) },
             onDeleteClicked = { actions.delete(it) },
-            downloadsProvider =  { persistentListOf() },
+            downloadsProvider =  { emptyList() },
             showFullTitle = true,
             onMarkAsRead = { actions.markRead(it) },
             onBookmark = { actions.bookmark(it) },
@@ -333,8 +334,8 @@ private fun ExpandableScope.ChapterList(
 
 
 fun LazyListScope.chapterListItems(
-    chaptersProvider: () -> ImmutableList<Chapter>,
-    downloadsProvider: () -> ImmutableList<Download>,
+    chaptersProvider: () -> List<Chapter>,
+    downloadsProvider: () -> List<QItem<Download>>,
     showFullTitle: Boolean,
     onMarkAsRead: (id: String) -> Unit,
     onBookmark: (id: String) -> Unit,
@@ -398,7 +399,7 @@ fun LazyListScope.chapterListItems(
                         horizontal = space.large,
                     ),
                 chapter = chapter,
-                download = downloadsProvider().fastFirstOrNull { it.chapter.id == chapter.id },
+                download = downloadsProvider().fastFirstOrNull { it.data.chapter.id == chapter.id },
                 showFullTitle = showFullTitle,
                 onDownloadClicked = { onDownloadClicked(chapter.id) },
                 onDeleteClicked = {
@@ -443,7 +444,7 @@ private fun ChapterListItem(
     modifier: Modifier = Modifier,
     showFullTitle: Boolean,
     chapter: Chapter,
-    download: Download?,
+    download: QItem<Download>?,
     onDownloadClicked: () -> Unit,
     onDeleteClicked: () -> Unit,
     onPauseClicked: (download: Download) -> Unit,
@@ -501,13 +502,13 @@ private fun ChapterListItem(
         val status by remember(download) {
             download?.statusFlow
                 ?: flowOf(
-                    if (chapter.downloaded) Download.State.DOWNLOADED else Download.State.NOT_DOWNLOADED
+                    if (chapter.downloaded) QItem.State.COMPLETED else QItem.State.IDLE
                 )
         }
-            .collectAsState(Download.State.NOT_DOWNLOADED)
+            .collectAsState(QItem.State.IDLE)
 
         val progress by remember(download) {
-            download?.progressFlow ?: flowOf(0)
+            download?.data?.progressFlow ?: flowOf(0)
         }
             .collectAsState(0)
 
@@ -520,7 +521,7 @@ private fun ChapterListItem(
                     ChapterDownloadAction.START -> onDownloadClicked()
                     ChapterDownloadAction.START_NOW -> Unit
                     ChapterDownloadAction.CANCEL -> onCancelClicked(
-                        download ?: return@ChapterDownloadIndicator
+                        download?.data ?: return@ChapterDownloadIndicator
                     )
                     ChapterDownloadAction.DELETE -> onDeleteClicked()
                 }
@@ -588,7 +589,7 @@ fun ReaderOptions(
                 verticalArrangement = Arrangement.Center
             ) {
                 val colors = remember {
-                    persistentListOf(
+                    listOf(
                         Color.Black to "Black",
                         Color.Gray to "Gray",
                         Color.White to "White",

@@ -10,6 +10,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
@@ -20,6 +22,7 @@ import io.silv.amadeus.crash.CrashActivity
 import io.silv.amadeus.crash.GlobalExceptionHandler
 import io.silv.amadeus.dependency.rememberDataDependency
 import io.silv.common.model.AppTheme
+import io.silv.explore.ExploreTab
 import io.silv.ui.LocalAppState
 import io.silv.ui.rememberAppState
 import io.silv.ui.theme.AmadeusTheme
@@ -45,8 +48,8 @@ class MainActivity : ComponentActivity() {
                 rememberAppState(
                     windowSizeClass = windowSizeClass,
                     networkConnectivity = connectivity,
-                    searchChannel = NavHost.globalSearchChannel,
-                    bottomBarVisibilityChannel = NavHost.bottomBarVisibility
+                    searchTab = ExploreTab,
+                    baseScreen = NavHost
                 )
 
             val theme by produceState(initialValue = AppTheme.DYNAMIC_COLOR_DEFAULT) {
@@ -62,6 +65,11 @@ class MainActivity : ComponentActivity() {
                         LocalAppState provides appState,
                     ) {
                         Navigator(NavHost) {
+                            DisposableEffect(Unit) {
+                                appState.navigator = it
+                                onDispose { appState.navigator = null }
+                            }
+
                             FadeTransition(it)
                         }
                     }

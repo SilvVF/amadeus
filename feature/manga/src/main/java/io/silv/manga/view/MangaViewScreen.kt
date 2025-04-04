@@ -112,10 +112,10 @@ import io.silv.ui.layout.PullRefresh
 import io.silv.ui.layout.ScrollbarLazyColumn
 import io.silv.ui.openOnWeb
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toImmutableSet
+
+
+
+
 import kotlinx.coroutines.launch
 
 class MangaViewScreen(
@@ -541,7 +541,7 @@ fun MangaViewSuccessScreen(
             ) {
 
                 var coverImages by remember {
-                    mutableStateOf<ImmutableList<String>>(persistentListOf<String>())
+                    mutableStateOf<List<String>>(emptyList())
                 }
                 var error by remember { mutableStateOf<String?>(null) }
                 var loading by remember { mutableStateOf(false) }
@@ -553,7 +553,7 @@ fun MangaViewSuccessScreen(
                     getMangaCoverArtById.await(state.manga.id)
                         .onSuccess {
                             error = null
-                            coverImages = data.toImmutableSet().toImmutableList()
+                            coverImages = data
                         }
                         .onFailure {
                             error = message()

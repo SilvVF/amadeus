@@ -58,7 +58,7 @@ import io.silv.ui.composables.mangaGrid
 import io.silv.ui.composables.mangaList
 import io.silv.ui.layout.TopAppBarWithBottomContent
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.persistentListOf
+
 
 class MangaFilterScreen(
     private val tag: String,
@@ -149,7 +149,7 @@ class MangaFilterScreen(
                     ),
                     bottomContent = {
                         val items = remember {
-                            persistentListOf(
+                            listOf(
                                 "all time" to TimePeriod.AllTime,
                                 "last year" to TimePeriod.OneYear,
                                 "last 6 months" to TimePeriod.SixMonths,

@@ -5,17 +5,17 @@ import androidx.lifecycle.LifecycleOwner
 import io.silv.common.DependencyAccessor
 
 /**
- * Global var for making the [CommonDependencies] accessible.
+ * Global var for making the [AndroidDependencies] accessible.
  */
 @DependencyAccessor
-public lateinit var commonDeps: CommonDependencies
+public lateinit var androidDeps: AndroidDependencies
 
 @OptIn(DependencyAccessor::class)
-public val LifecycleOwner.commonDepsLifecycle: CommonDependencies
-    get() = commonDeps
+public val LifecycleOwner.commonDepsLifecycle: AndroidDependencies
+    get() = androidDeps
 
 @OptIn(DependencyAccessor::class)
-abstract class CommonDependencies {
+abstract class AndroidDependencies {
 
     abstract val application: Application
 }

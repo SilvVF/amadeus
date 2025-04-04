@@ -29,16 +29,16 @@ class MangaDexApi(
     private val atHomeClient: AtHomeClient,
     private val dispatchers: AmadeusDispatchers,
 ) {
-    val mangaDexUrl = "https://api.mangadex.org"
+    val BASE_URL = "https://api.mangadex.org"
 
     suspend fun getMangaStatistics(id: String) =
         withContext(dispatchers.io) {
-            client.getApiResponse<StatisticsByMangaIdResponse>("$mangaDexUrl/statistics/manga/$id")
+            client.getApiResponse<StatisticsByMangaIdResponse>("$BASE_URL/statistics/manga/$id")
         }
 
     suspend fun getUserLists(id: String) =
         withContext(dispatchers.io) {
-            client.getApiResponse<UserIdListResponse>("$mangaDexUrl/user/$id/list")
+            client.getApiResponse<UserIdListResponse>("$BASE_URL/user/$id/list")
         }
 
     suspend fun getAuthorList(authorListRequest: AuthorListRequest) =
@@ -46,7 +46,7 @@ class MangaDexApi(
             val request =
                 authorListRequest
                     .createQueryParams()
-                    .createQuery("$mangaDexUrl/author")
+                    .createQuery("$BASE_URL/author")
 
             client.getApiResponse<AuthorListResponse>(request)
         }
@@ -56,14 +56,14 @@ class MangaDexApi(
             val request =
                 coverArtRequest
                     .createQueryParams()
-                    .createQuery("$mangaDexUrl/cover")
+                    .createQuery("$BASE_URL/cover")
 
             client.getApiResponse<CoverArtListResponse>(request)
         }
 
     suspend fun getChapterData(chapterListRequest: ChapterListRequest) =
         withContext(dispatchers.io) {
-            val request = chapterListRequest.createQueryParams().createQuery("$mangaDexUrl/chapter")
+            val request = chapterListRequest.createQueryParams().createQuery("$BASE_URL/chapter")
 
             client.getApiResponse<ChapterListResponse>(request)
         }
@@ -75,14 +75,14 @@ class MangaDexApi(
         val request =
             mangaFeedRequest
                 .createQueryParams()
-                .createQuery("$mangaDexUrl/manga/$mangaId/feed")
+                .createQuery("$BASE_URL/manga/$mangaId/feed")
 
         client.getApiResponse<ChapterListResponse>(request)
     }
 
     suspend fun getTagList() =
         withContext(dispatchers.io) {
-            client.getApiResponse<TagResponse>("$mangaDexUrl/manga/tag")
+            client.getApiResponse<TagResponse>("$BASE_URL/manga/tag")
         }
 
     suspend fun getMangaById(
@@ -92,7 +92,7 @@ class MangaDexApi(
         val request =
             mangaByIdRequest
                 .createQueryParams()
-                .createQuery("$mangaDexUrl/manga/$id")
+                .createQuery("$BASE_URL/manga/$id")
 
         client.getApiResponse<MangaByIdResponse>(request)
     }
@@ -102,13 +102,13 @@ class MangaDexApi(
             val request =
                 mangaRequest
                     .createQueryParams()
-                    .createQuery("$mangaDexUrl/manga")
+                    .createQuery("$BASE_URL/manga")
 
             client.getApiResponse<MangaListResponse>(request)
         }
 
     suspend fun getChapterImages(chapterId: String) =
         withContext(dispatchers.io) {
-            atHomeClient.getApiResponse<ChapterImageResponse>("$mangaDexUrl/at-home/server/$chapterId")
+            atHomeClient.getApiResponse<ChapterImageResponse>("$BASE_URL/at-home/server/$chapterId")
         }
 }

@@ -1,14 +1,8 @@
 package io.silv.domain.manga.interactor
 
-import io.silv.domain.chapter.repository.ChapterRepository
 import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.domain.manga.repository.MangaRepository
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.conflate
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.firstOrNull
 
 /**
  * Combines Saved manga with all resource repository's and transforms the manga received by id into a

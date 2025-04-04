@@ -1,15 +1,11 @@
 package io.silv.reader.loader
 
-import android.util.Log
 import io.ktor.client.utils.CacheControl
 import io.ktor.http.HttpHeaders
-import io.silv.common.ApplicationScope
 import io.silv.common.coroutine.ConcurrentPriorityQueue
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.Page
 import io.silv.data.download.ChapterCache
-import io.silv.di.dataDeps
-import io.silv.di.downloadDeps
 import io.silv.domain.chapter.model.toResource
 import io.silv.network.sources.HttpSource
 import io.silv.network.sources.ImageSourceFactory

@@ -15,7 +15,6 @@ import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaUpdate
 import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.network.model.manga.MangaDto
-import kotlinx.collections.immutable.toPersistentList
 
 object MangaMapper {
 
@@ -152,7 +151,7 @@ object MangaMapper {
     ): MangaWithChapters {
         return MangaWithChapters(
             manga = entity.manga.let(MangaMapper::mapManga),
-            chapters = entity.chapters.map(ChapterMapper::mapChapter).toPersistentList()
+            chapters = entity.chapters.map(ChapterMapper::mapChapter)
         )
     }
 }

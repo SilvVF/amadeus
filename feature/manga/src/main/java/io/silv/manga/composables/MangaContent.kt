@@ -59,8 +59,8 @@ import io.silv.domain.manga.model.Manga
 import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.noRippleClickable
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
+
+
 import kotlin.math.roundToInt
 
 @Composable
@@ -103,18 +103,16 @@ fun MangaActions(
             mutableStateOf(false)
         }
 
-        val items by remember(inLibrary) {
-            derivedStateOf {
-                persistentListOf(
-                    MangaActionItem(
-                        icon = if (inLibrary) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        label = if (inLibrary) "Added to library" else "Add to library",
-                        selected = inLibrary,
-                        action = addToLibraryClicked,
-                    ),
-                    MangaActionItem(Icons.Filled.Image, "Cover art", showChapterArt),
-                )
-            }
+        val items = remember(inLibrary) {
+            listOf(
+                MangaActionItem(
+                    icon = if (inLibrary) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    label = if (inLibrary) "Added to library" else "Add to library",
+                    selected = inLibrary,
+                    action = addToLibraryClicked,
+                ),
+                MangaActionItem(Icons.Filled.Image, "Cover art", showChapterArt),
+            )
         }
 
         items.fastForEach { (icon, label, action, selected) ->
@@ -146,14 +144,14 @@ fun MangaActions(
         }
         Box {
 
-            val statuses = remember { ReadingStatus.entries.toImmutableList() }
+            val statuses = remember { ReadingStatus.entries.toList() }
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
                 IconButton(
-                    onClick = {statusDialogVisible = !statusDialogVisible },
+                    onClick = { statusDialogVisible = !statusDialogVisible },
                     modifier = Modifier.padding(horizontal = space.large),
                 ) {
                     Icon(
@@ -179,7 +177,7 @@ fun MangaActions(
                     ) {
                         RadioButton(
                             selected = status == readingStatus,
-                            onClick = { changeStatus(status)  }
+                            onClick = { changeStatus(status) }
                         )
                         DropdownMenuItem(
                             text = { Text(status.toString()) },
@@ -224,8 +222,8 @@ private fun TagsAndLanguages(
             modifier = Modifier.padding(space.med),
         )
         TranslatedLanguageTags(
-            tags = remember(manga.id){
-                manga.availableTranslatedLanguages.toImmutableList()
+            tags = remember(manga.id) {
+                manga.availableTranslatedLanguages.toList()
             }
         )
     }
@@ -254,17 +252,17 @@ private fun MangaInfo(
         )
         MangaSummary(
             modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-                .padding(horizontal = 16.dp)
-                .noRippleClickable { expanded = !expanded },
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .padding(horizontal = 16.dp)
+                    .noRippleClickable { expanded = !expanded },
             expandedDescription = manga.description,
             shrunkDescription =
-            remember(manga.description) {
-                manga.description.replace(whitespaceLineRegex, "\n")
-                    .trimEnd()
-            },
+                remember(manga.description) {
+                    manga.description.replace(whitespaceLineRegex, "\n")
+                        .trimEnd()
+                },
             expanded = expanded,
         )
     }
@@ -336,11 +334,11 @@ private fun MangaSummary(
                 ) {
                     Icon(
                         imageVector =
-                        if (expanded) {
-                            Icons.Filled.KeyboardArrowUp
-                        } else {
-                            Icons.Filled.KeyboardArrowDown
-                        },
+                            if (expanded) {
+                                Icons.Filled.KeyboardArrowUp
+                            } else {
+                                Icons.Filled.KeyboardArrowDown
+                            },
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.background(

@@ -11,6 +11,7 @@ import io.silv.common.model.Download
 import io.silv.common.model.ReadingStatus
 import io.silv.data.download.CoverCache
 import io.silv.data.download.DownloadManager
+import io.silv.data.download.QItem
 import io.silv.data.manga.GetMangaStatisticsById
 import io.silv.datastore.model.Filters
 import io.silv.di.dataDeps
@@ -25,9 +26,9 @@ import io.silv.domain.manga.model.toResource
 import io.silv.model.MangaStats
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ioCoroutineScope
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
+
+
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -36,6 +37,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -59,11 +61,20 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
 
     init {
         combine(
-            getMangaWithChapters.subscribe(mangaId),
+            getMangaWithChapters.subscribe(mangaId).onStart {
+                val first = getMangaWithChapters.await(mangaId)
+                if (first == null) {
+                    mutableState.update { MangaViewState.Error("failed to get manga") }
+                } else {
+                    if (first.chapters.isEmpty()) {
+                        mutableState.update { MangaViewState.Success(first.manga) }
+                        refreshChapterList()
+                    }
+                }
+            },
             downloadManager.cacheChanges,
             downloadManager.queueState
         ) { (manga, chapters), _, _ ->
-
             mutableState.update {
                 (it.success ?: MangaViewState.Success(manga)).copy(
                     manga = manga,
@@ -73,7 +84,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
                                 .isChapterDownloaded(chapter.title, chapter.scanlator, manga.titleEnglish)
                         )
                     }
-                        .toImmutableList(),
+                        .toList(),
                 )
             }
         }
@@ -84,9 +95,9 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
             updateSuccess { state ->
                 state.copy(
                     downloads = downloads.filter {
-                        it.chapter.id in state.chapters.map { c -> c.id }
+                        it.data.chapter.id in state.chapters.map { c -> c.id }
                     }
-                        .toImmutableList(),
+                        .toList(),
                 )
             }
         }
@@ -305,7 +316,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
         }
     }
 
-    private fun List<Chapter>.applyFilters(filters: Filters): ImmutableList<Chapter> {
+    private fun List<Chapter>.applyFilters(filters: Filters): List<Chapter> {
         val sortedChapters: List<Chapter> =
             when {
                 filters.byChapterAsc == true -> sortedBy { it.chapter }
@@ -325,7 +336,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
             .filter { if (filters.bookmarked) it.bookmarked else true }
             .filter { if (filters.downloaded) it.downloaded else true }
             .filter { if (filters.unread) !it.read else true }
-            .toImmutableList()
+            .toList()
     }
 }
 
@@ -368,11 +379,11 @@ sealed interface MangaViewState {
 
     data class Success(
         val manga: Manga,
-        val downloads: ImmutableList<Download> = persistentListOf(),
+        val downloads: List<QItem<Download>> = emptyList(),
         val loadingArt: Boolean = false,
         val statsUiState: StatsUiState = StatsUiState.Loading,
-        val chapters: ImmutableList<Chapter> = persistentListOf(),
-        val filteredChapters: ImmutableList<Chapter> = persistentListOf(),
+        val chapters: List<Chapter> = emptyList(),
+        val filteredChapters: List<Chapter> = emptyList(),
         val filters: Filters = Filters(),
         val refreshingChapters: Boolean = false
     ) : MangaViewState

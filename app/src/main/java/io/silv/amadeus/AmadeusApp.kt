@@ -17,19 +17,17 @@ import eu.kanade.tachiyomi.TachiyomiImageDecoder
 import io.silv.amadeus.coil.CoilDiskCache
 import io.silv.amadeus.coil.CoilMemoryCache
 import io.silv.amadeus.coil.addDiskFetcher
-import io.silv.amadeus.dependency.CommonDependencies
+import io.silv.amadeus.dependency.AndroidDependencies
+import io.silv.amadeus.dependency.androidDeps
 import io.silv.common.DependencyAccessor
-import io.silv.amadeus.dependency.commonDeps
-import io.silv.common.AppDependencies
-import io.silv.common.appDeps
+import io.silv.common.CommonDependencies
+import io.silv.common.commonDeps
 import io.silv.di.DownloadDependencies
 import io.silv.di.downloadDeps
 import io.silv.data.download.CoverCache
 import io.silv.database.DaosModule
 import io.silv.database.DatabaseModule
-import io.silv.datastore.DataStoreModule
-import io.silv.datastore.DataStoreModuleImpl
-import io.silv.datastore.dataStore
+import io.silv.datastore.DataStoreDependencies
 import io.silv.datastore.dataStoreDeps
 import io.silv.di.DataDependencies
 import io.silv.di.dataDeps
@@ -69,29 +67,30 @@ class AmadeusApp : Application(), ImageLoaderFactory {
             }
         }
 
-        appDeps = object : AppDependencies() {}
+        commonDeps = object : CommonDependencies() {}
 
         val databaseModule = DatabaseModule(this)
         val daosModule = DaosModule(databaseModule)
 
-        dataStoreDeps = DataStoreModuleImpl(this)
+        dataStoreDeps = object: DataStoreDependencies() {
+            override val context: Application get() = this@AmadeusApp
+        }
 
-        networkDeps = object:  NetworkDependencies() {
+        networkDeps = object : NetworkDependencies() {
             override val context: Context get() = this@AmadeusApp
         }
 
-        dataDeps = object: DataDependencies() {
+        dataDeps = object : DataDependencies() {
             override val databaseModule: DatabaseModule = databaseModule
             override val context: Context get() = this@AmadeusApp
             override val daosModule: DaosModule = daosModule
         }
 
-        downloadDeps = object: DownloadDependencies() {
+        downloadDeps = object : DownloadDependencies() {
             override val context: Context get() = this@AmadeusApp
-            override val dataStoreModule: DataStoreModule get() = dataStoreDeps
         }
 
-        commonDeps = object : CommonDependencies(){
+        androidDeps = object : AndroidDependencies() {
             override val application: Application get() = this@AmadeusApp
         }
 
@@ -144,10 +143,9 @@ class AmadeusApp : Application(), ImageLoaderFactory {
             .allowRgb565(isLowRamDevice(this@AmadeusApp))
             .diskCache(diskCache)
             .memoryCache(memCache)
-            // Coil spawns a new thread for every image load by default
             .fetcherDispatcher(Dispatchers.IO.limitedParallelism(8))
-            .decoderDispatcher(Dispatchers.IO.limitedParallelism(2))
-            .transformationDispatcher(Dispatchers.IO.limitedParallelism(2))
+            .decoderDispatcher(Dispatchers.IO.limitedParallelism(4))
+            .transformationDispatcher(Dispatchers.IO.limitedParallelism(4))
         return if (true) {
             // TODO(remove this)
             builder.logger(DebugLogger())

@@ -10,26 +10,19 @@ import io.silv.common.DependencyAccessor
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_settings")
 
 @DependencyAccessor
-lateinit var dataStoreDeps: DataStoreModule
+lateinit var dataStoreDeps: DataStoreDependencies
 
-interface DataStoreModule {
+abstract class DataStoreDependencies {
 
-     val dataStore: DataStore<Preferences>
+    abstract val context: Application
 
-     val downloadStore: DownloadStore
+    val dataStore: DataStore<Preferences> = context.dataStore
 
-     val settingsStore: SettingsStore
-}
-
-class DataStoreModuleImpl(context: Context): DataStoreModule {
-
-    override val dataStore: DataStore<Preferences> = context.dataStore
-
-    override val settingsStore: SettingsStore by lazy {
+    val settingsStore: SettingsStore by lazy {
         SettingsStore(context)
     }
 
-    override val downloadStore: DownloadStore by lazy {
+    val downloadStore: DownloadStore by lazy {
         DownloadStore(context)
     }
 }

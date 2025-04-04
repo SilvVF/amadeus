@@ -11,6 +11,7 @@ import io.silv.common.DependencyAccessor
 import io.silv.common.createTrigger
 import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
+import io.silv.data.download.QItem
 import io.silv.di.dataDeps
 import io.silv.di.downloadDeps
 import io.silv.domain.chapter.interactor.ChapterHandler
@@ -32,7 +33,7 @@ import io.silv.library.state.LibraryMangaState
 import io.silv.library.state.LibraryState
 import io.silv.sync.workers.MangaSyncWorker
 import io.silv.ui.EventStateScreenModel
-import kotlinx.collections.immutable.toImmutableList
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,7 +53,7 @@ import kotlinx.coroutines.withContext
 data class UiChapterUpdate(
     val update: UpdateWithRelations,
     val downloaded: Boolean,
-    val download: Download?
+    val download: QItem<Download>?
 )
 
 class LibraryScreenModel @OptIn(DependencyAccessor::class) constructor(
@@ -93,7 +94,7 @@ class LibraryScreenModel @OptIn(DependencyAccessor::class) constructor(
                             }
                         )
                     }
-                        .toImmutableList()
+                        .toList()
                 )
             }
         }
@@ -119,9 +120,9 @@ class LibraryScreenModel @OptIn(DependencyAccessor::class) constructor(
                     state.copy(
                         libraryMangaState =
                         (state.libraryMangaState.success ?: LibraryMangaState.Success()).copy(
-                            filteredTagIds = tagIds.toImmutableList(),
+                            filteredTagIds = tagIds.toList(),
                             filteredText = query,
-                            mangaWithChapters = list.toImmutableList()
+                            mangaWithChapters = list.toList()
                         )
                     )
                 }
@@ -150,13 +151,13 @@ class LibraryScreenModel @OptIn(DependencyAccessor::class) constructor(
                             UiChapterUpdate(
                                 update = it,
                                 downloaded = downloaded,
-                                download = downloads.find { download -> download.chapter.id == it.chapterId },
+                                download = downloads.find { download -> download.data.chapter.id == it.chapterId },
                             )
                         }
                             .groupBy { it.update.chapterUpdatedAt.date.toEpochDays() }
                             .toList()
-                            .map { it.first to it.second.toImmutableList() }
-                            .toImmutableList()
+                            .map { it.first to it.second.toList() }
+                            .toList()
                     )
                 }
             }
@@ -168,8 +169,8 @@ class LibraryScreenModel @OptIn(DependencyAccessor::class) constructor(
                 val grouped = chapters.groupBy { it.mangaId }
                     .mapKeys { (k, _) -> cachedManga.getOrElse(k) { getManga.await(k) } }
                     .toList()
-                    .mapNotNull { if (it.first == null) null else Pair(it.first!!, it.second.toImmutableList()) }
-                    .toImmutableList()
+                    .mapNotNull { if (it.first == null) null else Pair(it.first!!, it.second.toList()) }
+                    .toList()
 
                 mutableState.update { state ->
                     state.copy(

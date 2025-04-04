@@ -13,7 +13,6 @@ java {
 dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.kotlin.collections.immutable)
     implementation(libs.kotlin.serialization)
     compileOnly(libs.compose.stable.marker)
 }

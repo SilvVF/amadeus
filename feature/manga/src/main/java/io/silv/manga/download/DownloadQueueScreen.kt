@@ -66,8 +66,8 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.model.Download
 import io.silv.common.model.Page
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
+
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -94,8 +94,8 @@ class DownloadQueueScreen: Screen {
                 cancelAll = screenModel::clearQueue,
                 cancelAllForSeries = {download ->
                      val toCancel = downloads
-                         .fastFilter { it.download.manga.id == download.manga.id }
-                         .map { it.download }
+                         .fastFilter { it.download.data.manga.id == download.manga.id }
+                         .map { it.download.data }
 
                     screenModel::cancel.invoke(toCancel)
                 },
@@ -119,7 +119,7 @@ data class DownloadQueueActions(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DownloadScreenContent(
-    downloads: ImmutableList<DownloadItem>,
+    downloads: List<DownloadItem>,
     actions: DownloadQueueActions,
     running: Boolean
 ) {
@@ -232,7 +232,7 @@ private fun DownloadScreenContent(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun VerticalReorderList(
-    downloads: ImmutableList<DownloadItem>,
+    downloads: List<DownloadItem>,
     actions: DownloadQueueActions,
     paddingValues: PaddingValues,
 ) {
@@ -251,13 +251,13 @@ fun VerticalReorderList(
             if(checkAtLeastApi30()) {
                 view.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
             }
-            actions.reorder(data)
+            actions.reorder(data.map { it.data })
         },
         onMove = { from, to ->
             list = list.toMutableList().apply {
                 add(to.index, removeAt(from.index))
             }
-                .toImmutableList()
+                .toList()
 
             if (checkAtLeastApi34()) {
                 view.performHapticFeedback(HapticFeedbackConstants.SEGMENT_FREQUENT_TICK)
@@ -278,15 +278,15 @@ fun VerticalReorderList(
         ) {
             items(
                 items = data,
-                key = { it.chapter.id }
+                key = { it.data.chapter.id }
             ) { item ->
                 ReorderableItem(
                     state = state,
-                    key = item.chapter.id,
+                    key = item.data.chapter.id,
                     modifier = Modifier
                 ) { isDragging ->
 
-                    val progress by item.progressFlow.collectAsStateWithLifecycle(0L)
+                    val progress by item.data.progressFlow.collectAsStateWithLifecycle(0L)
 
                     val primaryColor = MaterialTheme.colorScheme.primary
                     val surfaceColor = MaterialTheme.colorScheme.onSurface
@@ -294,7 +294,7 @@ fun VerticalReorderList(
                     val readyPages by produceState(initialValue = 0) {
                         withContext(Dispatchers.Default) {
                             while (true) {
-                                value = item.pages?.count { it.status == Page.State.READY } ?: 0
+                                value = item.data.pages?.count { it.status == Page.State.READY } ?: 0
                                 delay(1000)
                             }
                         }
@@ -330,17 +330,17 @@ fun VerticalReorderList(
                             Column(Modifier.weight(1f)) {
                                 Row (Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                                      Column(Modifier.weight(1f)) {
-                                         Text(item.manga.title, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                                         Text(item.data.manga.title, style = MaterialTheme.typography.titleMedium, maxLines = 1)
                                          Spacer(Modifier.height(space.xs))
                                          Text(
                                              remember(item) {
-                                                 "Vol. ${item.chapter.volume} Ch. ${item.chapter.chapter} - ${item.chapter.title}"
+                                                 "Vol. ${item.data.chapter.volume} Ch. ${item.data.chapter.chapter} - ${item.data.chapter.title}"
                                              },
                                              style = MaterialTheme.typography.labelMedium
                                          )
                                      }
-                                    item.pages?.let {
-                                        Text("$readyPages / ${item.pages?.size ?: ""}", style = MaterialTheme.typography.labelSmall)
+                                    item.data.pages?.let {
+                                        Text("$readyPages / ${item.data.pages?.size ?: ""}", style = MaterialTheme.typography.labelSmall)
                                     }
                                 }
 
@@ -379,6 +379,7 @@ fun VerticalReorderList(
                                                     add(item)
                                                     addAll(data)
                                                 }
+                                                    .map { it.data }
                                                     .toList()
                                             )
                                         }
@@ -391,17 +392,18 @@ fun VerticalReorderList(
                                                     addAll(data - item)
                                                     add(item)
                                                 }
+                                                    .map { it.data }
                                                     .toList()
                                             )
                                         }
                                     )
                                     DropdownMenuItem(
                                         text = { Text("Cancel") },
-                                        onClick = { actions.cancel(listOf(item)) }
+                                        onClick = { actions.cancel(listOf(item.data)) }
                                     )
                                     DropdownMenuItem(
                                         text = { Text("Cancel all for this series") },
-                                        onClick = { actions.cancelAllForSeries(item) }
+                                        onClick = { actions.cancelAllForSeries(item.data) }
                                     )
                                 }
                                 IconButton(

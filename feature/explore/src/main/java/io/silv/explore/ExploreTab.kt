@@ -2,7 +2,6 @@ package io.silv.explore
 
 import android.util.Log
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
@@ -32,8 +31,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
 import cafe.adriel.voyager.core.model.rememberScreenModel
@@ -49,6 +50,8 @@ import io.silv.explore.composables.FiltersBottomSheet
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.GlobalSearchTab
+import io.silv.ui.LaunchedOnReselect
+import io.silv.ui.LaunchedOnSearch
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
 import io.silv.ui.layout.ExpandableInfoLayout
@@ -56,30 +59,21 @@ import io.silv.ui.layout.PullRefresh
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.openOnWeb
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 object ExploreTab : ReselectTab, GlobalSearchTab {
-    private fun readResolve(): Any = ExploreTab
+    private fun readResolve(): Any = this
 
-    private val reselectChannel = Channel<Unit>()
-
-    private val searchChannel = Channel<String?>(capacity = 1)
+    override val reselectCh = Channel<Unit>(capacity = 1, BufferOverflow.DROP_OLDEST)
+    override val searchCh = Channel<String>(capacity = 1, BufferOverflow.DROP_OLDEST)
 
     private var savedStatePagedType: UiPagedType? = null
-
-    override suspend fun onSearch(query: String?, navigator: TabNavigator) {
-        searchChannel.trySend(query)
-        navigator.current = this
-    }
-
-    override suspend fun onReselect(navigator: Navigator) {
-        Log.d("Explore", "Sending reselect event")
-        reselectChannel.send(Unit)
-    }
 
     override val options: TabOptions
         @Composable
@@ -97,24 +91,7 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
     @Composable
     override fun Content() {
         val appState = LocalAppState.current
-        val tabNavigator = LocalTabNavigator.current
         val screenModel = rememberScreenModel { ExploreScreenModel(savedStatePagedType) }
-
-        val lifecycleOwner = LocalLifecycleOwner.current
-
-        LaunchedEffect(lifecycleOwner) {
-            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                withContext(Dispatchers.Main.immediate) {
-                    searchChannel.receiveAsFlow()
-                        .collect {
-                            tabNavigator.current = this@ExploreTab
-                            if (it != null) {
-                                screenModel.onSearch(it)
-                            }
-                        }
-                }
-            }
-        }
 
         val pagingFlowFlow by screenModel.mangaPagingFlow.collectAsStateWithLifecycle()
         val state by screenModel.state.collectAsStateWithLifecycle()
@@ -127,14 +104,12 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
         val expandableState = rememberExpandableState()
         val navigator = LocalNavigator.currentOrThrow
 
-        LaunchedEffect(reselectChannel, lifecycleOwner) {
-            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                withContext(Dispatchers.Main.immediate) {
-                    reselectChannel.receiveAsFlow().collectLatest {
-                        expandableState.toggle()
-                    }
-                }
-            }
+        LaunchedOnSearch { query ->
+            screenModel.onSearch(query)
+        }
+
+        LaunchedOnReselect {
+            expandableState.toggle()
         }
 
         var showDisplayOptionsBottomSheet by rememberSaveable {

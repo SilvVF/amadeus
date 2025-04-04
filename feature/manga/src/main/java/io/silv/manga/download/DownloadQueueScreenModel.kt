@@ -6,11 +6,11 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.DependencyAccessor
 import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
-import io.silv.di.dataDeps
+import io.silv.data.download.QItem
 import io.silv.di.downloadDeps
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
+
+
+
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -20,20 +20,20 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @Stable
-data class DownloadItem(val download: Download)
+data class DownloadItem(val download: QItem<Download>)
 
 class DownloadQueueScreenModel @OptIn(DependencyAccessor::class) constructor(
     private val downloadManager: DownloadManager = downloadDeps.downloadManager,
-) : StateScreenModel<ImmutableList<DownloadItem>>(persistentListOf()) {
+) : StateScreenModel<List<DownloadItem>>(emptyList()) {
 
     init {
         downloadManager.queueState
             .map { downloads ->
-                downloads.filter{ it.status != Download.State.DOWNLOADED }.map { download ->
+                downloads.filter{ it.status != QItem.State.COMPLETED }.map { download ->
                     DownloadItem(download = download)
                 }
             }.onEach { items ->
-                mutableState.update { items.toImmutableList() }
+                mutableState.update { items.toList() }
             }
             .launchIn(screenModelScope)
     }

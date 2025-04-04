@@ -20,6 +20,13 @@ import java.io.IOException
 import java.io.OutputStream
 import kotlin.coroutines.resumeWithException
 
+fun Context.getDownloadsDirectory(): UniFile? = UniFile.fromFile(
+    File(getExternalFilesDir(null)?.absolutePath + File.separator + "Amadeus")
+)
+    ?.createDirectory(DOWNLOADS_PATH)
+
+private const val DOWNLOADS_PATH = "downloads"
+
 val getDisplayMaxHeightInPx: Int
     get() = Resources.getSystem().displayMetrics.let { kotlin.math.max(it.heightPixels, it.widthPixels) }
 

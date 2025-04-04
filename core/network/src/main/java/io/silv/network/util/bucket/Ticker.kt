@@ -1,5 +1,9 @@
 package io.silv.network.util.bucket
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.asTimeSource
+import kotlin.time.ExperimentalTime
+
 
 interface  Ticker {
     fun read(): Long
@@ -14,10 +18,13 @@ interface  Ticker {
             return SYSTEM_TICKER
         }
 
+        @OptIn(ExperimentalTime::class)
         private val SYSTEM_TICKER: Ticker = object : Ticker {
 
+            val timeSource by lazy { Clock.System.asTimeSource().markNow() }
+
             override fun read(): Long {
-                return System.nanoTime()
+                return timeSource.elapsedNow().inWholeNanoseconds
             }
         }
     }

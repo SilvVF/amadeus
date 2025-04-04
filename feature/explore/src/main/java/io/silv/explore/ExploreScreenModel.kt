@@ -20,9 +20,9 @@ import io.silv.sync.SyncManager
 import io.silv.sync.syncDependencies
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ioCoroutineScope
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
+
+
+
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterNot
@@ -56,7 +56,7 @@ class ExploreScreenModel @OptIn(DependencyAccessor::class) constructor(
             .onEach { lists ->
                 mutableState.update { state ->
                     state.copy(
-                        seasonalLists = lists.toImmutableList(),
+                        seasonalLists = lists.toList(),
                     )
                 }
             }
@@ -66,7 +66,7 @@ class ExploreScreenModel @OptIn(DependencyAccessor::class) constructor(
             .onEach { recentSearchResults ->
                 mutableState.update { state ->
                     state.copy(
-                        recentSearchUiState = RecentSearchUiState.Success(recentSearchResults.toImmutableList()),
+                        recentSearchUiState = RecentSearchUiState.Success(recentSearchResults.toList()),
                     )
                 }
             }
@@ -162,7 +162,7 @@ sealed interface RecentSearchUiState {
 
     @Stable
     data class Success(
-        val recentQueries: ImmutableList<RecentSearch> = persistentListOf(),
+        val recentQueries: List<RecentSearch> = emptyList(),
     ) : RecentSearchUiState
 }
 
@@ -182,7 +182,7 @@ sealed interface UiPagedType {
 data class ExploreState(
     val refreshingSeasonal: Boolean = false,
     val pagedType: UiPagedType = UiPagedType.Popular,
-    val seasonalLists: ImmutableList<DomainSeasonalList> = persistentListOf(),
+    val seasonalLists: List<DomainSeasonalList> = emptyList(),
     val recentSearchUiState: RecentSearchUiState = RecentSearchUiState.Loading,
 ) {
     val filters

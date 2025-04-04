@@ -1,0 +1,114 @@
+package io.silv.reader2
+
+import android.view.KeyEvent
+import android.view.MotionEvent
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import io.silv.reader.Viewer
+import io.silv.reader.ViewerChapters
+import io.silv.reader.loader.ReaderPage
+import io.silv.ui.R
+
+enum class ReadingMode(
+    @StringRes val stringRes: Int,
+    @DrawableRes val iconRes: Int,
+    val flagValue: Int,
+    val direction: Direction? = null,
+    val type: ViewerType? = null,
+) {
+   // DEFAULT(R.string.label_default, R.drawable.ic_reader_default_24dp, 0x00000000),
+    LEFT_TO_RIGHT(
+        R.string.left_to_right_viewer,
+        io.silv.data.R.drawable.amadeuslogo,
+        0x00000001,
+        Direction.Horizontal,
+        ViewerType.Pager,
+    ),
+//    RIGHT_TO_LEFT(
+//        R.string.right_to_left_viewer,
+//        R.drawable.ic_reader_rtl_24dp,
+//        0x00000002,
+//        Direction.Horizontal,
+//        ViewerType.Pager,
+//    ),
+//    VERTICAL(
+//        R.string.vertical_viewer,
+//        R.drawable.ic_reader_vertical_24dp,
+//        0x00000003,
+//        Direction.Vertical,
+//        ViewerType.Pager,
+//    ),
+//    WEBTOON(
+//        R.string.webtoon_viewer,
+//        R.drawable.ic_reader_webtoon_24dp,
+//        0x00000004,
+//        Direction.Vertical,
+//        ViewerType.Webtoon,
+//    ),
+//    CONTINUOUS_VERTICAL(
+//        R.string.vertical_plus_viewer,
+//        R.drawable.ic_reader_continuous_vertical_24dp,
+//        0x00000005,
+//        Direction.Vertical,
+//        ViewerType.Webtoon,
+//    ),
+    ;
+
+    companion object {
+        const val MASK = 0x00000007
+
+        fun fromPreference(preference: Int?): ReadingMode = entries.find { it.flagValue == preference } ?: DEFAULT
+
+        fun isPagerType(preference: Int): Boolean {
+            val mode = fromPreference(preference)
+            return mode.type is ViewerType.Pager
+        }
+
+        fun toViewer(preference: Int?): Viewer {
+            return when (fromPreference(preference)) {
+                LEFT_TO_RIGHT -> L2RPagerViewer(activity)
+//                RIGHT_TO_LEFT -> R2LPagerViewer(activity)
+//                VERTICAL -> VerticalPagerViewer(activity)
+//                WEBTOON -> WebtoonViewer(activity)
+//                CONTINUOUS_VERTICAL -> WebtoonViewer(activity, isContinuous = false)
+//                DEFAULT -> throw IllegalStateException(
+//                    "Preference value must be resolved: $preference",
+//                )
+            }
+        }
+    }
+
+    sealed interface Direction {
+        data object Horizontal : Direction
+        data object Vertical : Direction
+    }
+
+    sealed interface ViewerType {
+        data object Pager : ViewerType
+        data object Webtoon : ViewerType
+    }
+}
+
+class L2RPagerViewer: Viewer {
+    override fun setChapters(chapters: ViewerChapters) {
+        TODO("Not yet implemented")
+    }
+
+    override fun moveToPage(page: ReaderPage) {
+        TODO("Not yet implemented")
+    }
+
+    override fun handleKeyEvent(event: KeyEvent): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun handleGenericMotionEvent(event: MotionEvent): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    @Composable
+    override fun Content() {
+        TODO("Not yet implemented")
+    }
+}

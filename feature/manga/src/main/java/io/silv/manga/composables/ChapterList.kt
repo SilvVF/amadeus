@@ -14,18 +14,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.util.fastFirstOrNull
 import io.silv.common.model.Download
+import io.silv.data.download.QItem
 import io.silv.manga.view.DownloadActions
 import io.silv.manga.view.MangaViewState
 import io.silv.ui.composables.ChapterListItem
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.ImmutableList
+
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
 
 fun LazyListScope.chapterListItems(
     mangaViewState: MangaViewState.Success,
     showFullTitle: Boolean,
-    downloads: ImmutableList<Download>,
+    downloads: List<QItem<Download>>,
     onMarkAsRead: (id: String) -> Unit,
     onBookmark: (id: String) -> Unit,
     onDownloadClicked: (id: String) -> Unit,
@@ -87,7 +88,7 @@ fun LazyListScope.chapterListItems(
                         horizontal = space.large,
                     ),
                 chapter = chapter,
-                download = downloads.fastFirstOrNull { it.chapter.id == chapter.id },
+                download = downloads.fastFirstOrNull { it.data.chapter.id == chapter.id },
                 showFullTitle = showFullTitle,
                 onDownloadClicked = { onDownloadClicked(chapter.id) },
                 onDeleteClicked = {

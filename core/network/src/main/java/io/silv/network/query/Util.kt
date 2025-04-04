@@ -1,6 +1,23 @@
 package io.silv.network.query
 
 import android.util.Log
+import io.ktor.http.Url
+import io.ktor.http.encodeURLParameter
+import io.ktor.http.encodeURLPath
+import java.net.URLEncoder
+
+internal fun queryParamsOf(vararg params: Pair<String, Any?>): List<QueryParam> {
+   return params.toList().toQueryParams()
+}
+
+internal fun List<Pair<String, Any?>>.toQueryParams() = filter { it.second != null }
+    .map { (name, value) ->
+        QueryParam(
+            name,
+            value.toString()
+        )
+    }
+
 
 /**
  * appends each part of the list to the [StringBuilder] as name[]=value.
@@ -93,27 +110,5 @@ fun List<QueryParam>.createQuery(base: String): String {
         }
             .toString()
 
-    // use %20 for whitespace in queries
-    var urlWithSpaces = ""
-    var i = 0
-    var lastWhiteSpace = false
-
-    while (i <= urlString.lastIndex) {
-        if (urlString[i] == ' ') {
-            lastWhiteSpace = true
-            i += 1
-            continue
-        } else {
-            if (lastWhiteSpace) {
-                lastWhiteSpace = false
-                urlWithSpaces += "%20"
-            }
-        }
-        urlWithSpaces += urlString[i]
-        i += 1
-    }
-
-    return urlWithSpaces.also {
-        Log.d("QUERY", it)
-    }
+    return Url(urlString).toString()
 }

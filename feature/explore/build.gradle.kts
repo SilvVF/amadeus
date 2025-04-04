@@ -107,7 +107,6 @@ dependencies {
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
-    implementation(libs.kotlin.collections.immutable)
 
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)

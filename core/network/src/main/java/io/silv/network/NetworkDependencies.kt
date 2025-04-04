@@ -7,9 +7,8 @@ import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
-import io.silv.common.AppDependencies
 import io.silv.common.DependencyAccessor
-import io.silv.common.appDeps
+import io.silv.common.commonDeps
 import io.silv.network.util.bucket.TokenBucketPlugin
 import io.silv.network.util.dohCloudflare
 import kotlinx.serialization.json.Json
@@ -42,6 +41,7 @@ abstract class NetworkDependencies {
             install(TokenBucketPlugin) {
                 bucket = {
                     withCapacity(40L)
+                    withInitialTokens(40L)
                     withFixedIntervalRefillStrategy(
                         refillTokens = 40L,
                         periodNanos = 60 * 1_000_000_000L
@@ -79,6 +79,7 @@ abstract class NetworkDependencies {
             install(TokenBucketPlugin) {
                 bucket = {
                     withCapacity(300L)
+                    withInitialTokens(300L)
                     withFixedIntervalRefillStrategy(
                         refillTokens = 300L,
                         periodNanos = 60 * 1_000_000_000L
@@ -95,6 +96,6 @@ abstract class NetworkDependencies {
     }
 
     val mangaDexApi by lazy {
-        MangaDexApi(mangaDexClient, atHomeClient, appDeps.dispatchers)
+        MangaDexApi(mangaDexClient, atHomeClient, commonDeps.dispatchers)
     }
 }

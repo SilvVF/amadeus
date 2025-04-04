@@ -54,19 +54,23 @@ android {
     }
     composeCompiler {
         reportsDestination = layout.buildDirectory.dir("compose_compiler")
-        stabilityConfigurationFile = rootProject.layout.projectDirectory.file("stability_config.conf")
+        stabilityConfigurationFiles.set(
+            listOf(
+                rootProject.layout.projectDirectory.file("stability_config.conf")
+            )
+        )
     }
 }
 
 dependencies {
 
     implementation(project(":core:data"))
+    implementation(project(":core:navigation"))
     implementation(project(":core:common"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.compose.foundation)
-    implementation(libs.voyager.screenModel)
     implementation(libs.material.motion.compose.core)
 
     testImplementation(libs.junit)
@@ -75,23 +79,12 @@ dependencies {
 
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
-    implementation(libs.androidx.material3.window.size)
-    implementation(libs.androidx.compose.ui.util)
     implementation(composeBom)
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.compose.material3)
+    implementation(libs.bundles.compose.ui)
     androidTestImplementation(libs.androidx.compose.ui.test.junit)
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.orbital)
-    implementation(libs.androidx.compose.ui.graphics)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.material.icons.extended)
-    implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.kotlin.collections.immutable)
 
     // COIL
     implementation(libs.coil.compose)
@@ -103,4 +96,5 @@ dependencies {
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)
     implementation(libs.voyager.tabNavigator)
+    implementation(libs.voyager.screenModel)
 }

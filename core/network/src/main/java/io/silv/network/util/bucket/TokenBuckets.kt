@@ -18,12 +18,6 @@ public object TokenBuckets {
                 delay(1)
             }
         }
-    private val BUSY_WAIT_SLEEP_STRATEGY: TokenBucket.SleepStrategy =
-        object : TokenBucket.SleepStrategy {
-            override suspend fun sleep() {
-                // Do nothing, don't sleep.
-            }
-        }
 
     class Builder {
         private var capacity: Long? = null
@@ -63,25 +57,6 @@ public object TokenBuckets {
         /** Use a user defined refill strategy.  */
         fun withRefillStrategy(refillStrategy: TokenBucket.RefillStrategy): Builder {
             this.refillStrategy = refillStrategy
-            return this
-        }
-
-        /** Use a sleep strategy that will always attempt to yield the CPU to other processes.  */
-        fun withYieldingSleepStrategy(): Builder {
-            return withSleepStrategy(YIELDING_SLEEP_STRATEGY)
-        }
-
-        /**
-         * Use a sleep strategy that will not yield the CPU to other processes.  It will busy wait until more tokens become
-         * available.
-         */
-        fun withBusyWaitSleepStrategy(): Builder {
-            return withSleepStrategy(BUSY_WAIT_SLEEP_STRATEGY)
-        }
-
-        /** Use a user defined sleep strategy.  */
-        fun withSleepStrategy(sleepStrategy: TokenBucket.SleepStrategy): Builder {
-            this.sleepStrategy = sleepStrategy
             return this
         }
 

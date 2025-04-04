@@ -2,6 +2,7 @@ package io.silv.network.util.bucket
 
 import io.ktor.client.plugins.api.ClientPlugin
 import io.ktor.client.plugins.api.createClientPlugin
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.ensureActive
 import kotlin.coroutines.coroutineContext
 
@@ -13,15 +14,21 @@ class TokenBucketPluginConfig {
 val TokenBucketPlugin: ClientPlugin<TokenBucketPluginConfig> =
     createClientPlugin("TokenBucketPlugin", ::TokenBucketPluginConfig) {
 
-    val numTokens = pluginConfig.consumptionAmount
-    val bucket = TokenBuckets.Builder().apply(pluginConfig.bucket).build()
+        val numTokens = pluginConfig.consumptionAmount
+        val bucket = TokenBuckets.Builder().apply(pluginConfig.bucket).build()
 
-    onRequest { _, _->
+        onRequest { _, _ ->
 
-        coroutineContext.ensureActive()
+            coroutineContext.ensureActive()
 
-        bucket.consume(numTokens)
+            bucket.consume(numTokens)
 
-        coroutineContext.ensureActive()
+            coroutineContext.ensureActive()
+        }
+        onResponse { r ->
+            val cacheHeader = r.headers["Age"] ?: r.headers["X-Cache"]
+            if (!r.status.isSuccess() || cacheHeader != null) {
+                bucket.refill(numTokens)
+            }
+        }
     }
-}

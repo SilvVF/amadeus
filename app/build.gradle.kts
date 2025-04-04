@@ -91,8 +91,12 @@ android {
     }
     composeCompiler {
         reportsDestination = layout.buildDirectory.dir("compose_compiler")
-        stabilityConfigurationFile =
-            rootProject.layout.projectDirectory.file("stability_config.conf")
+        stabilityConfigurationFiles.set(
+            listOf(
+                rootProject.layout.projectDirectory.file("stability_config.conf")
+            )
+        )
+
     }
     packaging {
         resources {
@@ -128,36 +132,22 @@ dependencies {
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
-    implementation(libs.voyager.screenModel)
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.util)
-    implementation(libs.androidx.material3.window.size)
-    implementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.material3)
+    implementation(libs.bundles.compose.ui)
     androidTestImplementation(libs.androidx.compose.ui.test.junit)
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.orbital)
-    implementation(libs.androidx.compose.ui.graphics)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.material.icons.extended)
-    implementation(libs.androidx.lifecycle.runtime.compose)
-
-    implementation(libs.androidx.compose.ui.animation.core)
-    implementation(libs.androidx.compose.ui.animation)
 
     // Datastore
     implementation(libs.androidx.datastore.preferences)
 
-    implementation(libs.androidx.navigation.compose)
     implementation(libs.okio)
 
     // VOYAGER
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)
     implementation(libs.voyager.tabNavigator)
+    implementation(libs.voyager.screenModel)
 
     // ROOM
     implementation(libs.room.runtime)
@@ -175,4 +165,6 @@ dependencies {
     implementation(libs.kotlin.serialization)
 
     implementation(libs.ktor.core)
+
+    implementation(libs.androidx.work.runtime.ktx)
 }

@@ -3,6 +3,7 @@ package io.silv.reader
 import android.net.Uri
 import android.view.KeyEvent
 import android.view.MotionEvent
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import cafe.adriel.voyager.core.model.StateScreenModel
@@ -805,6 +806,9 @@ interface Viewer {
      * return true if the event was handled, false otherwise.
      */
     fun handleGenericMotionEvent(event: MotionEvent): Boolean
+
+    @Composable
+    fun Content()
 }
 class InsertPage(val parent: ReaderPage) : ReaderPage(parent.index, parent.url, parent.imageUrl) {
 

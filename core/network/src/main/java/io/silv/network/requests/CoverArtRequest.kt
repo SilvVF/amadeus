@@ -5,6 +5,7 @@ import io.silv.common.model.Order
 import io.silv.common.model.OrderBy
 import io.silv.network.query.QueryParam
 import io.silv.network.query.QueryParams
+import io.silv.network.query.queryParamsOf
 
 /**
  * @param manga Manga ids (limited to 100 per request)
@@ -24,7 +25,7 @@ data class CoverArtRequest(
     val order: Map<Order, OrderBy>? = null,
 ) : QueryParams {
     override fun createQueryParams(): List<QueryParam> {
-        return listOf(
+        return queryParamsOf(
             Pair("limit", limit),
             Pair("offset", offset),
             Pair("manga", manga),
@@ -33,9 +34,5 @@ data class CoverArtRequest(
             Pair("locales", uploaders),
             Pair("order", order),
         )
-            .filter { it.second != null }
-            .map {
-                QueryParam(it.first, it.second.toString())
-            }
     }
 }

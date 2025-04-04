@@ -12,7 +12,6 @@ import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaUpdate
 import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.domain.manga.repository.MangaRepository
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -128,7 +127,7 @@ internal class MangaRepositoryImpl internal constructor(
         return mangaDao.observeMangaWithChaptersById(id).map { (manga, chapters) ->
             MangaWithChapters(
                 MangaMapper.mapManga(manga),
-                chapters.map(ChapterMapper::mapChapter).toImmutableList()
+                chapters.map(ChapterMapper::mapChapter)
             )
         }
     }
@@ -137,7 +136,7 @@ internal class MangaRepositoryImpl internal constructor(
         return mangaDao.getMangaWithChaptersById(id)?.let { (manga, chapters) ->
             MangaWithChapters(
                 MangaMapper.mapManga(manga),
-                chapters.map(ChapterMapper::mapChapter).toImmutableList()
+                chapters.map(ChapterMapper::mapChapter)
             )
         }
     }

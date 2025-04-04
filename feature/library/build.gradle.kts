@@ -56,26 +56,14 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.swipe)
 
-    implementation(libs.voyager.screenModel)
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
-    implementation(libs.androidx.material3.window.size)
-    implementation(libs.ui.util)
     implementation(composeBom)
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.material3)
+    implementation(libs.bundles.compose.ui)
     androidTestImplementation(libs.androidx.compose.ui.test.junit)
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.ui.graphics)
-    debugImplementation(libs.androidx.ui.tooling)
-    implementation(libs.animation)
-    implementation(libs.animation.graphics)
-    implementation(libs.androidx.material.icons.extended)
-    implementation(libs.androidx.lifecycle.runtime.compose)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 
     // Datastore
     implementation(libs.androidx.datastore.preferences)
@@ -83,12 +71,11 @@ dependencies {
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
-    implementation(libs.kotlin.collections.immutable)
-
     // VOYAGER
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.transitions)
     implementation(libs.voyager.tabNavigator)
+    implementation(libs.voyager.screenModel)
 
 
     // COIL

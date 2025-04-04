@@ -61,7 +61,6 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.kotlin.serialization)
     implementation(libs.kotlinx.serialization.json.okio)
-    implementation(libs.kotlin.collections.immutable)
 
     // Paging 3
     implementation(libs.androidx.paging.runtime)

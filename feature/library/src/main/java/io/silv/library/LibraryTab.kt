@@ -96,13 +96,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
@@ -110,6 +106,7 @@ import coil.compose.AsyncImage
 import io.silv.common.model.Download
 import io.silv.common.model.MangaCover
 import io.silv.common.time.localDateTimeNow
+import io.silv.data.download.QItem
 import io.silv.datastore.LibraryPrefs
 import io.silv.datastore.collectAsState
 import io.silv.domain.chapter.model.Chapter
@@ -124,6 +121,7 @@ import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.CenterBox
 import io.silv.ui.Converters
+import io.silv.ui.LaunchedOnReselect
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
 import io.silv.ui.composables.CardType
@@ -142,30 +140,19 @@ import io.silv.ui.layout.TopAppBarWithBottomContent
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.AmadeusTheme
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.Dispatchers
+
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.number
-import kotlinx.parcelize.IgnoredOnParcel
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
 
 object LibraryTab : ReselectTab {
+    private fun readResolve(): Any = this
 
-    private fun readResolve(): Any = LibraryTab
-
-    @Transient
-    @IgnoredOnParcel
-    internal val reselectChannel = Channel<Unit>()
-
-    override suspend fun onReselect(navigator: Navigator) {
-        reselectChannel.send(Unit)
-    }
+    override val reselectCh = Channel<Unit>(capacity = 1, BufferOverflow.DROP_OLDEST)
 
     @OptIn(ExperimentalAnimationGraphicsApi::class)
     override val options: TabOptions
@@ -182,24 +169,13 @@ object LibraryTab : ReselectTab {
 
     @Composable
     override fun Content() {
-
         val appState = LocalAppState.current
-
         val screenModel = rememberScreenModel { LibraryScreenModel() }
-
         val state by screenModel.state.collectAsStateWithLifecycle()
-
-        val lifeCycleOwner = LocalLifecycleOwner.current
         val expandableState = rememberExpandableState()
 
-        LaunchedEffect(reselectChannel, lifeCycleOwner) {
-            lifeCycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                withContext(Dispatchers.Main.immediate) {
-                    reselectChannel.receiveAsFlow().collectLatest {
-                        expandableState.toggle()
-                    }
-                }
-            }
+        LaunchedOnReselect {
+            expandableState.toggle()
         }
 
         LibraryScreenContent(
@@ -806,10 +782,10 @@ fun UpdatesList(
                                             actions.onDownload(update.mangaId, update.chapterId)
 
                                         ChapterDownloadAction.START_NOW ->
-                                            download?.let { actions.onStartDownloadNow(it) }
+                                            download?.let { actions.onStartDownloadNow(it.data) }
 
                                         ChapterDownloadAction.CANCEL ->
-                                            download?.let { actions.onCancelDownload(it) }
+                                            download?.let { actions.onCancelDownload(it.data) }
 
                                         ChapterDownloadAction.DELETE ->
                                             actions.onDeleteDownloadedChapter(
@@ -830,7 +806,7 @@ fun UpdatesList(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LazyItemScope.MangaUpdateItem(
-    download: Download?,
+    download: QItem<Download>?,
     downloaded: Boolean,
     update: UpdateWithRelations,
     onCoverClick: () -> Unit,
@@ -888,13 +864,13 @@ fun LazyItemScope.MangaUpdateItem(
         val status by remember(download) {
             download?.statusFlow
                 ?: flowOf(
-                    if (downloaded) Download.State.DOWNLOADED else Download.State.NOT_DOWNLOADED
+                    if (downloaded) QItem.State.COMPLETED else QItem.State.IDLE
                 )
         }
-            .collectAsState(Download.State.NOT_DOWNLOADED)
+            .collectAsState(QItem.State.IDLE)
 
         val progress by remember(download) {
-            download?.progressFlow ?: flowOf(0)
+            download?.data?.progressFlow ?: flowOf(0)
         }
             .collectAsState(0)
 
@@ -1218,11 +1194,11 @@ fun LibraryScreenContentSuccessPreview() {
                                             add(Chapter.stub(manga.id, 1, it.toDouble()))
                                         }
                                     }
-                                        .toImmutableList()
+                                        .toList()
                                 )
                             )
                         }
-                    }.toImmutableList()
+                    }.toList()
                 )
             )
         )

@@ -1,22 +1,17 @@
 package io.silv.common
 
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 
 interface PrefsConverter<T, V> {
     fun convertTo(value: T): V
@@ -35,11 +30,19 @@ interface PrefsConverter<T, V> {
     }
 }
 
-fun Channel<*>.drain() {
-    var result = tryReceive()
-    while(tryReceive().isSuccess) {
-        result = tryReceive()
+fun <T> mutableStateFrom(stateFlow: MutableStateFlow<T>) = object :
+    ReadWriteProperty<Any?, T> {
+    override fun getValue(thisRef: Any?, property: KProperty<*>): T = stateFlow.value
+    override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+        stateFlow.value = value
     }
+}
+
+
+fun Channel<*>.drain() {
+    do {
+        val result = tryReceive()
+    } while (result.isSuccess)
 }
 
 fun createTrigger(
@@ -75,22 +78,6 @@ suspend inline fun <T, R> Iterable<T>.pmap(crossinline transform: suspend (T) ->
         .awaitAll()
 }
 
-fun <T> emptyImmutableList(): ImmutableList<T> = persistentListOf()
-
-
-suspend inline fun <T, R> Sequence<T>.pmap(crossinline transform: suspend (T) -> R): List<R> {
-    return buildList {
-        coroutineScope {
-            for (item in this@pmap) {
-                add(
-                    async { transform(item) },
-                )
-            }
-        }
-    }
-        .awaitAll()
-}
-
 fun <T, R> Iterable<T>.filterUnique(item: (T) -> R): List<T> {
     val seen = mutableSetOf<R>()
     return buildList {
@@ -100,37 +87,4 @@ fun <T, R> Iterable<T>.filterUnique(item: (T) -> R): List<T> {
             }
         }
     }
-}
-
-fun <T> Iterable<T>.pForEach(
-    scope: CoroutineScope,
-    action: suspend (T) -> Unit,
-) {
-    for (item in this) {
-        scope.launch {
-            action(item)
-        }
-    }
-}
-
-// @OptIn(ExperimentalContracts::class)
-// suspend fun <T> Iterable<T>.pForEach(
-//    action: suspend (T) -> Unit
-// ) {
-//    contract { callsInPlace(action) }
-//    coroutineScope {
-//        for (item in this@pForEach) {
-//            launch {
-//                action(item)
-//            }
-//        }
-//    }
-// }
-
-fun lerp(
-    start: Float,
-    stop: Float,
-    fraction: Float,
-): Float {
-    return (start * (1f - fraction)) + (stop * fraction)
 }

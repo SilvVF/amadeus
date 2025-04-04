@@ -16,12 +16,12 @@ import io.silv.di.dataDeps
 import io.silv.domain.TagRepository
 import io.silv.model.DomainTag
 import io.silv.ui.Language
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.ImmutableMap
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.persistentMapOf
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toImmutableMap
+
+
+
+
+
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -44,27 +44,26 @@ class FilterScreenViewModel @OptIn(DependencyAccessor::class) constructor(
                     tags
                         .groupBy { tag -> tag.group }
                         .mapValues { (_, tags) ->
-                            tags.toImmutableList()
-                        }
-                        .toImmutableMap(),
+                            tags.toList()
+                        },
                 )
             }
         }
             .launchIn(screenModelScope)
     }
 
-    private fun <T> List<T>.toggleItem(item: T): ImmutableList<T> {
+    private fun <T> List<T>.toggleItem(item: T): List<T> {
         return (
             if (contains(item)) this - item else this + item
             )
-            .toImmutableList()
+            .toList()
     }
 
-    private fun <T> List<T>.toggleItems(items: List<T>): ImmutableList<T> {
+    private fun <T> List<T>.toggleItems(items: List<T>): List<T> {
         return (
             if (containsAll(items)) this - items.toSet() else this + items
             )
-            .toImmutableList()
+            .toList()
     }
 
     private fun updateFilters(block: (filters: UiQueryFilters) -> UiQueryFilters) {
@@ -256,26 +255,26 @@ sealed interface FilterAction {
 
 @Stable
 data class FilterState(
-    val categoryToTags: ImmutableMap<String, ImmutableList<DomainTag>> = persistentMapOf(),
+    val categoryToTags: Map<String, List<DomainTag>> = emptyMap(),
     val queryFilters: UiQueryFilters = UiQueryFilters(),
 )
 
 @Stable
 data class UiQueryFilters(
     val title: String = "",
-    val authors: ImmutableList<String> = persistentListOf(),
-    val artists: ImmutableList<String> = persistentListOf(),
+    val authors: List<String> = emptyList(),
+    val artists: List<String> = emptyList(),
     val year: String = "",
-    val includedTags: ImmutableList<String> = persistentListOf(),
+    val includedTags: List<String> = emptyList(),
     val includedTagsMode: TagsMode = TagsMode.OR,
-    val excludedTags: ImmutableList<String> = persistentListOf(),
+    val excludedTags: List<String> = emptyList(),
     val excludedTagsMode: TagsMode = TagsMode.OR,
-    val status: ImmutableList<Status> = persistentListOf(),
-    val originalLanguage: ImmutableList<Language> = persistentListOf(),
-    val availableTranslatedLanguage: ImmutableList<Language> = persistentListOf(),
-    val publicationDemographic: ImmutableList<PublicationDemographic> = persistentListOf(),
-    val ids: ImmutableList<String> = persistentListOf(),
-    val contentRating: ImmutableList<ContentRating> = persistentListOf(
+    val status: List<Status> = emptyList(),
+    val originalLanguage: List<Language> = emptyList(),
+    val availableTranslatedLanguage: List<Language> = emptyList(),
+    val publicationDemographic: List<PublicationDemographic> = emptyList(),
+    val ids: List<String> = emptyList(),
+    val contentRating: List<ContentRating> = listOf(
         ContentRating.safe,
         ContentRating.suggestive
     ),
@@ -283,7 +282,7 @@ data class UiQueryFilters(
     val updatedAtSince: LocalDateTime? = null,
     val order: Order? = null,
     val orderBy: OrderBy? = null,
-    val includes: ImmutableList<String> = persistentListOf(),
+    val includes: List<String> = emptyList(),
     val hasAvailableChapters: Boolean = true,
     val group: String = "",
 )

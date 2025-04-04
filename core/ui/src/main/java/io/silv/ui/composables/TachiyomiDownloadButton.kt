@@ -37,7 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import io.silv.common.model.Download
+import io.silv.data.download.QItem
 import io.silv.ui.R
 
 enum class ChapterDownloadAction {
@@ -70,29 +70,29 @@ fun CircularProgressIndicator(
 fun ChapterDownloadIndicator(
     enabled: Boolean,
     modifier: Modifier = Modifier,
-    downloadStateProvider: () -> Download.State,
+    downloadStateProvider: () -> QItem.State,
     downloadProgressProvider: () -> Int,
     onClick: (ChapterDownloadAction) -> Unit,
 ) {
     when (val downloadState = downloadStateProvider()) {
-        Download.State.NOT_DOWNLOADED -> NotDownloadedIndicator(
+        QItem.State.IDLE -> NotDownloadedIndicator(
             enabled = enabled,
             modifier = modifier,
             onClick = onClick,
         )
-        Download.State.QUEUE, Download.State.DOWNLOADING -> DownloadingIndicator(
+        QItem.State.QUEUE, QItem.State.RUNNING -> DownloadingIndicator(
             enabled = enabled,
             modifier = modifier,
             downloadState = downloadState,
             downloadProgressProvider = downloadProgressProvider,
             onClick = onClick,
         )
-        Download.State.DOWNLOADED -> DownloadedIndicator(
+        QItem.State.COMPLETED -> DownloadedIndicator(
             enabled = enabled,
             modifier = modifier,
             onClick = onClick,
         )
-        Download.State.ERROR -> ErrorIndicator(
+        QItem.State.ERROR -> ErrorIndicator(
             enabled = enabled,
             modifier = modifier,
             onClick = onClick,
@@ -130,7 +130,7 @@ private fun NotDownloadedIndicator(
 private fun DownloadingIndicator(
     enabled: Boolean,
     modifier: Modifier = Modifier,
-    downloadState: Download.State,
+    downloadState: QItem.State,
     downloadProgressProvider: () -> Int,
     onClick: (ChapterDownloadAction) -> Unit,
 ) {
@@ -148,8 +148,8 @@ private fun DownloadingIndicator(
         val arrowColor: Color
         val strokeColor = MaterialTheme.colorScheme.onSurfaceVariant
         val downloadProgress = downloadProgressProvider()
-        val indeterminate = downloadState == Download.State.QUEUE ||
-                (downloadState == Download.State.DOWNLOADING && downloadProgress == 0)
+        val indeterminate = downloadState == QItem.State.QUEUE ||
+                (downloadState == QItem.State.RUNNING && downloadProgress == 0)
         if (indeterminate) {
             arrowColor = strokeColor
             CircularProgressIndicator(

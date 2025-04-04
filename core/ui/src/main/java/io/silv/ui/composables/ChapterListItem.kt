@@ -12,7 +12,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -21,9 +20,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.silv.common.model.Download
+import io.silv.data.download.QItem
 import io.silv.domain.chapter.model.Chapter
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.coroutines.flow.flowOf
 
 @Composable
 private fun chapterTitleWithVolText(chapter: Chapter, showFullTitle: Boolean) =
@@ -57,7 +56,7 @@ fun ChapterListItem(
     modifier: Modifier = Modifier,
     showFullTitle: Boolean,
     chapter: Chapter,
-    download: Download?,
+    download: QItem<Download>?,
     onDownloadClicked: () -> Unit,
     onDeleteClicked: () -> Unit,
     onPauseClicked: (download: Download) -> Unit,
@@ -114,8 +113,9 @@ fun ChapterListItem(
         }
 
         if (download != null) {
-            val status by download.statusFlow.collectAsStateWithLifecycle(Download.State.NOT_DOWNLOADED)
-            val progress by download.progressFlow.collectAsStateWithLifecycle(0)
+            val status by download.statusFlow.collectAsStateWithLifecycle(QItem.State.IDLE)
+            val progress by download.data.progressFlow.collectAsStateWithLifecycle(0)
+
             ChapterDownloadIndicator(
                 enabled = true,
                 downloadStateProvider = { status },
@@ -124,7 +124,7 @@ fun ChapterListItem(
                     when (action) {
                         ChapterDownloadAction.START -> onDownloadClicked()
                         ChapterDownloadAction.START_NOW -> Unit
-                        ChapterDownloadAction.CANCEL -> onCancelClicked(download)
+                        ChapterDownloadAction.CANCEL -> onCancelClicked(download.data)
                         ChapterDownloadAction.DELETE -> onDeleteClicked()
                     }
                 }
@@ -134,9 +134,9 @@ fun ChapterListItem(
                 enabled = true,
                 downloadStateProvider = {
                     if (chapter.downloaded) {
-                        Download.State.DOWNLOADED
+                        QItem.State.COMPLETED
                     } else {
-                        Download.State.NOT_DOWNLOADED
+                        QItem.State.IDLE
                     }
                  },
                 downloadProgressProvider = { 0 },

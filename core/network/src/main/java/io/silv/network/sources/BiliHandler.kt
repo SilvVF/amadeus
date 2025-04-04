@@ -140,29 +140,6 @@ class BiliHandler(
         val path: String,
     )
 
-    @Serializable
-    data class BilibiliComicDto(
-        @SerialName("author_name") val authorName: List<String> = emptyList(),
-        @SerialName("classic_lines") val classicLines: String = "",
-        @SerialName("comic_id") val comicId: Int = 0,
-        @SerialName("ep_list") val episodeList: List<BilibiliEpisodeDto> = emptyList(),
-        val id: Int = 0,
-        @SerialName("is_finish") val isFinish: Int = 0,
-        @SerialName("season_id") val seasonId: Int = 0,
-        val styles: List<String> = emptyList(),
-        val title: String,
-        @SerialName("vertical_cover") val verticalCover: String = "",
-    )
-
-    @Serializable
-    data class BilibiliEpisodeDto(
-        val id: Int,
-        @SerialName("is_locked") val isLocked: Boolean,
-        @SerialName("ord") val order: Float,
-        @SerialName("pub_time") val publicationTime: String,
-        val title: String,
-    )
-
     companion object {
         private const val BASE_API_ENDPOINT = "twirp/comic.v1.Comic"
         private const val ACCEPT_JSON = "application/json, text/plain, */*"

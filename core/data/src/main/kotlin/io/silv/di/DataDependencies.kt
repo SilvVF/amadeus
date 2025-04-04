@@ -2,9 +2,8 @@ package io.silv.di
 
 import android.content.Context
 import androidx.work.WorkManager
-import io.silv.common.AppDependencies
 import io.silv.common.DependencyAccessor
-import io.silv.common.appDeps
+import io.silv.common.commonDeps
 import io.silv.common.model.NetworkConnectivity
 import io.silv.data.RecentSearchRepositoryImpl
 import io.silv.data.author.AuthorListRepositoryImpl
@@ -39,7 +38,6 @@ import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
 import io.silv.domain.manga.interactor.GetManga
 import io.silv.domain.manga.interactor.GetMangaWithChapters
 import io.silv.domain.manga.interactor.MangaHandler
-import io.silv.domain.manga.model.MangaUpdate
 import io.silv.domain.manga.repository.MangaRepository
 import io.silv.domain.manga.repository.SeasonalMangaRepository
 import io.silv.domain.manga.repository.TopYearlyFetcher
@@ -62,7 +60,7 @@ abstract class DataDependencies {
     internal val chapterList: GetChapterList
         get() = GetChapterList(
             networkDeps.mangaDexApi,
-            appDeps.dispatchers
+            commonDeps.dispatchers
         )
 
     val coverCache = CoverCache(context)
@@ -73,7 +71,7 @@ abstract class DataDependencies {
     val subscribeToPagingData get() = SubscribeToPagingData(mangaPagingSourceFactory, getManga)
     val mangaHandler get() = MangaHandler(mangaRepository)
     val chapterHandler get() = ChapterHandler(chapterRepository)
-    val recentSearchHandler get() = RecentSearchHandler(appDeps.dispatchers, recentSearchRepository)
+    val recentSearchHandler get() = RecentSearchHandler(commonDeps.dispatchers, recentSearchRepository)
     val getLibraryLastUpdated get() = GetLibraryLastUpdated(mangaRepository)
     val getBookmarkedChapters get() = GetBookmarkedChapters(chapterRepository)
     val getLibraryMangaWithChapters get() = GetLibraryMangaWithChapters(mangaRepository)
@@ -92,7 +90,7 @@ abstract class DataDependencies {
     }
 
     val historyRepository: HistoryRepository by lazy {
-        HistoryRepositoryImpl(daosModule.historyDao, appDeps.dispatchers)
+        HistoryRepositoryImpl(daosModule.historyDao, commonDeps.dispatchers)
     }
 
     val tagsRepository: TagRepository by lazy {
@@ -114,20 +112,20 @@ abstract class DataDependencies {
             networkDeps.mangaDexApi,
             chapterList,
             databaseModule.database,
-            appDeps.dispatchers
+            commonDeps.dispatchers
         )
     }
     val seasonalMangaRepository: SeasonalMangaRepository by lazy {
         SeasonalMangaRepositoryImpl(
             networkDeps.mangaDexApi,
             databaseModule.database,
-            appDeps.dispatchers,
+            commonDeps.dispatchers,
             mangaRepository
         )
     }
     val topYearlyFetcher: TopYearlyFetcher by lazy {
         YearlyTopMangaFetcher(
-            networkDeps.mangaDexApi, mangaRepository, getManga, appDeps.dispatchers
+            networkDeps.mangaDexApi, mangaRepository, getManga, commonDeps.dispatchers
         )
     }
     val tagRepository: TagRepository by lazy {
@@ -136,7 +134,7 @@ abstract class DataDependencies {
         )
     }
     val authorListRepository: AuthorListRepository by lazy {
-        AuthorListRepositoryImpl(networkDeps.mangaDexApi, appDeps.dispatchers)
+        AuthorListRepositoryImpl(networkDeps.mangaDexApi, commonDeps.dispatchers)
     }
 
     val mangaUpdateJob by lazy {
@@ -151,7 +149,7 @@ abstract class DataDependencies {
     val mangaRepository: MangaRepository by lazy {
         MangaRepositoryImpl(
             daosModule.sourceMangaDao,
-            appDeps.dispatchers,
+            commonDeps.dispatchers,
             databaseModule.database,
             coverCache
         )

@@ -2,7 +2,6 @@ package io.silv.data.download
 
 import android.content.Context
 import android.util.Log
-import io.silv.common.ApplicationScope
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Download
 import io.silv.common.model.MangaDexSource
@@ -37,17 +36,16 @@ class DownloadManager internal constructor(
 ) {
 
     val cacheChanges = downloadCache.changes
+    val queue = downloader.queue
 
-    val isRunning: Boolean
-        get() = downloader.isRunning
-
-    val queueState
-        get() = downloader.queueState
+    val isRunning: Boolean get() = queue.isRunning
+    val queueState get() = queue.queueState
 
     // For use by DownloadService only
-    fun downloaderStart() = downloader.start()
+    fun downloaderStart() = queue.start()
 
-    fun downloaderStop(reason: String? = null) = downloader.stop(reason)
+
+    fun downloaderStop(reason: String? = null) = queue.stop(reason)
 
     val isDownloaderRunning
         get() = DownloadWorker.isRunningFlow(context)
@@ -57,10 +55,10 @@ class DownloadManager internal constructor(
      */
     fun startDownloads() {
         applicationScope.launch {
-            if (downloader.isRunning) return@launch
+            if (queue.isRunning) return@launch
 
             if (DownloadWorker.isRunning(context)) {
-                downloader.start()
+                queue.start()
             } else {
                 DownloadWorker.start(context)
             }
@@ -71,45 +69,31 @@ class DownloadManager internal constructor(
      * Tells the downloader to pause downloads.
      */
     fun pauseDownloads() {
-        downloader.pause()
-        downloader.stop()
+        queue.pause()
     }
 
     /**
      * Empties the download queue.
      */
-    suspend fun clearQueue() {
-        downloader.clearQueue()
-        downloader.stop()
+    fun clearQueue() {
+        queue.clear()
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    fun statusFlow(): Flow<Download> = queueState
-        .flatMapLatest { downloads ->
-            downloads
-                .map { download ->
-                    download.statusFlow.drop(1).map { download }
-                }
-                .merge()
-        }
-        .onStart {
-            emitAll(
-                queueState.value.filter { download -> download.status == Download.State.DOWNLOADING }.asFlow(),
-            )
-        }
+    fun statusFlow(): Flow<QItem<Download>> = queue.statusFlow()
+
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun progressFlow(): Flow<Download> = queueState
+    fun progressFlow(): Flow<QItem<Download>> = queueState
         .flatMapLatest { downloads ->
             downloads
                 .map { download ->
-                    download.progressFlow.drop(1).map { download }
+                    download.data.progressFlow.drop(1).map { download }
                 }
                 .merge()
         }
         .onStart {
             emitAll(
-                queueState.value.filter { download -> download.status == Download.State.DOWNLOADING }
+                queueState.value.filter { download -> download.status == QItem.State.RUNNING }
                     .asFlow(),
             )
         }
@@ -120,8 +104,8 @@ class DownloadManager internal constructor(
      *
      * @param chapterId the chapter to check.
      */
-    fun getQueuedDownloadOrNull(chapterId: String): Download? {
-        return queueState.value.find { it.chapter.id == chapterId }
+    fun getQueuedDownloadOrNull(chapterId: String): QItem<Download>? {
+        return queueState.value.find { it.data.chapter.id == chapterId }
     }
 
     private suspend fun downloadFromChapterId(id: String): Download? {
@@ -134,11 +118,11 @@ class DownloadManager internal constructor(
 
     fun startDownloadNow(chapterId: String) {
         applicationScope.launch {
-            val existingDownload = getQueuedDownloadOrNull(chapterId)
+            val existingDownload = getQueuedDownloadOrNull(chapterId)?.data
             // If not in queue try to start a new download
             val toAdd = existingDownload ?: downloadFromChapterId(chapterId) ?: return@launch
-            queueState.value.toMutableList().apply {
-                existingDownload?.let { remove(it) }
+            queueState.value.map { it.data }.toMutableList().apply {
+                existingDownload?.let { existing -> remove(existing) }
                 add(0, toAdd)
                 reorderQueue(this)
             }
@@ -153,7 +137,7 @@ class DownloadManager internal constructor(
      */
     fun reorderQueue(downloads: List<Download>) {
         applicationScope.launch {
-            downloader.updateQueue(downloads)
+            queue.updateQueue(downloads.map(::QItem))
         }
     }
     /**
@@ -205,7 +189,7 @@ class DownloadManager internal constructor(
     fun addDownloadsToStartOfQueue(downloads: List<Download>) {
         applicationScope.launch {
             if (downloads.isEmpty()) return@launch
-            queueState.value.toMutableList().apply {
+            queueState.value.map { it.data }.toMutableList().apply {
                 addAll(0, downloads)
                 reorderQueue(this)
             }
@@ -290,7 +274,7 @@ class DownloadManager internal constructor(
     fun deleteManga(manga: MangaResource, source: Source, removeQueued: Boolean = true) {
         applicationScope.launch(Dispatchers.IO) {
             if (removeQueued) {
-                downloader.removeFromQueue(manga)
+                queue.removeFromQueueIf { item -> item.data.manga.id == manga.id }
             }
             downloadProvider.findMangaDir(manga.title, source)?.delete()
             downloadCache.removeManga(manga)
@@ -305,20 +289,18 @@ class DownloadManager internal constructor(
     }
 
     private suspend fun removeFromDownloadQueue(chapters: List<ChapterResource>) {
-
-        val wasRunning = downloader.isRunning
-
+        val wasRunning = queue.isRunning
         if (wasRunning) {
-            downloader.pause()
+            queue.pause()
         }
 
-        downloader.removeFromQueue(chapters)
+        queue.removeFromQueueIf { item -> item.data.chapter.id in chapters.map(ChapterResource::id) }
 
         if (wasRunning) {
             if (queueState.value.isEmpty()) {
-                downloader.stop()
+                queue.stop()
             } else if (queueState.value.isNotEmpty()) {
-                downloader.start()
+                queue.start()
             }
         }
     }

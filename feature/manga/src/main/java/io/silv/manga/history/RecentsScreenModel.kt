@@ -10,13 +10,13 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.DependencyAccessor
-import io.silv.common.appDeps
+import io.silv.common.commonDeps
 import io.silv.di.dataDeps
 import io.silv.domain.history.HistoryRepository
 import io.silv.domain.history.HistoryWithRelations
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
+
+
+
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class RecentsScreenModel @OptIn(DependencyAccessor::class) constructor(
     private val historyRepository: HistoryRepository = dataDeps.historyRepository,
-    dispatchers: AmadeusDispatchers = appDeps.dispatchers
+    dispatchers: AmadeusDispatchers = commonDeps.dispatchers
 ): StateScreenModel<RecentsState>(RecentsState()) {
 
     var searchQuery by mutableStateOf("")
@@ -59,7 +59,7 @@ class RecentsScreenModel @OptIn(DependencyAccessor::class) constructor(
             .onEach {
                 mutableState.update { state ->
                     state.copy(
-                        history = it.toImmutableList()
+                        history = it.toList()
                     )
                 }
             }
@@ -97,13 +97,13 @@ class RecentsScreenModel @OptIn(DependencyAccessor::class) constructor(
 
 @Immutable
 data class RecentsState(
-    val history: ImmutableList<HistoryWithRelations> = persistentListOf(),
+    val history: List<HistoryWithRelations> = emptyList(),
 ) {
 
     val groupedByEpochDays = history
         .groupBy { it.lastRead.date.toEpochDays() }
         .toList()
-        .toImmutableList()
+        .toList()
 }
 
 @Stable

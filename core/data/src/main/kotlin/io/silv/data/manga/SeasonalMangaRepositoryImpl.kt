@@ -15,7 +15,6 @@ import io.silv.model.DomainSeasonalList
 import io.silv.network.MangaDexApi
 import io.silv.network.model.list.Data
 import io.silv.network.util.fetchMangaChunked
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
@@ -37,7 +36,7 @@ internal class SeasonalMangaRepositoryImpl(
                     item.list.id,
                     item.list.season,
                     item.list.year,
-                    item.manga.map { it.manga.let(MangaMapper::mapManga) }.toImmutableList()
+                    item.manga.map { it.manga.let(MangaMapper::mapManga) }
                 )
             }
         }

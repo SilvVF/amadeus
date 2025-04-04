@@ -64,8 +64,6 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
-    implementation(libs.voyager.screenModel)
-
 
     implementation(libs.unifile)
 
@@ -98,24 +96,12 @@ dependencies {
 
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
-    implementation(libs.androidx.material3.window.size)
-    implementation(libs.androidx.compose.ui.ui.util)
     implementation(composeBom)
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.material3)
+    implementation(libs.bundles.compose.ui)
     androidTestImplementation(libs.androidx.compose.ui.test.junit)
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.orbital)
-    implementation(libs.ui.graphics)
-    debugImplementation(libs.ui.tooling)
-    implementation(libs.androidx.compose.animation.animation)
-    implementation(libs.androidx.compose.animation.animation.graphics)
-    implementation(libs.androidx.material.icons.extended)
-    implementation(libs.androidx.lifecycle.runtime.compose)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 
     // Paging 3
     implementation(libs.androidx.paging.compose)
@@ -129,10 +115,10 @@ dependencies {
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
-    implementation(libs.kotlin.collections.immutable)
 
     // VOYAGER
     implementation(libs.voyager.navigator)
+    implementation(libs.voyager.screenModel)
     implementation(libs.voyager.transitions)
     implementation(libs.voyager.tabNavigator)
 

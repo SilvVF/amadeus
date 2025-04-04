@@ -12,11 +12,11 @@ import io.silv.data.util.DiskUtil
  * It uses the following path scheme: /<root downloads dir>/<source name>/<manga>/<chapter>
  *
  */
-internal class DownloadProvider(
-    storageManager: StorageManager,
+class DownloadProvider(
+    context: Context
 ) {
 
-    val downloadsDir: UniFile? = storageManager.getDownloadsDirectory()
+    val downloadsDir: UniFile? = context.getDownloadsDirectory()
 
     /**
      * Returns the download directory for a manga. For internal use only.

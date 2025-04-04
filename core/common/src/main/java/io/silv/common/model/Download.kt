@@ -3,13 +3,11 @@ package io.silv.common.model
 import androidx.compose.runtime.Stable
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.sample
 
 
 @Stable
@@ -25,17 +23,6 @@ data class Download(
     val downloadedImages: Int
         get() = pages?.count { it.status == Page.State.READY } ?: 0
 
-    @Transient
-    private val _statusFlow = MutableStateFlow(State.NOT_DOWNLOADED)
-
-    @Transient
-    val statusFlow = _statusFlow.asStateFlow()
-    var status: State
-        get() = _statusFlow.value
-        set(status) {
-            _statusFlow.value = status
-        }
-
     @OptIn(FlowPreview::class)
     @Transient
     val progressFlow =
@@ -47,23 +34,14 @@ data class Download(
                 }
             }
 
-            val progressFlows = pages!!.map(Page::progressFlow)
-            emitAll(combine(progressFlows) { it.average().toInt() })
+            emitAll(combine(pages!!.map(Page::progressFlow)) { it.average().toInt() })
         }
             .distinctUntilChanged()
-            .debounce(50)
+            .sample(50)
 
     val progress: Int
         get() {
             val pages = pages ?: return 0
             return pages.map(Page::progress).average().toInt()
         }
-
-    enum class State(val value: Int) {
-        NOT_DOWNLOADED(0),
-        QUEUE(1),
-        DOWNLOADING(2),
-        DOWNLOADED(3),
-        ERROR(4),
-    }
 }

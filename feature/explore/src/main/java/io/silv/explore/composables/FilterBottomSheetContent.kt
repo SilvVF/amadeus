@@ -102,10 +102,10 @@ import io.silv.model.DomainTag
 import io.silv.ui.CenterBox
 import io.silv.ui.Language
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.ImmutableMap
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
+
+
+
+
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 
@@ -115,7 +115,7 @@ fun Screen.FilterBottomSheetContent(
     onQueryFilterChange: (UiQueryFilters) -> Unit,
     onSaveQueryClick: (UiQueryFilters) -> Unit,
     contentRatingFilters: @Composable ColumnScope.(
-        selected: ImmutableList<ContentRating>,
+        selected: List<ContentRating>,
         updateFilter: (FilterAction.ChangeContentRating) -> Unit,
     ) -> Unit = { selected, update ->
         DefaultContentRatingsFilter(
@@ -125,7 +125,7 @@ fun Screen.FilterBottomSheetContent(
     },
     publicationDemographicFilters: @Composable ColumnScope.(
         updateFilter: (FilterAction.ChangePublicationDemographic) -> Unit,
-        selected: ImmutableList<PublicationDemographic>,
+        selected: List<PublicationDemographic>,
     ) -> Unit = { updateFilter, selected ->
         DefaultPublicationDemographicFilter(
             updateFilter = updateFilter,
@@ -133,7 +133,7 @@ fun Screen.FilterBottomSheetContent(
         )
     },
     statusFilters: @Composable ColumnScope.(
-        selected: ImmutableList<Status>,
+        selected: List<Status>,
         updateFilter: (FilterAction.ChangeStatus) -> Unit,
     ) -> Unit = { selected, updateFilter ->
         DefaultStatusFilter(
@@ -142,7 +142,7 @@ fun Screen.FilterBottomSheetContent(
         )
     },
     languagesFilter: @Composable ColumnScope.(
-        translatedLanguage: ImmutableList<Language>,
+        translatedLanguage: List<Language>,
         updateFilter: (FilterAction) -> Unit,
     ) -> Unit = { translatedLanguage, updateFilter ->
         DefaultLanguageFilter(
@@ -152,7 +152,7 @@ fun Screen.FilterBottomSheetContent(
     },
     mangaTypeFilter: @Composable ColumnScope.(
         updateFilter: (FilterAction.MangaType) -> Unit,
-        originalLanguages: ImmutableList<Language>,
+        originalLanguages: List<Language>,
     ) -> Unit = { updateFilter, originalLanguages ->
         DefaultMangaTypeFilter(
             updateFilter = updateFilter,
@@ -160,9 +160,9 @@ fun Screen.FilterBottomSheetContent(
         )
     },
     tagsFilter: @Composable ColumnScope.(
-        includedTags: ImmutableList<String>,
-        excludedTags: ImmutableList<String>,
-        categoryToTag: ImmutableMap<String, ImmutableList<DomainTag>>,
+        includedTags: List<String>,
+        excludedTags: List<String>,
+        categoryToTag: Map<String, List<DomainTag>>,
         excludeTagsMode: TagsMode,
         includeTagsMode: TagsMode,
         updateFilter: (FilterAction) -> Unit,
@@ -349,7 +349,7 @@ fun DefaultTagsModeFilter(
 
 @Composable
 fun DefaultLanguageFilter(
-    translatedLanguage: ImmutableList<Language>,
+    translatedLanguage: List<Language>,
     updateFilter: (FilterAction) -> Unit,
 ) {
     LanguageSelection(
@@ -364,11 +364,11 @@ fun DefaultLanguageFilter(
 
 @Composable
 fun DefaultTagsFilter(
-    includedTags: ImmutableList<String>,
-    excludedTags: ImmutableList<String>,
+    includedTags: List<String>,
+    excludedTags: List<String>,
     includeTagsMode: TagsMode,
     excludeTagsMode: TagsMode,
-    categoryToTag: ImmutableMap<String, ImmutableList<DomainTag>>,
+    categoryToTag: Map<String, List<DomainTag>>,
     updateFilter: (FilterAction) -> Unit,
 ) {
     var included by rememberSaveable { mutableStateOf(true) }
@@ -429,7 +429,7 @@ fun DefaultTagsFilter(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DefaultStatusFilter(
-    selectedItems: ImmutableList<Status>,
+    selectedItems: List<Status>,
     updateFilter: (FilterAction.ChangeStatus) -> Unit,
     item: @Composable (Status) -> Unit = { contentRating ->
         val space = LocalSpacing.current
@@ -470,7 +470,7 @@ fun DefaultStatusFilter(
     Column {
         Text(text = "Status")
         FlowRow {
-            val statuses = remember { Status.entries.toImmutableList() }
+            val statuses = remember { Status.entries.toList() }
 
             statuses.fastForEach { status ->
                 item(status)
@@ -482,7 +482,7 @@ fun DefaultStatusFilter(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DefaultContentRatingsFilter(
-    selectedItems: ImmutableList<ContentRating>,
+    selectedItems: List<ContentRating>,
     updateFilter: (FilterAction.ChangeContentRating) -> Unit,
     item: @Composable (ContentRating) -> Unit = { contentRating ->
         val space = LocalSpacing.current
@@ -523,7 +523,7 @@ fun DefaultContentRatingsFilter(
     Column {
         Text(text = "Content Ratings")
         FlowRow {
-            val contentRatings = remember { ContentRating.entries.toImmutableList() }
+            val contentRatings = remember { ContentRating.entries.toList() }
 
             contentRatings.fastForEach { contentRating ->
                 item(contentRating)
@@ -580,7 +580,7 @@ fun StateFilterChip(
 @Composable
 private fun LanguageSelection(
     modifier: Modifier = Modifier,
-    selectedLanguages: ImmutableList<Language>,
+    selectedLanguages: List<Language>,
     onLanguageClick: (Language) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -591,7 +591,7 @@ private fun LanguageSelection(
         mutableIntStateOf(0)
     }
 
-    val languages = remember { Language.entries.toImmutableList() }
+    val languages = remember { Language.entries.toList() }
 
     Column(
         modifier = modifier,
@@ -670,13 +670,13 @@ private fun LanguageSelection(
 @Composable
 fun DefaultMangaTypeFilter(
     updateFilter: (FilterAction.MangaType) -> Unit,
-    selectedLanguages: ImmutableList<Language>,
+    selectedLanguages: List<Language>,
 ) {
     val space = LocalSpacing.current
 
     val mangaTypes =
         remember {
-            persistentListOf(
+            listOf(
                 "Japanese (Manga)" to listOf(Language.Japanese),
                 "Chinese (Manhua)" to listOf(Language.ChineseTrad, Language.ChineseSimp),
                 "Korean (Manhwa)" to listOf(Language.Korean),
@@ -748,13 +748,13 @@ fun DefaultMangaTypeFilter(
 @Composable
 fun DefaultPublicationDemographicFilter(
     updateFilter: (FilterAction.ChangePublicationDemographic) -> Unit,
-    selectedDemographics: ImmutableList<PublicationDemographic>,
+    selectedDemographics: List<PublicationDemographic>,
 ) {
     val space = LocalSpacing.current
 
     val demographics =
         remember {
-            PublicationDemographic.entries.toImmutableList()
+            PublicationDemographic.entries.toList()
         }
 
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -828,8 +828,8 @@ fun DefaultPublicationDemographicFilter(
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun TagsList(
-    categoryToTags: ImmutableMap<String, ImmutableList<DomainTag>>,
-    selectedTags: ImmutableList<String>,
+    categoryToTags: Map<String, List<DomainTag>>,
+    selectedTags: List<String>,
     onTagSelected: (id: String) -> Unit,
 ) {
     val space = LocalSpacing.current

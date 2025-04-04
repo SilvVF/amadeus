@@ -7,7 +7,6 @@ import io.silv.common.model.ProgressState
 import io.silv.common.model.PublicationDemographic
 import io.silv.common.model.ReadingStatus
 import io.silv.common.model.Status
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -44,8 +43,8 @@ data class Manga(
     val lastSyncedForUpdates: LocalDateTime?,
     val isStub: Boolean = false,
 ) {
-    val tags = tagToId.keys.toImmutableList()
-    val tagIds = tagToId.values.toImmutableList()
+    val tags = tagToId.keys.toList()
+    val tagIds = tagToId.values.toList()
 
     companion object {
         fun stub(): Manga {

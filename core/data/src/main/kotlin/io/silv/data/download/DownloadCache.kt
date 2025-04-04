@@ -1,15 +1,13 @@
 package io.silv.data.download
 
 import android.content.Context
-import android.net.Uri
+import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
 import io.silv.common.DependencyAccessor
-import io.silv.common.appDeps
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.MangaDexSource
 import io.silv.common.model.MangaResource
 import io.silv.common.model.Source
-import io.silv.datastore.dataStoreDeps
 import io.silv.di.dataDeps
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -48,7 +46,6 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.serializer
 import java.io.File
 import kotlin.time.Duration.Companion.hours
-import androidx.core.net.toUri
 
 /**
  * Cache where we dump the downloads directory from the filesystem. This class is needed because
@@ -60,7 +57,6 @@ import androidx.core.net.toUri
 class DownloadCache internal constructor(
     private val context: Context,
     private val provider: DownloadProvider,
-    private val storageManager: StorageManager,
 ) {
 
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -92,7 +88,7 @@ class DownloadCache internal constructor(
         get() = File(context.cacheDir, "dl_index_cache_v3")
 
     private val rootDownloadsDirLock = Mutex()
-    private var rootDownloadsDir = RootDirectory(storageManager.getDownloadsDirectory())
+    private var rootDownloadsDir = RootDirectory(context.getDownloadsDirectory())
 
     init {
         // Attempt to read cache file
@@ -360,7 +356,7 @@ class DownloadCache internal constructor(
             val sourceMap = sources.associate { provider.getSourceDirName(it).lowercase() to it.id }
 
             rootDownloadsDirLock.withLock {
-                rootDownloadsDir = RootDirectory(storageManager.getDownloadsDirectory())
+                rootDownloadsDir = RootDirectory(context.getDownloadsDirectory())
 
                 val sourceDirs = rootDownloadsDir.dir?.listFiles().orEmpty()
                     .filter { it.isDirectory && !it.name.isNullOrBlank() }

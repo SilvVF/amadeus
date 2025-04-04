@@ -3,4 +3,10 @@
     <string name="delete_chapter">Delete chapter</string>
     <string name="cancel_download">Cancel download</string>
     <string name="start_download_immediately">Start download immediately</string>
+    <string name="action_menu">menu</string>
+    <string name="nav_zone_prev">pervious</string>
+    <string name="nav_zone_next">next</string>
+    <string name="nav_zone_left">left</string>
+    <string name="nav_zone_right">right</string>
+    <string name="left_to_right_viewer">Left to right</string>
 </resources>

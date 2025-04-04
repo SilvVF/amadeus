@@ -64,7 +64,7 @@ import io.silv.ui.composables.SearchTopAppBar
 import io.silv.ui.layout.ScrollbarLazyColumn
 import io.silv.ui.theme.AmadeusTheme
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.persistentListOf
+
 import kotlinx.datetime.LocalDateTime
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
@@ -293,7 +293,7 @@ fun PreviewRecentsScreen() {
         RecentsScreenContent(
             state = remember {
                 RecentsState(
-                    history = persistentListOf(
+                    history = listOf(
                         HistoryWithRelations(
                             id = 1,
                             chapterId="2c484989-75d8-4f17-ae42-beb620a717a2",

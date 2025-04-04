@@ -24,7 +24,7 @@ class FixedIntervalRefillStrategy(
 
     override suspend fun refill(): Long {
         return mutex.withLock {
-            val now =  ticker.read()
+            val now = ticker.read()
             if (now < nextRefillTime) {
                 return 0
             }

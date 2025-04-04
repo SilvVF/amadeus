@@ -24,8 +24,10 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.ScreenTransition
 import io.silv.manga.download.DownloadQueueScreen
+import io.silv.ui.LaunchedOnReselect
 import io.silv.ui.ReselectTab
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.collectLatest
@@ -36,13 +38,9 @@ val LocalTopLevelNavigator = compositionLocalOf<Navigator?> { null }
 
 object RecentsTab: ReselectTab {
 
-    private fun readResolve(): Any = RecentsTab
+    private fun readResolve(): Any = this
 
-    private val recentsReselectChannel = Channel<Unit>(UNLIMITED)
-
-    override suspend fun onReselect(navigator: Navigator) {
-        recentsReselectChannel.send(Unit)
-    }
+    override val reselectCh: Channel<Unit> = Channel<Unit>(1, BufferOverflow.DROP_OLDEST)
 
     override val options: TabOptions
         @Composable
@@ -54,12 +52,9 @@ object RecentsTab: ReselectTab {
 
     @Composable
     override fun Content() {
-
         val topLevelNavigator = LocalNavigator.currentOrThrow
-        val lifecycleOwner = LocalLifecycleOwner.current
 
         Navigator(RecentsScreen()) { navigator ->
-
             CompositionLocalProvider(LocalTopLevelNavigator provides topLevelNavigator) {
                 ScreenTransition(
                     navigator = navigator,
@@ -85,17 +80,11 @@ object RecentsTab: ReselectTab {
                 )
             }
 
-            LaunchedEffect(recentsReselectChannel, lifecycleOwner.lifecycle) {
-                lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    withContext(Dispatchers.Main.immediate) {
-                        recentsReselectChannel.receiveAsFlow().collectLatest {
-                            if (navigator.items.fastAll { it !is DownloadQueueScreen }) {
-                                navigator.push(DownloadQueueScreen())
-                            } else {
-                                navigator.pop()
-                            }
-                        }
-                    }
+            LaunchedOnReselect {
+                if (navigator.items.fastAll { it !is DownloadQueueScreen }) {
+                    navigator.push(DownloadQueueScreen())
+                } else {
+                    navigator.pop()
                 }
             }
         }

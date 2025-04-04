@@ -6,9 +6,9 @@ import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.library.UiChapterUpdate
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
+
+
+
 import kotlinx.datetime.LocalDateTime
 
 @Stable
@@ -29,8 +29,8 @@ sealed interface LibraryError {
 data class LibraryState(
     val libraryLastUpdated: LocalDateTime? = null,
     val updatingLibrary: Boolean = false,
-    val bookmarkedChapters: ImmutableList<Pair<Manga, ImmutableList<Chapter>>> = persistentListOf(),
-    val updates: ImmutableList<Pair<Int, ImmutableList<UiChapterUpdate>>> = persistentListOf(),
+    val bookmarkedChapters: List<Pair<Manga, List<Chapter>>> = emptyList(),
+    val updates: List<Pair<Int, List<UiChapterUpdate>>> = emptyList(),
     val libraryMangaState: LibraryMangaState = LibraryMangaState.Loading
 )
 
@@ -46,8 +46,8 @@ sealed interface LibraryMangaState {
 
     @Stable
     data class Success(
-        val mangaWithChapters: ImmutableList<MangaWithChapters> = persistentListOf(),
-        val filteredTagIds: ImmutableList<String> = persistentListOf(),
+        val mangaWithChapters: List<MangaWithChapters> = emptyList(),
+        val filteredTagIds: List<String> = emptyList(),
         val filteredText: String = "",
         val updatingLibrary: Boolean = false,
     ): LibraryMangaState {
@@ -58,7 +58,7 @@ sealed interface LibraryMangaState {
                 .any { title -> filteredText.lowercase() in title.lowercase() }
             }
             .filter { (manga, _) -> filteredTagIds.isEmpty() || filteredTagIds.any { manga.tagIds.contains(it) } }
-            .toImmutableList()
+            .toList()
 
         val libraryTags = mangaWithChapters
             .flatMap { it.manga.tagToId.entries }
@@ -66,7 +66,7 @@ sealed interface LibraryMangaState {
             .map { (name, id) ->
                 LibraryTag(name, id, filteredTagIds.isEmpty() || filteredTagIds.contains(id))
             }
-            .toImmutableList()
+            .toList()
 
         val hasFilters = filteredTagIds.isNotEmpty() || filteredText.isNotBlank()
 

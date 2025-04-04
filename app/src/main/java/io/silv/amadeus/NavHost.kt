@@ -1,7 +1,6 @@
 package io.silv.amadeus
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
@@ -24,23 +23,18 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
+import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.amadeus.dependency.rememberDataDependency
-import io.silv.domain.update.GetUpdateCount
 import io.silv.explore.ExploreTab
 import io.silv.library.LibraryTab
 import io.silv.manga.history.RecentsTab
@@ -48,53 +42,39 @@ import io.silv.manga.settings.MoreTab
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
 import io.silv.ui.layout.Scaffold
-import io.silv.ui.theme.LocalSpacing
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.parcelize.IgnoredOnParcel
 import soup.compose.material.motion.animation.materialFadeThroughIn
 import soup.compose.material.motion.animation.materialFadeThroughOut
 
 object NavHost : Screen {
 
-    private fun readResolve(): Any = NavHost
-
-    @IgnoredOnParcel
-    internal val bottomBarVisibility = Channel<Boolean>()
-
-    internal val globalSearchChannel = Channel<String?>()
+    private fun readResolve(): Any = this
 
     @OptIn(ExperimentalMaterial3Api::class)
     @SuppressLint("UnusedContentLambdaTargetStateParameter")
     @Composable
     override fun Content() {
         val appState = LocalAppState.current
-        val lifecycleOwner = LocalLifecycleOwner.current
 
-        val bottomBarVisible by produceState(initialValue = true) {
-            bottomBarVisibility.receiveAsFlow().collectLatest { value = it }
-        }
-
-
-        val nav = LocalNavigator.currentOrThrow
         TabNavigator(
             tab = LibraryTab,
         ) { tabNavigator ->
-            CompositionLocalProvider(LocalNavigator provides nav) {
+
+            DisposableEffect(Unit) {
+                appState.tabNavigator = tabNavigator
+                onDispose { appState.tabNavigator = null }
+            }
+
+            CompositionLocalProvider(LocalNavigator provides appState.navigator) {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     contentWindowInsets = WindowInsets(0),
                     startBar = {
-                        AnimatedVisibility(appState.shouldShowNavRail && bottomBarVisible) {
+                        AnimatedVisibility(appState.shouldShowNavRail) {
                             AmadeusNavRail()
                         }
                     },
                     bottomBar = {
-                        AnimatedVisibility(appState.shouldShowBottomBar && bottomBarVisible) {
+                        AnimatedVisibility(appState.shouldShowBottomBar) {
                             AmadeusBottomBar(modifier = Modifier.fillMaxWidth())
                         }
                     }
@@ -124,20 +104,9 @@ object NavHost : Screen {
                     }
                 }
             }
-            LaunchedEffect(globalSearchChannel, lifecycleOwner) {
-                withContext(Dispatchers.Main.immediate) {
-                    lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                        globalSearchChannel.receiveAsFlow().collectLatest {
-                            ExploreTab.onSearch(it, tabNavigator)
-                        }
-                    }
-                }
-            }
         }
     }
 }
-
-
 
 
 @Composable
@@ -174,7 +143,7 @@ fun AmadeusNavRail(
         getUpdateCount.subscribe().collect { value = it }
     }
 
-    AnimatedVisibility(visible = visible) {
+    AnimatedVisibility(visible) {
         NavigationRail(modifier) {
             TabNavigationItemWithNotifications(LibraryTab, mangaWithUpdates)
             TabNavigationItem(RecentsTab)
@@ -189,9 +158,7 @@ fun AmadeusNavRail(
 private fun TabNavigationItemWithNotifications(tab: ReselectTab, notificationCount: Int) {
     val tabNavigator = LocalTabNavigator.current
     val selected = tabNavigator.current == tab
-    val scope = rememberCoroutineScope()
-    val navigator = LocalNavigator.currentOrThrow
-    val space = LocalSpacing.current
+    val appState = LocalAppState.current
 
     Box {
         NavigationRailItem(
@@ -201,15 +168,7 @@ private fun TabNavigationItemWithNotifications(tab: ReselectTab, notificationCou
             alwaysShowLabel = true,
             selected = selected,
             onClick = {
-                Log.d("Reselect", "onclick $tab")
-                if (selected) {
-                    scope.launch {
-                        Log.d("Reselect", "Sending Reselect event to $tab")
-                        tab.onReselect(navigator)
-                    }
-                } else {
-                    tabNavigator.current = tab
-                }
+                appState.onTabSelected(tab)
             },
             icon = {
                 BadgedBox(
@@ -241,26 +200,17 @@ private fun TabNavigationItemWithNotifications(tab: ReselectTab, notificationCou
 }
 
 @Composable
-private fun TabNavigationItem(tab: ReselectTab) {
+private fun TabNavigationItem(tab: Tab) {
+    val appState = LocalAppState.current
     val tabNavigator = LocalTabNavigator.current
     val selected = tabNavigator.current == tab
-    val scope = rememberCoroutineScope()
-    val navigator = LocalNavigator.currentOrThrow
 
     NavigationRailItem(
         label = { Text(tab.options.title) },
         alwaysShowLabel = true,
         selected = selected,
         onClick = {
-            Log.d("Reselect", "onclick $tab")
-            if (selected) {
-                scope.launch {
-                    Log.d("Reselect", "Sending Reselect event to $tab")
-                    tab.onReselect(navigator)
-                }
-            } else {
-                tabNavigator.current = tab
-            }
+            appState.onTabSelected(tab)
         },
         icon = {
             Icon(

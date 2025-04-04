@@ -13,14 +13,6 @@ data class CoverArtListResponse(
     val total: Int,
 )
 
-//
-// @Serializable
-// data class CoverResponse(
-//    val result: String = "",
-//    val response: String = "",
-//    val data: Cover
-// )
-
 @Serializable
 data class Cover(
     val id: String = "",

@@ -72,7 +72,7 @@ import io.silv.ui.composables.CardType
 import io.silv.ui.composables.SelectCardType
 import io.silv.ui.composables.UseList
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.persistentListOf
+
 import kotlin.math.roundToInt
 
 class SettingsScreen: Screen {
@@ -396,7 +396,7 @@ fun ReaderOptions(
                 verticalArrangement = Arrangement.Center
             ) {
                 val colors = remember {
-                    persistentListOf(
+                    listOf(
                         Color.Black to "Black",
                         Color.Gray to "Gray",
                         Color.White to "White",

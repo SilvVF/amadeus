@@ -72,8 +72,8 @@ import io.silv.ui.composables.MangaListItem
 import io.silv.ui.composables.mangaGrid
 import io.silv.ui.composables.mangaList
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
+
+
 import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -110,7 +110,7 @@ fun RecentSearchesPeekContent(
                 if (recentSearchUiState.recentQueries.isEmpty()) {
                     items(
                         items =
-                        persistentListOf(
+                        listOf(
                             "Oshi no ko",
                             "Steins Gate",
                             "Dr Stone",
@@ -206,7 +206,7 @@ fun BrowseMangaContent(
     contentPaddingValues: PaddingValues,
     pagedType: UiPagedType,
     gridState: LazyGridState = rememberLazyGridState(),
-    seasonalLists: ImmutableList<DomainSeasonalList>,
+    seasonalLists: List<DomainSeasonalList>,
     refreshingSeasonal: Boolean,
     mangaList: LazyPagingItems<StateFlow<Manga>>,
     onMangaClick: (manga: Manga) -> Unit,
@@ -412,7 +412,7 @@ private fun LazyGridScope.seasonalMangaGrid(
 @Composable
 fun SeasonalListTags(
     modifier: Modifier = Modifier,
-    seasonalLists: ImmutableList<DomainSeasonalList>,
+    seasonalLists: List<DomainSeasonalList>,
     refreshing: Boolean,
     selectedIndex: Int,
     onIndexSelected: (Int) -> Unit,

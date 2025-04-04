@@ -60,16 +60,17 @@ import io.silv.manga.download.DownloadQueueScreen
 import io.silv.manga.history.RecentsScreen
 import io.silv.manga.stats.StatsScreen
 import io.silv.manga.storeage.StorageScreen
+import io.silv.ui.LaunchedOnReselect
 import io.silv.ui.ReselectTab
 import io.silv.ui.openOnWeb
 import io.silv.ui.theme.LocalSpacing
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 
 object MoreTab: ReselectTab {
-    private fun readResolve(): Any = MoreTab
+    private fun readResolve(): Any = this
 
-    override suspend fun onReselect(navigator: Navigator) {
-        navigator.push(SettingsScreen())
-    }
+    override val reselectCh: Channel<Unit> = Channel(1, BufferOverflow.DROP_OLDEST)
 
     override val options: TabOptions
         @Composable
@@ -81,6 +82,12 @@ object MoreTab: ReselectTab {
 
     @Composable
     override fun Content() {
+        val navigator = LocalNavigator.currentOrThrow
+
+        LaunchedOnReselect {
+            navigator.push(SettingsScreen())
+        }
+
         MoreHomeScreen()
     }
 }

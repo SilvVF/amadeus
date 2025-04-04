@@ -90,8 +90,8 @@ import io.silv.ui.ReaderLayout
 import io.silv.ui.conditional
 import io.silv.ui.openOnWeb
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
+
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -158,7 +158,7 @@ class ReaderScreen(
         }
 
         val colors = remember {
-            persistentListOf(
+            listOf(
                 Color.Black to "Black",
                 Color.Gray to "Gray",
                 Color.White to "White",
@@ -234,7 +234,7 @@ class ReaderScreen(
 @Composable
 fun VerticalReader(
     viewerChapters: ViewerChapters,
-    chapterList: ImmutableList<Chapter>,
+    chapterList: List<Chapter>,
     manga: Manga,
     onPageChange: (readerChapter: ReaderChapter, page: Page) -> Unit,
     loadNextChapter: () -> Unit,
@@ -383,7 +383,7 @@ fun VerticalReader(
 @Composable
 fun HorizontalReader(
     viewerChapters: ViewerChapters,
-    chapterList: ImmutableList<Chapter>,
+    chapterList: List<Chapter>,
     manga: Manga,
     onPageChange: (readerChapter: ReaderChapter, page: Page) -> Unit,
     loadNextChapter: () -> Unit,

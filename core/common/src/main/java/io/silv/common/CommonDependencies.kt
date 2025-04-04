@@ -3,10 +3,10 @@ package io.silv.common
 import kotlinx.coroutines.CoroutineScope
 
 @OptIn(DependencyAccessor::class)
-public lateinit var appDeps: AppDependencies
+public lateinit var commonDeps: CommonDependencies
 
 @OptIn(DependencyAccessor::class)
-abstract class AppDependencies {
+abstract class CommonDependencies {
 
     val dispatchers: AmadeusDispatchers = AmadeusDispatchers.default
 

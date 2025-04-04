@@ -2,8 +2,7 @@ package io.silv.reader.loader
 
 import android.content.Context
 import io.silv.common.DependencyAccessor
-import io.silv.common.appDeps
-import io.silv.common.model.MangaDexSource
+import io.silv.common.commonDeps
 import io.silv.data.download.ChapterCache
 import io.silv.data.download.DownloadManager
 import io.silv.di.dataDeps
@@ -25,7 +24,7 @@ class ChapterLoader @OptIn(DependencyAccessor::class) constructor(
     private val imageSourceFactory: ImageSourceFactory = downloadDeps.imageSourceFactory,
     private val chapterCache: ChapterCache = downloadDeps.chapterCache,
     private val source: HttpSource = HttpSource(networkDeps.mangaDexApi, networkDeps.mangaDexClient),
-    private val applicationScope: CoroutineScope = appDeps.applicationScope,
+    private val applicationScope: CoroutineScope = commonDeps.applicationScope,
     private val context: Context = dataDeps.context,
 ) {
     /**

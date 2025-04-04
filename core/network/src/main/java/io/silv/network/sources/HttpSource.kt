@@ -34,16 +34,6 @@ private data class AtHomeChapterDto(
     val dataSaver: List<String>,
 )
 
-@Serializable
-private data class ImageReportDto(
-    val url: String,
-    val success: Boolean,
-    val bytes: Int?,
-    val cached: Boolean,
-    val duration: Long,
-)
-
-
 class HttpSource(
     private val mangaDexApi: MangaDexApi,
     private val client: HttpClient,
@@ -119,7 +109,7 @@ class HttpSource(
     }
 
     private val reqHeader =  HeadersBuilder().apply {
-        append("Referer", "${mangaDexApi.mangaDexUrl}/")
+        append("Referer", "${mangaDexApi.BASE_URL}/")
     }
 
 

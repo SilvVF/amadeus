@@ -3,6 +3,7 @@ package io.silv.network.requests
 import io.silv.common.model.TagsMode
 import io.silv.network.query.QueryParam
 import io.silv.network.query.QueryParams
+import io.silv.network.query.queryParamsOf
 
 data class MangaRequest(
     val limit: Int = 10,
@@ -31,7 +32,7 @@ data class MangaRequest(
     val group: String? = null,
 ) : QueryParams {
     override fun createQueryParams(): List<QueryParam> {
-        return listOf(
+        return queryParamsOf(
             Pair("limit", limit),
             Pair("offset", offset),
             Pair("title", title),
@@ -57,9 +58,5 @@ data class MangaRequest(
             Pair("hasAvailableChapters", hasAvailableChapters),
             Pair("group", group),
         )
-            .filter { it.second != null }
-            .map {
-                QueryParam(it.first, it.second.toString())
-            }
     }
 }

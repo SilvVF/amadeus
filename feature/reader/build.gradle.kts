@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "io.silv.reader"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 24
@@ -96,7 +96,6 @@ dependencies {
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlin.serialization)
-    implementation(libs.kotlin.collections.immutable)
 
     // VOYAGER
     implementation(libs.voyager.navigator)
@@ -109,4 +108,5 @@ dependencies {
     // COIL
     implementation(libs.coil.compose)
     implementation(libs.coil)
+    debugImplementation(libs.androidx.ui.tooling)
 }

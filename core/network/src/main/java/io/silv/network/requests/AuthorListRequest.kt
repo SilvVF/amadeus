@@ -2,6 +2,7 @@ package io.silv.network.requests
 
 import io.silv.network.query.QueryParam
 import io.silv.network.query.QueryParams
+import io.silv.network.query.queryParamsOf
 
 data class AuthorListRequest(
     val limit: Int? = null,
@@ -11,16 +12,12 @@ data class AuthorListRequest(
     val order: Map<String, String>? = null,
 ) : QueryParams {
     override fun createQueryParams(): List<QueryParam> {
-        return listOf(
+        return queryParamsOf(
             Pair("limit", limit),
             Pair("offset", offset),
             Pair("ids", ids),
             Pair("name", name),
             Pair("order", order),
         )
-            .filter { it.second != null }
-            .map {
-                QueryParam(it.first, it.second.toString())
-            }
     }
 }

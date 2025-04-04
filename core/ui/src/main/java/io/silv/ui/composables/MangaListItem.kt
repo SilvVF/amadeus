@@ -57,8 +57,7 @@ import coil.compose.AsyncImage
 import io.silv.domain.manga.model.Manga
 import io.silv.ui.Language
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
+
 
 @Stable
 enum class CardType(val string: String) {
@@ -185,7 +184,7 @@ fun MangaGridItem(
                                     brush =
                                     Brush.verticalGradient(
                                         colors =
-                                        persistentListOf(
+                                        listOf(
                                             Color.Transparent,
                                             Color.Black.copy(alpha = 0.7f),
                                             Color.Black.copy(alpha = 0.9f),
@@ -221,7 +220,7 @@ fun MangaGridItem(
 @Composable
 fun MangaGenreTags(
     modifier: Modifier = Modifier,
-    tags: ImmutableList<String>,
+    tags: List<String>,
     onTagClick: (tag: String) -> Unit = {},
 ) {
     val space = LocalSpacing.current
@@ -243,7 +242,7 @@ fun MangaGenreTags(
 @Composable
 fun TranslatedLanguageTags(
     modifier: Modifier = Modifier,
-    tags: ImmutableList<String>,
+    tags: List<String>,
     onLanguageClick: (language: String) -> Unit = {},
 ) {
     val space = LocalSpacing.current
@@ -282,7 +281,7 @@ fun TranslatedLanguageTags(
 @Composable
 fun GenreTagsWithBookmark(
     modifier: Modifier = Modifier,
-    tags: ImmutableList<String>,
+    tags: List<String>,
     bookmarked: Boolean,
     onBookmarkClick: () -> Unit,
     onTagClick: (tag: String) -> Unit = {},

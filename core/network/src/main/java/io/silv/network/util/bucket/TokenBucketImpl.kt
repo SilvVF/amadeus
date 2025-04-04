@@ -1,7 +1,10 @@
 package io.silv.network.util.bucket
 
+import android.util.Log
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.coroutines.coroutineContext
 
 /**
  * A token bucket implementation that is of a leaky bucket in the sense that it has a finite capacity and any added
@@ -33,9 +36,7 @@ internal class TokenBucketImpl(
 ) :
     TokenBucket {
 
-    private val numTokensMutex= Mutex()
-    private val refillMutex = Mutex()
-    private val consumeMutex = Mutex()
+    private val mutex = Mutex()
 
     private var size: Long  = initialTokens
 
@@ -52,7 +53,7 @@ internal class TokenBucketImpl(
     override suspend fun numTokens(): Long {
             // Give the refill strategy a chance to add tokens if it needs to so that we have an accurate
             // count.
-        return numTokensMutex.withLock {
+        return mutex.withReentrantLock {
             refill(refillStrategy.refill())
             size
         }
@@ -88,7 +89,7 @@ internal class TokenBucketImpl(
      * @return `true` if the tokens were consumed, `false` otherwise.
      */
     override suspend fun tryConsume(numTokens: Long): Boolean {
-        consumeMutex.withLock {
+        return mutex.withReentrantLock {
 
             assert(numTokens > 0) { "Number of tokens to consume must be positive" }
             assert(numTokens <= capacity) { "Number of tokens to consume must be less than the capacity of the bucket." }
@@ -98,9 +99,10 @@ internal class TokenBucketImpl(
             // Now try to consume some tokens
             if (numTokens <= size) {
                 size -= numTokens
-                return true
+                true
+            } else {
+                false
             }
-            return false
         }
     }
 
@@ -119,7 +121,7 @@ internal class TokenBucketImpl(
      * @param numTokens The number of tokens to consume from teh bucket, must be a positive number.
      */
     override suspend fun consume(numTokens: Long) {
-        while (true) {
+        while (coroutineContext.isActive) {
             if (tryConsume(numTokens)) {
                 break
             }
@@ -134,9 +136,8 @@ internal class TokenBucketImpl(
      * @param numTokens The number of tokens to add to the bucket.
      */
     override suspend fun refill(numTokens: Long) {
-        refillMutex.withLock {
-            val newTokens = capacity.coerceAtMost(numTokens.coerceAtLeast(0))
-            size = (size + newTokens).coerceAtMost(capacity).coerceAtLeast(0)
+        mutex.withReentrantLock {
+            size = (size + numTokens).coerceIn(numTokens.coerceAtMost(capacity)..capacity)
         }
     }
 }

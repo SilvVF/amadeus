@@ -110,6 +110,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+//https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:navigation/navigation-compose/src/commonMain/kotlin/androidx/navigation/compose/NavHost.kt;l=559;drc=78fdd43c1462ed48b757ed3f9234f6f949fd4004;bpv=1;bpt=1
 @Composable
 fun PredictiveBackScaleTransition(
     navigator: Navigator,
@@ -130,7 +131,6 @@ fun PredictiveBackScaleTransition(
         content = @Composable { it.Content() },
     )
 }
-
 
 @OptIn(ExperimentalAnimationApi::class, InternalVoyagerApi::class, ExperimentalVoyagerApi::class)
 @Composable

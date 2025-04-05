@@ -39,6 +39,9 @@ fun Context.openOnWeb(
     }
 }
 
+@Composable
+fun <T: Function<Unit>> rememberLambda(value: T) = remember { value }
+
 
 fun Color.isLight() = this.luminance() > 0.5
 

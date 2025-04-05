@@ -144,6 +144,12 @@ internal class ChapterRepositoryImpl(
         chapters == null || chapters.any { localDateTimeNow() - (it.savedLocalAt) > 24.hours }
     }
 
+    override suspend fun getChaptersByMangaId(
+        mangaId: String
+    ): List<Chapter> {
+        return chapterDao.getChaptersByMangaId(mangaId).map(ChapterMapper::mapChapter)
+    }
+
     override fun observeChaptersByMangaId(mangaId: String): Flow<List<Chapter>> {
         return chapterDao.observeChaptersByMangaId(mangaId).map { list -> list.map(ChapterMapper::mapChapter) }.onStart {
             if (shouldUpdate(mangaId)) {

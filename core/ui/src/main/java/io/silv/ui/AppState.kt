@@ -1,6 +1,7 @@
 package io.silv.ui
 
 import android.util.Log
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
@@ -99,6 +100,10 @@ class AppState(
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = false,
             )
+
+    fun showSnackBar(message: String, duration: SnackbarDuration = SnackbarDuration.Short) {
+        TODO("show snackbars")
+    }
 
     fun onTabSelected(tab: Tab) {
         if (tabNavigator?.current == tab

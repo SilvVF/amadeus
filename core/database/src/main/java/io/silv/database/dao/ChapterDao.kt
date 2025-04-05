@@ -29,7 +29,7 @@ interface ChapterDao {
 
     @Query(
         """
-        SELECT * FROM chapters 
+        SELECT * FROM chapters
         WHERE manga_id = :mangaId
     """,
     )
@@ -41,7 +41,7 @@ interface ChapterDao {
         WHERE manga_id = :mangaId
     """,
     )
-    fun getChaptersByMangaId(mangaId: String): List<ChapterEntity>
+    suspend fun getChaptersByMangaId(mangaId: String): List<ChapterEntity>
 
     @Query("SELECT * FROM chapters")
     fun getChapterEntities(): Flow<List<ChapterEntity>>

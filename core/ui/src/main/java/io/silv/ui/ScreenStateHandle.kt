@@ -65,7 +65,7 @@ class ScreenStateHandle: Serializable {
     @Transient
     private val flows = mutableMapOf<String, MutableStateFlow<Any?>>()
 
-    constructor(initialState: Map<String, Any?>) {
+    constructor(initialState: Map<String, Any?> = emptyMap()) {
         regular.putAll(initialState)
     }
 

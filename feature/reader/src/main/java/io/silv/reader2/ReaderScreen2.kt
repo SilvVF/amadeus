@@ -1,25 +1,11 @@
 package io.silv.reader2
 
-import android.app.DownloadManager
+import android.app.Activity
 import android.content.Context
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.PointF
-import android.graphics.RectF
-import android.os.Binder
-import android.os.Build
-import android.os.Bundle
-import android.os.Parcelable
-import android.util.Size
-import android.util.SizeF
-import android.util.SparseArray
+import android.content.ContextWrapper
+import android.view.KeyEvent
 import android.view.MotionEvent
-import androidx.annotation.MainThread
-import androidx.annotation.StringRes
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Animation
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,66 +14,71 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.internal.rememberComposableLambda
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.hapticfeedback.HapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.core.graphics.withScale
-import androidx.core.graphics.withTranslation
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import cafe.adriel.voyager.core.lifecycle.DisposableEffectIgnoringConfiguration
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.DependencyAccessor
-import io.silv.common.commonDeps
-import io.silv.common.model.Page
+import io.silv.common.log.LogPriority
+import io.silv.common.log.asLog
+import io.silv.common.log.logcat
 import io.silv.di.downloadDeps
-import io.silv.reader.ReaderScreenModel
 import io.silv.reader.Viewer
+import io.silv.reader.ViewerChapters
 import io.silv.reader.loader.ReaderChapter
 import io.silv.reader.loader.ReaderPage
-import io.silv.ui.R
+import io.silv.ui.LocalAppState
 import io.silv.ui.ScreenStateHandle
 import io.silv.ui.collectEvents
+import io.silv.ui.rememberLambda
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import java.io.Serializable
-import kotlin.math.abs
 
-class ReaderScreen2(
-    mangaId: String,
+private fun requireActivity(context: Context): ComponentActivity {
+    return when (context) {
+        is ComponentActivity -> context
+        is ContextWrapper -> requireActivity(context.baseContext)
+        else -> error("no activity")
+    }
+}
+
+data class ReaderScreen2(
+    val mangaId: String,
     val chapterId: String,
 ) : Screen {
 
-    val saved = ScreenStateHandle(mapOf("manga_id" to mangaId)).apply {
-        this["chapter_id"] = get<String>("chapter_id") ?: chapterId
-    }
+    val saved = ScreenStateHandle(mapOf("manga_id" to mangaId))
 
     override val key: ScreenKey = "ReaderScreen_${mangaId}_${saved.get<String>("chapter_id")}"
 
     @Composable
     override fun Content() {
 
-        SavedStateHandle
-        val screenModel = rememberScreenModel { Reader2ScreenModel(saved) }
+        val appState = LocalAppState.current
+        val context = LocalContext.current
+        val navigator = LocalNavigator.currentOrThrow
+
+        val screenModel = rememberScreenModel { Reader2ScreenModel(saved, appState) }
+
+        LaunchedEffect(Unit) {
+            val initResult = screenModel.init(mangaId, chapterId)
+
+            if (!initResult.getOrDefault(false)) {
+                val exception = initResult.exceptionOrNull() ?: IllegalStateException(
+                    "Unknown err",
+                )
+                logcat(LogPriority.ERROR) { exception.asLog() }
+                appState.showSnackBar(exception.message.orEmpty())
+                navigator.pop()
+            }
+        }
 
         LifecycleResumeEffect(screenModel) {
             screenModel.restartReadTimer()
@@ -96,18 +87,37 @@ class ReaderScreen2(
             }
         }
 
+        val setChapters = rememberLambda { viewerChapters: ViewerChapters ->
+            screenModel.state.value.viewer?.setChapters(viewerChapters)
+        }
+
+        val setOrientation = rememberLambda { orientation: Int ->
+            val newOrientation = Reader2Orientation.fromPreference(orientation)
+            val activity = requireActivity(context)
+            if (newOrientation.flag != activity.requestedOrientation) {
+                activity.requestedOrientation = newOrientation.flag
+            }
+        }
+
+        val displayRefreshHost = remember { DisplayRefreshHost() }
+
         screenModel.collectEvents { event ->
             when(event) {
                 is Reader2ScreenModel.Event.CopyImage -> TODO()
-                Reader2ScreenModel.Event.PageChanged -> TODO()
-                Reader2ScreenModel.Event.ReloadViewerChapters -> TODO()
+                Reader2ScreenModel.Event.PageChanged -> displayRefreshHost.flash()
+                Reader2ScreenModel.Event.ReloadViewerChapters -> {
+                    screenModel.state.value.viewerChapters?.let(setChapters)
+                }
                 is Reader2ScreenModel.Event.SavedImage -> TODO()
                 is Reader2ScreenModel.Event.SetCoverResult -> TODO()
-                is Reader2ScreenModel.Event.SetOrientation -> TODO()
+                is Reader2ScreenModel.Event.SetOrientation ->  setOrientation(event.orientation)
                 is Reader2ScreenModel.Event.ShareImage -> TODO()
             }
         }
 
+        val state by screenModel.state.collectAsStateWithLifecycle()
+
+        ReaderScreenContent(state)
     }
 }
 
@@ -123,7 +133,7 @@ private fun ReaderScreenContent(state: Reader2ScreenModel.State) {
 }
 
 
-abstract class PagerViewer(
+class PagerViewer(
     context: Context,
     feedback: HapticFeedback,
     val pages: List<Any?>,
@@ -147,6 +157,7 @@ abstract class PagerViewer(
 
     var nextTransition: ChapterTransition.Next? = null
         private set
+
 
     private fun checkAllowPreload(page: ReaderPage?): Boolean {
         // Page is transition page - preload allowed
@@ -194,6 +205,27 @@ abstract class PagerViewer(
                 is ChapterTransition -> onTransitionSelected(page)
             }
         }
+    }
+
+    override fun setChapters(chapters: ViewerChapters) {
+        TODO("Not yet implemented")
+    }
+
+    override fun moveToPage(page: ReaderPage) {
+        TODO("Not yet implemented")
+    }
+
+    override fun handleKeyEvent(event: KeyEvent): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun handleGenericMotionEvent(event: MotionEvent): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    @Composable
+    override fun Content() {
+        ComposeViewPager(this)
     }
 }
 

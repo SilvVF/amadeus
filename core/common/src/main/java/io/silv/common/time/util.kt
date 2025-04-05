@@ -10,6 +10,8 @@ fun localDateTimeNow() = Clock.System.now().toLocalDateTime(TimeZone.currentSyst
 
 fun epochSeconds() = Clock.System.now().epochSeconds
 
+fun epochMillis() = Clock.System.now().toEpochMilliseconds()
+
 fun LocalDateTime.epochMillis() = this.toInstant(timeZone()).toEpochMilliseconds()
 
 fun timeZone() = TimeZone.currentSystemDefault()

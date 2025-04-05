@@ -39,6 +39,7 @@ data class Chapter(
     val ableToDownload: Boolean,
 ) {
     val scanlator = scanlationGroupToId?.first ?: ""
+    val scanlatorOrNull = scanlationGroupToId?.first
     val scanlatorid = scanlationGroupToId?.second ?: ""
 
     val progress: ProgressState

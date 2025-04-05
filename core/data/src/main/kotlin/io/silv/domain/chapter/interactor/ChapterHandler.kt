@@ -1,7 +1,9 @@
 package io.silv.domain.chapter.interactor
 
 import io.silv.common.model.ProgressState
+import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.chapter.repository.ChapterRepository
+import io.silv.domain.manga.model.MangaUpdate
 
 class ChapterHandler(
     private val chapterRepository: ChapterRepository,

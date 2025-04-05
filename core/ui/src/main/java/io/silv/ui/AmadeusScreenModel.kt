@@ -33,6 +33,10 @@ abstract class EventStateScreenModel<EVENT, STATE>(initialState: STATE) : StateS
 
     val events = mutableEvents.receiveAsFlow()
 
+    protected fun trySendEvent(event: EVENT) {
+        mutableEvents.trySend(event)
+    }
+
     protected suspend fun sendEvent(event: EVENT) {
         withContext(Dispatchers.Main.immediate) {
             mutableEvents.send(event)

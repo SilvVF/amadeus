@@ -49,6 +49,8 @@ class AmadeusApp : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
 
+        AndroidLogcatLogger.installOnDebuggableApp(this)
+
         ScreenRegistry {
             register<SharedScreen.Reader> {
                 ReaderScreen(

@@ -1,5 +1,7 @@
 package io.silv.domain.manga.interactor
 
+import io.silv.domain.chapter.model.Chapter
+import io.silv.domain.chapter.repository.ChapterRepository
 import io.silv.domain.manga.model.MangaWithChapters
 import io.silv.domain.manga.repository.MangaRepository
 import kotlinx.coroutines.flow.Flow
@@ -18,5 +20,17 @@ class GetMangaWithChapters(
 
     suspend fun await(id: String): MangaWithChapters? {
         return mangaRepository.getMangaWithChaptersById(id)
+    }
+}
+
+class GetChaptersByMangaId(
+    private val chapterRepository: ChapterRepository,
+) {
+    fun subscribe(id: String): Flow<List<Chapter>> {
+        return chapterRepository.observeChaptersByMangaId(id)
+    }
+
+    suspend fun await(id: String): List<Chapter> {
+        return chapterRepository.getChaptersByMangaId(id)
     }
 }

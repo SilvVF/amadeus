@@ -29,15 +29,18 @@ import io.silv.domain.TagRepository
 import io.silv.domain.chapter.interactor.ChapterHandler
 import io.silv.domain.chapter.interactor.GetBookmarkedChapters
 import io.silv.domain.chapter.interactor.GetChapter
+import io.silv.domain.chapter.interactor.GetNextChapters
 import io.silv.domain.chapter.repository.ChapterRepository
 import io.silv.domain.history.GetLibraryLastUpdated
 import io.silv.domain.history.HistoryRepository
 import io.silv.domain.manga.MangaPagingSourceFactory
 import io.silv.domain.manga.SubscribeToPagingData
+import io.silv.domain.manga.interactor.GetChaptersByMangaId
 import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
 import io.silv.domain.manga.interactor.GetManga
 import io.silv.domain.manga.interactor.GetMangaWithChapters
 import io.silv.domain.manga.interactor.MangaHandler
+import io.silv.domain.manga.interactor.SetMangaViewerFlags
 import io.silv.domain.manga.repository.MangaRepository
 import io.silv.domain.manga.repository.SeasonalMangaRepository
 import io.silv.domain.manga.repository.TopYearlyFetcher
@@ -78,6 +81,9 @@ abstract class DataDependencies {
     val getMangaStatisticsById get() = GetMangaStatisticsById(networkDeps.mangaDexApi)
     val getUpdateCount get() = GetUpdateCount(updatesRepository)
     val getMangaCoverArtById get() = GetMangaCoverArtById(networkDeps.mangaDexApi)
+    val getChaptersByMangaId get() = GetChaptersByMangaId(chapterRepository)
+    val getNextChapters get() = GetNextChapters(getChaptersByMangaId, getManga)
+    val setMangaViewerFlags get() = SetMangaViewerFlags(mangaRepository)
 
     val workManager get() = WorkManager.getInstance(context)
 

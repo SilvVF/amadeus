@@ -9,4 +9,15 @@
     <string name="nav_zone_left">left</string>
     <string name="nav_zone_right">right</string>
     <string name="left_to_right_viewer">Left to right</string>
+    <string name="right_to_left_viewer">Right to left</string>
+    <string name="vertical_viewer">vertical</string>
+    <string name="webtoon_viewer">webtoon</string>
+    <string name="vertical_plus_viewer">Vertical plus</string>
+    <string name="label_default">Default</string>
+    <string name="rotation_free">Free</string>
+    <string name="rotation_portrait">portrait</string>
+    <string name="rotation_landscape">landscape</string>
+    <string name="rotation_force_portrait">portrait\n</string>
+    <string name="rotation_force_landscape">"force landscape "</string>
+    <string name="rotation_reverse_portrait">reverse portrait</string>
 </resources>

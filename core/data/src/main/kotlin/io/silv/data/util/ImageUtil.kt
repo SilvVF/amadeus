@@ -2,6 +2,7 @@ package io.silv.data.util
 
 import android.content.Context
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
@@ -12,8 +13,6 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
-import android.util.Log
-import android.webkit.MimeTypeMap
 import androidx.annotation.ColorInt
 import androidx.core.graphics.alpha
 import androidx.core.graphics.applyCanvas
@@ -23,28 +22,26 @@ import androidx.core.graphics.get
 import androidx.core.graphics.green
 import androidx.core.graphics.red
 import com.hippo.unifile.UniFile
-import io.silv.data.download.getDisplayMaxHeightInPx
+import io.silv.common.log.LogPriority
+import io.silv.common.log.asLog
+import io.silv.common.log.logcat
+import okio.Buffer
+import okio.BufferedSource
 import tachiyomi.decoder.Format
 import tachiyomi.decoder.ImageDecoder
-import java.io.BufferedInputStream
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.InputStream
-import java.net.URLConnection
+import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.min
 
-@Suppress("unused")
 object ImageUtil {
 
     fun isImage(name: String?, openStream: (() -> InputStream)? = null): Boolean {
         if (name == null) return false
 
-        val contentType = try {
-            URLConnection.guessContentTypeFromName(name)
-        } catch (e: Exception) {
-            null
-        } ?: openStream?.let { findImageType(it)?.mime }
-        return contentType?.startsWith("image/") ?: false
+        val extension = name.substringAfterLast('.')
+        return ImageType.entries.any { it.extension == extension } || openStream?.let { findImageType(it) } != null
     }
 
     fun findImageType(openStream: () -> InputStream): ImageType? {
@@ -68,26 +65,26 @@ object ImageUtil {
         }
     }
 
-    fun getExtensionFromMimeType(mime: String?): String {
-        return MimeTypeMap.getSingleton().getExtensionFromMimeType(mime)
-            ?: SUPPLEMENTARY_MIMETYPE_MAPPING[mime]
-            ?: "jpg"
+    fun getExtensionFromMimeType(mime: String?, openStream: () -> InputStream): String {
+        val type = mime?.let { ImageType.entries.find { it.mime == mime } } ?: findImageType(openStream)
+        return type?.extension ?: "jpg"
     }
 
-    fun isAnimatedAndSupported(stream: InputStream): Boolean {
-        try {
-            val type = getImageType(stream) ?: return false
-            return when (type.format) {
+    fun isAnimatedAndSupported(source: BufferedSource): Boolean {
+        return try {
+            val type = getImageType(source.peek().inputStream()) ?: return false
+            // https://coil-kt.github.io/coil/getting_started/#supported-image-formats
+            when (type.format) {
                 Format.Gif -> true
-                // Coil supports animated WebP on Android 9.0+
-                // https://coil-kt.github.io/coil/getting_started/#supported-image-formats
+                // Animated WebP on Android 9+
                 Format.Webp -> type.isAnimated && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                // Animated Heif on Android 11+
+                Format.Heif -> type.isAnimated && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
                 else -> false
             }
         } catch (e: Exception) {
-            /* Do Nothing */
+            false
         }
-        return false
     }
 
     private fun getImageType(stream: InputStream): tachiyomi.decoder.ImageType? {
@@ -122,18 +119,16 @@ object ImageUtil {
      *
      * @return true if the width is greater than the height
      */
-    fun isWideImage(imageStream: BufferedInputStream): Boolean {
-        val options = extractImageOptions(imageStream)
+    fun isWideImage(imageSource: BufferedSource): Boolean {
+        val options = extractImageOptions(imageSource)
         return options.outWidth > options.outHeight
     }
 
     /**
-     * Extract the 'side' part from imageStream and return it as InputStream.
+     * Extract the 'side' part from [BufferedSource] and return it as [BufferedSource].
      */
-    fun splitInHalf(imageStream: InputStream, side: Side): InputStream {
-        val imageBytes = imageStream.readBytes()
-
-        val imageBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+    fun splitInHalf(imageSource: BufferedSource, side: Side): BufferedSource {
+        val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
         val height = imageBitmap.height
         val width = imageBitmap.width
 
@@ -147,22 +142,20 @@ object ImageUtil {
         half.applyCanvas {
             drawBitmap(imageBitmap, part, singlePage, null)
         }
-        val output = ByteArrayOutputStream()
-        half.compress(Bitmap.CompressFormat.JPEG, 100, output)
+        val output = Buffer()
+        half.compress(Bitmap.CompressFormat.JPEG, 100, output.outputStream())
 
-        return ByteArrayInputStream(output.toByteArray())
+        return output
     }
 
-    fun rotateImage(imageStream: InputStream, degrees: Float): InputStream {
-        val imageBytes = imageStream.readBytes()
-
-        val imageBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+    fun rotateImage(imageSource: BufferedSource, degrees: Float): BufferedSource {
+        val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
         val rotated = rotateBitMap(imageBitmap, degrees)
 
-        val output = ByteArrayOutputStream()
-        rotated.compress(Bitmap.CompressFormat.JPEG, 100, output)
+        val output = Buffer()
+        rotated.compress(Bitmap.CompressFormat.JPEG, 100, output.outputStream())
 
-        return ByteArrayInputStream(output.toByteArray())
+        return output
     }
 
     private fun rotateBitMap(bitmap: Bitmap, degrees: Float): Bitmap {
@@ -173,10 +166,8 @@ object ImageUtil {
     /**
      * Split the image into left and right parts, then merge them into a new image.
      */
-    fun splitAndMerge(imageStream: InputStream, upperSide: Side): InputStream {
-        val imageBytes = imageStream.readBytes()
-
-        val imageBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+    fun splitAndMerge(imageSource: BufferedSource, upperSide: Side): BufferedSource {
+        val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
         val height = imageBitmap.height
         val width = imageBitmap.width
 
@@ -198,9 +189,9 @@ object ImageUtil {
             drawBitmap(imageBitmap, leftPart, bottomPart, null)
         }
 
-        val output = ByteArrayOutputStream()
-        result.compress(Bitmap.CompressFormat.JPEG, 100, output)
-        return ByteArrayInputStream(output.toByteArray())
+        val output = Buffer()
+        result.compress(Bitmap.CompressFormat.JPEG, 100, output.outputStream())
+        return output
     }
 
     enum class Side {
@@ -213,8 +204,8 @@ object ImageUtil {
      *
      * @return true if the height:width ratio is greater than 3.
      */
-    private fun isTallImage(imageStream: InputStream): Boolean {
-        val options = extractImageOptions(imageStream, resetAfterExtraction = false)
+    private fun isTallImage(imageSource: BufferedSource): Boolean {
+        val options = extractImageOptions(imageSource)
         return (options.outHeight / options.outWidth) > 3
     }
 
@@ -222,17 +213,18 @@ object ImageUtil {
      * Splits tall images to improve performance of reader
      */
     fun splitTallImage(tmpDir: UniFile, imageFile: UniFile, filenamePrefix: String): Boolean {
-        if (isAnimatedAndSupported(imageFile.openInputStream()) || !isTallImage(imageFile.openInputStream())) {
+        val imageSource = imageFile.openInputStream().use { Buffer().readFrom(it) }
+        if (isAnimatedAndSupported(imageSource) || !isTallImage(imageSource)) {
             return true
         }
 
-        val bitmapRegionDecoder = getBitmapRegionDecoder(imageFile.openInputStream())
+        val bitmapRegionDecoder = getBitmapRegionDecoder(imageSource.peek().inputStream())
         if (bitmapRegionDecoder == null) {
-            Log.d("splitTallImage", "Failed to create new instance of BitmapRegionDecoder")
+            logcat { "Failed to create new instance of BitmapRegionDecoder" }
             return false
         }
 
-        val options = extractImageOptions(imageFile.openInputStream(), resetAfterExtraction = false).apply {
+        val options = extractImageOptions(imageSource).apply {
             inJustDecodeBounds = false
         }
 
@@ -246,18 +238,22 @@ object ImageUtil {
 
                 val splitFile = tmpDir.createFile(splitImageName)!!
 
-                val region = Rect(0, splitData.topOffset, splitData.splitWidth, splitData.bottomOffset)
+                val region = Rect(
+                    0,
+                    splitData.topOffset,
+                    splitData.splitWidth,
+                    splitData.bottomOffset,
+                )
 
                 splitFile.openOutputStream().use { outputStream ->
                     val splitBitmap = bitmapRegionDecoder.decodeRegion(region, options)
                     splitBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
                     splitBitmap.recycle()
                 }
-                Log.d(
-                    "splitTallImage",
+                logcat {
                     "Success: Split #${splitData.index + 1} with topOffset=${splitData.topOffset} " +
                             "height=${splitData.splitHeight} bottomOffset=${splitData.bottomOffset}"
-                )
+                }
             }
             imageFile.delete()
             true
@@ -266,6 +262,7 @@ object ImageUtil {
             splitDataList
                 .map { splitImageName(filenamePrefix, it.index) }
                 .forEach { tmpDir.findFile(it)?.delete() }
+            logcat(LogPriority.ERROR) { e.asLog() }
             false
         } finally {
             bitmapRegionDecoder.recycle()
@@ -273,6 +270,7 @@ object ImageUtil {
     }
 
     private fun splitImageName(filenamePrefix: String, index: Int) = "${filenamePrefix}__${"%03d".format(
+        Locale.ENGLISH,
         index + 1,
     )}.jpg"
 
@@ -285,11 +283,10 @@ object ImageUtil {
             val partCount = (imageHeight - 1) / optimalImageHeight + 1
             val optimalSplitHeight = imageHeight / partCount
 
-            Log.d(
-                "splitData",
+            logcat {
                 "Generating SplitData for image (height: $imageHeight): " +
                         "$partCount parts @ ${optimalSplitHeight}px height per part"
-            )
+            }
 
             return buildList {
                 val range = 0..<partCount
@@ -361,11 +358,34 @@ object ImageUtil {
         val botRightIsDark = botRightPixel.isDark()
 
         var darkBG =
-            (topLeftIsDark && (botLeftIsDark || botRightIsDark || topRightIsDark || midLeftIsDark || topMidIsDark)) ||
-                    (topRightIsDark && (botRightIsDark || botLeftIsDark || midRightIsDark || topMidIsDark))
+            (
+                    topLeftIsDark &&
+                            (
+                                    botLeftIsDark ||
+                                            botRightIsDark ||
+                                            topRightIsDark ||
+                                            midLeftIsDark ||
+                                            topMidIsDark
+                                    )
+                    ) ||
+                    (
+                            topRightIsDark &&
+                                    (
+                                            botRightIsDark ||
+                                                    botLeftIsDark ||
+                                                    midRightIsDark ||
+                                                    topMidIsDark
+                                            )
+                            )
 
-        val topAndBotPixels =
-            listOf(topLeftPixel, topCenterPixel, topRightPixel, botRightPixel, bottomCenterPixel, botLeftPixel)
+        val topAndBotPixels = listOf(
+            topLeftPixel,
+            topCenterPixel,
+            topRightPixel,
+            botRightPixel,
+            bottomCenterPixel,
+            botLeftPixel,
+        )
         val isNotWhiteAndCloseTo = topAndBotPixels.mapIndexed { index, color ->
             val other = topAndBotPixels[(index + 1) % topAndBotPixels.size]
             !color.isWhite() && color.isCloseTo(other)
@@ -510,16 +530,26 @@ object ImageUtil {
             darkBG -> {
                 return ColorDrawable(blackColor)
             }
-            topIsBlackStreak || (
-                    topCornersIsDark && topOffsetCornersIsDark &&
-                            (topMidIsDark || overallBlackPixels > 9)
-                    ) -> {
+            topIsBlackStreak ||
+                    (
+                            topCornersIsDark &&
+                                    topOffsetCornersIsDark &&
+                                    (
+                                            topMidIsDark ||
+                                                    overallBlackPixels > 9
+                                            )
+                            ) -> {
                 intArrayOf(blackColor, blackColor, whiteColor, whiteColor)
             }
-            bottomIsBlackStreak || (
-                    botCornersIsDark && botOffsetCornersIsDark &&
-                            (bottomCenterPixel.isDark() || overallBlackPixels > 9)
-                    ) -> {
+            bottomIsBlackStreak ||
+                    (
+                            botCornersIsDark &&
+                                    botOffsetCornersIsDark &&
+                                    (
+                                            bottomCenterPixel.isDark() ||
+                                                    overallBlackPixels > 9
+                                            )
+                            ) -> {
                 intArrayOf(whiteColor, whiteColor, blackColor, blackColor)
             }
             else -> {
@@ -537,9 +567,7 @@ object ImageUtil {
         red < 40 && blue < 40 && green < 40 && alpha > 200
 
     private fun @receiver:ColorInt Int.isCloseTo(other: Int): Boolean =
-        kotlin.math.abs(red - other.red) < 30 && kotlin.math.abs(green - other.green) < 30 && kotlin.math.abs(
-            blue - other.blue
-        ) < 30
+        abs(red - other.red) < 30 && abs(green - other.green) < 30 && abs(blue - other.blue) < 30
 
     private fun @receiver:ColorInt Int.isWhite(): Boolean =
         red + blue + green > 740
@@ -547,16 +575,9 @@ object ImageUtil {
     /**
      * Used to check an image's dimensions without loading it in the memory.
      */
-    private fun extractImageOptions(
-        imageStream: InputStream,
-        resetAfterExtraction: Boolean = true,
-    ): BitmapFactory.Options {
-        imageStream.mark(imageStream.available() + 1)
-
-        val imageBytes = imageStream.readBytes()
+    private fun extractImageOptions(imageSource: BufferedSource): BitmapFactory.Options {
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options)
-        if (resetAfterExtraction) imageStream.reset()
+        BitmapFactory.decodeStream(imageSource.peek().inputStream(), null, options)
         return options
     }
 
@@ -570,11 +591,7 @@ object ImageUtil {
     }
 
     private val optimalImageHeight = getDisplayMaxHeightInPx * 2
-
-    // Android doesn't include some mappings
-    private val SUPPLEMENTARY_MIMETYPE_MAPPING = mapOf(
-        // https://issuetracker.google.com/issues/182703810
-        "image/jxl" to "jxl",
-    )
 }
 
+val getDisplayMaxHeightInPx: Int
+    get() = Resources.getSystem().displayMetrics.let { max(it.heightPixels, it.widthPixels) }

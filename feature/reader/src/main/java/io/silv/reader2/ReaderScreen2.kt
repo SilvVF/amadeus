@@ -1,8 +1,11 @@
 package io.silv.reader2
 
+import android.R
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.graphics.drawable.Animatable
+import android.graphics.drawable.Drawable
 import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.activity.ComponentActivity
@@ -13,8 +16,15 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedback
@@ -26,11 +36,19 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import coil.decode.ImageSource
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import io.silv.common.DependencyAccessor
+import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.log.LogPriority
 import io.silv.common.log.asLog
 import io.silv.common.log.logcat
+import io.silv.common.model.Page
+import io.silv.data.util.ImageUtil
+import io.silv.data.util.ImageUtil.splitInHalf
 import io.silv.di.downloadDeps
+import io.silv.reader.InsertPage
 import io.silv.reader.Viewer
 import io.silv.reader.ViewerChapters
 import io.silv.reader.loader.ReaderChapter
@@ -38,8 +56,28 @@ import io.silv.reader.loader.ReaderPage
 import io.silv.ui.LocalAppState
 import io.silv.ui.ScreenStateHandle
 import io.silv.ui.collectEvents
+import io.silv.ui.composables.CircularProgressIndicator
 import io.silv.ui.rememberLambda
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.WhileSubscribed
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
+import me.saket.telephoto.zoomable.ZoomableImageState
+import me.saket.telephoto.zoomable.ZoomableState
+import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
+import me.saket.telephoto.zoomable.rememberZoomableImageState
+import me.saket.telephoto.zoomable.rememberZoomableState
+import okio.Buffer
+import okio.BufferedSource
 
 private fun requireActivity(context: Context): ComponentActivity {
     return when (context) {
@@ -102,15 +140,16 @@ data class ReaderScreen2(
         val displayRefreshHost = remember { DisplayRefreshHost() }
 
         screenModel.collectEvents { event ->
-            when(event) {
+            when (event) {
                 is Reader2ScreenModel.Event.CopyImage -> TODO()
                 Reader2ScreenModel.Event.PageChanged -> displayRefreshHost.flash()
                 Reader2ScreenModel.Event.ReloadViewerChapters -> {
                     screenModel.state.value.viewerChapters?.let(setChapters)
                 }
+
                 is Reader2ScreenModel.Event.SavedImage -> TODO()
                 is Reader2ScreenModel.Event.SetCoverResult -> TODO()
-                is Reader2ScreenModel.Event.SetOrientation ->  setOrientation(event.orientation)
+                is Reader2ScreenModel.Event.SetOrientation -> setOrientation(event.orientation)
                 is Reader2ScreenModel.Event.ShareImage -> TODO()
             }
         }
@@ -136,9 +175,10 @@ private fun ReaderScreenContent(state: Reader2ScreenModel.State) {
 class PagerViewer(
     context: Context,
     feedback: HapticFeedback,
+    val config: PagerConfig,
     val pages: List<Any?>,
     val isHorizontal: Boolean = true,
-): Viewer {
+) : Viewer {
 
     @OptIn(DependencyAccessor::class)
     val downloadManager = downloadDeps.downloadManager
@@ -178,35 +218,6 @@ class PagerViewer(
         }
     }
 
-    @Composable
-    private fun PageRenderer(position: Int) {
-        val page = pages.getOrNull(position)
-        if (page != null && currentPage != page) {
-            val allowPreload = checkAllowPreload(page as? ReaderPage)
-            val forward = when {
-                currentPage is ReaderPage && page is ReaderPage -> {
-                    // if both pages have the same number, it's a split page with an InsertPage
-                    if (page.number == (currentPage as ReaderPage).number) {
-                        // the InsertPage is always the second in the reading direction
-                        page is InsertPage
-                    } else {
-                        page.number > (currentPage as ReaderPage).number
-                    }
-                }
-
-                currentPage is ChapterTransition.Prev && page is ReaderPage ->
-                    false
-
-                else -> true
-            }
-            currentPage = page
-            when (page) {
-                is ReaderPage -> onReaderPageSelected(page, allowPreload, forward)
-                is ChapterTransition -> onTransitionSelected(page)
-            }
-        }
-    }
-
     override fun setChapters(chapters: ViewerChapters) {
         TODO("Not yet implemented")
     }
@@ -223,9 +234,158 @@ class PagerViewer(
         TODO("Not yet implemented")
     }
 
+    fun onPageSplit(page: ReaderPage, newPage: ReaderPage) {
+
+    }
+
     @Composable
     override fun Content() {
         ComposeViewPager(this)
+    }
+}
+
+class PagerPageHolder(
+    val viewer: PagerViewer,
+    val page: ReaderPage,
+    val context: Context,
+    scope: CoroutineScope
+) {
+    val status = page.statusFlow.stateIn(
+        scope,
+        SharingStarted.WhileSubscribed(5_000),
+        initialValue = Page.State.QUEUE
+    )
+
+    var image by mutableStateOf<ImageRequest?>(null)
+
+    init {
+        scope.launch(Dispatchers.IO) {
+            val loader = page.chapter.pageLoader ?: return@launch
+            loader.loadPage(page)
+        }
+
+        scope.launch {
+            status.filter { it == Page.State.READY }.collectLatest {
+                val streamFn = page.stream ?: return@collectLatest
+
+                suspendRunCatching {
+                    val (source, isAnimated, background) = withContext(Dispatchers.IO) {
+                        val source = streamFn().use { ins ->
+                            process(page, Buffer().readFrom(ins))
+                        }
+                        val isAnimated = ImageUtil.isAnimatedAndSupported(source)
+                        val background = if (!isAnimated && viewer.config.automaticBackground) {
+                            ImageUtil.chooseBackground(context, source.peek().inputStream())
+                        } else {
+                            null
+                        }
+                        Triple(source, isAnimated, background)
+                    }
+                    image = coilImageRequest(source, isAnimated, background)
+                }
+            }
+        }
+    }
+
+    private fun coilImageRequest(
+        source: BufferedSource,
+        isAnimated: Boolean,
+        background: Drawable?
+    ): ImageRequest {
+        return if (isAnimated) {
+            TODO("animated image")
+        } else {
+            ImageRequest.Builder(context)
+                .data(source.readByteArray())
+                .crossfade(true)
+                .build()
+        }
+    }
+
+    private fun process(page: ReaderPage, imageSource: BufferedSource): BufferedSource {
+        if (viewer.config.dualPageRotateToFit) {
+            return rotateDualPage(imageSource)
+        }
+
+        if (!viewer.config.dualPageSplit) {
+            return imageSource
+        }
+
+        if (page is InsertPage) {
+            return splitInHalf(imageSource)
+        }
+
+        val isDoublePage = ImageUtil.isWideImage(imageSource)
+        if (!isDoublePage) {
+            return imageSource
+        }
+
+        onPageSplit(page)
+
+        return splitInHalf(imageSource)
+    }
+
+    private fun rotateDualPage(imageSource: BufferedSource): BufferedSource {
+        val isDoublePage = ImageUtil.isWideImage(imageSource)
+        return if (isDoublePage) {
+            val rotation = if (viewer.config.dualPageRotateToFitInvert) -90f else 90f
+            ImageUtil.rotateImage(imageSource, rotation)
+        } else {
+            imageSource
+        }
+    }
+
+    private fun splitInHalf(imageSource: BufferedSource): BufferedSource {
+        var side = when {
+            viewer is L2RPagerViewer && page is InsertPage -> ImageUtil.Side.RIGHT
+            viewer !is L2RPagerViewer && page is InsertPage -> ImageUtil.Side.LEFT
+            viewer is L2RPagerViewer && page !is InsertPage -> ImageUtil.Side.LEFT
+            viewer !is L2RPagerViewer && page !is InsertPage -> ImageUtil.Side.RIGHT
+            else -> error("We should choose a side!")
+        }
+
+        if (viewer.config.dualPageInvert) {
+            side = when (side) {
+                ImageUtil.Side.RIGHT -> ImageUtil.Side.LEFT
+                ImageUtil.Side.LEFT -> ImageUtil.Side.RIGHT
+            }
+        }
+
+        return splitInHalf(imageSource, side)
+    }
+
+    private fun onPageSplit(page: ReaderPage) {
+        val newPage = InsertPage(page)
+        viewer.onPageSplit(page, newPage)
+    }
+}
+
+@Composable
+fun PagerPage(
+    pagerPageHolder: PagerPageHolder,
+    modifier: Modifier = Modifier,
+    zoomState: ZoomableImageState = rememberZoomableImageState()
+) {
+    val status by pagerPageHolder.status.collectAsStateWithLifecycle()
+    Box(modifier) {
+        when (status) {
+            Page.State.QUEUE, Page.State.LOAD_PAGE, Page.State.DOWNLOAD_IMAGE -> {
+                androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
+
+            Page.State.READY -> {
+                ZoomableAsyncImage(
+                    model = pagerPageHolder.image,
+                    contentDescription = pagerPageHolder.page.url,
+                    state = zoomState,
+                    onClick = {
+
+                    }
+                )
+            }
+
+            Page.State.ERROR -> TODO()
+        }
     }
 }
 
@@ -235,20 +395,41 @@ fun ComposeViewPager(
     pagerViewer: PagerViewer,
     modifier: Modifier = Modifier
 ) {
-
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     if (pagerViewer.isHorizontal) {
         HorizontalPager(
             pagerViewer.pagerState,
             beyondViewportPageCount = pagerViewer.beyondBoundsPageCount
         ) {
+            val page = pagerViewer.pages[it]
 
+            when (page) {
+                is ReaderPage -> {
+                    val holder = remember {
+                        PagerPageHolder(pagerViewer, page, context, scope)
+                    }
+
+                    PagerPage(holder)
+                }
+            }
         }
     } else {
         VerticalPager(
             pagerViewer.pagerState,
             beyondViewportPageCount = pagerViewer.beyondBoundsPageCount
         ) {
+            val page = pagerViewer.pages[it]
 
+            when (page) {
+                is ReaderPage -> {
+                    val holder = remember {
+                        PagerPageHolder(pagerViewer, page, context, scope)
+                    }
+
+                    PagerPage(holder)
+                }
+            }
         }
     }
 }

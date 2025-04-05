@@ -232,8 +232,8 @@ class LibraryScreenModel @OptIn(DependencyAccessor::class) constructor(
             val chapter = getChapter.await(chapterId) ?: return@launch
 
             downloadManager.deleteChapters(
-                chapters = listOf(chapter.toResource()),
-                manga = manga.toResource()
+                manga = manga.toResource(),
+                chapters = listOf(chapter.toResource())
             )
         }
     }

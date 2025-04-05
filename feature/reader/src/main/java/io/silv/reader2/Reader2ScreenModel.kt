@@ -668,11 +668,10 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         val manga = manga ?: return
 
         screenModelScope.launch(NonCancellable) {
-            TODO("Delete chapters")
-//            downloadManager.enqueueChaptersToDelete(
-//                listOf(chapter.chapter.toDomainChapter()!!),
-//                manga,
-//            )
+            downloadManager.deleteChapters(
+                listOf(chapter.chapter.toResource()),
+                manga.toResource(),
+            )
         }
     }
 
@@ -682,8 +681,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      */
     private fun deletePendingChapters() {
         screenModelScope.launch(NonCancellable) {
-            TODO("Delete chapters")
-            //downloadManager.deletePendingChapters()
+
         }
     }
 

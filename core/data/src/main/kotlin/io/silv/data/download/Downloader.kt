@@ -11,8 +11,11 @@ import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.utils.CacheControl
 import io.ktor.http.HttpHeaders
+import io.ktor.utils.io.jvm.javaio.toInputStream
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.model.ChapterResource
@@ -46,6 +49,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.MediaType
@@ -401,9 +405,9 @@ internal class Downloader(
     private fun getImageExtension(response: HttpResponse, file: UniFile): String {
         // Read content type if available.
         val mime = response.headers["content-type"].takeIf { it?.contains("image") == true }
-            ?: context.contentResolver.getType(file.uri)
-            ?: ImageUtil.findImageType { file.openInputStream() }?.mime
-        return ImageUtil.getExtensionFromMimeType(mime)
+        return ImageUtil.getExtensionFromMimeType(mime) {
+           file.openInputStream()
+        }
     }
 
 

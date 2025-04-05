@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +30,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.rememberScreenModel
@@ -162,9 +164,10 @@ data class ReaderScreen2(
 
 @Composable
 private fun ReaderScreenContent(state: Reader2ScreenModel.State) {
-    ReaderDialogHost {
+    ReaderDialogHost(Modifier.fillMaxSize()) {
         ReaderNavigationOverlay(
-            state = rememberReaderOverlayState()
+            state = rememberReaderOverlayState(),
+            modifier = Modifier.fillMaxSize()
         ) {
             ReaderContainer(state)
         }
@@ -175,7 +178,6 @@ private fun ReaderScreenContent(state: Reader2ScreenModel.State) {
 class PagerViewer(
     context: Context,
     feedback: HapticFeedback,
-    val config: PagerConfig,
     val pages: List<Any?>,
     val isHorizontal: Boolean = true,
 ) : Viewer {
@@ -187,9 +189,10 @@ class PagerViewer(
     var currentChapter: ReaderChapter? = null
 
     private val scope = MainScope()
-    val pagerState = PagerState { pages.size }
 
-    val beyondBoundsPageCount = 1
+    val config: PagerConfig = PagerConfig(this, scope)
+
+    val pagerState = PagerState { pages.size }
 
     val modifier = Modifier
         .fillMaxSize()
@@ -236,11 +239,6 @@ class PagerViewer(
 
     fun onPageSplit(page: ReaderPage, newPage: ReaderPage) {
 
-    }
-
-    @Composable
-    override fun Content() {
-        ComposeViewPager(this)
     }
 }
 
@@ -337,10 +335,11 @@ class PagerPageHolder(
 
     private fun splitInHalf(imageSource: BufferedSource): BufferedSource {
         var side = when {
-            viewer is L2RPagerViewer && page is InsertPage -> ImageUtil.Side.RIGHT
-            viewer !is L2RPagerViewer && page is InsertPage -> ImageUtil.Side.LEFT
-            viewer is L2RPagerViewer && page !is InsertPage -> ImageUtil.Side.LEFT
-            viewer !is L2RPagerViewer && page !is InsertPage -> ImageUtil.Side.RIGHT
+            true -> ImageUtil.Side.RIGHT
+//            viewer is L2RPagerViewer && page is InsertPage -> ImageUtil.Side.RIGHT
+//            viewer !is L2RPagerViewer && page is InsertPage -> ImageUtil.Side.LEFT
+//            viewer is L2RPagerViewer && page !is InsertPage -> ImageUtil.Side.LEFT
+//            viewer !is L2RPagerViewer && page !is InsertPage -> ImageUtil.Side.RIGHT
             else -> error("We should choose a side!")
         }
 
@@ -361,7 +360,7 @@ class PagerPageHolder(
 }
 
 @Composable
-fun PagerPage(
+private fun PagerPage(
     pagerPageHolder: PagerPageHolder,
     modifier: Modifier = Modifier,
     zoomState: ZoomableImageState = rememberZoomableImageState()
@@ -372,7 +371,6 @@ fun PagerPage(
             Page.State.QUEUE, Page.State.LOAD_PAGE, Page.State.DOWNLOAD_IMAGE -> {
                 androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
-
             Page.State.READY -> {
                 ZoomableAsyncImage(
                     model = pagerPageHolder.image,
@@ -383,8 +381,7 @@ fun PagerPage(
                     }
                 )
             }
-
-            Page.State.ERROR -> TODO()
+            Page.State.ERROR -> Text("error", Modifier.align(Alignment.Center))
         }
     }
 }
@@ -397,37 +394,34 @@ fun ComposeViewPager(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    if (pagerViewer.isHorizontal) {
-        HorizontalPager(
-            pagerViewer.pagerState,
-            beyondViewportPageCount = pagerViewer.beyondBoundsPageCount
-        ) {
-            val page = pagerViewer.pages[it]
 
-            when (page) {
-                is ReaderPage -> {
-                    val holder = remember {
-                        PagerPageHolder(pagerViewer, page, context, scope)
-                    }
+    val readerPage = @Composable { page: ReaderPage ->
+        val holder = remember {
+            PagerPageHolder(pagerViewer, page, context, scope)
+        }
+        PagerPage(holder)
+    }
 
-                    PagerPage(holder)
+    Box(modifier) {
+        if (pagerViewer.isHorizontal) {
+            HorizontalPager(
+                pagerViewer.pagerState,
+                beyondViewportPageCount = 1
+            ) {
+                val page = pagerViewer.pages[it]
+                when (page) {
+                    is ReaderPage -> readerPage(page)
                 }
             }
-        }
-    } else {
-        VerticalPager(
-            pagerViewer.pagerState,
-            beyondViewportPageCount = pagerViewer.beyondBoundsPageCount
-        ) {
-            val page = pagerViewer.pages[it]
+        } else {
+            VerticalPager(
+                pagerViewer.pagerState,
+                beyondViewportPageCount = 1
+            ) {
+                val page = pagerViewer.pages[it]
 
-            when (page) {
-                is ReaderPage -> {
-                    val holder = remember {
-                        PagerPageHolder(pagerViewer, page, context, scope)
-                    }
-
-                    PagerPage(holder)
+                when (page) {
+                    is ReaderPage -> readerPage(page)
                 }
             }
         }
@@ -472,7 +466,13 @@ sealed class ChapterTransition {
 fun ReaderContainer(
     state: Reader2ScreenModel.State
 ) {
-    state.viewer?.Content()
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    val viewer = remember {
+        PagerViewer(context, haptics, emptyList())
+    }
+
+    ComposeViewPager(viewer)
 }
 
 @Composable

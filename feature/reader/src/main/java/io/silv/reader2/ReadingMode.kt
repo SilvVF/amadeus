@@ -1,8 +1,6 @@
 package io.silv.reader2
 
 import android.content.pm.ActivityInfo
-import android.view.KeyEvent
-import android.view.MotionEvent
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
@@ -11,11 +9,8 @@ import androidx.compose.material.icons.filled.ScreenLockPortrait
 import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.StayCurrentLandscape
 import androidx.compose.material.icons.filled.StayCurrentPortrait
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import io.silv.reader.Viewer
-import io.silv.reader.ViewerChapters
-import io.silv.reader.loader.ReaderPage
 import io.silv.ui.R
 
 enum class Reader2Orientation(
@@ -133,13 +128,11 @@ enum class ReadingMode(
         fun toViewer(preference: Int?): Viewer {
             return when (fromPreference(preference)) {
                 LEFT_TO_RIGHT -> TODO()
-//                RIGHT_TO_LEFT -> R2LPagerViewer(activity)
-//                VERTICAL -> VerticalPagerViewer(activity)
-//                WEBTOON -> WebtoonViewer(activity)
-//                CONTINUOUS_VERTICAL -> WebtoonViewer(activity, isContinuous = false)
-//                DEFAULT -> throw IllegalStateException(
-//                    "Preference value must be resolved: $preference",
-//                )
+                ReadingMode.DEFAULT -> TODO()
+                ReadingMode.RIGHT_TO_LEFT -> TODO()
+                ReadingMode.VERTICAL -> TODO()
+                ReadingMode.WEBTOON -> TODO()
+                ReadingMode.CONTINUOUS_VERTICAL -> TODO()
             }
         }
     }
@@ -152,28 +145,5 @@ enum class ReadingMode(
     sealed interface ViewerType {
         data object Pager : ViewerType
         data object Webtoon : ViewerType
-    }
-}
-
-class L2RPagerViewer: Viewer {
-    override fun setChapters(chapters: ViewerChapters) {
-        TODO("Not yet implemented")
-    }
-
-    override fun moveToPage(page: ReaderPage) {
-        TODO("Not yet implemented")
-    }
-
-    override fun handleKeyEvent(event: KeyEvent): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun handleGenericMotionEvent(event: MotionEvent): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    @Composable
-    override fun Content() {
-        TODO("Not yet implemented")
     }
 }

@@ -38,6 +38,7 @@ import io.silv.navigation.SharedScreen
 import io.silv.network.NetworkDependencies
 import io.silv.network.networkDeps
 import io.silv.reader.ReaderScreen
+import io.silv.reader2.ReaderScreen2
 import io.silv.sync.Sync
 import io.silv.sync.SyncDependencies
 import io.silv.sync.syncDependencies
@@ -53,7 +54,7 @@ class AmadeusApp : Application(), ImageLoaderFactory {
 
         ScreenRegistry {
             register<SharedScreen.Reader> {
-                ReaderScreen(
+                ReaderScreen2(
                     mangaId = it.mangaId,
                     chapterId = it.initialChapterId,
                 )

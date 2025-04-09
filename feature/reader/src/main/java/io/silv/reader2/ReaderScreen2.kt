@@ -2,6 +2,7 @@ package io.silv.reader2
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -26,10 +27,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -69,6 +73,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.io.Serializable
 
 private fun requireActivity(context: Context): ComponentActivity {
     return when (context) {
@@ -92,9 +97,7 @@ data class ReaderScreen2(
 
         val appState = LocalAppState.current
         val context = LocalContext.current
-        val hapticFeedback = LocalHapticFeedback.current
         val navigator = LocalNavigator.currentOrThrow
-        val scope = rememberCoroutineScope()
 
         val screenModel = rememberScreenModel {
             Reader2ScreenModel(
@@ -110,20 +113,6 @@ data class ReaderScreen2(
         }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
-        val viewer = remember {
-            PagerViewer(context, hapticFeedback, scope = scope) { action ->
-                when (action) {
-                    PagerAction.ToggleMenu -> screenModel.showMenus(!state.menuVisible)
-                    is PagerAction.OnPageSelected -> screenModel.onPageSelected(action.page)
-                    is PagerAction.RequestPreloadChapter -> scope.launch {
-                        screenModel.preload(action.chapter)
-                    }
-
-                    PagerAction.ShowMenu -> screenModel.showMenus(true)
-                }
-            }
-        }
-
         LaunchedEffect(screenModel) {
             val initResult = screenModel.init(mangaId, savedChapter)
             if (!initResult.getOrDefault(false)) {
@@ -133,12 +122,6 @@ data class ReaderScreen2(
                 logcat(LogPriority.ERROR) { exception.asLog() }
                 appState.showSnackBar(exception.message.orEmpty())
                 navigator.pop()
-            } else {
-                screenModel.state.map { it.viewerChapters }
-                    .distinctUntilChanged()
-                    .collect { chapters ->
-                        chapters?.let(viewer::setChapters)
-                    }
             }
         }
 
@@ -163,9 +146,6 @@ data class ReaderScreen2(
             when (event) {
                 is Reader2ScreenModel.Event.CopyImage -> TODO()
                 Reader2ScreenModel.Event.PageChanged -> displayRefreshHost.flash()
-                Reader2ScreenModel.Event.ReloadViewerChapters -> {
-                    state.viewerChapters?.let(viewer::setChapters)
-                }
                 is Reader2ScreenModel.Event.SavedImage -> TODO()
                 is Reader2ScreenModel.Event.SetCoverResult -> TODO()
                 is Reader2ScreenModel.Event.SetOrientation -> setOrientation(event.orientation)
@@ -176,7 +156,7 @@ data class ReaderScreen2(
 
         ReaderScreenContent(
             state,
-            viewer
+            screenModel.viewer
         )
     }
 }
@@ -204,43 +184,55 @@ fun ComposeViewPager(
     modifier: Modifier = Modifier,
     scope: CoroutineScope = rememberCoroutineScope()
 ) {
+    val context = LocalContext.current
+
     @Composable
     fun BoxScope.renderPage(page: Int) {
-        val page = pagerViewer.items.getOrNull(page)
-        when (page) {
-            is ReaderPage -> {
-                val holder = remember {
-                    PagerPageHolder(pagerViewer, page, scope)
+        val page = pagerViewer.items.getOrNull(page) ?: return
+        key(page) {
+            when (page) {
+                is ReaderPage -> {
+                    val holder = rememberSaveable(
+                        saver = Saver(
+                            save = {
+                                Bundle().apply {
+                                    it.image?.data?.let {
+                                        (it as? ByteArray)?.let {
+                                            putByteArray("data", it)
+                                        }
+                                    }
+                                }
+                            },
+                            restore = {
+                                val data = it.getByteArray("data")
+                                PagerPageHolder(pagerViewer, context, page, scope, data)
+                            }
+                        )
+                    ) {
+                        PagerPageHolder(pagerViewer, context, page, scope)
+                    }
+                    PagerPage(holder)
                 }
 
-                PagerPage(holder)
-            }
-
-            is ChapterTransition -> {
-                var size by remember { mutableStateOf(IntSize.Zero) }
-                Box(
-                    Modifier.fillMaxSize()
-                        .onSizeChanged { size = it }
-                        .pointerInput(Unit) {
-                            detectTapGestures(onTap = {
-                                pagerViewer.handleClickEvent(it, size)
-                            })
-                        }
-                ) {
-                    Text(
-                        "to: ${page.to?.chapter} from: ${page.from.chapter}",
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                is ChapterTransition -> {
+                    var size by remember { mutableStateOf(IntSize.Zero) }
+                    Box(
+                        Modifier.fillMaxSize()
+                            .onSizeChanged { size = it }
+                            .pointerInput(Unit) {
+                                detectTapGestures(onTap = {
+                                    pagerViewer.handleClickEvent(it, size)
+                                })
+                            }
+                    ) {
+                        Text(
+                            "to: ${page.to?.chapter?.title} from: ${page.from.chapter.title}",
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
                 }
             }
-            null -> Unit
         }
-    }
-
-    LaunchedEffect(pagerViewer) {
-        snapshotFlow { pagerViewer.pagerState.currentPage }
-            .distinctUntilChanged()
-            .collect(pagerViewer::onPageSelected)
     }
 
     Box(modifier) {

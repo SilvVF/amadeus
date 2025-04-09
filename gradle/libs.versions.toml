@@ -51,6 +51,7 @@ org-jetbrains-kotlin-android = "2.1.20"
 org-jetbrains-kotlin-jvm = "2.1.20"
 sandwich = "2.1.1"
 zoomableImageCoil = "0.15.1"
+uiTooling = "1.7.8"
 
 [libraries]
 # AndroidX Core
@@ -146,6 +147,7 @@ image-decoder = { module = "com.github.tachiyomiorg:image-decoder", version.ref 
 kache = { module = "com.mayakapps.kache:file-kache", version.ref = "kache" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 unifile = { module = "com.github.tachiyomiorg:unifile", version.ref = "unifile" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
 
 [plugins]
 com-android-test = { id = "com.android.test", version.ref = "agp" }

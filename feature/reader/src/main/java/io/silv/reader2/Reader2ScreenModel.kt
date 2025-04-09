@@ -46,6 +46,7 @@ import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ScreenStateHandle
 import io.silv.ui.ioCoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -88,6 +89,19 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
 
     private var chapterReadStartTime: Long? = null
     private var chapterToDownload: Download? = null
+
+
+    val viewer = PagerViewer(scope = MainScope()) { action ->
+        when (action) {
+            PagerAction.ToggleMenu -> showMenus(!state.value.menuVisible)
+            is PagerAction.OnPageSelected -> onPageSelected(action.page)
+            is PagerAction.RequestPreloadChapter -> screenModelScope.launch {
+                preload(action.chapter)
+            }
+
+            PagerAction.ShowMenu -> showMenus(true)
+        }
+    }
 
     /**
      * Chapter list for the active manga. It's retrieved lazily and should be accessed for the first
@@ -132,6 +146,12 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
                 }
                 chapterId = currentChapter.chapter.id
             }
+            .launchIn(screenModelScope)
+
+        state.map { it.viewerChapters }
+            .distinctUntilChanged()
+            .filterNotNull()
+            .onEach(viewer::setChapters)
             .launchIn(screenModelScope)
     }
 
@@ -229,13 +249,11 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * Called when the user is going to load the prev/next chapter through the toolbar buttons.
      */
     private suspend fun loadAdjacent(chapter: ReaderChapter) {
-        val loader = loader ?: return
-
         logcat { "Loading adjacent ${chapter.chapter.url}" }
 
         mutableState.update { it.copy(isLoadingAdjacentChapter = true) }
         try {
-            ioCoroutineScope.launch {
+            withContext(Dispatchers.IO) {
                 loadChapter(loader, chapter)
             }
         } catch (e: Throwable) {
@@ -274,8 +292,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         if (chapter.state != ReaderChapter.State.Wait && chapter.state !is ReaderChapter.State.Error) {
             return
         }
-
-        val loader = loader ?: return
         try {
             logcat { "Preloading ${chapter.chapter.url}" }
             loader.loadChapter(chapter)
@@ -285,7 +301,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
             }
             return
         }
-        sendEvent(Event.ReloadViewerChapters)
+        state.value.viewerChapters?.let(viewer::setChapters)
     }
 
     /**
@@ -487,7 +503,8 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * Returns the viewer position used by this manga or the default one.
      */
     suspend fun getMangaReadingMode(resolveDefault: Boolean = true): Int {
-        val default = dataStore.get(ReaderPrefs.defaultReadingMode) ?: ReadingMode.LEFT_TO_RIGHT.flagValue
+        val default =
+            dataStore.get(ReaderPrefs.defaultReadingMode) ?: ReadingMode.LEFT_TO_RIGHT.flagValue
         return default
     }
 
@@ -515,7 +532,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
                     )
                 }
             }
-            trySendEvent(Event.ReloadViewerChapters)
+            state.value.viewerChapters?.let(viewer::setChapters)
         }
     }
 
@@ -523,7 +540,8 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * Returns the orientation type used by this manga or the default one.
      */
     suspend fun getMangaOrientation(resolveDefault: Boolean = true): Int {
-        val default = dataStore.get(ReaderPrefs.defaultOrientationType) ?: Reader2Orientation.FREE.flagValue
+        val default =
+            dataStore.get(ReaderPrefs.defaultOrientationType) ?: Reader2Orientation.FREE.flagValue
         return default
     }
 
@@ -591,6 +609,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     fun setBrightnessOverlayValue(value: Int) {
         mutableState.update { it.copy(brightnessOverlayValue = value) }
     }
+
     /**
      * Saves the image of this the selected page on the pictures directory and notifies the UI of the result.
      * There's also a notification to allow sharing the image somewhere else or deleting it.
@@ -691,7 +710,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     sealed interface Event {
-        data object ReloadViewerChapters : Event
         data object PageChanged : Event
         data class SetOrientation(val orientation: Int) : Event
         data class SetCoverResult(val result: SetAsCoverResult) : Event
@@ -720,6 +738,7 @@ data class ViewerChapters(
         nextChapter?.unref()
     }
 }
+
 /**
  * Interface for implementing a viewer.
  */

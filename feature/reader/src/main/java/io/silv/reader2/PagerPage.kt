@@ -1,5 +1,6 @@
 package io.silv.reader2
 
+import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
@@ -41,8 +42,10 @@ import okio.BufferedSource
 @Stable
 class PagerPageHolder(
     val viewer: PagerViewer,
+    val context: Context,
     val page: ReaderPage,
-    val scope: CoroutineScope
+    val scope: CoroutineScope,
+    val data: ByteArray? = null
 ) {
     val status = page.statusFlow.stateIn(
         scope,
@@ -50,7 +53,17 @@ class PagerPageHolder(
         initialValue = Page.State.QUEUE
     )
 
-    var image by mutableStateOf<ImageRequest?>(null)
+    var image by mutableStateOf<ImageRequest?>(
+        if (data != null) {
+            ImageRequest.Builder(context)
+                .data(data)
+                .crossfade(true)
+                .build()
+        } else {
+            null
+        }
+    )
+
     var loadJob: Job? = null
 
     fun load() {
@@ -78,13 +91,13 @@ class PagerPageHolder(
                         }
                         val isAnimated = ImageUtil.isAnimatedAndSupported(source)
                         val background = if (!isAnimated && viewer.config.automaticBackground) {
-                            ImageUtil.chooseBackground(viewer.context, source.peek().inputStream())
+                            ImageUtil.chooseBackground(context, source.peek().inputStream())
                         } else {
                             null
                         }
                         Triple(source.readByteArray(), isAnimated, background)
                     }
-                    image = ImageRequest.Builder(viewer.context)
+                    image = ImageRequest.Builder(context)
                         .data(source)
                         .crossfade(true)
                         .build()

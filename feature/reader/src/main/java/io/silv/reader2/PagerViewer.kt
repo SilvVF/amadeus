@@ -1,12 +1,14 @@
 package io.silv.reader2
 
 import android.content.Context
+import androidx.compose.foundation.gestures.stopScroll
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.unit.IntSize
@@ -20,6 +22,8 @@ import io.silv.reader.loader.ReaderPage
 import io.silv.reader.loader.ViewerPage
 import io.silv.reader2.ViewerNavigation.NavigationRegion
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -33,32 +37,28 @@ sealed interface PagerAction {
 }
 
 class PagerViewer(
-    val context: Context,
-    val feedback: HapticFeedback,
     val isHorizontal: Boolean = true,
     val l2r: Boolean = true,
     val scope: CoroutineScope,
     val onAction: (PagerAction) -> Unit
 ) : Viewer {
 
-    @OptIn(DependencyAccessor::class)
-    val downloadManager = downloadDeps.downloadManager
-
     val config: PagerConfig = PagerConfig(this, scope)
     private var preprocessed: MutableMap<Int, InsertPage> = mutableMapOf()
 
-    val mutex = Mutex()
-    var currentChapter by mutableStateOf<ReaderChapter?>(null)
+    private val currentPageMutex = Mutex()
 
     var nextTransition: ChapterTransition.Next? = null
         private set
-
     var items = mutableStateListOf<ViewerPage>()
+        private set
+    var currentPage by mutableStateOf<ViewerPage?>(null)
+        private set
+    var currentChapter by mutableStateOf<ReaderChapter?>(null)
         private set
 
     val pagerState = PagerState { items.size }
 
-    var currentPage by mutableStateOf<ViewerPage?>(null)
 
     fun animateScrollToPage(page: Int) = scope.launch {
         pagerState.animateScrollToPage(page)
@@ -83,36 +83,43 @@ class PagerViewer(
         } + 1
     }
 
-
-    suspend fun onPageSelected(idx: Int) {
-        mutex.withLock {
-            val page = items.getOrNull(idx)
-            if (page != null && currentPage != page) {
-                val allowPreload = checkAllowPreload(page as? ReaderPage)
-                val forward = when {
-                    currentPage is ReaderPage && page is ReaderPage -> {
-                        // if both pages have the same number, it's a split page with an InsertPage
-                        if (page.number == (currentPage as ReaderPage).number) {
-                            // the InsertPage is always the second in the reading direction
-                            page is InsertPage
-                        } else {
-                            page.number > (currentPage as ReaderPage).number
-                        }
-                    }
-
-                    currentPage is ChapterTransition.Prev && page is ReaderPage -> false
-                    else -> true
+    init {
+        snapshotFlow { pagerState.settledPage }
+            .onEach {
+                currentPageMutex.withLock {
+                    handleSettledPage(it)
                 }
-                when (page) {
-                    is ReaderPage -> {
-                        onReaderPageSelected(page, allowPreload, forward)
-                        currentChapter = page.chapter
-                    }
-
-                    is ChapterTransition -> onTransitionSelected(page)
-                }
-                currentPage = page
             }
+            .launchIn(scope)
+    }
+
+    private fun handleSettledPage(idx: Int) {
+        val page = items.getOrNull(idx)
+        if (page != null && currentPage != page) {
+            val allowPreload = checkAllowPreload(page as? ReaderPage)
+            val forward = when {
+                currentPage is ReaderPage && page is ReaderPage -> {
+                    // if both pages have the same number, it's a split page with an InsertPage
+                    if (page.number == (currentPage as ReaderPage).number) {
+                        // the InsertPage is always the second in the reading direction
+                        page is InsertPage
+                    } else {
+                        page.number > (currentPage as ReaderPage).number
+                    }
+                }
+
+                currentPage is ChapterTransition.Prev && page is ReaderPage -> false
+                else -> true
+            }
+            when (page) {
+                is ReaderPage -> {
+                    onReaderPageSelected(page, allowPreload, forward)
+                    currentChapter = page.chapter
+                }
+
+                is ChapterTransition -> onTransitionSelected(page)
+            }
+            currentPage = page
         }
     }
 
@@ -253,16 +260,19 @@ class PagerViewer(
         preprocessed = mutableMapOf()
 
         scope.launch {
-            mutex.withLock {
+            currentPageMutex.withLock {
+                pagerState.stopScroll()
+
+                val settled = items.getOrNull(pagerState.settledPage)
+
                 items.clear()
                 items.addAll(newItems)
 
-                runCatching {
-                    pagerState.scrollToPage(newItems.indexOf(currentPage))
+                if (settled != null) {
+                    pagerState.scrollToPage(newItems.indexOf(settled))
                 }
-                    .onFailure {
-                        pagerState.scrollToPage(0)
-                    }
+
+                currentPage = settled
             }
         }
 

@@ -84,4 +84,5 @@ dependencies {
     
 
     implementation(libs.bundles.coil)
+    debugImplementation(libs.androidx.ui.tooling)
 }

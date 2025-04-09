@@ -1,12 +1,14 @@
 package io.silv.amadeus.coil
 
-import android.graphics.BitmapFactory
 import android.util.Log
-import coil.annotation.ExperimentalCoilApi
-import coil.decode.ImageSource
-import coil.disk.DiskCache
-import coil.memory.MemoryCache
-import coil.request.Options
+import coil3.annotation.ExperimentalCoilApi
+import coil3.decode.ImageSource
+import coil3.disk.DiskCache
+import coil3.request.Options
+import io.silv.common.log.LogPriority
+import io.silv.common.log.logcat
+import io.silv.data.download.saveTo
+import okio.FileSystem
 import okio.Source
 import okio.buffer
 import okio.sink
@@ -16,42 +18,22 @@ import java.io.File
 
 internal object CoilDiskUtils {
 
-    fun writeToMemCache(
-        options: Options,
-        bytes: ByteArray,
-        memCacheKey: MemoryCache.Key,
-        memCache: MemoryCache
-    ) = runCatching {
-        if (options.memoryCachePolicy.writeEnabled) {
-            val bmp = with(
-                BitmapFactory.Options().apply { inMutable = true }
-            ) {
-                BitmapFactory.decodeByteArray(
-                    bytes, 0,
-                    bytes.size,
-                    this
-                )
-            }
-            memCache[memCacheKey] = MemoryCache.Value(bitmap = bmp)
-        }
-    }
-
     fun writeResponseToCoverCache(
-        response: ByteArrayInputStream,
+        response: Source,
         cacheFile: File?,
         options: Options
     ): File? {
         if (cacheFile == null || !options.diskCachePolicy.writeEnabled) return null
         return try {
-            response.source().use { input ->
+            response.use { input ->
                 writeSourceToCoverCache(input, cacheFile)
             }
             cacheFile.takeIf { it.exists() }
         } catch (e: Exception) {
-            Log.e(
-                "writeResponseToCoverCache",
-                "Failed to write response data to cover cache ${cacheFile.name}"
-            )
+            logcat(LogPriority.ERROR) {
+                "writeResponseToCoverCache:" +
+                        "Failed to write response data to cover cache ${cacheFile.name}"
+            }
             null
         }
     }
@@ -72,7 +54,6 @@ internal object CoilDiskUtils {
         }
     }
 
-    @OptIn(ExperimentalCoilApi::class)
     fun readFromDiskCache(
         options: Options,
         diskCache: DiskCache,
@@ -85,7 +66,6 @@ internal object CoilDiskUtils {
         }
     }
 
-    @OptIn(ExperimentalCoilApi::class)
     fun moveSnapshotToCoverCache(
         diskCache: DiskCache,
         diskCacheKey: String,
@@ -102,33 +82,33 @@ internal object CoilDiskUtils {
             }
             cacheFile.takeIf { it.exists() }
         } catch (e: Exception) {
-            Log.e(
-                "moveSnapshotToCoverCache",
-                "Failed to write snapshot data to cover cache ${cacheFile.name}"
-            )
+            logcat {
+                "moveSnapshotToCoverCache" + "Failed to write snapshot data to cover cache ${cacheFile.name}"
+            }
             null
         }
     }
 
-    @OptIn(ExperimentalCoilApi::class)
     fun DiskCache.Snapshot.toImageSource(key: String): ImageSource {
         return ImageSource(
             file = data,
+            fileSystem = FileSystem.SYSTEM,
             diskCacheKey = key,
             closeable = this
         )
     }
 
-    @OptIn(ExperimentalCoilApi::class)
     fun writeToDiskCache(
-        response: ByteArray,
+        response: Source,
         diskCache: DiskCache,
         diskCacheKey: String
     ): DiskCache.Snapshot? {
         val editor = diskCache.openEditor(diskCacheKey) ?: return null
         try {
             diskCache.fileSystem.write(editor.data) {
-                write(response)
+                response.buffer().use {
+                    write(it.readByteArray())
+                }
             }
             return editor.commitAndOpenSnapshot()
         } catch (e: Exception) {

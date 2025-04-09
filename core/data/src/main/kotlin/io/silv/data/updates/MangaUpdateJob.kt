@@ -35,22 +35,8 @@ class MangaUpdateJob internal constructor(
 
                 val updatedChapterList = getChapterList.await(manga.id)
 
-                val prevList = chapterDao.getChaptersByMangaId(manga.id)
-
                 for (chapter in updatedChapterList) {
-
-                    val prev = prevList.find { p -> p.id == chapter.id }
-
-                    if (prev != null) {
-                        chapterDao.updateChapter(chapter.toChapterEntity(prev))
-                    } else {
-                        chapterDao.upsertChapter(chapter.toChapterEntity())
-                    }
-                }
-                val newIds = updatedChapterList.map { it.id }
-
-                for (unhandled in prevList.filter { prev -> prev.id !in newIds }) {
-                    chapterDao.deleteChapter(unhandled)
+                    chapterDao.updateOrInsert(chapter.toChapterEntity())
                 }
 
                 mangaDao.update(

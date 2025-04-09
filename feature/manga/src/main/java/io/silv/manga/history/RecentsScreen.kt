@@ -54,7 +54,7 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import io.silv.common.model.MangaCover
 import io.silv.common.time.localDateTimeNow
 import io.silv.domain.history.HistoryWithRelations

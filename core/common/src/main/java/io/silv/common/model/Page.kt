@@ -1,6 +1,7 @@
 package io.silv.common.model
 
 import androidx.compose.runtime.Stable
+import io.silv.common.mutablePropertyFrom
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
@@ -20,23 +21,14 @@ open class Page(
 
     @kotlinx.serialization.Transient
     val statusFlow = _statusFlow.asStateFlow()
-    var status: State
-        get() = _statusFlow.value
-        set(value) {
-            _statusFlow.value = value
-        }
+    var status by mutablePropertyFrom(_statusFlow)
 
     @kotlinx.serialization.Transient
     private val _progressFlow = MutableStateFlow(0)
 
     @kotlinx.serialization.Transient
     val progressFlow = _progressFlow.asStateFlow()
-
-    var progress: Int
-        get() = _progressFlow.value
-        set(value) {
-            _progressFlow.value = value
-        }
+    var progress by mutablePropertyFrom(_progressFlow)
 
     override fun update(
         bytesRead: Long,

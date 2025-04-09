@@ -23,7 +23,7 @@ internal class TagSyncWorker(
     workerParams: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParams) {
 
-    private val tagRepository = dataDeps.tagsRepository
+    private val tagRepository get() = dataDeps.tagsRepository
 
     override suspend fun doWork(): Result {
         return if (tagRepository.sync()) {

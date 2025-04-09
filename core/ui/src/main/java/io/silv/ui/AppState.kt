@@ -1,6 +1,9 @@
 package io.silv.ui
 
 import android.util.Log
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -19,6 +22,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
+import io.silv.common.log.logcat
 import io.silv.common.model.NetworkConnectivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +36,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 val LocalAppState = compositionLocalOf<AppState> { error("App State not yet provided") }
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+val LocalTransitionScope = compositionLocalOf<SharedTransitionScope?> { error("scope not provided") }
+val LocalAnimatedContentScope = compositionLocalOf<AnimatedContentScope?> { error("scope not provided") }
 
 @Composable
 fun rememberAppState(
@@ -102,7 +110,7 @@ class AppState(
             )
 
     fun showSnackBar(message: String, duration: SnackbarDuration = SnackbarDuration.Short) {
-        TODO("show snackbars")
+
     }
 
     fun onTabSelected(tab: Tab) {
@@ -110,7 +118,7 @@ class AppState(
             && tab is ReselectTab
         ) {
             scope.launch {
-                Log.d("Reselect", "Sending Reselect event to $tab")
+                logcat { "Sending Reselect event to $tab" }
                 tab.reselectCh.send(Unit)
             }
         } else {

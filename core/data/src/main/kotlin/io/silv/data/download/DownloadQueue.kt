@@ -2,7 +2,7 @@
 
 package io.silv.data.download
 
-import io.silv.common.mutableStateFrom
+import io.silv.common.mutablePropertyFrom
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -70,10 +70,10 @@ data class QItem<T>(
     private val _statusFlow = MutableStateFlow(State.IDLE)
     val statusFlow = _statusFlow.asStateFlow()
 
-    var retry: Int by mutableStateFrom(_retryFlow)
+    var retry: Int by mutablePropertyFrom(_retryFlow)
         internal set
 
-    var status: State by mutableStateFrom(_statusFlow)
+    var status: State by mutablePropertyFrom(_statusFlow)
         internal set
 
     enum class State(val value: Int) {
@@ -137,7 +137,7 @@ fun <T, KEY> Flow<List<QItem<T>>>.transformActiveJobsUntilError(
         .distinctUntilChanged()
 }
 
-private suspend fun <T> retry(
+suspend fun <T> retry(
     retries: Int,
     predicate: suspend (attempt: Int) -> Result<T>
 ): Result<T> {

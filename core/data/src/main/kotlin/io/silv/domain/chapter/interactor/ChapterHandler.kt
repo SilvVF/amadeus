@@ -1,5 +1,7 @@
 package io.silv.domain.chapter.interactor
 
+import io.silv.common.log.asLog
+import io.silv.common.log.logcat
 import io.silv.common.model.ProgressState
 import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.chapter.repository.ChapterRepository
@@ -9,7 +11,13 @@ class ChapterHandler(
     private val chapterRepository: ChapterRepository,
 ) {
     suspend fun refreshList(mangaId: String) {
-       runCatching{ chapterRepository.refetchChapters(mangaId) }
+       runCatching { chapterRepository.refetchChapters(mangaId) }
+           .onFailure {
+               logcat { it.asLog() }
+           }
+           .onSuccess {
+               logcat { "fetched ${chapterRepository.getChaptersByMangaId(mangaId)}" }
+           }
     }
 
     suspend fun toggleChapterBookmarked(id: String) =

@@ -16,6 +16,8 @@ import io.ktor.http.HttpHeaders
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Page
 import io.silv.network.MangaDexApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import java.util.Date
 import kotlin.time.Duration.Companion.minutes
@@ -37,6 +39,7 @@ private data class AtHomeChapterDto(
 class HttpSource(
     private val mangaDexApi: MangaDexApi,
     private val client: HttpClient,
+    private val imageSourceFactory: ImageSourceFactory,
 ) {
     private val tokenTracker = mutableMapOf<String, Long>()
 
@@ -105,7 +108,7 @@ class HttpSource(
                 }
             }
 
-        return page.imageUrl!!.replaceBefore("/data", mdAtHomeServerUrl ?: "https://api.mangadex.org/at-home/server").also { Log.d("Source", it) }
+        return page.imageUrl!!.replaceBefore("/data", mdAtHomeServerUrl ?: "https://api.mangadex.org/at-home/server")
     }
 
     private val reqHeader =  HeadersBuilder().apply {
@@ -117,7 +120,8 @@ class HttpSource(
         page: Page,
         headers: List<Pair<String, String>>,
     ): HttpResponse {
-        return client.get {
+        return withContext(Dispatchers.IO) {
+            client.get {
                 url(getValidImageUrlForPage(page))
                 headers {
                     headers.forEach { (name, value) ->
@@ -126,10 +130,15 @@ class HttpSource(
                 }
                 onDownload { bytesSentTotal, contentLength ->
                     runCatching {
-                        page.update(bytesSentTotal, contentLength!!, bytesSentTotal >= contentLength)
+                        page.update(
+                            bytesSentTotal,
+                            contentLength!!,
+                            bytesSentTotal >= contentLength
+                        )
                     }
                 }
             }
+        }
     }
 
     suspend fun getPageList(chapter: ChapterResource): List<Page> {
@@ -147,5 +156,16 @@ class HttpSource(
                 imageUrl = "${response.baseUrl}/data/${response.chapter.hash}/$data",
             )
         }
+            .ifEmpty {
+                imageSourceFactory.getSource(chapter.url)!!.let {
+                    it.fetchImageUrls(chapter.url).mapIndexed {index, data ->
+                        Page(
+                            index = index,
+                            url = chapter.url,
+                            imageUrl = data,
+                        )
+                    }
+                }
+            }
     }
 }

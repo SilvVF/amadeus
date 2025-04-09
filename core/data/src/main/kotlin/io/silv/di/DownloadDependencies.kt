@@ -42,7 +42,7 @@ abstract class DownloadDependencies {
             chapterCache,
             imageSourceFactory,
             networkDeps.mangaDexApi,
-            networkDeps.mangaDexClient,
+            networkDeps.noCacheClient,
             dataStoreDeps.downloadStore,
             dataDeps.getChapter,
             dataDeps.getManga,

@@ -1,8 +1,7 @@
-@Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     id("java-library")
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
-    kotlin("plugin.serialization") version "1.9.22"
+    kotlin("plugin.serialization")
 }
 
 java {

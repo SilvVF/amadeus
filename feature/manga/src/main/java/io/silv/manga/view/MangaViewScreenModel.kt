@@ -7,6 +7,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import com.skydoves.sandwich.ApiResponse
 import com.skydoves.sandwich.message
 import io.silv.common.DependencyAccessor
+import io.silv.common.log.logcat
 import io.silv.common.model.Download
 import io.silv.common.model.ReadingStatus
 import io.silv.data.download.CoverCache
@@ -150,7 +151,9 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
                 chapterHandler.refreshList(it.manga.id)
 
                 updateSuccess {
-                    it.copy(refreshingChapters = false)
+                    it.copy(
+                        refreshingChapters = false
+                    )
                 }
             }
         }
@@ -305,7 +308,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     fun downloadChapterImages(chapterId: String) {
         state.value.success?.let {
             ioCoroutineScope.launch {
-                Log.d("MangaViewScreenModel", "Calling download chapter images")
+                logcat { "Calling download chapter images" }
                 downloadManager.downloadChapters(
                     it.manga.toResource(),
                     listOf(

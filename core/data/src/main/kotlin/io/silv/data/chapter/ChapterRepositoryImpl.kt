@@ -8,6 +8,7 @@ import com.skydoves.sandwich.suspendMapSuccess
 import com.skydoves.sandwich.suspendOnFailure
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
+import io.silv.common.log.logcat
 import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.minus
 import io.silv.data.mappers.toChapterEntity
@@ -79,13 +80,13 @@ internal class ChapterRepositoryImpl(
                 val chapterJobs = ids.map { async { chapterDao.getChapterById(it) } }
 
                 val response = mangaDexApi.getChapterData(ChapterListRequest(ids = ids))
-                    .suspendOnFailure { Log.d("OfflineFirstChapterInfoRepository", "fetching failed $ids") }
+                    .suspendOnFailure { logcat { "fetching failed $ids" } }
                     .getOrThrow()
 
                 val chapters = chapterJobs.mapNotNull { it.await() }
 
                 response.data.forEach {chapter ->
-                    chapterDao.upsertChapter(
+                    chapterDao.updateOrInsert(
                        chapter.toChapterEntity(
                             prev = chapters.find { entity -> entity.id == chapter.id }
                        )
@@ -98,7 +99,7 @@ internal class ChapterRepositoryImpl(
 
     override suspend fun saveChapter(chapter: Chapter) {
         withContext(dispatchers.io) {
-            chapterDao.upsertChapter(chapter.let(ChapterMapper::toEntity))
+            chapterDao.updateOrInsert(chapter.let(ChapterMapper::toEntity))
         }
     }
 
@@ -107,7 +108,7 @@ internal class ChapterRepositoryImpl(
             mangaDexApi.getChapterData(ChapterListRequest(ids = listOf(id)))
                     .suspendMapSuccess {
                         val chapter = this.data.first().toChapterEntity()
-                        chapterDao.upsertChapter(chapter)
+                        chapterDao.updateOrInsert(chapter)
                         chapter.let(ChapterMapper::mapChapter)
                     }
                     .getOrNull()
@@ -116,8 +117,7 @@ internal class ChapterRepositoryImpl(
 
     override suspend fun refetchChapters(mangaId: String) = withContext(dispatchers.io) {
         updateDbChapters(
-            chapters = getChapterList.await(mangaId),
-            mangaId = mangaId
+            chapters = getChapterList.await(mangaId)
         )
     }
 
@@ -130,9 +130,7 @@ internal class ChapterRepositoryImpl(
     }
 
     override fun observeChapters(): Flow<List<Chapter>> {
-        return chapterDao.getChapterEntities()
-            .map { list -> list.map(ChapterMapper::mapChapter) }
-            .flowOn(dispatchers.io)
+        return chapterDao.getChapterEntities().map { list -> list.map(ChapterMapper::mapChapter) }
     }
 
     override fun observeBookmarkedChapters(): Flow<List<Chapter>> {
@@ -153,36 +151,19 @@ internal class ChapterRepositoryImpl(
     override fun observeChaptersByMangaId(mangaId: String): Flow<List<Chapter>> {
         return chapterDao.observeChaptersByMangaId(mangaId).map { list -> list.map(ChapterMapper::mapChapter) }.onStart {
             if (shouldUpdate(mangaId)) {
-                Log.d("ChapterEntityRepository","Updating from network")
+                logcat { "Updating from network" }
 
-                updateDbChapters(
-                    chapters = getChapterList.await(mangaId),
-                    mangaId = mangaId
-                )
+                updateDbChapters(chapters = getChapterList.await(mangaId))
             } else {
-                Log.d("ChapterEntityRepository","Skipped Fetch From network")
+                logcat { "Skipped Fetch From network" }
             }
         }
     }
 
-    private suspend fun updateDbChapters(chapters: List<ChapterDto>, mangaId: String) {
+    private suspend fun updateDbChapters(chapters: List<ChapterDto>) {
         database.withTransaction {
-
-            val prevList = chapterDao.getChaptersByMangaId(mangaId)
-
             for (chapter in chapters) {
-
-                val prev = prevList.find { p -> p.id == chapter.id }
-
-                if (prev != null) {
-                    chapterDao.updateChapter(chapter.toChapterEntity(prev))
-                } else {
-                    chapterDao.upsertChapter(chapter.toChapterEntity())
-                }
-            }
-            val newIds = chapters.map { it.id }
-            for (unhandled in prevList.filter { prev -> prev.id !in newIds }) {
-                chapterDao.deleteChapter(unhandled)
+                chapterDao.updateOrInsert(chapter.toChapterEntity())
             }
         }
     }

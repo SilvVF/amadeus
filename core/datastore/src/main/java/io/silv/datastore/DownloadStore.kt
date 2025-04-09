@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import io.silv.common.log.logcat
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Download
 import io.silv.common.model.MangaResource
@@ -50,7 +51,7 @@ class DownloadStore(
      * @param downloads the list of downloads to add.
      */
     suspend fun addAll(downloads: List<Download>) {
-        Log.d("DownloadStore", "serializing")
+        logcat { "serializing" }
         datastore.edit { prefs ->
             downloads.forEach {
                 prefs[getKey(it)] = serialize(it)

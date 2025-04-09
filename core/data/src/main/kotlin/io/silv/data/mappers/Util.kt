@@ -1,5 +1,6 @@
 package io.silv.data.mappers
 
+import io.silv.common.log.logcat
 import io.silv.common.model.TimePeriod
 import io.silv.common.time.timeStringMinus
 import io.silv.network.model.LocalizedString
@@ -27,6 +28,9 @@ fun coverArtUrl(
         ?.attributes
         ?.fileName
         ?: ""
+
+    logcat("MangaCoverArt") { "$fileName ${mangaDto.relationships}" }
+    logcat("MangaCoverArt") { "coverArtUrl ${"https://uploads.mangadex.org/covers/${mangaDto.id}/$fileName"}" }
 
     return "https://uploads.mangadex.org/covers/${mangaDto.id}/$fileName"
 }

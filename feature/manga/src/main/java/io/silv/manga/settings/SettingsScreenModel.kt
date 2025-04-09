@@ -6,6 +6,7 @@ import androidx.work.WorkManager
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.DependencyAccessor
+import io.silv.common.log.logcat
 import io.silv.common.model.AppTheme
 import io.silv.common.model.AutomaticUpdatePeriod
 import io.silv.datastore.SettingsStore
@@ -43,7 +44,7 @@ class SettingsScreenModel @OptIn(DependencyAccessor::class) constructor(
     fun changeAutomaticUpdatePeriod(automaticUpdatePeriod: AutomaticUpdatePeriod) {
         screenModelScope.launch {
             val persisted = settingsStore.update { prev ->
-                Log.d("Settings", "$prev")
+                logcat { "$prev" }
                 prev.copy(updateInterval = automaticUpdatePeriod)
             }
             if (persisted) {

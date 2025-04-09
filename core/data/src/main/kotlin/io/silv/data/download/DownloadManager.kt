@@ -2,6 +2,7 @@ package io.silv.data.download
 
 import android.content.Context
 import android.util.Log
+import io.silv.common.log.logcat
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Download
 import io.silv.common.model.MangaDexSource
@@ -149,7 +150,7 @@ class DownloadManager internal constructor(
      */
     fun downloadChapters(manga: MangaResource, chapters: List<ChapterResource>, autoStart: Boolean = true) {
         applicationScope.launch {
-            Log.d("DownloadManager", "queing chapters $chapters manga $manga auto start $autoStart")
+            logcat { "queing chapters $chapters manga $manga auto start $autoStart" }
             downloader.queueChapters(manga, chapters, autoStart)
         }
     }

@@ -23,7 +23,7 @@ internal class SeasonalMangaSyncWorker(
     workerParams: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParams) {
 
-    private val seasonalMangaRepository = dataDeps.seasonalMangaRepository
+    private val seasonalMangaRepository get() = dataDeps.seasonalMangaRepository
 
     override suspend fun doWork(): Result {
         return if (seasonalMangaRepository.sync()) {

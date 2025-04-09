@@ -3,6 +3,7 @@
 package io.silv.library
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
@@ -102,7 +103,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import io.silv.common.model.Download
 import io.silv.common.model.MangaCover
 import io.silv.common.time.localDateTimeNow
@@ -122,7 +123,9 @@ import io.silv.navigation.push
 import io.silv.ui.CenterBox
 import io.silv.ui.Converters
 import io.silv.ui.LaunchedOnReselect
+import io.silv.ui.LocalAnimatedContentScope
 import io.silv.ui.LocalAppState
+import io.silv.ui.LocalTransitionScope
 import io.silv.ui.ReselectTab
 import io.silv.ui.composables.CardType
 import io.silv.ui.composables.ChapterDownloadAction
@@ -140,6 +143,7 @@ import io.silv.ui.layout.TopAppBarWithBottomContent
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.AmadeusTheme
 import io.silv.ui.theme.LocalSpacing
+import io.silv.ui.tryApplySharedElementTransition
 
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -154,7 +158,6 @@ object LibraryTab : ReselectTab {
 
     override val reselectCh = Channel<Unit>(capacity = 1, BufferOverflow.DROP_OLDEST)
 
-    @OptIn(ExperimentalAnimationGraphicsApi::class)
     override val options: TabOptions
         @Composable
         get() {
@@ -260,7 +263,7 @@ fun LibraryTopAppBar(
                         searchText = searchText(),
                         placeHolder = {
                             Text(
-                                text =  remember(selectedTabProvider()) {
+                                text = remember(selectedTabProvider()) {
                                     "Search ${selectedTabProvider.invoke()}..."
                                 }
                             )
@@ -350,6 +353,7 @@ fun LibraryScreenContent(
         LibraryBottomSheet.DisplayOptions -> LibraryOptionsBottomSheet {
             currentBottomSheet = null
         }
+
         LibraryBottomSheet.Filters -> Unit
         null -> Unit
     }
@@ -378,6 +382,7 @@ fun LibraryScreenContent(
                         CircularProgressIndicator()
                     }
                 }
+
                 is LibraryMangaState.Error -> {
                     ErrorScreenContent(
                         state = mangaState,
@@ -388,6 +393,7 @@ fun LibraryScreenContent(
                         }
                     )
                 }
+
                 is LibraryMangaState.Success -> {
                     SuccessScreenContent(
                         state = stateProvider(),
@@ -539,7 +545,7 @@ fun LibraryPeekContent(
         modifier = modifier
     ) {
         state.libraryMangaState.success?.libraryTags?.let { tags ->
-            if(tags.fastAny { it.selected } && !tags.fastAll { it.selected }) {
+            if (tags.fastAny { it.selected } && !tags.fastAll { it.selected }) {
                 item(
                     key = "clear"
                 ) {
@@ -548,7 +554,7 @@ fun LibraryPeekContent(
                         label = { Text("clear") },
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.Clear ,
+                                imageVector = Icons.Default.Clear,
                                 contentDescription = null
                             )
                         },
@@ -586,8 +592,6 @@ fun SuccessScreenContent(
     currentTab: LibTab,
     actions: LibraryActions,
 ) {
-    val space = LocalSpacing.current
-
     val showGlobalSearch by remember(state) {
         derivedStateOf {
             mangaState.filteredTagIds.isEmpty() &&
@@ -597,7 +601,6 @@ fun SuccessScreenContent(
     }
 
     val scope = rememberCoroutineScope()
-    val navigator = LocalNavigator.currentOrThrow
 
     val cardType by LibraryPrefs.cardTypePrefKey.collectAsState(
         defaultValue = CardType.Compact,
@@ -605,7 +608,10 @@ fun SuccessScreenContent(
         scope = scope,
     )
 
-    val gridCells by LibraryPrefs.gridCellsPrefKey.collectAsState(LibraryPrefs.gridCellsDefault, scope)
+    val gridCells by LibraryPrefs.gridCellsPrefKey.collectAsState(
+        LibraryPrefs.gridCellsDefault,
+        scope
+    )
     val useList by LibraryPrefs.useListPrefKey.collectAsState(false, scope)
     val animatePlacement by LibraryPrefs.animatePlacementPrefKey.collectAsState(true, scope)
 
@@ -620,7 +626,7 @@ fun SuccessScreenContent(
             }
         },
         modifier = Modifier.fillMaxSize()
-    ) {targetStateTab ->
+    ) { targetStateTab ->
         when (targetStateTab) {
             LibTab.Library -> LibraryManga(
                 useList = useList,
@@ -632,11 +638,13 @@ fun SuccessScreenContent(
                 state = mangaState,
                 actions = actions
             )
+
             LibTab.Chapters -> BookmarkedChapters(
                 paddingValues = paddingValues,
                 state = state,
                 actions = actions
             )
+
             LibTab.Updates -> UpdatesList(
                 state = state,
                 actions = actions,
@@ -893,7 +901,11 @@ fun BookmarkedChapters(
     val navigator = LocalNavigator.currentOrThrow
 
     if (state.bookmarkedChapters.isEmpty()) {
-        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Icon(
                 imageVector = Icons.Filled.BookmarkBorder,
                 contentDescription = null,
@@ -927,13 +939,13 @@ fun BookmarkedChapters(
                     val archive =
                         SwipeAction(
                             icon =
-                            rememberVectorPainter(
-                                if (chapter.bookmarked) {
-                                    Icons.TwoTone.Archive
-                                } else {
-                                    Icons.TwoTone.Unarchive
-                                },
-                            ),
+                                rememberVectorPainter(
+                                    if (chapter.bookmarked) {
+                                        Icons.TwoTone.Archive
+                                    } else {
+                                        Icons.TwoTone.Unarchive
+                                    },
+                                ),
                             background = MaterialTheme.colorScheme.primary,
                             isUndo = chapter.bookmarked,
                             onSwipe = {
@@ -944,13 +956,13 @@ fun BookmarkedChapters(
                     val read =
                         SwipeAction(
                             icon =
-                            rememberVectorPainter(
-                                if (chapter.read) {
-                                    Icons.Filled.VisibilityOff
-                                } else {
-                                    Icons.Filled.VisibilityOff
-                                },
-                            ),
+                                rememberVectorPainter(
+                                    if (chapter.read) {
+                                        Icons.Filled.VisibilityOff
+                                    } else {
+                                        Icons.Filled.VisibilityOff
+                                    },
+                                ),
                             background = MaterialTheme.colorScheme.primary,
                             isUndo = chapter.read,
                             onSwipe = {
@@ -965,17 +977,17 @@ fun BookmarkedChapters(
                     ) {
                         ChapterListItem(
                             modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    navigator.push(
-                                        SharedScreen.Reader(manga.id, chapter.id)
-                                    )
-                                }
-                                .padding(
-                                    vertical = space.med,
-                                    horizontal = space.large,
-                                ),
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        navigator.push(
+                                            SharedScreen.Reader(manga.id, chapter.id)
+                                        )
+                                    }
+                                    .padding(
+                                        vertical = space.med,
+                                        horizontal = space.large,
+                                    ),
                             chapter = chapter,
                             download = null,
                             showFullTitle = true,
@@ -997,7 +1009,7 @@ fun BookmarkedChapters(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun LibraryManga(
     useList: Boolean,

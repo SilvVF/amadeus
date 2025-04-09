@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.platform.inspectable
 import androidx.compose.ui.semantics.semantics
@@ -70,15 +71,8 @@ import kotlin.math.pow
 fun Modifier.pullRefreshIndicatorTransform(
     state: PullRefreshState,
     scale: Boolean = false,
-) = inspectable(
-    inspectorInfo =
-    debugInspectorInfo {
-        name = "pullRefreshIndicatorTransform"
-        properties["state"] = state
-        properties["scale"] = scale
-    },
-) {
-    Modifier
+): Modifier {
+    return this
         // Essentially we only want to clip the at the top, so the indicator will not appear when
         // the position is 0. It is preferable to clip the indicator as opposed to the layout that
         // contains the indicator, as this would also end up clipping shadows drawn by items in a

@@ -32,7 +32,7 @@ class MangaSyncWorker(
     workerParams: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParams) {
 
-    private val mangaUpdateJob = dataDeps.mangaUpdateJob
+    private val mangaUpdateJob get() = dataDeps.mangaUpdateJob
 
     override suspend fun doWork(): Result {
 

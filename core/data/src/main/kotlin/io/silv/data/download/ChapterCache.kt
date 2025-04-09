@@ -2,25 +2,34 @@ package io.silv.data.download
 
 import android.content.Context
 import android.text.format.Formatter
-import android.util.Log
 import com.mayakapps.kache.FileKache
 import com.mayakapps.kache.KacheStrategy
-import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse
-import io.ktor.utils.io.core.use
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.utils.io.asSource
+import io.silv.common.AmadeusDispatchers
+import io.silv.common.DependencyAccessor
+import io.silv.common.commonDeps
+import io.silv.common.coroutine.suspendRunCatching
+import io.silv.common.log.asLog
+import io.silv.common.log.logcat
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Page
 import io.silv.data.util.DiskUtil
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.io.buffered
+import kotlinx.io.readByteArray
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
 import okio.FileSystem
 import okio.IOException
 import okio.Path
 import okio.Path.Companion.toPath
 import okio.buffer
+import okio.use
 import java.io.File
 
 /**
@@ -31,9 +40,10 @@ import java.io.File
  *
  * @param context the application context.
  */
-class ChapterCache(
+class ChapterCache @OptIn(DependencyAccessor::class) constructor(
     private val context: Context,
     private val json: Json,
+    private val dispatchers: AmadeusDispatchers = commonDeps.dispatchers,
 ) {
 
     private val fileSystem = FileSystem.SYSTEM
@@ -74,19 +84,15 @@ class ChapterCache(
      * @return the list of pages.
      */
     @OptIn(ExperimentalSerializationApi::class)
-    suspend fun getPageListFromCache(chapter: ChapterResource): List<Page> {
+    suspend fun getPageListFromCache(chapter: ChapterResource): List<Page> = withContext(dispatchers.io) {
         // Get the key for the chapter.
         val key = DiskUtil.hashKeyForDisk(getKey(chapter))
 
         // Convert JSON string to list of objects. Throws an exception if snapshot is null
-        return diskCache.get(key)!!.let { filePath ->
-
-            json.decodeFromString<List<Page>>(
-                fileSystem.source(filePath.toPath())
-                    .buffer()
-                    .readByteArray()
-                    .decodeToString()
-            )
+        diskCache.get(key)!!.let { filePath ->
+            fileSystem.source(filePath.toPath()).buffer().inputStream().use {
+                json.decodeFromStream<List<Page>>(it)
+            }
         }
     }
 
@@ -96,26 +102,21 @@ class ChapterCache(
      * @param chapter the chapter.
      * @param pages list of pages.
      */
-    suspend fun putPageListToCache(chapter: ChapterResource, pages: List<Page>) {
-        // Convert list of pages to json string.
-        val cachedValue = json.encodeToString(pages)
-
+    suspend fun putPageListToCache(chapter: ChapterResource, pages: List<Page>) = withContext(dispatchers.io) {
         try {
             // Get editor from md5 key.
             val key = DiskUtil.hashKeyForDisk(getKey(chapter))
 
             diskCache.put(key) { filePath ->
-                runCatching {
-                    fileSystem.sink(filePath.toPath()).buffer().use { sink ->
-
-                        sink.write(cachedValue.toByteArray())
-                        sink.flush()
+                suspendRunCatching {
+                    fileSystem.sink(filePath.toPath()).buffer().use {
+                        it.writeUtf8(json.encodeToString(pages))
                     }
                 }
                     .isSuccess
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            logcat { e.asLog() }
             // Ignore.
         }
     }
@@ -126,8 +127,8 @@ class ChapterCache(
      * @param imageUrl url of image.
      * @return true if in cache otherwise false.
      */
-    suspend fun isImageInCache(imageUrl: String): Boolean {
-        return try {
+    suspend fun isImageInCache(imageUrl: String): Boolean = withContext(dispatchers.io) {
+        try {
             diskCache.get(DiskUtil.hashKeyForDisk(imageUrl)) != null
         } catch (e: IOException) {
             false
@@ -140,11 +141,11 @@ class ChapterCache(
      * @param imageUrl url of image.
      * @return path of image.
      */
-    suspend fun getImageFilePath(imageUrl: String): Path {
+    suspend fun getImageFilePath(imageUrl: String): Path = withContext(dispatchers.io) {
         // Get file from md5 key.
         val imageName = DiskUtil.hashKeyForDisk(imageUrl)
 
-        return diskCache.get(imageName)!!.toPath()
+        diskCache.get(imageName)!!.toPath()
     }
 
     /**
@@ -155,42 +156,40 @@ class ChapterCache(
      * @throws IOException image error.
      */
     @Throws(IOException::class)
-    suspend fun putImageToCache(imageUrl: String, response: HttpResponse) {
+    suspend fun putImageToCache(imageUrl: String, response: HttpResponse) = withContext(dispatchers.io) {
         // Initialize editor (edits the values for an entry).
         try {
             // Get editor from md5 key.
             val key = DiskUtil.hashKeyForDisk(imageUrl)
-
-            val responseBody: ByteArray = response.body()
-
-            // Get OutputStream and write image with Okio.
-            diskCache.put(key) {path ->
-                runCatching {
-                    fileSystem.sink(path.toPath()).buffer().use { os ->
-                        os.write(responseBody)
-                        os.flush()
-                    }
-                }
-                    .onFailure {
-                        Log.d("Chapter", "failed to cache ${it.message}")
-                    }
-                    .onSuccess {
-                        Log.d("Chapter", "put to cache")
-                    }
-                    .isSuccess
-            }
+           response.bodyAsChannel().asSource().buffered().use {
+               // Get OutputStream and write image with Okio.
+               diskCache.put(key) { path ->
+                   suspendRunCatching {
+                       fileSystem.sink(path.toPath()).buffer().use { sink ->
+                           sink.write(it.readByteArray())
+                       }
+                   }
+                       .onFailure {
+                           logcat { "Chapter failed to cache ${it.message}" }
+                       }
+                       .onSuccess {
+                           logcat { "Chapter put to cache" }
+                       }
+                       .isSuccess
+               }
+           }
         } finally {
             response.cancel()
         }
     }
 
-    suspend fun clear(): Int {
+    suspend fun clear(): Int = withContext(dispatchers.io) {
 
         val count = diskCache.getKeys().size
 
         diskCache.clear()
 
-        return count - diskCache.getKeys().size
+        count - diskCache.getKeys().size
     }
 
     private fun getKey(chapter: ChapterResource): String {

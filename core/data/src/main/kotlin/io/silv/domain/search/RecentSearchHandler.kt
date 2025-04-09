@@ -2,6 +2,7 @@ package io.silv.domain.search
 
 import android.util.Log
 import io.silv.common.AmadeusDispatchers
+import io.silv.common.log.logcat
 import kotlinx.coroutines.withContext
 
 class RecentSearchHandler(
@@ -18,7 +19,7 @@ class RecentSearchHandler(
 
     suspend fun clearRecentSearches() =
         withContext(dispatchers.io) {
-            Log.d("search-history", "recentSearchRepository.clearRecentSearches")
+            logcat { "recentSearchRepository.clearRecentSearches" }
             recentSearchRepository.clearRecentSearches()
         }
 }

@@ -1,30 +1,34 @@
 package eu.kanade.tachiyomi
 
 import android.content.Context
-import coil.decode.DataSource
-import coil.decode.ImageSource
-import coil.disk.DiskCache
-import coil.fetch.FetchResult
-import coil.fetch.Fetcher
-import coil.fetch.SourceResult
-import coil.key.Keyer
-import coil.request.Options
+import coil3.Extras
+import coil3.decode.DataSource
+import coil3.decode.ImageSource
+import coil3.fetch.FetchResult
+import coil3.fetch.SourceFetchResult
+import coil3.key.Keyer
+import coil3.network.httpHeaders
+import coil3.request.Options
 import eu.kanade.tachiyomi.MangaCoverFetcher.Companion.USE_CUSTOM_COVER
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.CacheControl.NoCache
 import io.ktor.http.CacheControl.NoStore
 import io.ktor.http.CacheControl.Visibility
 import io.ktor.http.HttpHeaders
+import io.ktor.utils.io.asSource
 import io.silv.amadeus.coil.DiskBackedFetcher
 import io.silv.amadeus.coil.FetcherDiskStore
 import io.silv.amadeus.coil.FetcherDiskStoreImageFile
 import io.silv.common.model.MangaCover
 import io.silv.data.download.CoverCache
 import io.silv.domain.manga.model.Manga
+import kotlinx.io.okio.asOkioSource
+import okio.FileSystem
 import okio.Path.Companion.toOkioPath
+import okio.Source
 
 /**
  * A [Fetcher] that fetches cover image for [Manga] object.
@@ -39,14 +43,12 @@ import okio.Path.Companion.toOkioPath
 class MangaCoverFetcher(
     private val client: HttpClient,
     private val coverCache: CoverCache,
-    private val ctx: Context,
 ) {
 
-    private val mangaKeyer = MangaKeyer()
+    private val mangaKeyer = MangaKeyer(coverCache)
     private val coverKeyer = MangaCoverKeyer(coverCache)
 
     val coverFetcher: DiskBackedFetcher<MangaCover> = object: DiskBackedFetcher<MangaCover> {
-        override val context: Context = ctx
         override val keyer: Keyer<MangaCover> = coverKeyer
         override val diskStore: FetcherDiskStore<MangaCover> =
             FetcherDiskStoreImageFile { data, _ ->
@@ -56,34 +58,32 @@ class MangaCoverFetcher(
                     null
                 }
             }
-        override suspend fun fetch(options: Options, data: MangaCover): ByteArray = fetchManga(options, data.url)
+        override suspend fun fetch(options: Options, data: MangaCover): Source = fetchManga(options, data.url)
         override suspend fun overrideFetch(options: Options, data: MangaCover): FetchResult? {
-            return customCoverOverride(options, data.mangaId, coverKeyer.key(data, options))
+            return customCoverOverride(options, data.mangaId, data.isMangaFavorite, coverKeyer.key(data, options))
         }
     }
 
     val mangaFetcher: DiskBackedFetcher<Manga> = object: DiskBackedFetcher<Manga> {
-        override val context: Context = ctx
         override val keyer: Keyer<Manga> = mangaKeyer
         override val diskStore: FetcherDiskStore<Manga> =
-            FetcherDiskStoreImageFile { data, _ ->
+            FetcherDiskStoreImageFile { data, options ->
                 if (data.inLibrary) {
                     coverCache.getCoverFile(data.coverArt)
                 } else {
                     null
                 }
             }
-        override suspend fun fetch(options: Options, data: Manga): ByteArray = fetchManga(options, data.coverArt)
+        override suspend fun fetch(options: Options, data: Manga): Source = fetchManga(options, data.coverArt)
         override suspend fun overrideFetch(options: Options, data: Manga): FetchResult? {
-            return customCoverOverride(options, data.id, mangaKeyer.key(data, options))
+            return customCoverOverride(options, data.id, data.inLibrary, mangaKeyer.key(data, options))
         }
     }
 
-
-    suspend fun fetchManga(options: Options, url: String): ByteArray {
+    suspend fun fetchManga(options: Options, url: String): Source {
         return client
             .get(url) {
-                for (header in options.headers) {
+                for (header in options.httpHeaders.asMap().toList()) {
                     header(header.first, header.second)
                 }
                 when {
@@ -98,19 +98,22 @@ class MangaCoverFetcher(
                     }
                 }
             }
-            .body()
+            .bodyAsChannel()
+            .asSource()
+            .asOkioSource()
     }
 
-    fun customCoverOverride(options: Options, id: String, key: String): FetchResult? {
+    fun customCoverOverride(options: Options, id: String, inLibrary: Boolean, key: String): FetchResult? {
         // Use custom cover if exists
-        val useCustomCover = options.parameters.value(USE_CUSTOM_COVER) ?: true
-        if (useCustomCover) {
+        val useCustomCover = options.extras[USE_CUSTOM_COVER] != false
+        if (useCustomCover && inLibrary) {
             val customCoverFile = coverCache.getCustomCoverFile(id)
             if (customCoverFile.exists()) {
-                return SourceResult(
+                return SourceFetchResult(
                     source = ImageSource(
                         file = customCoverFile.toOkioPath(),
-                        diskCacheKey = key
+                        fileSystem = FileSystem.SYSTEM,
+                        diskCacheKey = key,
                     ),
                     mimeType = "image/*",
                     dataSource = DataSource.DISK,
@@ -121,7 +124,7 @@ class MangaCoverFetcher(
     }
 
     companion object {
-        const val USE_CUSTOM_COVER = "use_custom_cover"
+        val USE_CUSTOM_COVER = Extras.Key<Boolean>(true)
 
         private val CACHE_CONTROL_NO_STORE = NoStore(visibility = Visibility.Public)
         private val CACHE_CONTROL_NO_CACHE = NoCache(visibility = Visibility.Public)

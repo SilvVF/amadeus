@@ -1,7 +1,7 @@
 package io.silv.reader.loader
 
 import androidx.compose.runtime.Stable
-import io.silv.common.model.ChapterResource
+import io.silv.common.mutablePropertyFrom
 import io.silv.domain.chapter.model.Chapter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.datetime.LocalDateTime
@@ -33,18 +33,14 @@ data class ReaderChapter(
         readableAt: LocalDateTime = this.chapter.readableAt,
         ableToDownload: Boolean = this.chapter.ableToDownload
     ) {
-        this.chapter = Chapter(
+        this.chapter = this.chapter.copy(
             id, url, bookmarked, downloaded, mangaId, title, volume, chapter, pages,
             lastReadPage, translatedLanguage, uploader, scanlationGroupToId,
             userToId, version, createdAt, updatedAt, readableAt, ableToDownload
         )
     }
 
-    var state: State
-        get() = stateFlow.value
-        set(value) {
-            stateFlow.value = value
-        }
+    var state: State by mutablePropertyFrom(stateFlow)
 
     val pages: List<ReaderPage>?
         get() = (state as? State.Loaded)?.pages

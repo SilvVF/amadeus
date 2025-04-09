@@ -1,4 +1,3 @@
-@Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
@@ -8,78 +7,31 @@ plugins {
 
 android {
     namespace = "io.silv.manga"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 28
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs += arrayOf(
-            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
-            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
-            "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi",
-            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
-            "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
-            "-opt-in=androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
-            "-opt-in=coil.annotation.ExperimentalCoilApi",
-            "-opt-in=kotlinx.coroutines.FlowPreview",
-            "-Xcontext-receivers"
-        )
     }
     buildFeatures {
         compose = true
     }
     composeCompiler {
         reportsDestination = layout.buildDirectory.dir("compose_compiler")
-        stabilityConfigurationFile = rootProject.layout.projectDirectory.file("stability_config.conf")
+        stabilityConfigurationFiles.add(
+            rootProject.layout.projectDirectory.file("stability_config.conf")
+        )
     }
 }
 
 dependencies {
-
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.espresso.core)
-
-    implementation(libs.unifile)
-
-    implementation(libs.sandwich)
-
-    implementation(libs.font.awesome)
-
-    implementation(libs.richtext.commonmark)
-    implementation(libs.richtext.ui.material3)
-
-    implementation(libs.swipe)
-
-    implementation(libs.reorderable)
-
-
-    implementation(project(":core:ui"))
+    api(project(":core:ui"))
     implementation(project(":core:common"))
     implementation(project(":core:data"))
     implementation(project(":core:datastore"))
@@ -89,7 +41,22 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.material)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+
+    implementation(libs.unifile)
+    implementation(libs.sandwich)
+    implementation(libs.font.awesome)
+
+    implementation(libs.richtext.commonmark)
+    implementation(libs.richtext.ui.material3)
+
+    implementation(libs.swipe)
+    implementation(libs.reorderable)
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
@@ -117,15 +84,9 @@ dependencies {
     implementation(libs.kotlin.serialization)
 
     // VOYAGER
-    implementation(libs.voyager.navigator)
-    implementation(libs.voyager.screenModel)
-    implementation(libs.voyager.transitions)
-    implementation(libs.voyager.tabNavigator)
+    implementation(libs.bundles.voyager)
 
-    implementation(libs.flow.combinetuple.kt)
-    implementation(libs.tuples.kt)
+    
 
-    // COIL
-    implementation(libs.coil.compose)
-    implementation(libs.coil)
+    implementation(libs.bundles.coil)
 }

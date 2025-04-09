@@ -29,6 +29,17 @@ abstract class NetworkDependencies {
         isLenient = true
     }
 
+    val noCacheClient by lazy {
+        HttpClient(OkHttp){
+            install(ContentNegotiation) {
+                json(
+                    json = json,
+                    contentType = ContentType.Any,
+                )
+            }
+        }
+    }
+
     val atHomeClient: AtHomeClient by lazy {
         HttpClient(OkHttp) {
             engine {

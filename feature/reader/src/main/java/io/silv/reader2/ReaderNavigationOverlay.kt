@@ -9,6 +9,7 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,39 +23,28 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.compose.ui.unit.IntSize
 import androidx.core.graphics.withScale
 import androidx.core.graphics.withTranslation
 import io.silv.ui.R
+import io.silv.ui.conditional
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.abs
-
-@Preview()
-@Composable
-fun PreviewReaderNavigationOverlay() {
-    MaterialTheme {
-        ReaderNavigationOverlay(
-            modifier = Modifier.fillMaxSize(),
-            state = rememberReaderOverlayState()
-        ) {
-            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface))
-        }
-    }
-}
 
 private const val ANIM_DURATION = 1000
 
 @Composable
 fun rememberReaderOverlayState(
-    navigation: ViewerNavigation = remember { RightAndLeftNavigation() },
-    spec:  AnimationSpec<Float> = tween(durationMillis = ANIM_DURATION),
+    navigation: ViewerNavigation,
+    spec: AnimationSpec<Float> = tween(durationMillis = ANIM_DURATION),
     scope: CoroutineScope = rememberCoroutineScope()
 ): ReaderOverlayState {
 
@@ -127,50 +117,49 @@ class ReaderOverlayState(
 @Composable
 fun ReaderNavigationOverlay(
     modifier: Modifier = Modifier,
-    state: ReaderOverlayState,
+    overlayState: ReaderOverlayState,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
 
     Box(
         modifier
-            .pointerInteropFilter { event ->
-                state.onTouchEvent(event)
-            }
-            .graphicsLayer {
-                alpha = state.alphaAnim.value
-            }
-            .drawWithContent {
-                drawContent()
-                val canvas = drawContext.canvas.nativeCanvas
-                state.navigation.getRegions().forEach { region ->
-                    val rect = region.rectF
-
-                    // Scale rect from 1f,1f to screen width and height
-                    canvas.withScale(size.width.toFloat(), size.height.toFloat()) {
-                        state.regionPaint.color = region.type.color
-                        drawRect(rect, state.regionPaint)
-                    }
-
-                    // Don't want scale anymore because it messes with drawText
-                    // Translate origin to rect start (left, top)
-                    canvas.withTranslation(
-                        x = (size.width * rect.left),
-                        y = (size.height * rect.top)
-                    ) {
-                        // Calculate center of rect width on screen
-                        val x = width * (abs(rect.left - rect.right) / 2)
-
-                        // Calculate center of rect height on screen
-                        val y = height * (abs(rect.top - rect.bottom) / 2)
-
-                        drawText(context.getString(region.type.nameRes), x, y, state.textBorderPaint)
-                        drawText(context.getString(region.type.nameRes), x, y, state.textPaint)
-                    }
+            .conditional(overlayState.alphaAnim.value != 0f) {
+                pointerInteropFilter { event ->
+                    overlayState.onTouchEvent(event)
                 }
             }
     ) {
         content()
+        Canvas(Modifier.matchParentSize().graphicsLayer { alpha = overlayState.alphaAnim.value }) {
+            val canvas = drawContext.canvas.nativeCanvas
+
+            overlayState.navigation.getRegions().forEach { region ->
+                val rect = region.rectF
+
+                // Scale rect from 1f,1f to screen width and height
+                canvas.withScale(size.width.toFloat(), size.height.toFloat()) {
+                    overlayState.regionPaint.color = region.type.color
+                    drawRect(rect, overlayState.regionPaint)
+                }
+
+                // Don't want scale anymore because it messes with drawText
+                // Translate origin to rect start (left, top)
+                canvas.withTranslation(
+                    x = (size.width * rect.left),
+                    y = (size.height * rect.top)
+                ) {
+                    // Calculate center of rect width on screen
+                    val x = width * (abs(rect.left - rect.right) / 2)
+
+                    // Calculate center of rect height on screen
+                    val y = height * (abs(rect.top - rect.bottom) / 2)
+
+                    drawText(context.getString(region.type.nameRes), x, y, overlayState.textBorderPaint)
+                    drawText(context.getString(region.type.nameRes), x, y, overlayState.textPaint)
+                }
+            }
+        }
     }
 }
 
@@ -217,9 +206,9 @@ abstract class ViewerNavigation {
         return regionList
     }
 
-    fun getAction(pos: PointF): NavigationRegion {
-        val x = pos.x
-        val y = pos.y
+    fun getAction(pos: Offset, size: IntSize): NavigationRegion {
+        val x = pos.x / size.width
+        val y = pos.y / size.height
         val region = getRegions().find { it.rectF.contains(x, y) }
         return when {
             region != null -> region.type

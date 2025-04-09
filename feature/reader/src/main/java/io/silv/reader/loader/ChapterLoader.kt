@@ -1,5 +1,6 @@
 package io.silv.reader.loader
 
+import HttpPageLoader
 import android.content.Context
 import io.silv.common.DependencyAccessor
 import io.silv.common.commonDeps
@@ -21,10 +22,12 @@ import kotlinx.coroutines.withContext
 class ChapterLoader @OptIn(DependencyAccessor::class) constructor(
     private val manga: Manga,
     private val downloadManager: DownloadManager = downloadDeps.downloadManager,
-    private val imageSourceFactory: ImageSourceFactory = downloadDeps.imageSourceFactory,
     private val chapterCache: ChapterCache = downloadDeps.chapterCache,
-    private val source: HttpSource = HttpSource(networkDeps.mangaDexApi, networkDeps.mangaDexClient),
-    private val applicationScope: CoroutineScope = commonDeps.applicationScope,
+    private val source: HttpSource = HttpSource(
+        networkDeps.mangaDexApi,
+        networkDeps.noCacheClient,
+        downloadDeps.imageSourceFactory,
+    ),
     private val context: Context = dataDeps.context,
 ) {
     /**
@@ -84,10 +87,8 @@ class ChapterLoader @OptIn(DependencyAccessor::class) constructor(
 
             else -> HttpPageLoader(
                 chapter,
-                chapterCache,
-                applicationScope,
                 source,
-                imageSourceFactory
+                chapterCache
             )
         }
     }

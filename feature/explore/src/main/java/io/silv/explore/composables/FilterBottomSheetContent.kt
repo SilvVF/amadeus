@@ -643,14 +643,6 @@ private fun LanguageSelection(
                     DropdownMenuItem(
                         onClick = { onLanguageClick(language) },
                         text = { Text(language.string) },
-                        leadingIcon = {
-                            Image(
-                                painter = painterResource(id = language.resId),
-                                contentDescription = "flag",
-                                modifier = Modifier.size(50.dp),
-                                contentScale = ContentScale.Fit,
-                            )
-                        },
                         trailingIcon = {
                             Checkbox(
                                 checked = selected,

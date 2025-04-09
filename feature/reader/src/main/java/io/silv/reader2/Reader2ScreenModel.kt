@@ -36,9 +36,6 @@ import io.silv.domain.manga.interactor.GetManga
 import io.silv.domain.manga.interactor.SetMangaViewerFlags
 import io.silv.domain.manga.model.Manga
 import io.silv.domain.manga.model.toResource
-import io.silv.reader.InsertPage
-import io.silv.reader.Viewer
-import io.silv.reader.ViewerChapters
 import io.silv.reader.loader.ChapterLoader
 import io.silv.reader.loader.DownloadPageLoader
 import io.silv.reader.loader.ReaderChapter
@@ -67,7 +64,10 @@ import kotlin.coroutines.cancellation.CancellationException
  * Presenter used by the activity to perform background operations.
  */
 class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
-    private val savedState: ScreenStateHandle,
+    private val mangaId: String,
+    private var chapterId: String,
+    private var chapterPageIndex: Int,
+    val saveState: (String, Int) -> Unit,
     private val appState: AppState,
     private val downloadManager: DownloadManager = downloadDeps.downloadManager,
     private val downloadProvider: DownloadProvider = downloadDeps.downloadProvider,
@@ -84,19 +84,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
 
 
     val manga: Manga? get() = state.value.manga
-    private var loader: ChapterLoader? = null
-
-    private var chapterId = savedState.get<String>("chapter_id") ?: ""
-        set(value) {
-            savedState["chapter_id"] = value
-            field = value
-        }
-    private var chapterPageIndex = savedState.get<Int>("page_index") ?: -1
-        set(value) {
-            savedState["page_index"] = value
-            field = value
-        }
-
+    private val loader: ChapterLoader by lazy { ChapterLoader(manga!!) }
 
     private var chapterReadStartTime: Long? = null
     private var chapterToDownload: Download? = null
@@ -107,7 +95,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      */
     private val chapterList by lazy {
         runBlocking {
-            getChaptersByMangaId.await(manga!!.id)
+            getChaptersByMangaId.await(mangaId)
                 .groupBy { it.scanlatorOrNull }
                 .mapValues { (_, value) ->
                     value.sortedBy { it.chapter }
@@ -161,16 +149,15 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         return manga == null
     }
 
-    suspend fun init(mangaId: String, initialChapterId: String): Result<Boolean> {
+    suspend fun init(mangaId: String, savedChapter: String): Result<Boolean> {
         if (!needsInit()) return Result.success(true)
         return suspendRunCatching {
             withContext(Dispatchers.IO) {
                 val manga = getManga.await(mangaId)
                 if (manga != null) {
                     mutableState.update { it.copy(manga = manga) }
-                    if (chapterId.isEmpty()) chapterId = initialChapterId
-
-                    loader = ChapterLoader(manga)
+                    logcat { "chapterid $savedChapter initial $chapterId" }
+                    if (!savedChapter.isEmpty()) chapterId = savedChapter
 
                     loadChapter(loader!!, chapterList.first { chapterId == it.chapter.id })
                     true
@@ -189,7 +176,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     private suspend fun loadChapter(
         loader: ChapterLoader,
         chapter: ReaderChapter,
-    ): ViewerChapters {
+    ) {
         loader.loadChapter(chapter)
 
         val chapterPos = chapterList.indexOf(chapter)
@@ -212,7 +199,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
                 )
             }
         }
-        return newChapters
     }
 
     /**
@@ -299,13 +285,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
             }
             return
         }
-        trySendEvent(Event.ReloadViewerChapters)
-    }
-
-    fun onViewerLoaded(viewer: Viewer?) {
-        mutableState.update {
-            it.copy(viewer = viewer)
-        }
+        sendEvent(Event.ReloadViewerChapters)
     }
 
     /**
@@ -336,8 +316,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         if (inDownloadRange) {
             downloadNextChapters()
         }
-
-        trySendEvent(Event.PageChanged)
     }
 
     private fun downloadNextChapters() {
@@ -409,7 +387,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
             it.copy(currentPage = pageIndex + 1)
         }
         readerChapter.requestedPage = pageIndex
-        chapterPageIndex = pageIndex
+        saveState(chapterId, pageIndex)
 
         if (!incognitoMode && page.status != Page.State.ERROR) {
             readerChapter.updateChapter(
@@ -536,8 +514,8 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
                         viewerChapters = currChapters,
                     )
                 }
-                sendEvent(Event.ReloadViewerChapters)
             }
+            trySendEvent(Event.ReloadViewerChapters)
         }
     }
 
@@ -569,7 +547,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
                     )
                 }
                 sendEvent(Event.SetOrientation(getMangaOrientation()))
-                sendEvent(Event.ReloadViewerChapters)
             }
         }
     }
@@ -656,7 +633,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * will run in a background thread and errors are ignored.
      */
     private fun updateTrackChapterRead(readerChapter: ReaderChapter) {
-        TODO("updateTrackChapterRead")
+        // TODO("updateTrackChapterRead")
     }
 
     /**
@@ -693,10 +670,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         val isLoadingAdjacentChapter: Boolean = false,
         val currentPage: Int = -1,
         val viewerFlags: Long? = null,
-        /**
-         * Viewer used to display the pages (pager, webtoon, ...).
-         */
-        val viewer: Viewer? = null,
         val dialog: Dialog? = null,
         val menuVisible: Boolean = false,
         @IntRange(from = -100, to = 100)
@@ -726,5 +699,54 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         data class SavedImage(val result: SaveImageResult) : Event
         data class ShareImage(val uri: Uri, val page: ReaderPage) : Event
         data class CopyImage(val uri: Uri) : Event
+    }
+}
+
+data class ViewerChapters(
+    val currChapter: ReaderChapter,
+    val prevChapter: ReaderChapter?,
+    val nextChapter: ReaderChapter?,
+) {
+
+    fun ref() {
+        currChapter.ref()
+        prevChapter?.ref()
+        nextChapter?.ref()
+    }
+
+    fun unref() {
+        currChapter.unref()
+        prevChapter?.unref()
+        nextChapter?.unref()
+    }
+}
+/**
+ * Interface for implementing a viewer.
+ */
+interface Viewer {
+
+    /**
+     * Destroys this viewer. Called when leaving the reader or swapping viewers.
+     */
+    fun destroy() {}
+
+    /**
+     * Tells this viewer to set the given [chapters] as active.
+     */
+    fun setChapters(chapters: ViewerChapters)
+
+    /**
+     * Tells this viewer to move to the given [page].
+     */
+    fun moveToPage(page: ReaderPage)
+}
+
+class InsertPage(val parent: ReaderPage) : ReaderPage(parent.index, parent.url, parent.imageUrl) {
+
+    override var chapter: ReaderChapter = parent.chapter
+
+    init {
+        status = State.READY
+        stream = parent.stream
     }
 }

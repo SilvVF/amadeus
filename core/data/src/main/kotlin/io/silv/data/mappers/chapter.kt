@@ -11,7 +11,7 @@ fun ChapterDto.toChapterEntity(prev: ChapterEntity? = null): ChapterEntity {
         mangaId = chapter.relationships.find { it.type == "manga" }?.id
             ?: throw IllegalStateException("Chapter had no related manga id"),
         volume = chapter.attributes.volume?.toIntOrNull() ?: -1,
-        title = chapter.attributes.title ?: "",
+        title = chapter.attributes.title ?: "Vol: ${chapter.attributes.volume} Chap: ${chapter.attributes.chapter}",
         pages = chapter.attributes.pages,
         chapterNumber = chapter.attributes.chapter?.toDoubleOrNull() ?: -1.0,
         createdAt = chapter.attributes.createdAt.parseMangaDexTimeToDateTime(),
@@ -25,7 +25,7 @@ fun ChapterDto.toChapterEntity(prev: ChapterEntity? = null): ChapterEntity {
         scanlationGroupId = chapter.relationships.find { it.type == "scanlation_group" }?.id,
         user = chapter.relationships.find { it.type == "user" }?.attributes?.username,
         userId = chapter.relationships.find { it.type == "user" }?.id,
-        bookmarked = prev?.bookmarked ?: false,
+        bookmarked = prev?.bookmarked == true,
         lastPageRead = prev?.lastPageRead
     )
 }

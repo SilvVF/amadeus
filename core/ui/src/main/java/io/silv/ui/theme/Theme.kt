@@ -87,14 +87,11 @@ private val DarkColors =
         scrim = md_theme_dark_scrim,
     )
 
-@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun AmadeusTheme(
     appTheme: AppTheme = AppTheme.DYNAMIC_COLOR_DEFAULT,
     systemInDarkTheme: Boolean = isSystemInDarkTheme(),
-    content:
-        @Composable()
-        () -> Unit,
+    content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
     LaunchedEffect(appTheme) {
@@ -139,7 +136,6 @@ fun AmadeusTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = Color.Transparent.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = systemInDarkTheme
         }
     }

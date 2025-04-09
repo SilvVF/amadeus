@@ -67,21 +67,20 @@ abstract class HistoryDao {
     abstract suspend fun deleteByMangaId(mangaId: String)
 
     @Query("""
-        SELECT *
+        SELECT H.*
         FROM history H
         JOIN chapters C
         ON H.chapter_id = C.id
         WHERE C.manga_id = :mangaId AND C.id = H.chapter_id;
     """)
-    @RewriteQueriesToDropUnusedColumns
     abstract suspend fun getHistoryByMangaId(mangaId: String): List<HistoryEntity>
 
     @Query("""
         SELECT *
-        FROM historyView
-        WHERE historyView.lastRead > 0
-        AND maxReadAtChapterId = historyView.chapterId
-        AND lower(historyView.title) LIKE ('%' || :query || '%')
+        FROM historyView HV
+        WHERE HV.lastRead > 0
+        AND maxReadAtChapterId = HV.chapterId
+        AND lower(HV.title) LIKE ('%' || :query || '%')
         ORDER BY lastRead DESC;
     """)
     abstract fun history(query: String): Flow<List<HistoryView>>

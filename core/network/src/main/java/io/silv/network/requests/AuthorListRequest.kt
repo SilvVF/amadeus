@@ -11,6 +11,7 @@ data class AuthorListRequest(
     val name: String? = null,
     val order: Map<String, String>? = null,
 ) : QueryParams {
+
     override fun createQueryParams(): List<QueryParam> {
         return queryParamsOf(
             Pair("limit", limit),

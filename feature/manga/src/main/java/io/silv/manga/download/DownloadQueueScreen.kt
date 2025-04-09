@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,6 +45,7 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -65,19 +67,15 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.model.Download
 import io.silv.common.model.Page
+import io.silv.ui.rememberLambda
 import io.silv.ui.theme.LocalSpacing
-
-
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import org.burnoutcrew.reorderable.ReorderableItem
-import org.burnoutcrew.reorderable.detectReorder
-import org.burnoutcrew.reorderable.detectReorderAfterLongPress
-import org.burnoutcrew.reorderable.rememberReorderableLazyListState
-import org.burnoutcrew.reorderable.reorderable
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
-class DownloadQueueScreen: Screen {
+class DownloadQueueScreen : Screen {
 
     @Composable
     override fun Content() {
@@ -92,10 +90,10 @@ class DownloadQueueScreen: Screen {
                 reorder = screenModel::reorder,
                 cancel = screenModel::cancel,
                 cancelAll = screenModel::clearQueue,
-                cancelAllForSeries = {download ->
-                     val toCancel = downloads
-                         .fastFilter { it.download.data.manga.id == download.manga.id }
-                         .map { it.download.data }
+                cancelAllForSeries = { download ->
+                    val toCancel = downloads
+                        .fastFilter { it.download.data.manga.id == download.manga.id }
+                        .map { it.download.data }
 
                     screenModel::cancel.invoke(toCancel)
                 },
@@ -128,60 +126,62 @@ private fun DownloadScreenContent(
 
     io.silv.ui.layout.Scaffold(
         modifier = Modifier.fillMaxSize(),
-       topBar = {
-           CenterAlignedTopAppBar(
-               colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                 containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
-               ),
-               navigationIcon = {
-                   IconButton(
-                       onClick = { navigator.pop() }
-                   ) {
-                       Icon(
-                           imageVector = Icons.Filled.Close,
-                           contentDescription = null
-                       )
-                   }
-               },
-               title = { Text("Download queue") },
-               actions = {
-                   val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
-                   if (downloads.isNotEmpty()) {
-                       Text(
-                           text = "${downloads.size}",
-                           modifier = Modifier.drawBehind {
-                               drawCircle(
-                                   color = surfaceVariant
-                               )
-                           }
-                       )
-                       Box {
-                           var dropdownExpanded by remember { mutableStateOf(false) }
-                           DropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
-                               DropdownMenuItem(
-                                   text = { Text("Cancel all") },
-                                   onClick = { actions.cancelAll() }
-                               )
-                           }
-                           IconButton(
-                               onClick = {
-                                   dropdownExpanded = true
-                               }
-                           ) {
-                               Icon(
-                                   imageVector = Icons.Default.MoreVert,
-                                   contentDescription = null,
-                                   modifier = Modifier.padding(space.small),
-                                   tint = MaterialTheme.colorScheme.surfaceTint
-                               )
-                           }
-                       }
-                   }
-               }
-           )
-       },
+        topBar = {
+            CenterAlignedTopAppBar(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                ),
+                navigationIcon = {
+                    IconButton(
+                        onClick = { navigator.pop() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = null
+                        )
+                    }
+                },
+                title = { Text("Download queue") },
+                actions = {
+                    val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
+                    if (downloads.isNotEmpty()) {
+                        Text(
+                            text = "${downloads.size}",
+                            modifier = Modifier.drawBehind {
+                                drawCircle(
+                                    color = surfaceVariant
+                                )
+                            }
+                        )
+                        Box {
+                            var dropdownExpanded by remember { mutableStateOf(false) }
+                            DropdownMenu(
+                                expanded = dropdownExpanded,
+                                onDismissRequest = { dropdownExpanded = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("Cancel all") },
+                                    onClick = { actions.cancelAll() }
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    dropdownExpanded = true
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(space.small),
+                                    tint = MaterialTheme.colorScheme.surfaceTint
+                                )
+                            }
+                        }
+                    }
+                }
+            )
+        },
         floatingActionButton = {
-            val (icon, action, text) = if(!running) {
+            val (icon, action, text) = if (!running) {
                 Triple(Icons.Filled.PlayArrow, actions.play, "Start")
             } else {
                 Triple(Icons.Filled.Pause, actions.pause, "Pause")
@@ -236,7 +236,7 @@ fun VerticalReorderList(
     actions: DownloadQueueActions,
     paddingValues: PaddingValues,
 ) {
-    var list by remember(downloads) { mutableStateOf(downloads) }
+    val list = remember(downloads) { mutableStateListOf<DownloadItem>(*downloads.toTypedArray()) }
 
     val data by remember {
         derivedStateOf { list.map { it.download } }
@@ -245,36 +245,27 @@ fun VerticalReorderList(
     val view = LocalView.current
     val haptics = LocalHapticFeedback.current
     val space = LocalSpacing.current
-
-    val state = rememberReorderableLazyListState(
-        onDragEnd = { from, to ->
-            if(checkAtLeastApi30()) {
-                view.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
-            }
-            actions.reorder(data.map { it.data })
-        },
-        onMove = { from, to ->
-            list = list.toMutableList().apply {
-                add(to.index, removeAt(from.index))
-            }
-                .toList()
-
-            if (checkAtLeastApi34()) {
-                view.performHapticFeedback(HapticFeedbackConstants.SEGMENT_FREQUENT_TICK)
-            } else {
-                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-            }
+    val listState = rememberLazyListState()
+    val state = rememberReorderableLazyListState(listState) { from, to ->
+        list.add(to.index, list.removeAt(from.index))
+        if (checkAtLeastApi34()) {
+            view.performHapticFeedback(HapticFeedbackConstants.SEGMENT_FREQUENT_TICK)
+        } else {
+            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
-    )
-
+    }
+    val onDragEnd = rememberLambda(data, actions) {
+        if (checkAtLeastApi30()) {
+            view.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
+        }
+        actions.reorder(data.map { it.data })
+    }
 
     Surface {
         LazyColumn(
-            state = state.listState,
+            state = listState,
             contentPadding = paddingValues,
-            modifier = Modifier
-                .reorderable(state)
-                .detectReorderAfterLongPress(state),
+            modifier = Modifier.fillMaxSize()
         ) {
             items(
                 items = data,
@@ -294,7 +285,11 @@ fun VerticalReorderList(
                     val readyPages by produceState(initialValue = 0) {
                         withContext(Dispatchers.Default) {
                             while (true) {
-                                value = item.data.pages?.count { it.status == Page.State.READY } ?: 0
+                                value =
+                                    item.data.pages?.count { it.status == Page.State.READY } ?: 0
+                                if (value == (item.data.pages?.size ?: continue)) {
+                                    break
+                                }
                                 delay(1000)
                             }
                         }
@@ -314,7 +309,9 @@ fun VerticalReorderList(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .detectReorderAfterLongPress(state),
+                                .longPressDraggableHandle(
+                                    onDragStopped = onDragEnd
+                                ),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
@@ -323,24 +320,35 @@ fun VerticalReorderList(
                                 contentDescription = null,
                                 modifier = Modifier
                                     .padding(space.small)
-                                    .detectReorder(state),
+                                    .draggableHandle(onDragStopped = onDragEnd),
                                 tint = MaterialTheme.colorScheme.surfaceTint
                             )
 
                             Column(Modifier.weight(1f)) {
-                                Row (Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-                                     Column(Modifier.weight(1f)) {
-                                         Text(item.data.manga.title, style = MaterialTheme.typography.titleMedium, maxLines = 1)
-                                         Spacer(Modifier.height(space.xs))
-                                         Text(
-                                             remember(item) {
-                                                 "Vol. ${item.data.chapter.volume} Ch. ${item.data.chapter.chapter} - ${item.data.chapter.title}"
-                                             },
-                                             style = MaterialTheme.typography.labelMedium
-                                         )
-                                     }
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text(
+                                            item.data.manga.title,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            maxLines = 1
+                                        )
+                                        Spacer(Modifier.height(space.xs))
+                                        Text(
+                                            remember(item) {
+                                                "Vol. ${item.data.chapter.volume} Ch. ${item.data.chapter.chapter} - ${item.data.chapter.title}"
+                                            },
+                                            style = MaterialTheme.typography.labelMedium
+                                        )
+                                    }
                                     item.data.pages?.let {
-                                        Text("$readyPages / ${item.data.pages?.size ?: ""}", style = MaterialTheme.typography.labelSmall)
+                                        Text(
+                                            "$readyPages / ${item.data.pages?.size ?: ""}",
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
                                     }
                                 }
 
@@ -362,7 +370,10 @@ fun VerticalReorderList(
                                     )
                                     drawRoundRect(
                                         color = primaryColor,
-                                        size = Size(this.size.width * (widthPct / 100), this.size.height)
+                                        size = Size(
+                                            this.size.width * (widthPct / 100),
+                                            this.size.height
+                                        )
                                     )
                                 }
                             }
@@ -370,7 +381,9 @@ fun VerticalReorderList(
                             var dropdownExpanded by remember { mutableStateOf(false) }
 
                             Box {
-                                DropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
+                                DropdownMenu(
+                                    expanded = dropdownExpanded,
+                                    onDismissRequest = { dropdownExpanded = false }) {
                                     DropdownMenuItem(
                                         text = { Text("Move series to top") },
                                         onClick = {
@@ -378,9 +391,7 @@ fun VerticalReorderList(
                                                 buildSet {
                                                     add(item)
                                                     addAll(data)
-                                                }
-                                                    .map { it.data }
-                                                    .toList()
+                                                }.map { it.data }
                                             )
                                         }
                                     )
@@ -391,9 +402,7 @@ fun VerticalReorderList(
                                                 buildSet {
                                                     addAll(data - item)
                                                     add(item)
-                                                }
-                                                    .map { it.data }
-                                                    .toList()
+                                                }.map { it.data }
                                             )
                                         }
                                     )

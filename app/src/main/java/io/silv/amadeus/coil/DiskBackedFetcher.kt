@@ -1,14 +1,13 @@
 package io.silv.amadeus.coil
 
-import android.content.Context
-import coil.fetch.FetchResult
-import coil.key.Keyer
-import coil.request.Options
+import coil3.fetch.FetchResult
+import coil3.key.Keyer
+import coil3.request.Options
+import okio.Source
 
 interface DiskBackedFetcher<T : Any> {
     val keyer: Keyer<T>
     val diskStore: FetcherDiskStore<T>
-    val context: Context
     suspend fun overrideFetch(options: Options, data: T): FetchResult? { return null }
-    suspend fun fetch(options: Options, data: T): ByteArray
+    suspend fun fetch(options: Options, data: T): Source
 }

@@ -1,4 +1,3 @@
-@Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
@@ -6,10 +5,10 @@ plugins {
 
 android {
     namespace = "io.silv.navigation"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 28
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

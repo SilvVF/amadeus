@@ -30,7 +30,7 @@ interface PrefsConverter<T, V> {
     }
 }
 
-fun <T> mutableStateFrom(stateFlow: MutableStateFlow<T>) = object :
+fun <T> mutablePropertyFrom(stateFlow: MutableStateFlow<T>) = object :
     ReadWriteProperty<Any?, T> {
     override fun getValue(thisRef: Any?, property: KProperty<*>): T = stateFlow.value
     override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {

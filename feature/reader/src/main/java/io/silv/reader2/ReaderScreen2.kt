@@ -1,36 +1,51 @@
 package io.silv.reader2
 
-import android.R
-import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.graphics.drawable.Animatable
-import android.graphics.drawable.Drawable
-import android.view.KeyEvent
-import android.view.MotionEvent
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.focusable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.rememberScreenModel
@@ -38,48 +53,22 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import coil.decode.ImageSource
-import coil.request.CachePolicy
-import coil.request.ImageRequest
-import io.silv.common.DependencyAccessor
-import io.silv.common.coroutine.suspendRunCatching
 import io.silv.common.log.LogPriority
 import io.silv.common.log.asLog
 import io.silv.common.log.logcat
-import io.silv.common.model.Page
-import io.silv.data.util.ImageUtil
-import io.silv.data.util.ImageUtil.splitInHalf
-import io.silv.di.downloadDeps
-import io.silv.reader.InsertPage
-import io.silv.reader.Viewer
-import io.silv.reader.ViewerChapters
-import io.silv.reader.loader.ReaderChapter
+import io.silv.reader.loader.ChapterTransition
 import io.silv.reader.loader.ReaderPage
+import io.silv.reader.loader.ViewerPage
 import io.silv.ui.LocalAppState
 import io.silv.ui.ScreenStateHandle
 import io.silv.ui.collectEvents
-import io.silv.ui.composables.CircularProgressIndicator
 import io.silv.ui.rememberLambda
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.WhileSubscribed
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
-import kotlinx.coroutines.withContext
-import me.saket.telephoto.zoomable.ZoomableImageState
-import me.saket.telephoto.zoomable.ZoomableState
-import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
-import me.saket.telephoto.zoomable.rememberZoomableImageState
-import me.saket.telephoto.zoomable.rememberZoomableState
-import okio.Buffer
-import okio.BufferedSource
 
 private fun requireActivity(context: Context): ComponentActivity {
     return when (context) {
@@ -94,22 +83,49 @@ data class ReaderScreen2(
     val chapterId: String,
 ) : Screen {
 
-    val saved = ScreenStateHandle(mapOf("manga_id" to mangaId))
-
-    override val key: ScreenKey = "ReaderScreen_${mangaId}_${saved.get<String>("chapter_id")}"
+    var savedChapter: String = ""
+    var page: Int = -1
+    override val key: ScreenKey = "${mangaId}_$chapterId"
 
     @Composable
     override fun Content() {
 
         val appState = LocalAppState.current
         val context = LocalContext.current
+        val hapticFeedback = LocalHapticFeedback.current
         val navigator = LocalNavigator.currentOrThrow
+        val scope = rememberCoroutineScope()
 
-        val screenModel = rememberScreenModel { Reader2ScreenModel(saved, appState) }
+        val screenModel = rememberScreenModel {
+            Reader2ScreenModel(
+                saveState = { cid, p ->
+                    savedChapter = cid
+                    page = p
+                },
+                chapterId = chapterId,
+                chapterPageIndex = page,
+                mangaId = mangaId,
+                appState = appState
+            )
+        }
+        val state by screenModel.state.collectAsStateWithLifecycle()
 
-        LaunchedEffect(Unit) {
-            val initResult = screenModel.init(mangaId, chapterId)
+        val viewer = remember {
+            PagerViewer(context, hapticFeedback, scope = scope) { action ->
+                when (action) {
+                    PagerAction.ToggleMenu -> screenModel.showMenus(!state.menuVisible)
+                    is PagerAction.OnPageSelected -> screenModel.onPageSelected(action.page)
+                    is PagerAction.RequestPreloadChapter -> scope.launch {
+                        screenModel.preload(action.chapter)
+                    }
 
+                    PagerAction.ShowMenu -> screenModel.showMenus(true)
+                }
+            }
+        }
+
+        LaunchedEffect(screenModel) {
+            val initResult = screenModel.init(mangaId, savedChapter)
             if (!initResult.getOrDefault(false)) {
                 val exception = initResult.exceptionOrNull() ?: IllegalStateException(
                     "Unknown err",
@@ -117,6 +133,12 @@ data class ReaderScreen2(
                 logcat(LogPriority.ERROR) { exception.asLog() }
                 appState.showSnackBar(exception.message.orEmpty())
                 navigator.pop()
+            } else {
+                screenModel.state.map { it.viewerChapters }
+                    .distinctUntilChanged()
+                    .collect { chapters ->
+                        chapters?.let(viewer::setChapters)
+                    }
             }
         }
 
@@ -125,10 +147,6 @@ data class ReaderScreen2(
             onPauseOrDispose {
                 screenModel.flushReadTimer()
             }
-        }
-
-        val setChapters = rememberLambda { viewerChapters: ViewerChapters ->
-            screenModel.state.value.viewer?.setChapters(viewerChapters)
         }
 
         val setOrientation = rememberLambda { orientation: Int ->
@@ -146,9 +164,8 @@ data class ReaderScreen2(
                 is Reader2ScreenModel.Event.CopyImage -> TODO()
                 Reader2ScreenModel.Event.PageChanged -> displayRefreshHost.flash()
                 Reader2ScreenModel.Event.ReloadViewerChapters -> {
-                    screenModel.state.value.viewerChapters?.let(setChapters)
+                    state.viewerChapters?.let(viewer::setChapters)
                 }
-
                 is Reader2ScreenModel.Event.SavedImage -> TODO()
                 is Reader2ScreenModel.Event.SetCoverResult -> TODO()
                 is Reader2ScreenModel.Event.SetOrientation -> setOrientation(event.orientation)
@@ -156,323 +173,150 @@ data class ReaderScreen2(
             }
         }
 
-        val state by screenModel.state.collectAsStateWithLifecycle()
 
-        ReaderScreenContent(state)
+        ReaderScreenContent(
+            state,
+            viewer
+        )
     }
 }
 
 @Composable
-private fun ReaderScreenContent(state: Reader2ScreenModel.State) {
+private fun ReaderScreenContent(
+    state: Reader2ScreenModel.State,
+    viewer: PagerViewer
+) {
     ReaderDialogHost(Modifier.fillMaxSize()) {
         ReaderNavigationOverlay(
-            state = rememberReaderOverlayState(),
+            overlayState = rememberReaderOverlayState(viewer.config.navigator),
             modifier = Modifier.fillMaxSize()
         ) {
-            ReaderContainer(state)
+            ReaderContainer(viewer, state)
         }
     }
 }
 
-
-class PagerViewer(
-    context: Context,
-    feedback: HapticFeedback,
-    val pages: List<Any?>,
-    val isHorizontal: Boolean = true,
-) : Viewer {
-
-    @OptIn(DependencyAccessor::class)
-    val downloadManager = downloadDeps.downloadManager
-
-    var currentPage: Any? = null
-    var currentChapter: ReaderChapter? = null
-
-    private val scope = MainScope()
-
-    val config: PagerConfig = PagerConfig(this, scope)
-
-    val pagerState = PagerState { pages.size }
-
-    val modifier = Modifier
-        .fillMaxSize()
-        .focusable(false)
-
-    var nextTransition: ChapterTransition.Next? = null
-        private set
-
-
-    private fun checkAllowPreload(page: ReaderPage?): Boolean {
-        // Page is transition page - preload allowed
-        page ?: return true
-
-        // Initial opening - preload allowed
-        currentPage ?: return true
-
-        // Allow preload for
-        // 1. Going to next chapter from chapter transition
-        // 2. Going between pages of same chapter
-        // 3. Next chapter page
-        return when (page.chapter) {
-            (currentPage as? ChapterTransition.Next)?.to -> true
-            (currentPage as? ReaderPage)?.chapter -> true
-            nextTransition?.to -> true
-            else -> false
-        }
-    }
-
-    override fun setChapters(chapters: ViewerChapters) {
-        TODO("Not yet implemented")
-    }
-
-    override fun moveToPage(page: ReaderPage) {
-        TODO("Not yet implemented")
-    }
-
-    override fun handleKeyEvent(event: KeyEvent): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun handleGenericMotionEvent(event: MotionEvent): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    fun onPageSplit(page: ReaderPage, newPage: ReaderPage) {
-
-    }
-}
-
-class PagerPageHolder(
-    val viewer: PagerViewer,
-    val page: ReaderPage,
-    val context: Context,
-    scope: CoroutineScope
-) {
-    val status = page.statusFlow.stateIn(
-        scope,
-        SharingStarted.WhileSubscribed(5_000),
-        initialValue = Page.State.QUEUE
-    )
-
-    var image by mutableStateOf<ImageRequest?>(null)
-
-    init {
-        scope.launch(Dispatchers.IO) {
-            val loader = page.chapter.pageLoader ?: return@launch
-            loader.loadPage(page)
-        }
-
-        scope.launch {
-            status.filter { it == Page.State.READY }.collectLatest {
-                val streamFn = page.stream ?: return@collectLatest
-
-                suspendRunCatching {
-                    val (source, isAnimated, background) = withContext(Dispatchers.IO) {
-                        val source = streamFn().use { ins ->
-                            process(page, Buffer().readFrom(ins))
-                        }
-                        val isAnimated = ImageUtil.isAnimatedAndSupported(source)
-                        val background = if (!isAnimated && viewer.config.automaticBackground) {
-                            ImageUtil.chooseBackground(context, source.peek().inputStream())
-                        } else {
-                            null
-                        }
-                        Triple(source, isAnimated, background)
-                    }
-                    image = coilImageRequest(source, isAnimated, background)
-                }
-            }
-        }
-    }
-
-    private fun coilImageRequest(
-        source: BufferedSource,
-        isAnimated: Boolean,
-        background: Drawable?
-    ): ImageRequest {
-        return if (isAnimated) {
-            TODO("animated image")
-        } else {
-            ImageRequest.Builder(context)
-                .data(source.readByteArray())
-                .crossfade(true)
-                .build()
-        }
-    }
-
-    private fun process(page: ReaderPage, imageSource: BufferedSource): BufferedSource {
-        if (viewer.config.dualPageRotateToFit) {
-            return rotateDualPage(imageSource)
-        }
-
-        if (!viewer.config.dualPageSplit) {
-            return imageSource
-        }
-
-        if (page is InsertPage) {
-            return splitInHalf(imageSource)
-        }
-
-        val isDoublePage = ImageUtil.isWideImage(imageSource)
-        if (!isDoublePage) {
-            return imageSource
-        }
-
-        onPageSplit(page)
-
-        return splitInHalf(imageSource)
-    }
-
-    private fun rotateDualPage(imageSource: BufferedSource): BufferedSource {
-        val isDoublePage = ImageUtil.isWideImage(imageSource)
-        return if (isDoublePage) {
-            val rotation = if (viewer.config.dualPageRotateToFitInvert) -90f else 90f
-            ImageUtil.rotateImage(imageSource, rotation)
-        } else {
-            imageSource
-        }
-    }
-
-    private fun splitInHalf(imageSource: BufferedSource): BufferedSource {
-        var side = when {
-            true -> ImageUtil.Side.RIGHT
-//            viewer is L2RPagerViewer && page is InsertPage -> ImageUtil.Side.RIGHT
-//            viewer !is L2RPagerViewer && page is InsertPage -> ImageUtil.Side.LEFT
-//            viewer is L2RPagerViewer && page !is InsertPage -> ImageUtil.Side.LEFT
-//            viewer !is L2RPagerViewer && page !is InsertPage -> ImageUtil.Side.RIGHT
-            else -> error("We should choose a side!")
-        }
-
-        if (viewer.config.dualPageInvert) {
-            side = when (side) {
-                ImageUtil.Side.RIGHT -> ImageUtil.Side.LEFT
-                ImageUtil.Side.LEFT -> ImageUtil.Side.RIGHT
-            }
-        }
-
-        return splitInHalf(imageSource, side)
-    }
-
-    private fun onPageSplit(page: ReaderPage) {
-        val newPage = InsertPage(page)
-        viewer.onPageSplit(page, newPage)
-    }
-}
-
-@Composable
-private fun PagerPage(
-    pagerPageHolder: PagerPageHolder,
-    modifier: Modifier = Modifier,
-    zoomState: ZoomableImageState = rememberZoomableImageState()
-) {
-    val status by pagerPageHolder.status.collectAsStateWithLifecycle()
-    Box(modifier) {
-        when (status) {
-            Page.State.QUEUE, Page.State.LOAD_PAGE, Page.State.DOWNLOAD_IMAGE -> {
-                androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
-            Page.State.READY -> {
-                ZoomableAsyncImage(
-                    model = pagerPageHolder.image,
-                    contentDescription = pagerPageHolder.page.url,
-                    state = zoomState,
-                    onClick = {
-
-                    }
-                )
-            }
-            Page.State.ERROR -> Text("error", Modifier.align(Alignment.Center))
-        }
-    }
-}
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ComposeViewPager(
     pagerViewer: PagerViewer,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    scope: CoroutineScope = rememberCoroutineScope()
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    @Composable
+    fun BoxScope.renderPage(page: Int) {
+        val page = pagerViewer.items.getOrNull(page)
+        when (page) {
+            is ReaderPage -> {
+                val holder = remember {
+                    PagerPageHolder(pagerViewer, page, scope)
+                }
 
-    val readerPage = @Composable { page: ReaderPage ->
-        val holder = remember {
-            PagerPageHolder(pagerViewer, page, context, scope)
+                PagerPage(holder)
+            }
+
+            is ChapterTransition -> {
+                var size by remember { mutableStateOf(IntSize.Zero) }
+                Box(
+                    Modifier.fillMaxSize()
+                        .onSizeChanged { size = it }
+                        .pointerInput(Unit) {
+                            detectTapGestures(onTap = {
+                                pagerViewer.handleClickEvent(it, size)
+                            })
+                        }
+                ) {
+                    Text(
+                        "to: ${page.to?.chapter} from: ${page.from.chapter}",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
+            null -> Unit
         }
-        PagerPage(holder)
+    }
+
+    LaunchedEffect(pagerViewer) {
+        snapshotFlow { pagerViewer.pagerState.currentPage }
+            .distinctUntilChanged()
+            .collect(pagerViewer::onPageSelected)
     }
 
     Box(modifier) {
         if (pagerViewer.isHorizontal) {
             HorizontalPager(
                 pagerViewer.pagerState,
-                beyondViewportPageCount = 1
+                beyondViewportPageCount = 1,
+                reverseLayout = !pagerViewer.l2r,
+                modifier = Modifier.fillMaxSize()
             ) {
-                val page = pagerViewer.pages[it]
-                when (page) {
-                    is ReaderPage -> readerPage(page)
-                }
+                renderPage(it)
             }
         } else {
             VerticalPager(
                 pagerViewer.pagerState,
-                beyondViewportPageCount = 1
+                beyondViewportPageCount = 1,
+                modifier = Modifier.fillMaxSize()
             ) {
-                val page = pagerViewer.pages[it]
-
-                when (page) {
-                    is ReaderPage -> readerPage(page)
-                }
+                renderPage(it)
             }
         }
+        PageIndicatorText(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .windowInsetsPadding(WindowInsets.systemBars),
+            currentPage = pagerViewer.currentPageNumber,
+            totalPages = pagerViewer.totalPages,
+        )
     }
 }
 
-sealed class ChapterTransition {
 
-    abstract val from: ReaderChapter
-    abstract val to: ReaderChapter?
+@Composable
+private fun PageIndicatorText(
+    modifier: Modifier = Modifier,
+    currentPage: Int,
+    totalPages: Int,
+) {
+    if (currentPage <= 0 || totalPages <= 0) return
 
-    class Prev(
-        override val from: ReaderChapter,
-        override val to: ReaderChapter?,
-    ) : ChapterTransition()
+    val text = "$currentPage / $totalPages"
 
-    class Next(
-        override val from: ReaderChapter,
-        override val to: ReaderChapter?,
-    ) : ChapterTransition()
+    val style = TextStyle(
+        color = Color(235, 235, 235),
+        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.sp,
+    )
+    val strokeStyle = style.copy(
+        color = Color(45, 45, 45),
+        drawStyle = Stroke(width = 4f),
+    )
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is ChapterTransition) return false
-        if (from == other.from && to == other.to) return true
-        if (from == other.to && to == other.from) return true
-        return false
-    }
-
-    override fun hashCode(): Int {
-        var result = from.hashCode()
-        result = 31 * result + (to?.hashCode() ?: 0)
-        return result
-    }
-
-    override fun toString(): String {
-        return "${javaClass.simpleName}(from=${from.chapter.url}, to=${to?.chapter?.url})"
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+    ) {
+        Text(
+            text = text,
+            style = strokeStyle,
+        )
+        Text(
+            text = text,
+            style = style,
+        )
     }
 }
 
 @Composable
 fun ReaderContainer(
+    viewer: PagerViewer,
     state: Reader2ScreenModel.State
 ) {
-    val context = LocalContext.current
-    val haptics = LocalHapticFeedback.current
-    val viewer = remember {
-        PagerViewer(context, haptics, emptyList())
+    Surface(Modifier.fillMaxSize()) {
+        ComposeViewPager(viewer)
     }
-
-    ComposeViewPager(viewer)
 }
 
 @Composable

@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.StayCurrentLandscape
 import androidx.compose.material.icons.filled.StayCurrentPortrait
 import androidx.compose.ui.graphics.vector.ImageVector
-import io.silv.reader.Viewer
 import io.silv.ui.R
 
 enum class Reader2Orientation(

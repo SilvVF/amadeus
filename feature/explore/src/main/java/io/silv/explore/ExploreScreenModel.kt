@@ -6,6 +6,7 @@ import androidx.compose.runtime.Stable
 import androidx.paging.PagingConfig
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.DependencyAccessor
+import io.silv.common.log.logcat
 import io.silv.common.model.PagedType
 import io.silv.data.download.CoverCache
 import io.silv.di.dataDeps
@@ -149,7 +150,7 @@ class ExploreScreenModel @OptIn(DependencyAccessor::class) constructor(
 
     fun clearSearchHistory() {
         screenModelScope.launch {
-            Log.d("search-history", "clearSearchHistory")
+            logcat { "clearSearchHistory" }
             recentSearchHandler.clearRecentSearches()
         }
     }

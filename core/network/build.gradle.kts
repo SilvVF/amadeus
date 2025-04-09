@@ -1,29 +1,20 @@
-@Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    kotlin("plugin.serialization") version "1.9.22"
+    kotlin("plugin.serialization")
     id("kotlin-parcelize")
 }
+
 android {
     namespace = "io.silv.network"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 28
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
-        }
-    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -34,11 +25,10 @@ android {
 }
 
 dependencies {
-    api(project(":core:common"))
+    implementation(project(":core:common"))
 
     implementation(libs.okhttp)
     implementation(libs.sandwich.ktor)
-    implementation(libs.disklrucache)
 
     implementation(libs.okhttp.dnsoverhttps)
     implementation(libs.okio)
@@ -46,11 +36,7 @@ dependencies {
 
     implementation(libs.jsoup)
     // KTOR
-    implementation(libs.ktor.core)
-    implementation(libs.ktor.client.okhttp)
-    implementation(libs.ktor.serialization.json)
-    implementation(libs.ktor.logging)
-    implementation(libs.ktor.contentnegotiation)
+    implementation(libs.bundles.ktor)
     // For persistent cache
     implementation(libs.kache)
     // KOTLIN

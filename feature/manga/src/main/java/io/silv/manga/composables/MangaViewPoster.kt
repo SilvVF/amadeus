@@ -1,5 +1,6 @@
 package io.silv.manga.composables
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import io.silv.common.filterUnique
 import io.silv.common.model.ReadingStatus
 import io.silv.common.model.Status
@@ -37,7 +38,9 @@ import io.silv.manga.view.MangaStats
 import io.silv.manga.view.StatsUiState
 import io.silv.ui.fillMaxSizeAfterMeasure
 import io.silv.ui.theme.LocalSpacing
+import io.silv.ui.tryApplySharedElementTransition
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun MangaImageWithTitle(
     modifier: Modifier = Modifier,
@@ -56,7 +59,7 @@ fun MangaImageWithTitle(
             modifier =
             Modifier
                 .fillMaxWidth()
-                .fillMaxSizeAfterMeasure(1f)
+                .fillMaxSizeAfterMeasure(this, 1f)
                 .align(TopStart),
             manga = manga,
         )
@@ -147,6 +150,7 @@ private fun PublicationStatusIndicator(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun MangaTitle(
     modifier: Modifier = Modifier,

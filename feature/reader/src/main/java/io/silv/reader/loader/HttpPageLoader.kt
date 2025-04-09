@@ -1,38 +1,39 @@
-package io.silv.reader.loader
-
-import io.ktor.client.utils.CacheControl
-import io.ktor.http.HttpHeaders
-import io.silv.common.coroutine.ConcurrentPriorityQueue
-import io.silv.common.coroutine.suspendRunCatching
+import io.silv.common.DependencyAccessor
+import io.silv.common.commonDeps
+import io.silv.common.log.logcat
 import io.silv.common.model.Page
 import io.silv.data.download.ChapterCache
+import io.silv.di.dataDeps
+import io.silv.di.downloadDeps
 import io.silv.domain.chapter.model.toResource
 import io.silv.network.sources.HttpSource
 import io.silv.network.sources.ImageSourceFactory
-import kotlinx.coroutines.CancellationException
+import io.silv.reader.loader.PageLoader
+import io.silv.reader.loader.ReaderChapter
+import io.silv.reader.loader.ReaderPage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import java.util.concurrent.PriorityBlockingQueue
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.min
-
 
 /**
  * Loader used to load chapters from an online source.
  */
-internal class HttpPageLoader(
+internal class HttpPageLoader @OptIn(DependencyAccessor::class) constructor(
     private val chapter: ReaderChapter,
-    private val chapterCache: ChapterCache,
-    private val applicationScope: CoroutineScope,
     private val source: HttpSource,
-    private val imageSourceFactory: ImageSourceFactory
+    private val chapterCache: ChapterCache = downloadDeps.chapterCache,
+    private val appScope: CoroutineScope = commonDeps.applicationScope
 ) : PageLoader() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -40,16 +41,15 @@ internal class HttpPageLoader(
     /**
      * A queue used to manage requests one by one while allowing priorities.
      */
-    private val queue = ConcurrentPriorityQueue<PriorityPage>(comparator = PriorityPage::compareTo)
+    private val queue = PriorityBlockingQueue<PriorityPage>()
 
     private val preloadSize = 4
 
     init {
         scope.launch(Dispatchers.IO) {
             flow {
-                while (isActive) {
-                    val page = suspendRunCatching { queue.pollUntilAvailable()?.page }
-                    emit(page.getOrNull() ?: continue)
+                while (true) {
+                    emit(runInterruptible { queue.take() }.page)
                 }
             }
                 .filter { it.status == Page.State.QUEUE }
@@ -70,20 +70,7 @@ internal class HttpPageLoader(
             if (e is CancellationException) {
                 throw e
             }
-            if (chapter.chapter.url.isNotBlank()) {
-                imageSourceFactory
-                    .getSource(chapter.chapter.url)
-                    .fetchImageUrls(chapter.chapter.url)
-                    .mapIndexed { index, data ->
-                        Page(
-                            index = index,
-                            url = chapter.chapter.url,
-                            imageUrl = data,
-                        )
-                    }
-            } else {
-                source.getPageList(chapter.chapter.toResource())
-            }
+            source.getPageList(chapter.chapter.toResource())
         }
         return pages.mapIndexed { index, page ->
             // Don't trust sources and use our own indexing
@@ -96,17 +83,21 @@ internal class HttpPageLoader(
      */
     override suspend fun loadPage(page: ReaderPage) = withContext(Dispatchers.IO) {
         val imageUrl = page.imageUrl
-
+        logcat { "loading page $imageUrl" }
         // Check if the image has been deleted
-        if (page.status == Page.State.READY && imageUrl != null && !chapterCache.isImageInCache(
-                imageUrl
+        if (page.status == Page.State.READY &&
+            imageUrl != null &&
+            !chapterCache.isImageInCache(
+                imageUrl,
             )
         ) {
+            logcat { "queueing page $imageUrl" }
             page.status = Page.State.QUEUE
         }
 
         // Automatically retry failed pages when subscribed to this page
         if (page.status == Page.State.ERROR) {
+            logcat { "retry page $imageUrl" }
             page.status = Page.State.QUEUE
         }
 
@@ -120,7 +111,7 @@ internal class HttpPageLoader(
             continuation.invokeOnCancellation {
                 queuedPages.forEach {
                     if (it.page.status == Page.State.QUEUE) {
-                        runBlocking { queue.remove(it) }
+                        queue.remove(it)
                     }
                 }
             }
@@ -140,15 +131,18 @@ internal class HttpPageLoader(
     override fun recycle() {
         super.recycle()
         scope.cancel()
-        runBlocking { queue.clear() }
+        queue.clear()
 
         // Cache current page list progress for online chapters to allow a faster reopen
         chapter.pages?.let { pages ->
-            applicationScope.launch(Dispatchers.IO) {
+            appScope.launch(Dispatchers.IO) {
                 try {
                     // Convert to pages without reader information
                     val pagesToSave = pages.map { Page(it.index, it.url, it.imageUrl) }
-                    chapterCache.putPageListToCache(chapter.chapter.toResource(), pagesToSave)
+                    chapterCache.putPageListToCache(
+                        chapter.chapter.toResource(),
+                        pagesToSave,
+                    )
                 } catch (e: Throwable) {
                     if (e is CancellationException) {
                         throw e
@@ -163,7 +157,7 @@ internal class HttpPageLoader(
      *
      * @return a list of [PriorityPage] that were added to the [queue]
      */
-    private suspend fun preloadNextPages(currentPage: ReaderPage, amount: Int): List<PriorityPage> {
+    private fun preloadNextPages(currentPage: ReaderPage, amount: Int): List<PriorityPage> {
         val pageIndex = currentPage.index
         val pages = currentPage.chapter.pages ?: return emptyList()
         if (pageIndex == pages.lastIndex) return emptyList()
@@ -191,35 +185,43 @@ internal class HttpPageLoader(
                 page.status = Page.State.LOAD_PAGE
                 page.imageUrl = source.getImageUrl(page)
             }
+
             val imageUrl = page.imageUrl!!
 
             if (!chapterCache.isImageInCache(imageUrl)) {
-
+                logcat { "not in cache page $imageUrl" }
                 page.status = Page.State.DOWNLOAD_IMAGE
-
-                val imageResponse = source
-                    .getImage(
-                        page = page,
-                        headers = listOf(
-                            HttpHeaders.CacheControl to CacheControl.NO_CACHE,
-                            HttpHeaders.CacheControl to CacheControl.MUST_REVALIDATE
-                        )
-                    )
-
+                val imageResponse = source.getImage(page, emptyList())
                 chapterCache.putImageToCache(imageUrl, imageResponse)
             }
-            val imageFile = chapterCache.getImageFilePath(imageUrl)
-
-            val file = imageFile.toFile()
-
-            page.stream = { file.inputStream().buffered() }
+            logcat { "setting image stream $imageUrl" }
+            val file = chapterCache.getImageFilePath(imageUrl).toFile()
+            page.stream = { file.inputStream() }
             page.status = Page.State.READY
         } catch (e: Throwable) {
-            e.printStackTrace()
             page.status = Page.State.ERROR
             if (e is CancellationException) {
                 throw e
             }
         }
+    }
+}
+
+/**
+ * Data class used to keep ordering of pages in order to maintain priority.
+ */
+private class PriorityPage(
+    val page: ReaderPage,
+    val priority: Int,
+) : Comparable<PriorityPage> {
+    companion object {
+        private val idGenerator = AtomicInteger()
+    }
+
+    private val identifier = idGenerator.incrementAndGet()
+
+    override fun compareTo(other: PriorityPage): Int {
+        val p = other.priority.compareTo(priority)
+        return if (p != 0) p else identifier.compareTo(other.identifier)
     }
 }

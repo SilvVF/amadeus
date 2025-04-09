@@ -1,13 +1,10 @@
 package eu.kanade.tachiyomi
 
-import coil.key.Keyer
-import coil.request.Options
+import coil3.key.Keyer
+import coil3.request.Options
 import io.silv.common.model.MangaCover
 import io.silv.data.download.CoverCache
 import io.silv.domain.manga.model.Manga
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 
 fun Manga.asMangaCover(): MangaCover {
     return MangaCover(
@@ -19,12 +16,15 @@ fun Manga.asMangaCover(): MangaCover {
 }
 
 
-class MangaKeyer : Keyer<Manga> {
-    override fun key(
-        data: Manga,
-        options: Options,
-    ): String {
-        return "${data.coverArt};${data.coverLastModified}"
+class MangaKeyer(
+    private val coverCache: CoverCache
+) : Keyer<Manga> {
+    override fun key(data: Manga, options: Options): String {
+        return if (data.inLibrary && coverCache.getCustomCoverFile(data.id).exists()) {
+            "${data.id};${data.coverLastModified}"
+        } else {
+            "${data.coverArt};${data.coverLastModified}"
+        }
     }
 }
 
@@ -35,7 +35,7 @@ class MangaCoverKeyer(
         data: MangaCover,
         options: Options,
     ): String {
-        return if (coverCache.getCustomCoverFile(data.mangaId).exists()) {
+        return if (data.isMangaFavorite && coverCache.getCustomCoverFile(data.mangaId).exists()) {
             "${data.mangaId};${data.lastModified}"
         } else {
             "${data.url};${data.lastModified}"

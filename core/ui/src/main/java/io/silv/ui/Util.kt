@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.internal.ComposableLambda
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,8 +41,7 @@ fun Context.openOnWeb(
 }
 
 @Composable
-fun <T: Function<Unit>> rememberLambda(value: T) = remember { value }
-
+fun <T: Function<Unit>> rememberLambda(vararg keys: Any?, value: T) = remember(*keys) { value }
 
 fun Color.isLight() = this.luminance() > 0.5
 

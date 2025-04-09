@@ -1,6 +1,5 @@
 package io.silv.reader2
 
-import android.preference.Preference
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -26,13 +25,6 @@ class PagerConfig(
     var automaticBackground by mutableStateOf(false)
         private set
 
-    var dualPageSplitChangedListener: ((Boolean) -> Unit)? = null
-
-    var imageScaleType by mutableIntStateOf(1)
-        private set
-
-    var imageZoomType by mutableIntStateOf(0)
-
     var imageCropBorders by mutableStateOf(false)
         private set
 
@@ -42,7 +34,7 @@ class PagerConfig(
     var landscapeZoom by mutableStateOf(false)
         private set
 
-    override var navigator: ViewerNavigation = defaultNavigation()
+    override var navigator: ViewerNavigation by mutableStateOf(defaultNavigation())
 
     override fun defaultNavigation(): ViewerNavigation {
         return if(viewer.isHorizontal) {
@@ -59,7 +51,6 @@ class PagerConfig(
             4 -> RightAndLeftNavigation()
             else -> defaultNavigation()
         }
-        navigationModeChangedListener?.invoke()
     }
 }
 
@@ -71,14 +62,9 @@ abstract class ViewerConfig(
     var theme by mutableIntStateOf(0)
         private set
 
-    var imagePropertyChangedListener: (() -> Unit)? = null
-
-    var navigationModeChangedListener: (() -> Unit)? = null
-
     var tappingInverted by mutableStateOf(false)
     var longTapEnabled by mutableStateOf(true)
     var usePageTransitions by mutableStateOf(false)
-    var doubleTapAnimDuration by mutableIntStateOf(500)
     var volumeKeysEnabled by mutableStateOf(false)
     var volumeKeysInverted by mutableStateOf(false)
     var alwaysShowChapterTransition by mutableStateOf(true)

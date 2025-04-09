@@ -12,6 +12,7 @@ import io.ktor.http.Url
 import io.ktor.util.date.GMTDate
 import io.ktor.util.flattenEntries
 import io.ktor.util.hex
+import io.silv.common.log.logcat
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -34,10 +35,7 @@ internal class DefaultHttpCache internal constructor(
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : CacheStorage by LruCacheStorage(
     {
-        FileKache(
-            directoryPath = directory.path,
-            maxSize = maxSize
-        ) {
+        FileKache(directory = directory.path, maxSize = maxSize) {
             strategy = KacheStrategy.LRU
         }
     },
@@ -121,7 +119,7 @@ private class LruCacheStorage(
         urlHex: String,
         caches: List<CachedResponseData>
     ) = coroutineScope {
-        Log.d("HttpCacheImpl", "writing to cache $urlHex")
+        logcat { "writing to cache $urlHex" }
         // Initialize the editor (edits the values for an entry).
         try {
             diskCache.put(urlHex) { fileName ->
@@ -158,7 +156,7 @@ private class LruCacheStorage(
             source.discard(10, TimeUnit.SECONDS)
             caches
         } catch (cause: Exception) {
-            Log.e("HttpCacheImpl", "Exception during reading a file: ${cause.message}")
+            logcat { "Exception during reading a file: ${cause.message}" }
             emptySet()
         }
     }

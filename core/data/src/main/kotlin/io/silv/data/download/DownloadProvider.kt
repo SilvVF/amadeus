@@ -3,6 +3,7 @@ package io.silv.data.download
 import android.content.Context
 import android.util.Log
 import com.hippo.unifile.UniFile
+import io.silv.common.log.logcat
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Source
 import io.silv.data.util.DiskUtil
@@ -30,7 +31,7 @@ class DownloadProvider(
                 .createDirectory(getSourceDirName(source))!!
                 .createDirectory(getMangaDirName(mangaTitle))!!
         } catch (e: Throwable) {
-            Log.e("DownloadProvider","Invalid download directory")
+            logcat { "Invalid download directory" }
             throw Exception("Invalid download dir")
         }
     }

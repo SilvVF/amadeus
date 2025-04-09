@@ -1,6 +1,7 @@
 package io.silv.manga.view
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -93,7 +94,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.skydoves.sandwich.message
 import com.skydoves.sandwich.onFailure
 import com.skydoves.sandwich.onSuccess
@@ -112,9 +113,6 @@ import io.silv.ui.layout.PullRefresh
 import io.silv.ui.layout.ScrollbarLazyColumn
 import io.silv.ui.openOnWeb
 import io.silv.ui.theme.LocalSpacing
-
-
-
 
 import kotlinx.coroutines.launch
 
@@ -273,7 +271,9 @@ fun MangaViewScreenContent(
 private const val FILTER_BOTTOM_SHEET = 1
 private const val VOLUME_ART_BOTTOM_SHEET = 0
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, DependencyAccessor::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, DependencyAccessor::class,
+    ExperimentalSharedTransitionApi::class
+)
 @Composable
 fun MangaViewSuccessScreen(
     state: MangaViewState.Success,
@@ -438,7 +438,8 @@ fun MangaViewSuccessScreen(
                 item(key = "manga-poster") {
                     MangaImageWithTitle(
                         manga = state.manga,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth(),
                         padding = paddingValues,
                         stats = state.statsUiState,
                         viewOnWeb = {

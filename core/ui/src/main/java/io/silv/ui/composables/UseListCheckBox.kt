@@ -46,7 +46,7 @@ fun SelectCardType(
     cardType: CardType,
     onCardTypeSelected: (CardType) -> Unit,
 ) {
-    val types = remember { CardType.values().toList() }
+    val types = remember { CardType.entries }
 
     types.fastForEachIndexed { i, type ->
         Row(

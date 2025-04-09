@@ -1,5 +1,6 @@
 package io.silv.ui.composables
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.LocalIndication
@@ -53,10 +54,11 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import io.silv.domain.manga.model.Manga
 import io.silv.ui.Language
 import io.silv.ui.theme.LocalSpacing
+import io.silv.ui.tryApplySharedElementTransition
 
 
 @Stable
@@ -67,7 +69,6 @@ enum class CardType(val string: String) {
 }
 
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MangaListItem(
     modifier: Modifier = Modifier,
@@ -99,6 +100,9 @@ fun MangaListItem(
             model = manga.takeIf { !it.isStub } ?: manga.coverArt,
             contentDescription = null,
             modifier = Modifier
+                .tryApplySharedElementTransition(
+                    key = { manga.id }
+                )
                 .clip(RoundedCornerShape(8.dp),)
                 .fillMaxWidth(0.13f)
                 .aspectRatio(1f / 1f),
@@ -110,7 +114,11 @@ fun MangaListItem(
             text = manga.titleEnglish,
             maxLines = 2,
             textAlign = TextAlign.Start,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .tryApplySharedElementTransition(
+                    key = { manga.titleEnglish },
+                )
+                .weight(1f),
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.labelMedium,
         )
@@ -134,6 +142,7 @@ fun MangaListItem(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun MangaGridItem(
     modifier: Modifier = Modifier,
@@ -163,7 +172,11 @@ fun MangaGridItem(
             AsyncImage(
                 model = manga.takeIf { !it.isStub } ?: manga.coverArt,
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .tryApplySharedElementTransition(
+                        key = { manga.id }
+                    )
+                    .fillMaxSize(),
                 contentScale = ContentScale.Crop,
                 placeholder = ColorPainter(Color(0x1F888888))
             )
@@ -177,6 +190,9 @@ fun MangaGridItem(
                     color = Color(0xFFEDE0DD),
                     modifier =
                     Modifier
+                        .tryApplySharedElementTransition(
+                            key = { manga.titleEnglish }
+                        )
                         .fillMaxWidth()
                         .drawWithCache {
                             onDrawBehind {
@@ -218,28 +234,6 @@ fun MangaGridItem(
 }
 
 @Composable
-fun MangaGenreTags(
-    modifier: Modifier = Modifier,
-    tags: List<String>,
-    onTagClick: (tag: String) -> Unit = {},
-) {
-    val space = LocalSpacing.current
-
-    LazyRow(modifier) {
-        items(
-            items = tags,
-            key = { item -> item },
-        ) { language ->
-            ElevatedSuggestionChip(
-                onClick = { onTagClick(language) },
-                label = { Text(text = language) },
-                modifier = Modifier.padding(horizontal = space.small),
-            )
-        }
-    }
-}
-
-@Composable
 fun TranslatedLanguageTags(
     modifier: Modifier = Modifier,
     tags: List<String>,
@@ -253,14 +247,12 @@ fun TranslatedLanguageTags(
             key = { item -> item },
         ) { language ->
 
-            var showLang by remember {
-                mutableStateOf(false)
-            }
+            var showLang by remember { mutableStateOf(false) }
 
             val text =
                 remember(showLang) {
                     if (showLang) {
-                        Language.values().find { it.code == language }?.string ?: language
+                        Language.entries.find { it.code == language }?.string ?: language
                     } else {
                         language
                     }

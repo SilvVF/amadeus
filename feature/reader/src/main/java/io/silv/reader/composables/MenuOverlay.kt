@@ -137,9 +137,7 @@ fun ReaderMenuOverlay(
         }
     }
 
-    val tabs = remember {
-        MenuTabs.values().toList().toList()
-    }
+    val tabs = remember { MenuTabs.entries }
 
     val menuPagerState = rememberPagerState { tabs.size }
     val scope = rememberCoroutineScope()

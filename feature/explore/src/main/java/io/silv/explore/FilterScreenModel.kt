@@ -5,6 +5,7 @@ import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.DependencyAccessor
+import io.silv.common.log.logcat
 import io.silv.common.model.ContentRating
 import io.silv.common.model.Order
 import io.silv.common.model.OrderBy
@@ -81,7 +82,7 @@ class FilterScreenViewModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     fun updateFilter(action: FilterAction) {
-        Log.d("Filter", "Updating $action")
+        logcat { "Updating $action" }
         screenModelScope.launch {
             when (action) {
                 is FilterAction.ChangeArtist ->

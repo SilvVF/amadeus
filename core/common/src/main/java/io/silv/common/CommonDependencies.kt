@@ -2,7 +2,7 @@ package io.silv.common
 
 import kotlinx.coroutines.CoroutineScope
 
-@OptIn(DependencyAccessor::class)
+@DependencyAccessor
 public lateinit var commonDeps: CommonDependencies
 
 @OptIn(DependencyAccessor::class)

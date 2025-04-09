@@ -1,4 +1,3 @@
-@Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
@@ -7,47 +6,17 @@ plugins {
 
 android {
     namespace = "io.silv.ui"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 28
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = "17"
-
-        compileOptions {
-            freeCompilerArgs += arrayOf(
-                "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
-                "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
-                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-                "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
-                "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi",
-                "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-                "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
-                "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
-                "-opt-in=androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
-                "-opt-in=coil.annotation.ExperimentalCoilApi",
-                "-opt-in=kotlinx.coroutines.FlowPreview",
-                "-Xcontext-receivers"
-            )
-        }
     }
     buildFeatures {
         compose = true
@@ -71,7 +40,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.compose.foundation)
-    implementation(libs.material.motion.compose.core)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.junit)
@@ -86,15 +54,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
-    // COIL
-    implementation(libs.coil.compose)
-    implementation(libs.coil)
+    implementation(libs.bundles.coil)
 
     implementation(libs.androidx.paging.common)
     implementation(libs.androidx.paging.compose)
 
-    implementation(libs.voyager.navigator)
-    implementation(libs.voyager.transitions)
-    implementation(libs.voyager.tabNavigator)
-    implementation(libs.voyager.screenModel)
+    implementation(libs.bundles.voyager)
 }

@@ -15,9 +15,11 @@ import io.ktor.client.statement.bodyAsBytes
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.utils.CacheControl
 import io.ktor.http.HttpHeaders
+import io.ktor.utils.io.asSource
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.coroutine.suspendRunCatching
+import io.silv.common.log.logcat
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Download
 import io.silv.common.model.MangaDexSource
@@ -51,6 +53,8 @@ import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.io.asSink
+import kotlinx.io.buffered
 import okhttp3.Call
 import okhttp3.MediaType
 import okhttp3.OkHttpClient
@@ -64,6 +68,7 @@ import okio.IOException
 import okio.Source
 import okio.buffer
 import java.io.File
+import kotlin.math.log
 
 /**
  * This class is the one in charge of downloading chapters.
@@ -118,7 +123,7 @@ internal class Downloader(
         chapters: List<ChapterResource>,
         autoStart: Boolean
     ) {
-        Log.d("Downloader", "chapter empty = ${chapters.isEmpty()}")
+        logcat { "chapter empty = ${chapters.isEmpty()}" }
 
         if (chapters.isEmpty()) return
 
@@ -140,13 +145,13 @@ internal class Downloader(
             .toList()
             .map(::QItem)
 
-        Log.d("Downloader", "chapters to queue = $chaptersToQueue")
+        logcat { "chapters to queue = $chaptersToQueue" }
 
         if (chaptersToQueue.isNotEmpty()) {
             queue.addAllToQueue(chaptersToQueue)
 
             DownloadWorker.start(context)
-            Log.d("Downloader", "started download worker")
+            logcat { "started download worker" }
         }
     }
 
@@ -164,7 +169,7 @@ internal class Downloader(
                     }
                 }
 
-                else -> imageSourceFactory.getSource(url).fetchImageUrls(url)
+                else -> imageSourceFactory.getSource(url)!!.fetchImageUrls(url)
                     .mapIndexed { i, data ->
                         Page(
                             index = i,
@@ -185,32 +190,32 @@ internal class Downloader(
     private suspend fun downloadChapter(download: Download) {
 
         val mangaDir = provider.getMangaDir(download.manga.title, MangaDexSource)
-        Log.d("Downloader", "dir $mangaDir")
+        logcat { "dir $mangaDir" }
 
 
         val availSpace = DiskUtil.getAvailableStorageSpace(mangaDir)
 
-        Log.d("Downloader", "space $availSpace")
+        logcat { "space $availSpace" }
 
         if (availSpace != -1L && availSpace < MIN_DISK_SPACE) {
-            Log.d("Downloader", "error disk space")
+            logcat { "error disk space" }
             error("no disk space")
             return
         }
 
         val chapterDirname =
             provider.getChapterDirName(download.chapter.title, download.chapter.scanlator)
-        Log.d("Downloader", "chapterDirname $chapterDirname")
+        logcat { "chapterDirname $chapterDirname" }
         val tmpDir = mangaDir.createDirectory(chapterDirname + TMP_DIR_SUFFIX)!!
-        Log.d("Downloader", "tmp dir $tmpDir")
+        logcat { "tmp dir $tmpDir" }
         // If the page list already exists, start from the file
         val pageList = download.pages ?: run {
-            Log.d("Downloader", "getting page list bc empty")
+            logcat { "getting page list bc empty" }
             // Otherwise, pull page list from network and add them to download object
             val pages = getPageList(download.chapter.url, download.chapter.id)
 
             if (pages.isEmpty()) {
-                throw Exception("empty Page list")
+                error("empty Page list")
             }
             // Don't trust index from source
             val reIndexedPages =
@@ -218,7 +223,7 @@ internal class Downloader(
             download.pages = reIndexedPages
             reIndexedPages
         }
-
+        logcat { "new list ${pageList.map { it.imageUrl }}" }
         // Delete all temporary (unfinished) files
         tmpDir.listFiles()
             ?.filter { it.extension == "tmp" }
@@ -230,7 +235,7 @@ internal class Downloader(
             .flatMapMerge(concurrency = 2) { page ->
                 flow<Page> {
                     withContext(Dispatchers.IO) {
-                        Log.d("Downloader", "getting images")
+                        logcat { "getting images" }
                         getOrDownloadImage(page, download, tmpDir)
                     }
                     emit(page)
@@ -238,7 +243,7 @@ internal class Downloader(
                     .flowOn(Dispatchers.IO)
             }
             .collect {
-                Log.d("Downloader", "page collected $it")
+                logcat { "collected page $it" }
                 // Do when page is downloaded.
                 //notifier.onProgressChange(download)
             }
@@ -246,20 +251,20 @@ internal class Downloader(
         // Do after download completes
 
         if (!isDownloadSuccessful(download, tmpDir)) {
-            Log.d("Downloader", "not successful")
+            logcat { "not successful" }
             error("failed to download")
             return
         }
 
 
-        Log.d("Downloader", "rename")
+        logcat { "rename" }
         tmpDir.renameTo(chapterDirname)
 
         cache.addChapter(chapterDirname, mangaDir, download.manga)
-        Log.d("Downloader", "added chapter to cache")
+        logcat { "added chapter to cache" }
 
         DiskUtil.createNoMediaFile(tmpDir, context)
-        Log.d("Downloader", "created no media file")
+        logcat { "created no media file" }
     }
 
     /**
@@ -272,6 +277,7 @@ internal class Downloader(
     private suspend fun getOrDownloadImage(page: Page, download: Download, tmpDir: UniFile) {
         // If the image URL is empty, do nothing
         if (page.imageUrl == null) {
+            logcat { "image url was empty $page" }
             return
         }
 
@@ -286,7 +292,7 @@ internal class Downloader(
         val imageFile = tmpDir.listFiles()?.firstOrNull {
             it.name!!.startsWith("$filename.") || it.name!!.startsWith("${filename}__001")
         }
-
+        logcat { "found image file ${imageFile?.filePath}" }
         try {
             // If the image is already downloaded, do nothing. Otherwise download from network
             val file = when {
@@ -306,11 +312,13 @@ internal class Downloader(
             page.imageUrl = file.uri.toString()
             page.progress = 100
             page.status = Page.State.READY
+            logcat { "image ready $page" }
         } catch (e: Throwable) {
             if (e is CancellationException) throw e
             // Mark this page as error and allow to download the remaining
             page.progress = 0
             page.status = Page.State.ERROR
+            logcat { "image error $page" }
             // notifier.onError(e.message, download.chapter.name, download.manga.title)
         }
     }
@@ -325,14 +333,18 @@ internal class Downloader(
     private suspend fun downloadImage(page: Page, tmpDir: UniFile, filename: String): UniFile {
         page.status = Page.State.DOWNLOAD_IMAGE
         page.progress = 0
-        return flow {
-            val response = withContext(Dispatchers.IO) {
+
+        val response = retry(3) { attempt ->
+            logcat { "downloading $attempt ${page.imageUrl}" }
+            delay((2L shl attempt.toInt()) * 1000)
+            suspendRunCatching {
                 client.get {
                     url(page.imageUrl!!)
                     headers {
                         set(HttpHeaders.CacheControl, CacheControl.NO_CACHE)
                     }
                     onDownload { bytesSentTotal, contentLength ->
+                        logcat { "download progress $bytesSentTotal, $contentLength ${page.imageUrl}" }
                         runCatching {
                             page.update(
                                 bytesSentTotal,
@@ -343,33 +355,26 @@ internal class Downloader(
                     }
                 }
             }
-
-            val file = tmpDir.createFile("$filename.tmp")!!
-            try {
-                val bytes: ByteArray = response.body()
-                file.openOutputStream().use {
-                    it.write(bytes)
-                }
-                val extension = getImageExtension(response, file)
-                file.renameTo("$filename.$extension")
-            } catch (e: Exception) {
-                response.cancel()
-                file.delete()
-                throw e
-            }
-            emit(file)
         }
-            // Retry 3 times, waiting 2, 4 and 8 seconds between attempts.
-            .retryWhen { _, attempt ->
-                if (attempt < 3) {
-                    delay((2L shl attempt.toInt()) * 1000)
-                    true
-                } else {
-                    false
+            .getOrThrow()
+
+        val file = tmpDir.createFile("$filename.tmp")!!
+        try {
+            file.openOutputStream().asSink().use { sink ->
+                response.bodyAsChannel().asSource().buffered().use {
+                    it.transferTo(sink)
                 }
             }
-            .first()
+            val extension = getImageExtension(response, file)
+            file.renameTo("$filename.$extension")
+        } catch (e: Exception) {
+            response.cancel()
+            file.delete()
+            throw e
+        }
+        return file
     }
+
 
     /**
      * Copies the image from cache to file in tmpDir.
@@ -383,6 +388,7 @@ internal class Downloader(
         tmpDir: UniFile,
         filename: String
     ): UniFile {
+        logcat { "copying ${cacheFile.path}" }
         val tmpFile = tmpDir.createFile("$filename.tmp")!!
         cacheFile.inputStream().use { input ->
             tmpFile.openOutputStream().use { output ->
@@ -406,7 +412,7 @@ internal class Downloader(
         // Read content type if available.
         val mime = response.headers["content-type"].takeIf { it?.contains("image") == true }
         return ImageUtil.getExtensionFromMimeType(mime) {
-           file.openInputStream()
+            file.openInputStream()
         }
     }
 
@@ -439,11 +445,7 @@ internal class Downloader(
                 else -> true
             }
         }
-        if (downloadedImagesCount != downloadPageCount) {
-            return false
-        }
-
-        return true
+        return downloadedImagesCount == downloadPageCount
     }
 
     companion object {

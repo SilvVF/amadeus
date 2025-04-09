@@ -10,6 +10,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import io.silv.common.DependencyAccessor
+import io.silv.common.log.logcat
 import io.silv.common.model.NetworkConnectivity
 import io.silv.data.workers.createForegroundInfo
 import io.silv.di.dataDeps
@@ -34,8 +35,8 @@ class DownloadWorker(
     workerParams: WorkerParameters
 ) : CoroutineWorker(applicationContext, workerParams) {
 
-    private val downloadManager = downloadDeps.downloadManager
-    private val connectivityManager = dataDeps.connectivity
+    private val downloadManager get() = downloadDeps.downloadManager
+    private val connectivityManager get() = dataDeps.connectivity
 
     private val isOnline = connectivityManager.online.stateIn(
         CoroutineScope(Dispatchers.Default),
@@ -47,7 +48,7 @@ class DownloadWorker(
 
         var active = checkConnectivity() && downloadManager.downloaderStart()
 
-        Log.d("DownloadWorker", "starting work active $active")
+        logcat { "starting work active $active" }
 
         if (!active) {
             return Result.failure()
@@ -59,7 +60,7 @@ class DownloadWorker(
             active = !isStopped && downloadManager.isRunning && checkConnectivity()
         }
 
-        Log.d("DownloadWorker", "ending work not active")
+        logcat { "ending work not active" }
 
         return Result.success()
     }

@@ -1,6 +1,6 @@
 package io.silv.amadeus.coil
 
-import coil.request.Options
+import coil3.request.Options
 import java.io.File
 
 interface FetcherDiskStore<T: Any> {

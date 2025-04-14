@@ -6,7 +6,6 @@ Features are based on [Tachiyomi](https://tachiyomi.org/) and [Neko](https://tac
 Rip tachiyomi [o7]("https://www.youtube.com/watch?v=EAk8PjCsXQ8")
 
 # tech stack
-- [Koin](https://insert-koin.io/)
 - [Room](https://developer.android.com/jetpack/androidx/releases/room)
 - [Voyager](https://voyager.adriel.cafe/)
 - [Datastore](https://developer.android.com/jetpack/androidx/releases/datastore)

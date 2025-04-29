@@ -76,8 +76,8 @@ import io.silv.common.model.Download
 import io.silv.data.download.QItem
 import io.silv.datastore.ReaderPrefs
 import io.silv.datastore.collectAsState
-import io.silv.domain.chapter.model.Chapter
-import io.silv.domain.manga.model.Manga
+import io.silv.data.chapter.Chapter
+import io.silv.data.manga.model.Manga
 import io.silv.reader.loader.ReaderChapter
 import io.silv.ui.Converters
 import io.silv.ui.ReaderLayout

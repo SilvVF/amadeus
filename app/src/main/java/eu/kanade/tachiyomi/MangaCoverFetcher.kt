@@ -1,6 +1,5 @@
 package eu.kanade.tachiyomi
 
-import android.content.Context
 import coil3.Extras
 import coil3.decode.DataSource
 import coil3.decode.ImageSource
@@ -24,7 +23,7 @@ import io.silv.amadeus.coil.FetcherDiskStore
 import io.silv.amadeus.coil.FetcherDiskStoreImageFile
 import io.silv.common.model.MangaCover
 import io.silv.data.download.CoverCache
-import io.silv.domain.manga.model.Manga
+import io.silv.data.manga.model.Manga
 import kotlinx.io.okio.asOkioSource
 import okio.FileSystem
 import okio.Path.Companion.toOkioPath

@@ -2,7 +2,7 @@ package io.silv.data
 
 import io.silv.database.dao.RecentSearchDao
 import io.silv.database.entity.RecentSearchEntity
-import io.silv.domain.search.RecentSearchRepository
+import io.silv.data.search.RecentSearchRepository
 import io.silv.model.RecentSearch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

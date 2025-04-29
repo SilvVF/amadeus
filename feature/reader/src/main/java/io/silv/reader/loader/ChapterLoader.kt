@@ -3,16 +3,13 @@ package io.silv.reader.loader
 import HttpPageLoader
 import android.content.Context
 import io.silv.common.DependencyAccessor
-import io.silv.common.commonDeps
 import io.silv.data.download.ChapterCache
 import io.silv.data.download.DownloadManager
 import io.silv.di.dataDeps
 import io.silv.di.downloadDeps
-import io.silv.domain.manga.model.Manga
+import io.silv.data.manga.model.Manga
 import io.silv.network.networkDeps
 import io.silv.network.sources.HttpSource
-import io.silv.network.sources.ImageSourceFactory
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

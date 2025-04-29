@@ -3,11 +3,9 @@ import io.silv.common.commonDeps
 import io.silv.common.log.logcat
 import io.silv.common.model.Page
 import io.silv.data.download.ChapterCache
-import io.silv.di.dataDeps
 import io.silv.di.downloadDeps
-import io.silv.domain.chapter.model.toResource
+import io.silv.data.chapter.toResource
 import io.silv.network.sources.HttpSource
-import io.silv.network.sources.ImageSourceFactory
 import io.silv.reader.loader.PageLoader
 import io.silv.reader.loader.ReaderChapter
 import io.silv.reader.loader.ReaderPage

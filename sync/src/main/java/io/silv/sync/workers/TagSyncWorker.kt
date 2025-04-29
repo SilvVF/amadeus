@@ -13,7 +13,6 @@ import androidx.work.WorkerParameters
 import io.silv.common.DependencyAccessor
 import io.silv.data.workers.createForegroundInfo
 import io.silv.di.dataDeps
-import io.silv.domain.TagRepository
 import io.silv.sync.TagSyncWorkName
 import java.util.concurrent.TimeUnit
 

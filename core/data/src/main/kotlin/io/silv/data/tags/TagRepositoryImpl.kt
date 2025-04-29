@@ -5,7 +5,7 @@ import io.silv.common.time.epochSeconds
 import io.silv.data.util.syncVersions
 import io.silv.database.dao.TagDao
 import io.silv.database.entity.list.TagEntity
-import io.silv.domain.TagRepository
+import io.silv.data.TagRepository
 import io.silv.model.DomainTag
 import io.silv.network.MangaDexApi
 import kotlinx.coroutines.flow.Flow

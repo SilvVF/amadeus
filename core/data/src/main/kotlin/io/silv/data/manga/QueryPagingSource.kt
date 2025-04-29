@@ -4,8 +4,8 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.skydoves.sandwich.getOrThrow
 import io.silv.common.model.MangaResource
-import io.silv.domain.manga.model.MangaUpdate
-import io.silv.domain.manga.repository.MangaRepository
+import io.silv.data.manga.model.MangaUpdate
+import io.silv.data.manga.repository.MangaRepository
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
 import kotlinx.coroutines.Dispatchers

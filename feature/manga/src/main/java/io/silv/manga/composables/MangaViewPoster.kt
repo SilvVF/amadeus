@@ -33,12 +33,11 @@ import coil3.compose.AsyncImage
 import io.silv.common.filterUnique
 import io.silv.common.model.ReadingStatus
 import io.silv.common.model.Status
-import io.silv.domain.manga.model.Manga
+import io.silv.data.manga.model.Manga
 import io.silv.manga.view.MangaStats
 import io.silv.manga.view.StatsUiState
 import io.silv.ui.fillMaxSizeAfterMeasure
 import io.silv.ui.theme.LocalSpacing
-import io.silv.ui.tryApplySharedElementTransition
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable

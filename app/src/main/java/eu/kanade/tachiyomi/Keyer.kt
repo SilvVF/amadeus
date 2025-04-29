@@ -4,7 +4,7 @@ import coil3.key.Keyer
 import coil3.request.Options
 import io.silv.common.model.MangaCover
 import io.silv.data.download.CoverCache
-import io.silv.domain.manga.model.Manga
+import io.silv.data.manga.model.Manga
 
 fun Manga.asMangaCover(): MangaCover {
     return MangaCover(

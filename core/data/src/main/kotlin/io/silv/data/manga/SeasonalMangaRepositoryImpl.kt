@@ -9,8 +9,8 @@ import io.silv.database.AmadeusDatabase
 import io.silv.database.dao.SeasonalListAndKeyAndManga
 import io.silv.database.entity.list.SeasonalListEntity
 import io.silv.database.entity.manga.MangaToListRelation
-import io.silv.domain.manga.repository.MangaRepository
-import io.silv.domain.manga.repository.SeasonalMangaRepository
+import io.silv.data.manga.repository.MangaRepository
+import io.silv.data.manga.repository.SeasonalMangaRepository
 import io.silv.model.DomainSeasonalList
 import io.silv.network.MangaDexApi
 import io.silv.network.model.list.Data

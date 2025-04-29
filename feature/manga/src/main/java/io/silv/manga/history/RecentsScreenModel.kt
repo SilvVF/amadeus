@@ -12,8 +12,8 @@ import io.silv.common.AmadeusDispatchers
 import io.silv.common.DependencyAccessor
 import io.silv.common.commonDeps
 import io.silv.di.dataDeps
-import io.silv.domain.history.HistoryRepository
-import io.silv.domain.history.HistoryWithRelations
+import io.silv.data.history.HistoryRepository
+import io.silv.data.history.HistoryWithRelations
 
 
 

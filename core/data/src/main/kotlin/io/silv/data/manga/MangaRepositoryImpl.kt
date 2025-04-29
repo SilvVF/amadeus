@@ -8,10 +8,11 @@ import io.silv.data.download.CoverCache
 import io.silv.data.util.deleteOldCoverFromCache
 import io.silv.database.AmadeusDatabase
 import io.silv.database.dao.MangaDao
-import io.silv.domain.manga.model.Manga
-import io.silv.domain.manga.model.MangaUpdate
-import io.silv.domain.manga.model.MangaWithChapters
-import io.silv.domain.manga.repository.MangaRepository
+import io.silv.data.manga.model.Manga
+import io.silv.data.manga.model.MangaUpdate
+import io.silv.data.manga.model.MangaWithChapters
+import io.silv.data.manga.model.toUpdate
+import io.silv.data.manga.repository.MangaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -22,23 +23,39 @@ internal class MangaRepositoryImpl internal constructor(
     private val dispatchers: AmadeusDispatchers,
     private val database: AmadeusDatabase,
     private val coverCache: CoverCache,
-): MangaRepository {
+) : MangaRepository {
 
     override suspend fun getMangaById(id: String): Manga? =
         withContext(dispatchers.io) {
             mangaDao.getById(id)?.let(MangaMapper::mapManga)
         }
 
-    override suspend fun updateManga(list: List<Manga>) =
+    override suspend fun updateManga(update: MangaUpdate) =
         withContext(dispatchers.io) {
-            list.forEach {
-                mangaDao.update(MangaMapper.toEntity(it))
+            with(update) {
+                mangaDao.updateFields(
+                    mangaId = id,
+                    coverArt = coverArt,
+                    title = title,
+                    version = version,
+                    updatedAt = updatedAt,
+                    description = description,
+                    alternateTitles = alternateTitles,
+                    originalLanguage = originalLanguage,
+                    availableTranslatedLanguages = availableTranslatedLanguages,
+                    status = status,
+                    tagToId = tagToId,
+                    contentRating = contentRating,
+                    lastVolume = lastVolume,
+                    lastChapter = lastChapter,
+                    publicationDemographic = publicationDemographic,
+                    year = year,
+                    latestUploadedChapter = latestUploadedChapter,
+                    authors = authors,
+                    artists = artists,
+                    coverLastModified = coverLastModified
+                )
             }
-        }
-
-    override suspend fun updateManga(manga: Manga) =
-        withContext(dispatchers.io) {
-            mangaDao.update(MangaMapper.toEntity(manga))
         }
 
     override fun observeLastLibrarySynced(): Flow<LocalDateTime?> {
@@ -48,54 +65,27 @@ internal class MangaRepositoryImpl internal constructor(
     override suspend fun getMangaByTitle(title: String): Manga? =
         withContext(dispatchers.io) { mangaDao.getMangaByTitle(title)?.let(MangaMapper::mapManga) }
 
-    override suspend fun upsertManga(update: MangaUpdate) =
+    override suspend fun insertManga(manga: Manga) =
         withContext(dispatchers.io) {
-            database.withTransaction {
-                mangaDao.upsert(
-                    id = update.id,
-                    coverArt = update.coverArt,
-                    title = update.title,
-                    version = update.version,
-                    updatedAt = update.updatedAt,
-                    description = update.description,
-                    alternateTitles = update.alternateTitles,
-                    originalLanguage = update.originalLanguage,
-                    availableTranslatedLanguages = update.availableTranslatedLanguages,
-                    status = update.status,
-                    tagToId = update.tagToId,
-                    contentRating = update.contentRating,
-                    lastVolume = update.lastVolume,
-                    lastChapter = update.lastChapter,
-                    publicationDemographic = update.publicationDemographic,
-                    year = update.year,
-                    latestUploadedChapter = update.latestUploadedChapter,
-                    authors = update.authors,
-                    artists = update.artists,
-                    createdAt = update.createdAt,
-                    progressState = update.progressState,
-                    favorite = update.favorite,
-                    readingStatus = update.readingStatus,
-                ) { existing ->
-                    runCatching {
-                        existing?.deleteOldCoverFromCache(coverCache, update)
-                            ?.takeIf { deleted -> deleted }
-                            ?.let { epochSeconds() }
-                    }
-                        .getOrNull()
-                }
+            mangaDao.upsert(
+                MangaMapper.toEntity(manga)
+            ) { existing ->
+                val deleted = existing.deleteOldCoverFromCache(coverCache, manga.toUpdate())
+                if (deleted) epochSeconds() else null
             }
         }
 
-    override suspend fun upsertManga(updates: List<MangaUpdate>, withTransaction: Boolean) =
+    override suspend fun insertManga(manga: List<Manga>, withTransaction: Boolean) {
         withContext(dispatchers.io) {
             if (withTransaction) {
                 database.withTransaction {
-                    updates.forEach { upsertManga(it) }
+                    manga.forEach { insertManga(it) }
                 }
             } else {
-                updates.forEach { upsertManga(it) }
+                manga.forEach { insertManga(it) }
             }
         }
+    }
 
     override fun observeMangaById(id: String): Flow<Manga?> {
         return mangaDao.observeById(id).map { manga -> manga?.let(MangaMapper::mapManga) }
@@ -121,7 +111,9 @@ internal class MangaRepositoryImpl internal constructor(
     }
 
     override suspend fun getLibraryMangaWithChapters(): List<MangaWithChapters> =
-        withContext(dispatchers.io) { mangaDao.getLibraryMangaWithChapters().map(MangaMapper::mapMangaWithChapters) }
+        withContext(dispatchers.io) {
+            mangaDao.getLibraryMangaWithChapters().map(MangaMapper::mapMangaWithChapters)
+        }
 
     override fun observeMangaWithChaptersById(id: String): Flow<MangaWithChapters> {
         return mangaDao.observeMangaWithChaptersById(id).map { (manga, chapters) ->
@@ -142,7 +134,7 @@ internal class MangaRepositoryImpl internal constructor(
     }
 
     override suspend fun deleteUnused() =
-        withContext(dispatchers.io){ mangaDao.deleteUnused() }
+        withContext(dispatchers.io) { mangaDao.deleteUnused() }
 
     override fun observeUnusedCount(): Flow<Int> {
         return mangaDao.observeUnusedMangaCount()

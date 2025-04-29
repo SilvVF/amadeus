@@ -7,9 +7,9 @@ import io.silv.common.model.PagedType
 import io.silv.common.model.TimePeriod
 import io.silv.data.download.CoverCache
 import io.silv.di.dataDeps
-import io.silv.domain.manga.SubscribeToPagingData
-import io.silv.domain.manga.interactor.MangaHandler
-import io.silv.domain.manga.model.toResource
+import io.silv.data.manga.SubscribeToPagingData
+import io.silv.data.manga.interactor.MangaHandler
+import io.silv.data.manga.model.toResource
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ioCoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi

@@ -16,7 +16,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
-import io.silv.domain.manga.model.Manga
+import io.silv.data.manga.model.Manga
 import io.silv.ui.CenterBox
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.coroutines.flow.StateFlow

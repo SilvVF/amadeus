@@ -24,30 +24,31 @@ import io.silv.data.util.NetworkConnectivityImpl
 import io.silv.database.DaosModule
 import io.silv.database.DatabaseModule
 import io.silv.datastore.SettingsStore
-import io.silv.domain.AuthorListRepository
-import io.silv.domain.TagRepository
+import io.silv.data.AuthorListRepository
+import io.silv.data.TagRepository
 import io.silv.domain.chapter.interactor.ChapterHandler
 import io.silv.domain.chapter.interactor.GetBookmarkedChapters
 import io.silv.domain.chapter.interactor.GetChapter
 import io.silv.domain.chapter.interactor.GetNextChapters
+
+import io.silv.data.history.GetLibraryLastUpdated
+import io.silv.data.history.HistoryRepository
+import io.silv.data.manga.MangaPagingSourceFactory
+import io.silv.data.manga.SubscribeToPagingData
+import io.silv.data.manga.interactor.GetChaptersByMangaId
+import io.silv.data.manga.interactor.GetLibraryMangaWithChapters
+import io.silv.data.manga.interactor.GetManga
+import io.silv.data.manga.interactor.GetMangaWithChapters
+import io.silv.data.manga.interactor.MangaHandler
+import io.silv.data.manga.interactor.SetMangaViewerFlags
+import io.silv.data.manga.repository.MangaRepository
+import io.silv.data.manga.repository.SeasonalMangaRepository
+import io.silv.data.manga.repository.TopYearlyFetcher
+import io.silv.data.search.RecentSearchHandler
+import io.silv.data.search.RecentSearchRepository
+import io.silv.data.update.GetUpdateCount
+import io.silv.data.update.UpdatesRepository
 import io.silv.domain.chapter.repository.ChapterRepository
-import io.silv.domain.history.GetLibraryLastUpdated
-import io.silv.domain.history.HistoryRepository
-import io.silv.domain.manga.MangaPagingSourceFactory
-import io.silv.domain.manga.SubscribeToPagingData
-import io.silv.domain.manga.interactor.GetChaptersByMangaId
-import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
-import io.silv.domain.manga.interactor.GetManga
-import io.silv.domain.manga.interactor.GetMangaWithChapters
-import io.silv.domain.manga.interactor.MangaHandler
-import io.silv.domain.manga.interactor.SetMangaViewerFlags
-import io.silv.domain.manga.repository.MangaRepository
-import io.silv.domain.manga.repository.SeasonalMangaRepository
-import io.silv.domain.manga.repository.TopYearlyFetcher
-import io.silv.domain.search.RecentSearchHandler
-import io.silv.domain.search.RecentSearchRepository
-import io.silv.domain.update.GetUpdateCount
-import io.silv.domain.update.UpdatesRepository
 import io.silv.network.networkDeps
 
 @DependencyAccessor
@@ -66,7 +67,7 @@ abstract class DataDependencies {
             commonDeps.dispatchers
         )
 
-    val coverCache = CoverCache(context)
+    val coverCache by lazy { CoverCache(context) }
 
     val getManga: GetManga get() = GetManga(mangaRepository)
     val getMangaWithChapters: GetMangaWithChapters get() = GetMangaWithChapters(mangaRepository)

@@ -1,6 +1,5 @@
 package io.silv.data.chapter
 
-import android.util.Log
 import androidx.room.withTransaction
 import com.skydoves.sandwich.getOrNull
 import com.skydoves.sandwich.getOrThrow
@@ -15,8 +14,8 @@ import io.silv.data.mappers.toChapterEntity
 import io.silv.data.util.GetChapterList
 import io.silv.database.AmadeusDatabase
 import io.silv.database.dao.ChapterDao
-import io.silv.domain.chapter.model.Chapter
 import io.silv.domain.chapter.repository.ChapterRepository
+
 import io.silv.network.MangaDexApi
 import io.silv.network.model.chapter.ChapterDto
 import io.silv.network.requests.ChapterListRequest

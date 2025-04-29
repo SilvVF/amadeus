@@ -23,48 +23,48 @@ abstract class MangaDao {
     @Query(
         """
         UPDATE manga SET
-        cover_art = :coverArt,
-        title = :title,
-        version = :version,
-        updated_at = :updatedAt,
-        description = :description,
-        alternate_titles = :alternateTitles,
-        originalLanguage = :originalLanguage,
-        available_translated_languages = :availableTranslatedLanguages,
-        status = :status,
-        tag_to_id = :tagToId,
-        content_rating = :contentRating,
-        last_volume = :lastVolume,
-        last_chapter = :lastChapter,
-        publication_demographic = :publicationDemographic,
-        year = :year,
-        latest_uploaded_chapter = :latestUploadedChapter,
-        authors = :authors,
-        artists = :artists,
+        cover_art = coalesce(cover_art, :coverArt),
+        title = coalesce(:title, title),
+        version = coalesce(:version, version),
+        updated_at = coalesce(:updatedAt, updated_at),
+        description = coalesce(:description, description),
+        alternate_titles = coalesce(:alternateTitles, alternate_titles),
+        original_language = coalesce(:originalLanguage, original_language),
+        available_translated_languages = coalesce(:availableTranslatedLanguages, available_translated_languages),
+        status = coalesce(:status, status),
+        tag_to_id = coalesce(:tagToId, tag_to_id),
+        content_rating = coalesce(:contentRating, content_rating),
+        last_volume = coalesce(:lastVolume, last_volume),
+        last_chapter = coalesce(:lastChapter, last_chapter),
+        publication_demographic = coalesce(:publicationDemographic, publication_demographic),
+        year = coalesce(:year, year),
+        latest_uploaded_chapter = coalesce(:latestUploadedChapter, latest_uploaded_chapter),
+        authors = coalesce(:authors, authors),
+        artists = coalesce(:artists, artists),
         cover_last_modified = coalesce(cover_last_modified, :coverLastModified)
         WHERE id = :mangaId
         """
     )
-    protected abstract suspend fun updateIfExists(
-        mangaId: String,
-        coverArt: String,
-        title: String,
-        version: Int,
-        updatedAt: LocalDateTime,
-        description: String,
-        alternateTitles: Map<String, String>,
-        originalLanguage: String,
-        availableTranslatedLanguages: List<String>,
-        status: Status,
-        tagToId: Map<String, String>,
-        contentRating: ContentRating,
-        lastVolume: Int,
-        lastChapter: Long,
+    abstract suspend fun updateFields(
+        mangaId: String?,
+        coverArt: String?,
+        title: String?,
+        version: Int?,
+        updatedAt: LocalDateTime?,
+        description: String?,
+        alternateTitles: Map<String, String>?,
+        originalLanguage: String?,
+        availableTranslatedLanguages: List<String>?,
+        status: Status?,
+        tagToId: Map<String, String>?,
+        contentRating: ContentRating?,
+        lastVolume: Int?,
+        lastChapter: Long?,
         publicationDemographic: PublicationDemographic?,
-        year: Int,
+        year: Int?,
         latestUploadedChapter: String?,
-        authors: List<String>,
-        artists: List<String>,
+        authors: List<String>?,
+        artists: List<String>?,
         coverLastModified: Long?,
     )
 
@@ -77,79 +77,37 @@ abstract class MangaDao {
     @Query("SELECT MAX(last_synced_for_updates) FROM manga WHERE favorite")
     abstract fun observeLastSyncedTime(): Flow<LocalDateTime?>
 
+    @Transaction
     suspend fun upsert(
-        id: String,
-        coverArt: String?,
-        title: String,
-        version: Int,
-        createdAt: LocalDateTime,
-        updatedAt: LocalDateTime,
-        favorite: Boolean?,
-        description: String,
-        alternateTitles: Map<String, String>,
-        originalLanguage: String,
-        availableTranslatedLanguages: List<String>,
-        status: Status,
-        tagToId: Map<String, String>,
-        contentRating: ContentRating,
-        lastVolume: Int,
-        lastChapter: Long,
-        publicationDemographic: PublicationDemographic?,
-        year: Int,
-        latestUploadedChapter: String?,
-        authors: List<String>,
-        artists: List<String>,
-        progressState: ProgressState?,
-        readingStatus: ReadingStatus?,
-        checkIfCoverNeedsUpdate: (MangaEntity?) -> Long?
+        entity: MangaEntity,
+        checkIfCoverNeedsUpdate: (MangaEntity) -> Long?
     ) {
-        if (
-            coverArt != null &&
-            insert(
-                MangaEntity(
-                    id, coverArt, title, version, createdAt, updatedAt,
-                    favorite == true, description, alternateTitles,
-                    originalLanguage, availableTranslatedLanguages, status, tagToId,
-                    contentRating, lastVolume, lastChapter, publicationDemographic,
-                    year, latestUploadedChapter, authors, artists,
-                    progressState ?: ProgressState.NotStarted,
-                    readingStatus ?: ReadingStatus.None,
+        if (insert(entity) == -1L) {
+            val prev = getById(entity.id) ?: return
+            val coverLastModified = checkIfCoverNeedsUpdate(prev)
+            update(
+                prev.copy(
+                    coverLastModified = coverLastModified ?: prev.coverLastModified,
+                    coverArt = entity.coverArt,
+                    title = entity.title,
+                    alternateTitles = entity.alternateTitles,
+                    status = entity.status,
+                    availableTranslatedLanguages = entity.availableTranslatedLanguages,
+                    originalLanguage = entity.originalLanguage,
+                    publicationDemographic = entity.publicationDemographic,
+                    description = entity.description,
+                    tagToId = entity.tagToId,
+                    contentRating = entity.contentRating,
                 )
-            ) == -1L
-        ) {
-            val coverLastModified = checkIfCoverNeedsUpdate(getById(id))
-            updateIfExists(
-                mangaId = id,
-                coverArt = coverArt,
-                title = title,
-                version = version,
-                updatedAt = updatedAt,
-                description = description,
-                alternateTitles = alternateTitles,
-                originalLanguage = originalLanguage,
-                availableTranslatedLanguages = availableTranslatedLanguages,
-                status = status,
-                tagToId = tagToId,
-                contentRating = contentRating,
-                lastVolume = lastVolume,
-                lastChapter = lastChapter,
-                publicationDemographic = publicationDemographic,
-                year = year,
-                latestUploadedChapter = latestUploadedChapter,
-                authors = authors,
-                artists = artists,
-                coverLastModified = coverLastModified
             )
         }
     }
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun insertAll(mangas: List<MangaEntity>)
-
     @Delete
     abstract suspend fun delete(manga: MangaEntity)
 
-    @Query("""
+    @Query(
+        """
         DELETE 
         FROM manga
         WHERE NOT manga.favorite  
@@ -166,10 +124,12 @@ abstract class MangaDao {
                 WHERE manga.id = chapters.manga_id
             )
         )
-    """)
+    """
+    )
     abstract suspend fun deleteUnused()
 
-    @Query("""
+    @Query(
+        """
         SELECT COUNT(DISTINCT manga.id)
         FROM manga
         WHERE NOT manga.favorite 
@@ -186,7 +146,8 @@ abstract class MangaDao {
                 WHERE manga.id = chapters.manga_id
             )
         )
-    """)
+    """
+    )
     abstract fun observeUnusedMangaCount(): Flow<Int>
 
     @Query("SELECT * FROM MANGA WHERE id = :id LIMIT 1")

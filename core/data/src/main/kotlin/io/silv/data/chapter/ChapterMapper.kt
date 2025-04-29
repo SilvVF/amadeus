@@ -1,7 +1,6 @@
 package io.silv.data.chapter
 
 import io.silv.database.entity.chapter.ChapterEntity
-import io.silv.domain.chapter.model.Chapter
 
 object ChapterMapper {
 

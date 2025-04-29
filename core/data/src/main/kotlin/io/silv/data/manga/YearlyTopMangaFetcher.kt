@@ -4,10 +4,10 @@ import com.skydoves.sandwich.getOrNull
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.model.TagsMode
 import io.silv.common.time.timeStringMinus
-import io.silv.domain.manga.interactor.GetManga
-import io.silv.domain.manga.model.Manga
-import io.silv.domain.manga.repository.MangaRepository
-import io.silv.domain.manga.repository.TopYearlyFetcher
+import io.silv.data.manga.interactor.GetManga
+import io.silv.data.manga.model.Manga
+import io.silv.data.manga.repository.MangaRepository
+import io.silv.data.manga.repository.TopYearlyFetcher
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
 import kotlinx.coroutines.CoroutineScope

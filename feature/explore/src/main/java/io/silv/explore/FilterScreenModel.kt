@@ -1,6 +1,5 @@
 package io.silv.explore
 
-import android.util.Log
 import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -14,7 +13,7 @@ import io.silv.common.model.QueryFilters
 import io.silv.common.model.Status
 import io.silv.common.model.TagsMode
 import io.silv.di.dataDeps
-import io.silv.domain.TagRepository
+import io.silv.data.TagRepository
 import io.silv.model.DomainTag
 import io.silv.ui.Language
 

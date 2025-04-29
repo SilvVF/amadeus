@@ -20,36 +20,40 @@ abstract class DownloadDependencies {
 
     abstract val context: Context
 
-    val chapterCache = ChapterCache(context, networkDeps.json)
+    val chapterCache by lazy { ChapterCache(context, networkDeps.json) }
 
     val imageSourceFactory = ImageSourceFactory(networkDeps.mangaDexClient)
 
-    val downloadProvider = DownloadProvider(context)
+    val downloadProvider by lazy { DownloadProvider(context) }
 
-    val downloadCache = DownloadCache(
-        context,
-        downloadProvider
-    )
-
-    val downloadManager = DownloadManager(
-        context,
-        commonDeps.applicationScope,
-        downloadProvider,
-        Downloader(
+    val downloadCache by lazy {
+        DownloadCache(
             context,
+            downloadProvider
+        )
+    }
+
+    val downloadManager by lazy {
+        DownloadManager(
+            context,
+            commonDeps.applicationScope,
             downloadProvider,
+            Downloader(
+                context,
+                downloadProvider,
+                downloadCache,
+                chapterCache,
+                imageSourceFactory,
+                networkDeps.mangaDexApi,
+                networkDeps.noCacheClient,
+                dataStoreDeps.downloadStore,
+                dataDeps.getChapter,
+                dataDeps.getManga,
+                commonDeps.dispatchers
+            ),
             downloadCache,
-            chapterCache,
-            imageSourceFactory,
-            networkDeps.mangaDexApi,
-            networkDeps.noCacheClient,
-            dataStoreDeps.downloadStore,
-            dataDeps.getChapter,
             dataDeps.getManga,
-            commonDeps.dispatchers
-        ),
-        downloadCache,
-        dataDeps.getManga,
-        dataDeps.getChapter
-    )
+            dataDeps.getChapter
+        )
+    }
 }

@@ -53,8 +53,8 @@ import io.silv.common.model.ReadingStatus
 import io.silv.data.download.DownloadManager
 import io.silv.di.dataDeps
 import io.silv.di.downloadDeps
-import io.silv.domain.history.HistoryRepository
-import io.silv.domain.manga.interactor.GetLibraryMangaWithChapters
+import io.silv.data.history.HistoryRepository
+import io.silv.data.manga.interactor.GetLibraryMangaWithChapters
 import io.silv.manga.R
 import io.silv.ui.CenterBox
 import io.silv.ui.theme.LocalSpacing

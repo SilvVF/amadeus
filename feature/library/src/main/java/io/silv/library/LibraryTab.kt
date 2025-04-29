@@ -6,7 +6,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
@@ -110,10 +109,10 @@ import io.silv.common.time.localDateTimeNow
 import io.silv.data.download.QItem
 import io.silv.datastore.LibraryPrefs
 import io.silv.datastore.collectAsState
-import io.silv.domain.chapter.model.Chapter
-import io.silv.domain.manga.model.Manga
-import io.silv.domain.manga.model.MangaWithChapters
-import io.silv.domain.update.UpdateWithRelations
+import io.silv.data.chapter.Chapter
+import io.silv.data.manga.model.Manga
+import io.silv.data.manga.model.MangaWithChapters
+import io.silv.data.update.UpdateWithRelations
 import io.silv.library.state.LibraryActions
 import io.silv.library.state.LibraryError
 import io.silv.library.state.LibraryMangaState
@@ -123,9 +122,7 @@ import io.silv.navigation.push
 import io.silv.ui.CenterBox
 import io.silv.ui.Converters
 import io.silv.ui.LaunchedOnReselect
-import io.silv.ui.LocalAnimatedContentScope
 import io.silv.ui.LocalAppState
-import io.silv.ui.LocalTransitionScope
 import io.silv.ui.ReselectTab
 import io.silv.ui.composables.CardType
 import io.silv.ui.composables.ChapterDownloadAction
@@ -143,7 +140,6 @@ import io.silv.ui.layout.TopAppBarWithBottomContent
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.AmadeusTheme
 import io.silv.ui.theme.LocalSpacing
-import io.silv.ui.tryApplySharedElementTransition
 
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel

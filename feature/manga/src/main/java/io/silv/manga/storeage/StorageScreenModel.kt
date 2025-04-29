@@ -11,9 +11,9 @@ import io.silv.data.download.DownloadCache
 import io.silv.data.download.DownloadManager
 import io.silv.di.dataDeps
 import io.silv.di.downloadDeps
-import io.silv.domain.manga.interactor.GetManga
-import io.silv.domain.manga.model.toResource
-import io.silv.domain.manga.repository.MangaRepository
+import io.silv.data.manga.interactor.GetManga
+import io.silv.data.manga.model.toResource
+import io.silv.data.manga.repository.MangaRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine

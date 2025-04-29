@@ -1,6 +1,5 @@
 package io.silv.explore
 
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.paging.PagingConfig
@@ -10,11 +9,11 @@ import io.silv.common.log.logcat
 import io.silv.common.model.PagedType
 import io.silv.data.download.CoverCache
 import io.silv.di.dataDeps
-import io.silv.domain.manga.SubscribeToPagingData
-import io.silv.domain.manga.interactor.MangaHandler
-import io.silv.domain.manga.model.toResource
-import io.silv.domain.manga.repository.SeasonalMangaRepository
-import io.silv.domain.search.RecentSearchHandler
+import io.silv.data.manga.SubscribeToPagingData
+import io.silv.data.manga.interactor.MangaHandler
+import io.silv.data.manga.model.toResource
+import io.silv.data.manga.repository.SeasonalMangaRepository
+import io.silv.data.search.RecentSearchHandler
 import io.silv.model.DomainSeasonalList
 import io.silv.model.RecentSearch
 import io.silv.sync.SyncManager

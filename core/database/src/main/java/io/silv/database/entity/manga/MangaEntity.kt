@@ -33,6 +33,7 @@ data class MangaEntity(
     val description: String,
     @ColumnInfo("alternate_titles")
     val alternateTitles: Map<String, String>,
+    @ColumnInfo(name = "original_language")
     val originalLanguage: String,
     @ColumnInfo("available_translated_languages")
     val availableTranslatedLanguages: List<String>,

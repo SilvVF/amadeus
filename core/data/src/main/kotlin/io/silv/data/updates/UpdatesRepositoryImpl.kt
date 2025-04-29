@@ -1,8 +1,8 @@
 package io.silv.data.updates
 
 import io.silv.database.dao.UpdatesDao
-import io.silv.domain.update.UpdateWithRelations
-import io.silv.domain.update.UpdatesRepository
+import io.silv.data.update.UpdateWithRelations
+import io.silv.data.update.UpdatesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

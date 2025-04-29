@@ -6,9 +6,9 @@ import androidx.core.net.toUri
 import io.silv.common.model.MangaDexSource
 import io.silv.common.model.Page
 import io.silv.data.download.DownloadManager
-import io.silv.domain.chapter.model.toResource
-import io.silv.domain.manga.model.Manga
-import io.silv.domain.manga.model.toResource
+import io.silv.data.chapter.toResource
+import io.silv.data.manga.model.Manga
+import io.silv.data.manga.model.toResource
 
 internal class DownloadPageLoader(
     private val chapter: ReaderChapter,

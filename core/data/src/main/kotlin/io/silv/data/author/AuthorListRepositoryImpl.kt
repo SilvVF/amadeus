@@ -3,7 +3,7 @@ package io.silv.data.author
 import com.skydoves.sandwich.getOrThrow
 import io.silv.common.AmadeusDispatchers
 import io.silv.common.model.QueryResult
-import io.silv.domain.AuthorListRepository
+import io.silv.data.AuthorListRepository
 import io.silv.model.DomainAuthor
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.AuthorListRequest

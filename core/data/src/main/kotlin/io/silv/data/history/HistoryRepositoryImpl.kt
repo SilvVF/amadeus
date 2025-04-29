@@ -2,10 +2,6 @@ package io.silv.data.history
 
 import io.silv.common.AmadeusDispatchers
 import io.silv.database.dao.HistoryDao
-import io.silv.domain.history.History
-import io.silv.domain.history.HistoryRepository
-import io.silv.domain.history.HistoryUpdate
-import io.silv.domain.history.HistoryWithRelations
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 

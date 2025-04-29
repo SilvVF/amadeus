@@ -21,7 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.silv.common.model.Download
 import io.silv.data.download.QItem
-import io.silv.domain.chapter.model.Chapter
+import io.silv.data.chapter.Chapter
 import io.silv.ui.theme.LocalSpacing
 
 @Composable

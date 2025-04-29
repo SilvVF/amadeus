@@ -9,8 +9,7 @@ import io.silv.common.model.TimePeriod
 import io.silv.common.time.timeStringMinus
 import io.silv.common.time.toMangaDexTimeString
 import io.silv.data.mappers.timeString
-import io.silv.domain.manga.MangaPagingSourceFactory
-import io.silv.domain.manga.repository.MangaRepository
+import io.silv.data.manga.repository.MangaRepository
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
 import kotlin.time.Duration.Companion.days

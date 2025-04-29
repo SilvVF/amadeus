@@ -57,7 +57,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import io.silv.common.model.MangaCover
 import io.silv.common.time.localDateTimeNow
-import io.silv.domain.history.HistoryWithRelations
+import io.silv.data.history.HistoryWithRelations
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.composables.SearchTopAppBar

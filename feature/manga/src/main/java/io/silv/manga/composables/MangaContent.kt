@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -31,7 +30,6 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,7 +53,7 @@ import androidx.compose.ui.util.fastForEach
 import com.halilibo.richtext.markdown.Markdown
 import com.halilibo.richtext.ui.material3.Material3RichText
 import io.silv.common.model.ReadingStatus
-import io.silv.domain.manga.model.Manga
+import io.silv.data.manga.model.Manga
 import io.silv.ui.composables.TranslatedLanguageTags
 import io.silv.ui.noRippleClickable
 import io.silv.ui.theme.LocalSpacing

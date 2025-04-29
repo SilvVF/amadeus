@@ -59,7 +59,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.datastore.ExplorePrefs
 import io.silv.datastore.collectAsState
-import io.silv.domain.manga.model.Manga
+import io.silv.data.manga.model.Manga
 import io.silv.model.DomainSeasonalList
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push

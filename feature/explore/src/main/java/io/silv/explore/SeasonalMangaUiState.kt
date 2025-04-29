@@ -3,7 +3,7 @@ package io.silv.explore
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import io.silv.common.model.Season
-import io.silv.domain.manga.model.Manga
+import io.silv.data.manga.model.Manga
 
 @Stable
 @Immutable

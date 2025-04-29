@@ -1,11 +1,7 @@
 package io.silv.ui.composables
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Indication
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,7 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import io.silv.domain.manga.model.Manga
+import io.silv.data.manga.model.Manga
 import io.silv.ui.Language
 import io.silv.ui.theme.LocalSpacing
 import io.silv.ui.tryApplySharedElementTransition

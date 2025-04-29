@@ -46,11 +46,9 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.DependencyAccessor
-import io.silv.data.download.ChapterCache
 import io.silv.data.util.DiskUtil
 import io.silv.di.dataDeps
 import io.silv.di.downloadDeps
-import io.silv.domain.manga.repository.MangaRepository
 import io.silv.manga.R
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.coroutines.Dispatchers

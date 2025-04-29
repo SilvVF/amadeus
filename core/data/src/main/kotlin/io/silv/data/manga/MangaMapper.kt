@@ -11,9 +11,9 @@ import io.silv.data.mappers.tagToId
 import io.silv.data.mappers.titleEnglish
 import io.silv.database.entity.manga.MangaEntity
 import io.silv.database.entity.manga.MangaEntityWithChapters
-import io.silv.domain.manga.model.Manga
-import io.silv.domain.manga.model.MangaUpdate
-import io.silv.domain.manga.model.MangaWithChapters
+import io.silv.data.manga.model.Manga
+import io.silv.data.manga.model.MangaUpdate
+import io.silv.data.manga.model.MangaWithChapters
 import io.silv.network.model.manga.MangaDto
 
 object MangaMapper {

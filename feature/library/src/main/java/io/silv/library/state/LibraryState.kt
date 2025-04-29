@@ -2,9 +2,9 @@ package io.silv.library.state
 
 import androidx.compose.runtime.Stable
 import io.silv.common.model.Download
-import io.silv.domain.chapter.model.Chapter
-import io.silv.domain.manga.model.Manga
-import io.silv.domain.manga.model.MangaWithChapters
+import io.silv.data.chapter.Chapter
+import io.silv.data.manga.model.Manga
+import io.silv.data.manga.model.MangaWithChapters
 import io.silv.library.UiChapterUpdate
 
 

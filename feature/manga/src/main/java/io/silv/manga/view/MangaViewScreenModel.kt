@@ -1,6 +1,5 @@
 package io.silv.manga.view
 
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -18,12 +17,12 @@ import io.silv.datastore.model.Filters
 import io.silv.di.dataDeps
 import io.silv.di.downloadDeps
 import io.silv.domain.chapter.interactor.ChapterHandler
-import io.silv.domain.chapter.model.Chapter
-import io.silv.domain.chapter.model.toResource
-import io.silv.domain.manga.interactor.GetMangaWithChapters
-import io.silv.domain.manga.interactor.MangaHandler
-import io.silv.domain.manga.model.Manga
-import io.silv.domain.manga.model.toResource
+import io.silv.data.chapter.Chapter
+import io.silv.data.chapter.toResource
+import io.silv.data.manga.interactor.GetMangaWithChapters
+import io.silv.data.manga.interactor.MangaHandler
+import io.silv.data.manga.model.Manga
+import io.silv.data.manga.model.toResource
 import io.silv.model.MangaStats
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ioCoroutineScope

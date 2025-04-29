@@ -1,7 +1,6 @@
 package io.silv.data.download
 
 import android.content.Context
-import android.util.Log
 import io.silv.common.log.logcat
 import io.silv.common.model.ChapterResource
 import io.silv.common.model.Download
@@ -10,9 +9,9 @@ import io.silv.common.model.MangaResource
 import io.silv.common.model.Page
 import io.silv.common.model.Source
 import io.silv.domain.chapter.interactor.GetChapter
-import io.silv.domain.chapter.model.toResource
-import io.silv.domain.manga.interactor.GetManga
-import io.silv.domain.manga.model.toResource
+import io.silv.data.chapter.toResource
+import io.silv.data.manga.interactor.GetManga
+import io.silv.data.manga.model.toResource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -114,7 +113,7 @@ class DownloadManager internal constructor(
         val chapter = getChapter.await(id) ?: return null
         val manga = getManga.await(chapter.mangaId) ?: return null
 
-        return Download(manga.toResource(), chapter.toResource())
+        return Download(manga.toResource(), io.silv.data.chapter.toResource())
     }
 
     fun startDownloadNow(chapterId: String) {

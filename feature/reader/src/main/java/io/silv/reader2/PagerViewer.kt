@@ -1,6 +1,5 @@
 package io.silv.reader2
 
-import android.content.Context
 import androidx.compose.foundation.gestures.stopScroll
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.derivedStateOf
@@ -10,9 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.unit.IntSize
-import io.silv.common.DependencyAccessor
 import io.silv.common.log.logcat
 import io.silv.data.chapter.Chapter
 import io.silv.reader.loader.ChapterTransition
@@ -20,7 +17,10 @@ import io.silv.reader.loader.ReaderChapter
 import io.silv.reader.loader.ReaderPage
 import io.silv.reader.loader.ViewerPage
 import io.silv.reader2.ViewerNavigation.NavigationRegion
+import io.silv.ui.EventScreenModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -42,6 +42,11 @@ class PagerViewer(
     val onAction: (PagerAction) -> Unit
 ) : Viewer {
 
+    sealed interface UiEvent {
+        data class AnimateScrollToPage(val page: Int): UiEvent
+    }
+
+
     val config: PagerConfig = PagerConfig(this, scope)
     private var preprocessed: MutableMap<Int, InsertPage> = mutableMapOf()
 
@@ -58,9 +63,12 @@ class PagerViewer(
 
     val pagerState = PagerState { items.size }
 
+    val uiEvents = Channel<UiEvent>(UNLIMITED)
 
-    fun animateScrollToPage(page: Int) = scope.launch {
-        pagerState.animateScrollToPage(page)
+    private fun animateScrollToPage(page: Int) {
+        uiEvents.trySend(
+            UiEvent.AnimateScrollToPage(page)
+        )
     }
 
     val totalPages by derivedStateOf {
@@ -180,13 +188,13 @@ class PagerViewer(
         }
     }
 
-    fun calculateChapterGap(higherChapter: Chapter?, lowerChapter: Chapter?): Int {
+    private fun calculateChapterGap(higherChapter: Chapter?, lowerChapter: Chapter?): Int {
         if (higherChapter == null || lowerChapter == null) return 0
         if (higherChapter.chapter < 0 || lowerChapter.chapter < 0) return 0
         return calculateChapterGap(higherChapter.chapter, lowerChapter.chapter)
     }
 
-    fun calculateChapterGap(higherChapterNumber: Double, lowerChapterNumber: Double): Int {
+    private fun calculateChapterGap(higherChapterNumber: Double, lowerChapterNumber: Double): Int {
         if (higherChapterNumber < 0.0 || lowerChapterNumber < 0.0) return 0
         return floor(higherChapterNumber).toInt() - floor(lowerChapterNumber).toInt() - 1
     }
@@ -258,22 +266,8 @@ class PagerViewer(
 
         preprocessed = mutableMapOf()
 
-        scope.launch {
-            currentPageMutex.withLock {
-                pagerState.stopScroll()
-
-                val settled = items.getOrNull(pagerState.settledPage)
-
-                items.clear()
-                items.addAll(newItems)
-
-                if (settled != null) {
-                    pagerState.scrollToPage(newItems.indexOf(settled))
-                }
-
-                currentPage = settled
-            }
-        }
+        items.clear()
+        items.addAll(newItems)
 
         // Will skip insert page otherwise
         insertPageLastPage?.let { moveToPage(it) }

@@ -64,7 +64,7 @@ class PagerPageHolder(
         }
     )
 
-    var loadJob: Job? = null
+    private var loadJob: Job? = null
 
     fun load() {
         loadJob?.cancel()
@@ -154,8 +154,7 @@ class PagerPageHolder(
             viewer.l2r && page is InsertPage -> ImageUtil.Side.RIGHT
             !viewer.l2r && page is InsertPage -> ImageUtil.Side.LEFT
             viewer.l2r && page !is InsertPage -> ImageUtil.Side.LEFT
-            !viewer.l2r && page !is InsertPage -> ImageUtil.Side.RIGHT
-            else -> error("We should choose a side!")
+            else -> ImageUtil.Side.RIGHT
         }
 
         if (viewer.config.dualPageInvert) {

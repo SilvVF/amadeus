@@ -125,3 +125,21 @@ fun <EVENT> EventStateScreenModel<EVENT, *>.collectEvents(
         }
     }
 }
+
+@SuppressLint("ComposableNaming")
+@Composable
+fun <EVENT> Channel<EVENT>.collectEvents(
+    lifecycleState: Lifecycle.State = Lifecycle.State.STARTED,
+    event: (suspend (event: EVENT) -> Unit),
+) {
+    val sideEffectFlow = this
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(sideEffectFlow, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(lifecycleState) {
+            withContext(Dispatchers.Main.immediate) {
+                sideEffectFlow.receiveAsFlow().collect { event(it) }
+            }
+        }
+    }
+}

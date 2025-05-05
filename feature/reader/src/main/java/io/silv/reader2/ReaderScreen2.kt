@@ -63,6 +63,7 @@ import io.silv.common.log.logcat
 import io.silv.reader.loader.ChapterTransition
 import io.silv.reader.loader.ReaderPage
 import io.silv.reader.loader.ViewerPage
+import io.silv.reader2.PagerViewer.UiEvent
 import io.silv.ui.LocalAppState
 import io.silv.ui.ScreenStateHandle
 import io.silv.ui.collectEvents
@@ -74,6 +75,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.io.Serializable
+import java.util.UUID
 
 private fun requireActivity(context: Context): ComponentActivity {
     return when (context) {
@@ -154,6 +156,14 @@ data class ReaderScreen2(
         }
 
 
+        screenModel.viewer.uiEvents.collectEvents { event ->
+            when (event) {
+                is UiEvent.AnimateScrollToPage -> {
+                    screenModel.viewer.pagerState.animateScrollToPage(event.page)
+                }
+            }
+        }
+
         ReaderScreenContent(
             state,
             screenModel.viewer
@@ -176,8 +186,6 @@ private fun ReaderScreenContent(
     }
 }
 
-
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ComposeViewPager(
     pagerViewer: PagerViewer,
@@ -187,49 +195,32 @@ fun ComposeViewPager(
     val context = LocalContext.current
 
     @Composable
-    fun BoxScope.renderPage(page: Int) {
-        val page = pagerViewer.items.getOrNull(page) ?: return
-        key(page) {
-            when (page) {
-                is ReaderPage -> {
-                    val holder = rememberSaveable(
-                        saver = Saver(
-                            save = {
-                                Bundle().apply {
-                                    it.image?.data?.let {
-                                        (it as? ByteArray)?.let {
-                                            putByteArray("data", it)
-                                        }
-                                    }
-                                }
-                            },
-                            restore = {
-                                val data = it.getByteArray("data")
-                                PagerPageHolder(pagerViewer, context, page, scope, data)
-                            }
-                        )
-                    ) {
-                        PagerPageHolder(pagerViewer, context, page, scope)
-                    }
-                    PagerPage(holder)
-                }
+    fun renderPage(pageNum: Int) {
+        val page = pagerViewer.items.getOrNull(pageNum) ?: return
 
-                is ChapterTransition -> {
-                    var size by remember { mutableStateOf(IntSize.Zero) }
-                    Box(
-                        Modifier.fillMaxSize()
-                            .onSizeChanged { size = it }
-                            .pointerInput(Unit) {
-                                detectTapGestures(onTap = {
-                                    pagerViewer.handleClickEvent(it, size)
-                                })
-                            }
-                    ) {
-                        Text(
-                            "to: ${page.to?.chapter?.title} from: ${page.from.chapter.title}",
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
+        when (page) {
+            is ReaderPage -> {
+                val holder = remember {
+                    PagerPageHolder(pagerViewer, context, page, scope)
+                }
+                PagerPage(holder)
+            }
+
+            is ChapterTransition -> {
+                var size by remember { mutableStateOf(IntSize.Zero) }
+                Box(
+                    Modifier.fillMaxSize()
+                        .onSizeChanged { size = it }
+                        .pointerInput(Unit) {
+                            detectTapGestures(onTap = {
+                                pagerViewer.handleClickEvent(it, size)
+                            })
+                        }
+                ) {
+                    Text(
+                        "to: ${page.to?.chapter?.title} from: ${page.from.chapter.title}",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
             }
         }
@@ -241,7 +232,11 @@ fun ComposeViewPager(
                 pagerViewer.pagerState,
                 beyondViewportPageCount = 1,
                 reverseLayout = !pagerViewer.l2r,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                key = {
+                    pagerViewer.items.getOrNull(it)?.hashCode()
+                        ?: UUID.randomUUID().toString()
+                }
             ) {
                 renderPage(it)
             }
@@ -249,7 +244,11 @@ fun ComposeViewPager(
             VerticalPager(
                 pagerViewer.pagerState,
                 beyondViewportPageCount = 1,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                key = {
+                    pagerViewer.items.getOrNull(it)?.hashCode()
+                        ?: UUID.randomUUID().toString()
+                }
             ) {
                 renderPage(it)
             }

@@ -175,9 +175,9 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
                 if (manga != null) {
                     mutableState.update { it.copy(manga = manga) }
                     logcat { "chapterid $savedChapter initial $chapterId" }
-                    if (!savedChapter.isEmpty()) chapterId = savedChapter
+                    if (savedChapter.isNotEmpty()) chapterId = savedChapter
 
-                    loadChapter(loader!!, chapterList.first { chapterId == it.chapter.id })
+                    loadChapter(loader, chapterList.first { chapterId == it.chapter.id })
                     true
                 } else {
                     // Unlikely but okay
@@ -307,7 +307,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * read, update tracking services, enqueue downloaded chapter deletion, and updating the active chapter if this
      * [page]'s chapter is different from the currently active.
      */
-    fun onPageSelected(page: ReaderPage) {
+    private fun onPageSelected(page: ReaderPage) {
         // InsertPage doesn't change page progress
         if (page is InsertPage) {
             return

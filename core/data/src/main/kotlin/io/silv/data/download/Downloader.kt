@@ -24,7 +24,7 @@ import io.silv.common.model.Page
 import io.silv.data.util.DiskUtil
 import io.silv.data.util.ImageUtil
 import io.silv.datastore.DownloadStore
-import io.silv.domain.chapter.interactor.GetChapter
+import io.silv.data.chapter.interactor.GetChapter
 import io.silv.data.chapter.toResource
 import io.silv.data.manga.interactor.GetManga
 import io.silv.data.manga.model.toResource

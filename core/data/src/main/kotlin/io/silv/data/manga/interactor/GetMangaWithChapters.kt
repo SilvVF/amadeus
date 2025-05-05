@@ -4,6 +4,7 @@ import io.silv.data.chapter.Chapter
 
 import io.silv.data.manga.model.MangaWithChapters
 import io.silv.data.manga.repository.MangaRepository
+import io.silv.domain.chapter.repository.ChapterRepository
 import kotlinx.coroutines.flow.Flow
 
 /**

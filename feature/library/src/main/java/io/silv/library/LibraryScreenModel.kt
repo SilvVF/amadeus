@@ -14,9 +14,9 @@ import io.silv.data.download.DownloadManager
 import io.silv.data.download.QItem
 import io.silv.di.dataDeps
 import io.silv.di.downloadDeps
-import io.silv.domain.chapter.interactor.ChapterHandler
-import io.silv.domain.chapter.interactor.GetBookmarkedChapters
-import io.silv.domain.chapter.interactor.GetChapter
+import io.silv.data.chapter.interactor.ChapterHandler
+import io.silv.data.chapter.interactor.GetBookmarkedChapters
+import io.silv.data.chapter.interactor.GetChapter
 import io.silv.data.chapter.toResource
 import io.silv.data.history.GetLibraryLastUpdated
 import io.silv.data.manga.interactor.GetLibraryMangaWithChapters
@@ -209,7 +209,7 @@ class LibraryScreenModel @OptIn(DependencyAccessor::class) constructor(
             val manga = getManga.await(mangaId) ?: return@launch
             val chapter = getChapter.await(chapterId) ?: return@launch
 
-            downloadManager.downloadChapters(manga.toResource(), listOf(io.silv.data.chapter.toResource()))
+            downloadManager.downloadChapters(manga.toResource(), listOf(chapter.toResource()))
         }
     }
 
@@ -233,7 +233,7 @@ class LibraryScreenModel @OptIn(DependencyAccessor::class) constructor(
 
             downloadManager.deleteChapters(
                 manga = manga.toResource(),
-                chapters = listOf(io.silv.data.chapter.toResource())
+                chapters = listOf(chapter.toResource())
             )
         }
     }

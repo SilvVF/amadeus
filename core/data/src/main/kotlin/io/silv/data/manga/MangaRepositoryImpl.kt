@@ -67,11 +67,31 @@ internal class MangaRepositoryImpl internal constructor(
 
     override suspend fun insertManga(manga: Manga) =
         withContext(dispatchers.io) {
-            mangaDao.upsert(
-                MangaMapper.toEntity(manga)
-            ) { existing ->
-                val deleted = existing.deleteOldCoverFromCache(coverCache, manga.toUpdate())
-                if (deleted) epochSeconds() else null
+            database.withTransaction {
+                val entity = MangaMapper.toEntity(manga)
+                if (mangaDao.insert(entity) == -1L) {
+                    val prev = mangaDao.getById(entity.id)!!
+                    val updatedCover = prev.deleteOldCoverFromCache(coverCache, manga.toUpdate())
+                    mangaDao.update(
+                        prev.copy(
+                            coverLastModified = if (updatedCover) {
+                                epochSeconds()
+                            } else {
+                                prev.coverLastModified
+                            },
+                            coverArt = entity.coverArt,
+                            title = entity.title,
+                            alternateTitles = entity.alternateTitles,
+                            status = entity.status,
+                            availableTranslatedLanguages = entity.availableTranslatedLanguages,
+                            originalLanguage = entity.originalLanguage,
+                            publicationDemographic = entity.publicationDemographic,
+                            description = entity.description,
+                            tagToId = entity.tagToId,
+                            contentRating = entity.contentRating,
+                        )
+                    )
+                }
             }
         }
 

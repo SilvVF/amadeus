@@ -16,8 +16,8 @@ import kotlin.time.Duration.Companion.days
 
 
 internal class MangaPagingSourceFactoryImpl(
-    private val mangaRepository: MangaRepository,
     private val mangaDexApi: MangaDexApi,
+    private val mangaRepository: MangaRepository,
 ): MangaPagingSourceFactory {
 
     private val latestMangaRequest =  MangaRequest(
@@ -81,7 +81,7 @@ internal class MangaPagingSourceFactoryImpl(
                    is PagedType.Query -> queryMangaRequest(type.filters)
                    is PagedType.TimePeriod -> timePeriodsMangaRequest(type.tagId, type.timePeriod)
                },
-               mangaRepository = mangaRepository
+               mangaRepository,
            )
         },
     )

@@ -1,8 +1,9 @@
-package io.silv.domain.chapter.interactor
+package io.silv.data.chapter.interactor
 
 import io.silv.common.log.asLog
 import io.silv.common.log.logcat
 import io.silv.common.model.ProgressState
+import io.silv.domain.chapter.repository.ChapterRepository
 
 
 class ChapterHandler(

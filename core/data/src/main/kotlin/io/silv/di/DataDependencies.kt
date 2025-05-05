@@ -26,10 +26,10 @@ import io.silv.database.DatabaseModule
 import io.silv.datastore.SettingsStore
 import io.silv.data.AuthorListRepository
 import io.silv.data.TagRepository
-import io.silv.domain.chapter.interactor.ChapterHandler
-import io.silv.domain.chapter.interactor.GetBookmarkedChapters
-import io.silv.domain.chapter.interactor.GetChapter
-import io.silv.domain.chapter.interactor.GetNextChapters
+import io.silv.data.chapter.interactor.ChapterHandler
+import io.silv.data.chapter.interactor.GetBookmarkedChapters
+import io.silv.data.chapter.interactor.GetChapter
+import io.silv.data.chapter.interactor.GetNextChapters
 
 import io.silv.data.history.GetLibraryLastUpdated
 import io.silv.data.history.HistoryRepository
@@ -163,6 +163,6 @@ abstract class DataDependencies {
     }
 
     val mangaPagingSourceFactory: MangaPagingSourceFactory by lazy {
-        MangaPagingSourceFactoryImpl(mangaRepository, networkDeps.mangaDexApi)
+        MangaPagingSourceFactoryImpl(networkDeps.mangaDexApi, mangaRepository)
     }
 }

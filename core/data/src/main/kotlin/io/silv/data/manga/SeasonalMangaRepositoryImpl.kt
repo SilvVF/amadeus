@@ -86,8 +86,8 @@ internal class SeasonalMangaRepositoryImpl(
 
 
 
-                mangaRepository.upsertManga(
-                    response.map(MangaMapper::dtoToUpdate),
+                mangaRepository.insertManga(
+                    response.map(MangaMapper::dtoToManga),
                     withTransaction = false
                 )
 

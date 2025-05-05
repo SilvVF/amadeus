@@ -77,32 +77,6 @@ abstract class MangaDao {
     @Query("SELECT MAX(last_synced_for_updates) FROM manga WHERE favorite")
     abstract fun observeLastSyncedTime(): Flow<LocalDateTime?>
 
-    @Transaction
-    suspend fun upsert(
-        entity: MangaEntity,
-        checkIfCoverNeedsUpdate: (MangaEntity) -> Long?
-    ) {
-        if (insert(entity) == -1L) {
-            val prev = getById(entity.id) ?: return
-            val coverLastModified = checkIfCoverNeedsUpdate(prev)
-            update(
-                prev.copy(
-                    coverLastModified = coverLastModified ?: prev.coverLastModified,
-                    coverArt = entity.coverArt,
-                    title = entity.title,
-                    alternateTitles = entity.alternateTitles,
-                    status = entity.status,
-                    availableTranslatedLanguages = entity.availableTranslatedLanguages,
-                    originalLanguage = entity.originalLanguage,
-                    publicationDemographic = entity.publicationDemographic,
-                    description = entity.description,
-                    tagToId = entity.tagToId,
-                    contentRating = entity.contentRating,
-                )
-            )
-        }
-    }
-
     @Delete
     abstract suspend fun delete(manga: MangaEntity)
 

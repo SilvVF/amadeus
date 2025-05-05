@@ -1,6 +1,6 @@
-package io.silv.domain.chapter.interactor
+package io.silv.data.chapter.interactor
 
-import io.silv.domain.chapter.model.Chapter
+import io.silv.data.chapter.Chapter
 import io.silv.data.manga.interactor.GetChaptersByMangaId
 import io.silv.data.manga.interactor.GetManga
 import kotlin.math.max

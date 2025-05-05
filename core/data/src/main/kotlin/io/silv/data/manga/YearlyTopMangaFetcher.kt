@@ -53,8 +53,8 @@ internal class YearlyTopMangaFetcher(
                     ?.data
                     ?: emptyList()
         ).also { list ->
-              mangaRepository.upsertManga(
-                  list.map(MangaMapper::dtoToUpdate)
+              mangaRepository.insertManga(
+                  list.map(MangaMapper::dtoToManga)
               )
         }
             .mapNotNull {

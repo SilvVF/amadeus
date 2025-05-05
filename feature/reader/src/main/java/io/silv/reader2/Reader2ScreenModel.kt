@@ -24,8 +24,8 @@ import io.silv.datastore.dataStoreDeps
 import io.silv.datastore.get
 import io.silv.di.dataDeps
 import io.silv.di.downloadDeps
-import io.silv.domain.chapter.interactor.ChapterHandler
-import io.silv.domain.chapter.interactor.GetNextChapters
+import io.silv.data.chapter.interactor.ChapterHandler
+import io.silv.data.chapter.interactor.GetNextChapters
 import io.silv.data.chapter.Chapter
 import io.silv.data.chapter.toResource
 import io.silv.data.history.HistoryRepository

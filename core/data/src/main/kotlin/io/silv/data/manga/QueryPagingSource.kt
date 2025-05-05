@@ -4,7 +4,9 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.skydoves.sandwich.getOrThrow
 import io.silv.common.model.MangaResource
+import io.silv.data.manga.model.Manga
 import io.silv.data.manga.model.MangaUpdate
+import io.silv.data.manga.model.toResource
 import io.silv.data.manga.repository.MangaRepository
 import io.silv.network.MangaDexApi
 import io.silv.network.requests.MangaRequest
@@ -16,16 +18,16 @@ class QueryPagingSource(
     private val mangaDexApi: MangaDexApi,
     private val query: MangaRequest,
     private val mangaRepository: MangaRepository,
-): PagingSource<Int, MangaResource>() {
+): PagingSource<Int, Manga>() {
 
-    override fun getRefreshKey(state: PagingState<Int, MangaResource>): Int? {
+    override fun getRefreshKey(state: PagingState<Int, Manga>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
             val anchorPage = state.closestPageToPosition(anchorPosition)
             anchorPage?.prevKey ?: anchorPage?.nextKey
         }
     }
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, MangaResource> {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Manga> {
 
         return try {
 
@@ -42,11 +44,11 @@ class QueryPagingSource(
                 )
                     .getOrThrow()
 
-                val updates = result.data.map(MangaMapper::dtoToUpdate)
-
-                mangaRepository.upsertManga(updates)
-
-                updates.map { it.toResource() } to result.limit
+                result.data.map { mangaDto ->
+                    MangaMapper.dtoToManga(mangaDto).also {
+                        mangaRepository.insertManga(it)
+                    }
+                } to result.limit
             }
 
 
@@ -63,18 +65,6 @@ class QueryPagingSource(
             )
         } catch (e: Exception) {
             LoadResult.Error(e)
-        }
-    }
-
-    private fun MangaUpdate.toResource(): MangaResource {
-        val update = this
-        return object : MangaResource {
-            override val id: String = update.id
-            override val coverArt: String = update.coverArt
-            override val title: String = update.title
-            override val version: Int = update.version
-            override val createdAt: LocalDateTime = update.createdAt
-            override val updatedAt: LocalDateTime = update.updatedAt
         }
     }
 }

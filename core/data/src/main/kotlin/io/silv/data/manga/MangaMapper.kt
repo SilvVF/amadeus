@@ -1,5 +1,8 @@
 package io.silv.data.manga
 
+import io.silv.common.model.ProgressState
+import io.silv.common.model.ReadingStatus
+import io.silv.common.time.localDateTimeNow
 import io.silv.common.time.parseMangaDexTimeToDateTime
 import io.silv.data.chapter.ChapterMapper
 import io.silv.data.mappers.alternateTitles
@@ -18,15 +21,15 @@ import io.silv.network.model.manga.MangaDto
 
 object MangaMapper {
 
-    fun dtoToUpdate(
+    fun dtoToManga(
         mangaDto: MangaDto
-    ): MangaUpdate = with(mangaDto) {
-        MangaUpdate(
+    ): Manga = with(mangaDto) {
+        Manga(
             id = id,
-            favorite = null,
+            inLibrary = false,
             coverArt = coverArtUrl(this),
             description = descriptionEnglish,
-            title = titleEnglish,
+            titleEnglish = titleEnglish,
             alternateTitles = alternateTitles,
             originalLanguage = attributes.originalLanguage,
             availableTranslatedLanguages = attributes.availableTranslatedLanguages.filterNotNull(),
@@ -43,9 +46,11 @@ object MangaMapper {
             latestUploadedChapter = attributes.latestUploadedChapter,
             authors = authors,
             artists = artists,
-            progressState = null,
-            readingStatus = null,
-            coverLastModified = null
+            progressState = ProgressState.NotStarted,
+            readingStatus = ReadingStatus.None,
+            coverLastModified = -1L,
+            savedAtLocal = localDateTimeNow(),
+            lastSyncedForUpdates = null
         )
     }
 

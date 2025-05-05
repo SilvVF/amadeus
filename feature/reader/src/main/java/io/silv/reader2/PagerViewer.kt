@@ -14,8 +14,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.unit.IntSize
 import io.silv.common.DependencyAccessor
 import io.silv.common.log.logcat
-import io.silv.di.downloadDeps
-import io.silv.domain.chapter.model.Chapter
+import io.silv.data.chapter.Chapter
 import io.silv.reader.loader.ChapterTransition
 import io.silv.reader.loader.ReaderChapter
 import io.silv.reader.loader.ReaderPage
@@ -277,9 +276,7 @@ class PagerViewer(
         }
 
         // Will skip insert page otherwise
-        if (insertPageLastPage != null) {
-            moveToPage(insertPageLastPage)
-        }
+        insertPageLastPage?.let { moveToPage(it) }
     }
 
     override fun moveToPage(page: ReaderPage) {

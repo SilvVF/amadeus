@@ -16,7 +16,7 @@ import io.silv.data.manga.GetMangaStatisticsById
 import io.silv.datastore.model.Filters
 import io.silv.di.dataDeps
 import io.silv.di.downloadDeps
-import io.silv.domain.chapter.interactor.ChapterHandler
+import io.silv.data.chapter.interactor.ChapterHandler
 import io.silv.data.chapter.Chapter
 import io.silv.data.chapter.toResource
 import io.silv.data.manga.interactor.GetMangaWithChapters

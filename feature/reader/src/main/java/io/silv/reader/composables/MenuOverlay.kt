@@ -110,6 +110,7 @@ fun ReaderMenuOverlay(
     chapters: () -> List<Chapter>?,
     menuVisible: () -> Boolean,
     currentPage: () -> Int,
+    pageCount: () -> Int,
     layoutDirection: LayoutDirection,
     onDismissRequested: () -> Unit,
     loadPrevChapter: () -> Unit,
@@ -212,8 +213,8 @@ fun ReaderMenuOverlay(
                             .align(Alignment.Center)
                             .consumeWindowInsets(WindowInsets.systemBars),
                         fractionProvider = { expandableState.fraction.value },
-                        pageIdxProvider =  currentPage,
-                        pageCountProvider = { readerChapter()?.pages?.size ?: 0 },
+                        currentPageProvider =  currentPage,
+                        pageCountProvider = pageCount,
                         layoutDirectionProvider = { layoutDirection },
                         onPrevClick = loadPrevChapter,
                         onNextClick = loadNextChapter,

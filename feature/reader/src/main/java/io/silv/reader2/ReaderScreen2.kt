@@ -52,7 +52,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
@@ -93,8 +95,9 @@ data class ReaderScreen2(
     val chapterId: String,
 ) : Screen {
 
-    var savedChapter: String = ""
-    var page: Int = -1
+    private var savedChapter: String = chapterId
+    private var page: Int = -1
+
     override val key: ScreenKey = "${mangaId}_$chapterId"
 
     @Composable
@@ -103,6 +106,7 @@ data class ReaderScreen2(
         val appState = LocalAppState.current
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
+        val lifecycleOwner = LocalLifecycleOwner.current
 
         val screenModel = rememberScreenModel {
             Reader2ScreenModel(
@@ -110,7 +114,7 @@ data class ReaderScreen2(
                     savedChapter = cid
                     page = p
                 },
-                chapterId = chapterId,
+                chapterId = savedChapter,
                 chapterPageIndex = page,
                 mangaId = mangaId,
                 appState = appState
@@ -169,7 +173,23 @@ data class ReaderScreen2(
 
         ReaderScreenContent(
             state,
-            screenModel.viewer
+            screenModel.viewer,
+            loadPrevChapter = {
+                lifecycleOwner.lifecycleScope.launch {
+                    screenModel.loadPreviousChapter()
+                }
+            },
+            loadNextChapter = {
+                lifecycleOwner.lifecycleScope.launch {
+                    screenModel.loadNextChapter()
+                }
+            },
+            onBack = {
+                navigator.pop()
+            },
+            onDismiss = {
+                screenModel.showMenus(false)
+            }
         )
     }
 }
@@ -177,12 +197,20 @@ data class ReaderScreen2(
 @Composable
 private fun ReaderScreenContent(
     state: Reader2ScreenModel.State,
-    viewer: PagerViewer
+    viewer: PagerViewer,
+    onBack: () -> Unit,
+    onDismiss: () -> Unit,
+    loadNextChapter: () -> Unit,
+    loadPrevChapter: () -> Unit
 ) {
     ReaderDialogHost(
         Modifier.fillMaxSize(),
         state,
-        viewer
+        viewer,
+        onDismiss = onDismiss,
+        onBack = onBack,
+        loadNextChapter = loadNextChapter,
+        loadPrevChapter = loadPrevChapter,
     ) {
         ReaderNavigationOverlay(
             overlayState = rememberReaderOverlayState(viewer.config.navigator),
@@ -322,22 +350,32 @@ fun ReaderDialogHost(
     modifier: Modifier = Modifier,
     state: Reader2ScreenModel.State,
     viewer: PagerViewer,
+    loadPrevChapter: () -> Unit,
+    loadNextChapter: () -> Unit,
+    onDismiss: () -> Unit,
+    onBack: () -> Unit,
     content: @Composable () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     ReaderMenuOverlay(
-        onDismissRequested = {},
+        onDismissRequested = onDismiss,
         onViewOnWebClick = {},
-        onBackArrowClick = {},
-        readerChapter = { state.currentChapter },
+        onBackArrowClick = onBack,
+        readerChapter = { viewer.currentChapter },
         manga = { state.manga },
         menuVisible = { state.menuVisible },
         layoutDirection = if (viewer.l2r) LayoutDirection.Ltr else LayoutDirection.Rtl,
         chapterActions = ChapterActions(),
         chapters = { emptyList() },
         currentPage = { viewer.currentPageNumber },
-        loadNextChapter = { },
-        loadPrevChapter = {},
-        changePage = { _ -> }
+        pageCount = { viewer.totalPages },
+        loadNextChapter = loadNextChapter,
+        loadPrevChapter = loadPrevChapter,
+        changePage = { page ->
+            scope.launch {
+                viewer.pagerState.animateScrollToPage(page)
+            }
+        }
     ) {
         content()
     }

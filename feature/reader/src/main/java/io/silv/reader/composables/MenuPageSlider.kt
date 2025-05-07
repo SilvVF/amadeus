@@ -14,16 +14,21 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,14 +51,32 @@ fun MenuPageSlider(
     modifier: Modifier = Modifier,
     fractionProvider:() -> Float,
     layoutDirectionProvider: () -> LayoutDirection,
-    pageIdxProvider: () -> Int,
+    currentPageProvider: () -> Int,
     pageCountProvider: () -> Int,
     onPrevClick: () -> Unit,
     onNextClick: () -> Unit,
     onPageChange: (page: Int) -> Unit,
 ) {
-    val space = LocalSpacing.current
+    val pageCount = pageCountProvider()
+    val currentPage = currentPageProvider()
 
+    val valid = !(currentPage <= 0 || pageCount <= 0)
+
+    val sliderState = remember(currentPage) {
+        SliderState(
+            value = currentPage.toFloat().coerceAtLeast(1f),
+            steps = pageCount.coerceAtLeast(1),
+            valueRange = 1f..pageCount.toFloat()
+        )
+    }
+
+    SideEffect {
+        sliderState.onValueChangeFinished = {
+            onPageChange(sliderState.value.roundToInt())
+        }
+    }
+
+    val space = LocalSpacing.current
     val layoutDirection = layoutDirectionProvider()
 
     fun leftButtonClick() {
@@ -88,9 +111,6 @@ fun MenuPageSlider(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        val pageCount = pageCountProvider()
-        val pageIdx = pageIdxProvider()
-
         IconButton(
             onClick = ::leftButtonClick,
             modifier = Modifier.padding(space.small),
@@ -104,48 +124,28 @@ fun MenuPageSlider(
             )
         }
         Text(
-            text = when (layoutDirection) {
-                Ltr -> "${pageIdx + 1}"
-                Rtl -> pageCount.toString()
-            },
+            text = if (valid) "${sliderState.value.toInt()}" else "",
             color = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
             modifier = Modifier.padding(space.small)
         )
-        if (fraction > 0f) {
+        if (fraction > 0f && valid) {
             CompositionLocalProvider(
                 LocalLayoutDirection provides layoutDirection
             ) {
-                val hapticFeedback = LocalHapticFeedback.current
 
-                var sliderValue by rememberSaveable(pageIdx) { mutableFloatStateOf(pageIdx + 1f) }
 
                 Slider(
-                    valueRange = 1f..pageCount.toFloat().coerceAtLeast(1f),
-                    value = sliderValue,
-                    onValueChange = {
-                       sliderValue = it
-                       if (it.roundToInt().toFloat() == it)  {
-                           onPageChange((sliderValue.roundToInt() - 1).coerceAtLeast(0))
-                           hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                       }
-                    },
-                    onValueChangeFinished = {
-                        onPageChange((sliderValue.roundToInt() - 1).coerceAtLeast(0))
-                        sliderValue = sliderValue.roundToInt().toFloat()
-                    },
+                    state = sliderState,
                     modifier = Modifier
                         .weight(1f)
                         .padding(space.small),
-                    steps = (pageCount - 2).coerceAtLeast(0),
-                    colors = sliderColors(fraction = fraction)
+                    colors = sliderColors(fraction = fraction),
+
                 )
             }
         }
         Text(
-            text = when (layoutDirection) {
-                Rtl -> "${pageIdx + 1}"
-                Ltr -> pageCount.toString()
-            },
+            text = if (valid) "$pageCount" else "",
             modifier = Modifier.padding(space.small),
             color = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
         )

@@ -28,7 +28,6 @@ import io.silv.ui.EventStateScreenModel
 import io.silv.ui.ioCoroutineScope
 
 
-
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -61,17 +60,26 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
 
     init {
         combine(
-            getMangaWithChapters.subscribe(mangaId).onStart {
-                val first = getMangaWithChapters.await(mangaId)
-                if (first == null) {
-                    mutableState.update { MangaViewState.Error("failed to get manga") }
-                } else {
-                    if (first.chapters.isEmpty()) {
-                        mutableState.update { MangaViewState.Success(first.manga) }
-                        refreshChapterList()
+            getMangaWithChapters.subscribe(mangaId)
+                .onEach { logcat { "MangaWithChapters ${it.manga.inLibrary} ${it.chapters.size}" } }
+                .onStart {
+                    val first = getMangaWithChapters.await(mangaId)
+                    if (first == null) {
+                        mutableState.update {
+                            MangaViewState.Error("failed to get manga")
+                        }
+                    } else {
+                        if (first.chapters.isEmpty()) {
+                            mutableState.update {
+                                MangaViewState.Success(
+                                    first.manga,
+                                    refreshingChapters = true
+                                )
+                            }
+                            refreshChapterList()
+                        }
                     }
-                }
-            },
+                },
             downloadManager.cacheChanges,
             downloadManager.queueState
         ) { (manga, chapters), _, _ ->
@@ -81,7 +89,11 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
                     chapters = chapters.map { chapter ->
                         chapter.copy(
                             downloaded = downloadManager
-                                .isChapterDownloaded(chapter.title, chapter.scanlator, manga.titleEnglish)
+                                .isChapterDownloaded(
+                                    chapter.title,
+                                    chapter.scanlator,
+                                    manga.titleEnglish
+                                )
                         )
                     }
                         .toList(),
@@ -129,10 +141,10 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
                 updateSuccess { state ->
                     state.copy(
                         statsUiState =
-                        when (response) {
-                            is ApiResponse.Success -> StatsUiState.Success(response.data)
-                            is ApiResponse.Failure -> StatsUiState.Error(response.message())
-                        },
+                            when (response) {
+                                is ApiResponse.Success -> StatsUiState.Success(response.data)
+                                is ApiResponse.Failure -> StatsUiState.Error(response.message())
+                            },
                     )
                 }
             }
@@ -161,15 +173,6 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     fun toggleLibraryManga(id: String) {
         screenModelScope.launch {
             mangaHandler.addOrRemoveFromLibrary(id)
-                .onSuccess {
-
-                    if (!it.inLibrary) {
-
-                        ioCoroutineScope.launch {
-                            coverCache.deleteFromCache(it.toResource(), true)
-                        }
-                    }
-                }
         }
     }
 
@@ -276,7 +279,8 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
             screenModelScope.launch {
                 downloadManager.deleteChapters(
                     listOf(
-                        it.chapters.firstOrNull { it.id == chapterId }?.toResource() ?: return@launch
+                        it.chapters.firstOrNull { it.id == chapterId }?.toResource()
+                            ?: return@launch
                     ),
                     it.manga.toResource(),
                 )
@@ -326,9 +330,11 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
                 filters.bySourceAsc == true ->
                     groupBy { it.scanlationGroupToId }
                         .mapValues { (_, value) -> value.sortedBy { it.chapter } }.values.flatten()
+
                 filters.bySourceAsc == false ->
                     groupBy { it.scanlationGroupToId }
                         .mapValues { (_, value) -> value.sortedByDescending { it.chapter } }.values.flatten()
+
                 filters.byUploadDateAsc == true -> sortedBy { it.createdAt }
                 filters.byUploadDateAsc == false -> sortedByDescending { it.createdAt }
                 else -> this

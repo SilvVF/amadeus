@@ -1,22 +1,13 @@
 package io.silv.reader2
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.Color
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import io.silv.common.DependencyAccessor
 import io.silv.datastore.dataStoreDeps
-import io.silv.datastore.get
-import kotlinx.coroutines.delay
 
 @Stable
 class DisplayRefreshHost {

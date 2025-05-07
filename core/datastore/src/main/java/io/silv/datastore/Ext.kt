@@ -1,14 +1,18 @@
 package io.silv.datastore
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlin.jvm.Throws
 
+@Throws(IOException::class, Exception::class)
 suspend fun <T> DataStore<Preferences>.set(key: Preferences.Key<T>, value: T) {
-    edit { prefs ->
-        prefs[key] = value
+    updateData { prefs ->
+        val mutPrefs =  prefs.toMutablePreferences()
+        mutPrefs[key] = value
+        mutPrefs
     }
 }
 

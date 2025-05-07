@@ -37,7 +37,6 @@ class ExploreScreenModel @OptIn(DependencyAccessor::class) constructor(
     subscribeToPagingData: SubscribeToPagingData = dataDeps.subscribeToPagingData,
     seasonalManga: SeasonalMangaRepository = dataDeps.seasonalMangaRepository,
     private val mangaHandler: MangaHandler = dataDeps.mangaHandler,
-    private val coverCache: CoverCache = dataDeps.coverCache,
     private val recentSearchHandler: RecentSearchHandler = dataDeps.recentSearchHandler,
     private val seasonalMangaSyncManager: SyncManager = syncDependencies.seasonalMangaSyncManager
 ) : EventStateScreenModel<ExploreEvent, ExploreState>(ExploreState(pagedType = savedStatePagedType ?: UiPagedType.Popular)) {
@@ -131,13 +130,6 @@ class ExploreScreenModel @OptIn(DependencyAccessor::class) constructor(
     fun bookmarkManga(mangaId: String) {
         screenModelScope.launch {
             mangaHandler.addOrRemoveFromLibrary(mangaId)
-                .onSuccess {
-                    if (!it.inLibrary) {
-                        ioCoroutineScope.launch {
-                            coverCache.deleteFromCache(it.toResource(), true)
-                        }
-                    }
-                }
         }
     }
 

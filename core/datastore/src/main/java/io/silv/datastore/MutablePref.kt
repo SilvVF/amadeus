@@ -5,20 +5,14 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import io.silv.common.DependencyAccessor
 import io.silv.common.PrefsConverter
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 class PreferenceMutableState<T>(
     defaultValue: T,
@@ -44,9 +38,7 @@ class PreferenceMutableState<T>(
         get() = state.value
         set(value) {
             scope.launch {
-                dataStore.edit {
-                    it[key] = value
-                }
+                dataStore.set(key, value)
             }
         }
 
@@ -80,9 +72,7 @@ class PreferenceMutableStateWithConversion<T, V>(
         get() = state.value
         set(value) {
             scope.launch {
-                dataStore.edit {
-                    it[key] = converter.convertTo(value)
-                }
+                dataStore.set(key, converter.convertTo(value))
             }
         }
 

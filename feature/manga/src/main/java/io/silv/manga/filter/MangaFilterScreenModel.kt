@@ -21,7 +21,6 @@ import kotlinx.coroutines.launch
 class MangaFilterScreenModel @OptIn(DependencyAccessor::class) constructor(
     private val mangaHandler: MangaHandler = dataDeps.mangaHandler,
     subscribeToPagingData: SubscribeToPagingData = dataDeps.subscribeToPagingData,
-    private val coverCache: CoverCache = dataDeps.coverCache,
     tagId: String,
 ) : EventStateScreenModel<MangaFilterEvent, YearlyFilteredUiState>(YearlyFilteredUiState()) {
 
@@ -43,13 +42,6 @@ class MangaFilterScreenModel @OptIn(DependencyAccessor::class) constructor(
     fun toggleFavorite(id: String) {
         screenModelScope.launch {
             mangaHandler.addOrRemoveFromLibrary(id)
-                .onSuccess {
-                    if (!it.inLibrary) {
-                        ioCoroutineScope.launch {
-                            coverCache.deleteFromCache(it.toResource(), true)
-                        }
-                    }
-                }
         }
     }
 }

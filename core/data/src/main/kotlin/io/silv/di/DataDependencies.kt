@@ -73,7 +73,7 @@ abstract class DataDependencies {
     val getMangaWithChapters: GetMangaWithChapters get() = GetMangaWithChapters(mangaRepository)
     val getChapter: GetChapter get() = GetChapter(chapterRepository)
     val subscribeToPagingData get() = SubscribeToPagingData(mangaPagingSourceFactory, getManga)
-    val mangaHandler get() = MangaHandler(mangaRepository)
+    val mangaHandler get() = MangaHandler(mangaRepository, coverCache)
     val chapterHandler get() = ChapterHandler(chapterRepository)
     val recentSearchHandler get() = RecentSearchHandler(commonDeps.dispatchers, recentSearchRepository)
     val getLibraryLastUpdated get() = GetLibraryLastUpdated(mangaRepository)

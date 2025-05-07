@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -60,6 +61,8 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.log.LogPriority
 import io.silv.common.log.asLog
 import io.silv.common.log.logcat
+import io.silv.reader.composables.ChapterActions
+import io.silv.reader.composables.ReaderMenuOverlay
 import io.silv.reader.loader.ChapterTransition
 import io.silv.reader.loader.ReaderPage
 import io.silv.reader.loader.ViewerPage
@@ -176,7 +179,11 @@ private fun ReaderScreenContent(
     state: Reader2ScreenModel.State,
     viewer: PagerViewer
 ) {
-    ReaderDialogHost(Modifier.fillMaxSize()) {
+    ReaderDialogHost(
+        Modifier.fillMaxSize(),
+        state,
+        viewer
+    ) {
         ReaderNavigationOverlay(
             overlayState = rememberReaderOverlayState(viewer.config.navigator),
             modifier = Modifier.fillMaxSize()
@@ -313,9 +320,25 @@ fun ReaderContainer(
 @Composable
 fun ReaderDialogHost(
     modifier: Modifier = Modifier,
+    state: Reader2ScreenModel.State,
+    viewer: PagerViewer,
     content: @Composable () -> Unit
 ) {
-    Box(modifier) {
+    ReaderMenuOverlay(
+        onDismissRequested = {},
+        onViewOnWebClick = {},
+        onBackArrowClick = {},
+        readerChapter = { state.currentChapter },
+        manga = { state.manga },
+        menuVisible = { state.menuVisible },
+        layoutDirection = if (viewer.l2r) LayoutDirection.Ltr else LayoutDirection.Rtl,
+        chapterActions = ChapterActions(),
+        chapters = { emptyList() },
+        currentPage = { viewer.currentPageNumber },
+        loadNextChapter = { },
+        loadPrevChapter = {},
+        changePage = { _ -> }
+    ) {
         content()
     }
 }

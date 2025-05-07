@@ -44,11 +44,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -101,12 +103,11 @@ private enum class MenuTabs(val icon: ImageVector) {
     Chapters(Icons.Filled.FormatListNumbered), Options(Icons.Filled.Tune)
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ReaderMenuOverlay(
-    readerChapter: () -> ReaderChapter,
-    manga: () -> Manga,
-    chapters: () -> List<Chapter>,
+    readerChapter: () -> ReaderChapter?,
+    manga: () -> Manga?,
+    chapters: () -> List<Chapter>?,
     menuVisible: () -> Boolean,
     currentPage: () -> Int,
     layoutDirection: LayoutDirection,
@@ -151,7 +152,10 @@ fun ReaderMenuOverlay(
             enter = slideInVertically { -it },
             exit = slideOutVertically { -it }
         ) {
-            CenterAlignedTopAppBar(
+            LargeTopAppBar(
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                ),
                 navigationIcon = {
                     IconButton(onClick = onBackArrowClick) {
                         Icon(
@@ -175,13 +179,15 @@ fun ReaderMenuOverlay(
                     ) {
                         val chapter = readerChapter()
                         val chapterText = remember(chapter) {
-                            if (chapter.chapter.validNumber) {
-                                "Ch.${chapter.chapter.chapter} - ${chapter.chapter.title}"
-                            } else {
-                                chapter.chapter.title
-                            }
+                            chapter?.let {
+                                if (chapter.chapter.validNumber) {
+                                    "Ch.${chapter.chapter.chapter} - ${chapter.chapter.title}"
+                                } else {
+                                    chapter.chapter.title
+                                }
+                            } ?: ""
                         }
-                        Text(manga().titleEnglish)
+                        Text(manga()?.titleEnglish.orEmpty())
                         Text(
                             chapterText,
                             style = MaterialTheme.typography.labelMedium.copy(
@@ -207,7 +213,7 @@ fun ReaderMenuOverlay(
                             .consumeWindowInsets(WindowInsets.systemBars),
                         fractionProvider = { expandableState.fraction.value },
                         pageIdxProvider =  currentPage,
-                        pageCountProvider = { readerChapter().pages?.size ?: 0 },
+                        pageCountProvider = { readerChapter()?.pages?.size ?: 0 },
                         layoutDirectionProvider = { layoutDirection },
                         onPrevClick = loadPrevChapter,
                         onNextClick = loadNextChapter,
@@ -260,7 +266,7 @@ fun ReaderMenuOverlay(
                 ) {
                     when(it) {
                         MenuTabs.Chapters.ordinal -> ChapterList(
-                            chapters = chapters,
+                            chapters = { chapters() ?: emptyList() },
                             modifier = Modifier
                                 .fillMaxHeight(0.6f)
                                 .fillMaxWidth(),
@@ -295,12 +301,12 @@ fun ToggleItem(
 
 @Stable
 data class ChapterActions(
-    val delete: (chapterId: String) -> Unit ,
-    val markRead: (chapterId: String) -> Unit,
-    val bookmark: (chapterId: String) -> Unit,
-    val cancelDownload: (download: Download) -> Unit,
-    val pauseDownloads: () -> Unit,
-    val download: (chapterId: String) -> Unit,
+    val delete: (chapterId: String) -> Unit = {},
+    val markRead: (chapterId: String) -> Unit = {},
+    val bookmark: (chapterId: String) -> Unit = {},
+    val cancelDownload: (download: Download) -> Unit = {},
+    val pauseDownloads: () -> Unit = {},
+    val download: (chapterId: String) -> Unit = {},
 
 )
 

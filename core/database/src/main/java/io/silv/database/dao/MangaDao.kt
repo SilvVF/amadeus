@@ -23,31 +23,35 @@ abstract class MangaDao {
     @Query(
         """
         UPDATE manga SET
-        cover_art = coalesce(cover_art, :coverArt),
-        title = coalesce(:title, title),
-        version = coalesce(:version, version),
-        updated_at = coalesce(:updatedAt, updated_at),
-        description = coalesce(:description, description),
-        alternate_titles = coalesce(:alternateTitles, alternate_titles),
-        original_language = coalesce(:originalLanguage, original_language),
-        available_translated_languages = coalesce(:availableTranslatedLanguages, available_translated_languages),
-        status = coalesce(:status, status),
-        tag_to_id = coalesce(:tagToId, tag_to_id),
-        content_rating = coalesce(:contentRating, content_rating),
-        last_volume = coalesce(:lastVolume, last_volume),
-        last_chapter = coalesce(:lastChapter, last_chapter),
-        publication_demographic = coalesce(:publicationDemographic, publication_demographic),
-        year = coalesce(:year, year),
-        latest_uploaded_chapter = coalesce(:latestUploadedChapter, latest_uploaded_chapter),
-        authors = coalesce(:authors, authors),
-        artists = coalesce(:artists, artists),
-        cover_last_modified = coalesce(cover_last_modified, :coverLastModified)
+        cover_art = COALESCE(:coverArt, cover_art),
+        title = COALESCE(:title, title),
+        version = COALESCE(:version, version),
+        updated_at = COALESCE(:updatedAt, updated_at),
+        description = COALESCE(:description, description),
+        alternate_titles = COALESCE(:alternateTitles, alternate_titles),
+        original_language = COALESCE(:originalLanguage, original_language),
+        available_translated_languages = COALESCE(:availableTranslatedLanguages, available_translated_languages),
+        status = COALESCE(:status, status),
+        tag_to_id = COALESCE(:tagToId, tag_to_id),
+        content_rating = COALESCE(:contentRating, content_rating),
+        last_volume = COALESCE(:lastVolume, last_volume),
+        last_chapter = COALESCE(:lastChapter, last_chapter),
+        publication_demographic = COALESCE(:publicationDemographic, publication_demographic),
+        year = COALESCE(:year, year),
+        latest_uploaded_chapter = COALESCE(:latestUploadedChapter, latest_uploaded_chapter),
+        authors = COALESCE(:authors, authors),
+        artists = COALESCE(:artists, artists),
+        cover_last_modified = COALESCE(:coverLastModified, cover_last_modified),
+        favorite = COALESCE(:favorite, favorite),
+        reading_status = COALESCE(:readingStatus, reading_status),
+        progress_state = COALESCE(:progressState, progress_state)
         WHERE id = :mangaId
         """
     )
     abstract suspend fun updateFields(
-        mangaId: String?,
+        mangaId: String,
         coverArt: String?,
+        favorite: Boolean?,
         title: String?,
         version: Int?,
         updatedAt: LocalDateTime?,
@@ -65,6 +69,8 @@ abstract class MangaDao {
         latestUploadedChapter: String?,
         authors: List<String>?,
         artists: List<String>?,
+        progressState: ProgressState?,
+        readingStatus: ReadingStatus?,
         coverLastModified: Long?,
     )
 

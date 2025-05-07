@@ -53,7 +53,10 @@ internal class MangaRepositoryImpl internal constructor(
                     latestUploadedChapter = latestUploadedChapter,
                     authors = authors,
                     artists = artists,
-                    coverLastModified = coverLastModified
+                    coverLastModified = coverLastModified,
+                    progressState = progressState,
+                    readingStatus = readingStatus,
+                    favorite = favorite
                 )
             }
         }

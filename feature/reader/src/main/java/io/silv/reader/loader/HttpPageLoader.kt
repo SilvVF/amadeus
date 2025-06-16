@@ -3,8 +3,9 @@ import io.silv.common.commonDeps
 import io.silv.common.log.logcat
 import io.silv.common.model.Page
 import io.silv.data.download.ChapterCache
-import io.silv.di.downloadDeps
+
 import io.silv.data.chapter.toResource
+import io.silv.di.dataDeps
 import io.silv.network.sources.HttpSource
 import io.silv.reader.loader.PageLoader
 import io.silv.reader.loader.ReaderChapter
@@ -30,7 +31,7 @@ import kotlin.math.min
 internal class HttpPageLoader @OptIn(DependencyAccessor::class) constructor(
     private val chapter: ReaderChapter,
     private val source: HttpSource,
-    private val chapterCache: ChapterCache = downloadDeps.chapterCache,
+    private val chapterCache: ChapterCache = dataDeps.chapterCache,
     private val appScope: CoroutineScope = commonDeps.applicationScope
 ) : PageLoader() {
 

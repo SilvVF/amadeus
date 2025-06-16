@@ -92,13 +92,12 @@ private fun requireActivity(context: Context): ComponentActivity {
 
 data class ReaderScreen2(
     val mangaId: String,
-    val chapterId: String,
+    var chapterId: String,
 ) : Screen {
 
-    private var savedChapter: String = chapterId
-    private var page: Int = -1
+    var page: Int = 0
 
-    override val key: ScreenKey = "${mangaId}_$chapterId"
+    override val key: ScreenKey get() = "${mangaId}_$chapterId"
 
     @Composable
     override fun Content() {
@@ -110,20 +109,19 @@ data class ReaderScreen2(
 
         val screenModel = rememberScreenModel {
             Reader2ScreenModel(
-                saveState = { cid, p ->
-                    savedChapter = cid
-                    page = p
-                },
-                chapterId = savedChapter,
+                chapterId = chapterId,
                 chapterPageIndex = page,
                 mangaId = mangaId,
                 appState = appState
-            )
+            ) { state ->
+                page = (state[Reader2ScreenModel.PAGE_KEY] as? Int) ?: 0
+                chapterId = (state[Reader2ScreenModel.CHAPTER_KEY] as? String) ?: chapterId
+            }
         }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         LaunchedEffect(screenModel) {
-            val initResult = screenModel.init(mangaId, savedChapter)
+            val initResult = screenModel.init(mangaId, chapterId)
             if (!initResult.getOrDefault(false)) {
                 val exception = initResult.exceptionOrNull() ?: IllegalStateException(
                     "Unknown err",
@@ -222,45 +220,40 @@ private fun ReaderScreenContent(
 }
 
 @Composable
-fun ComposeViewPager(
-    pagerViewer: PagerViewer,
-    modifier: Modifier = Modifier,
-    scope: CoroutineScope = rememberCoroutineScope()
-) {
+fun PageContent(page: ViewerPage, viewer: PagerViewer) {
     val context = LocalContext.current
+    when (page) {
+        is ReaderPage -> {
+            val state = pagePresenter(viewer, context, page)
+            PagerPage(state)
+        }
 
-    @Composable
-    fun renderPage(pageNum: Int) {
-        val page = pagerViewer.items.getOrNull(pageNum) ?: return
-
-        when (page) {
-            is ReaderPage -> {
-                val holder = remember {
-                    PagerPageHolder(pagerViewer, context, page, scope)
-                }
-                PagerPage(holder)
-            }
-
-            is ChapterTransition -> {
-                var size by remember { mutableStateOf(IntSize.Zero) }
-                Box(
-                    Modifier.fillMaxSize()
-                        .onSizeChanged { size = it }
-                        .pointerInput(Unit) {
-                            detectTapGestures(onTap = {
-                                pagerViewer.handleClickEvent(it, size)
-                            })
-                        }
-                ) {
-                    Text(
-                        "to: ${page.to?.chapter?.title} from: ${page.from.chapter.title}",
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
+        is ChapterTransition -> {
+            var size by remember { mutableStateOf(IntSize.Zero) }
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .onSizeChanged { size = it }
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = {
+                            viewer.handleClickEvent(it, size)
+                        })
+                    }
+            ) {
+                Text(
+                    "to: ${page.to?.chapter?.title} from: ${page.from.chapter.title}",
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
         }
     }
+}
 
+@Composable
+fun ComposeViewPager(
+    pagerViewer: PagerViewer,
+    modifier: Modifier = Modifier,
+) {
     Box(modifier) {
         if (pagerViewer.isHorizontal) {
             HorizontalPager(
@@ -268,24 +261,20 @@ fun ComposeViewPager(
                 beyondViewportPageCount = 1,
                 reverseLayout = !pagerViewer.l2r,
                 modifier = Modifier.fillMaxSize(),
-                key = {
-                    pagerViewer.items.getOrNull(it)?.hashCode()
-                        ?: UUID.randomUUID().toString()
-                }
+                key = { pagerViewer.items[it].hashCode() }
             ) {
-                renderPage(it)
+                val page = pagerViewer.items[it]
+                PageContent(page, pagerViewer)
             }
         } else {
             VerticalPager(
                 pagerViewer.pagerState,
                 beyondViewportPageCount = 1,
                 modifier = Modifier.fillMaxSize(),
-                key = {
-                    pagerViewer.items.getOrNull(it)?.hashCode()
-                        ?: UUID.randomUUID().toString()
-                }
+                key = { pagerViewer.items[it].hashCode() }
             ) {
-                renderPage(it)
+                val page = pagerViewer.items[it]
+                PageContent(page, pagerViewer)
             }
         }
         PageIndicatorText(

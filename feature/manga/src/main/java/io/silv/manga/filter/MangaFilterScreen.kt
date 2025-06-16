@@ -47,7 +47,8 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.model.TimePeriod
 import io.silv.datastore.FilterPrefs
-import io.silv.datastore.collectAsState
+import io.silv.datastore.collectPrefAsState
+import io.silv.di.rememberDataDependency
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.navigation.replace
@@ -125,9 +126,9 @@ class MangaFilterScreen(
                         Text(
                             "$tag trending $timePeriodString",
                             style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
+                                MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
                             modifier = Modifier.padding(space.large)
                         )
                     },
@@ -143,10 +144,10 @@ class MangaFilterScreen(
                         }
                     },
                     colors =
-                    TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent,
-                    ),
+                        TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent,
+                            scrolledContainerColor = Color.Transparent,
+                        ),
                     bottomContent = {
                         val items = remember {
                             listOf(
@@ -180,15 +181,21 @@ class MangaFilterScreen(
         ) { paddingValues ->
 
             val scope = rememberCoroutineScope()
+            val dataStore = rememberDataDependency { dataStore }
 
-            val cardType by FilterPrefs.cardTypePrefKey.collectAsState(
+            val cardType by FilterPrefs.cardTypePrefKey.collectPrefAsState(
+                dataStore,
                 defaultValue = CardType.Compact,
                 converter = Converters.CardTypeToStringConverter,
                 scope = scope,
             )
 
-            val gridCells by FilterPrefs.gridCellsPrefKey.collectAsState(FilterPrefs.gridCellsDefault, scope)
-            val useList by FilterPrefs.useListPrefKey.collectAsState(false, scope)
+            val gridCells by FilterPrefs.gridCellsPrefKey.collectPrefAsState(
+                dataStore,
+                FilterPrefs.gridCellsDefault,
+                scope
+            )
+            val useList by FilterPrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
 
             when {
                 timePeriodItems.loadState.refresh is LoadState.Loading -> {
@@ -196,6 +203,7 @@ class MangaFilterScreen(
                         androidx.compose.material3.CircularProgressIndicator()
                     }
                 }
+
                 timePeriodItems.itemCount == 0 &&
                         timePeriodItems.loadState.refresh != LoadState.Loading
                         && timePeriodItems.loadState.append != LoadState.Loading -> {
@@ -210,7 +218,9 @@ class MangaFilterScreen(
                             imageVector = Icons.Outlined.SearchOff,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.surfaceTint,
-                            modifier = Modifier.fillMaxWidth().fillMaxHeight(0.16f)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(0.16f)
                         )
                         Text(
                             "No items to display try adjusting the time period.",
@@ -219,6 +229,7 @@ class MangaFilterScreen(
                         )
                     }
                 }
+
                 useList -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -231,6 +242,7 @@ class MangaFilterScreen(
                         )
                     }
                 }
+
                 else -> {
                     LazyVerticalGrid(
                         modifier = Modifier.fillMaxSize(),

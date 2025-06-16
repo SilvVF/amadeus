@@ -12,39 +12,25 @@ import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
 import coil3.disk.directory
-import coil3.gif.AnimatedImageDecoder
-import coil3.gif.GifDecoder
 import coil3.imageDecoderEnabled
 import coil3.memory.MemoryCache
-import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowHardware
 import coil3.request.allowRgb565
 import coil3.request.crossfade
-import coil3.svg.SvgDecoder
 import coil3.util.DebugLogger
 import eu.kanade.tachiyomi.BufferedSourceFetcher
 import eu.kanade.tachiyomi.MangaCoverFactory
-import eu.kanade.tachiyomi.MangaCoverFetcher
 import eu.kanade.tachiyomi.MangaCoverKeyer
 import eu.kanade.tachiyomi.MangaFactory
 import eu.kanade.tachiyomi.MangaKeyer
 import eu.kanade.tachiyomi.data.coil.TachiyomiImageDecoder
-import io.silv.amadeus.coil.addDiskFetcher
-import io.silv.amadeus.dependency.AndroidDependencies
-import io.silv.amadeus.dependency.androidDeps
 import io.silv.common.CommonDependencies
 import io.silv.common.DependencyAccessor
 import io.silv.common.commonDeps
 import io.silv.data.download.CoverCache
-import io.silv.database.DaosModule
-import io.silv.database.DatabaseModule
-import io.silv.datastore.DataStoreDependencies
-import io.silv.datastore.dataStoreDeps
 import io.silv.di.DataDependencies
-import io.silv.di.DownloadDependencies
 import io.silv.di.dataDeps
-import io.silv.di.downloadDeps
 import io.silv.manga.download.DownloadQueueScreen
 import io.silv.manga.filter.MangaFilterScreen
 import io.silv.manga.view.MangaViewScreen
@@ -87,29 +73,12 @@ class AmadeusApp : Application(), SingletonImageLoader.Factory {
 
         commonDeps = object : CommonDependencies() {}
 
-        val databaseModule = DatabaseModule(this)
-        val daosModule = DaosModule(databaseModule)
-
-        dataStoreDeps = object : DataStoreDependencies() {
-            override val context: Application get() = this@AmadeusApp
-        }
-
         networkDeps = object : NetworkDependencies() {
             override val context: Context get() = this@AmadeusApp
         }
 
         dataDeps = object : DataDependencies() {
-            override val databaseModule: DatabaseModule = databaseModule
             override val context: Context get() = this@AmadeusApp
-            override val daosModule: DaosModule = daosModule
-        }
-
-        downloadDeps = object : DownloadDependencies() {
-            override val context: Context get() = this@AmadeusApp
-        }
-
-        androidDeps = object : AndroidDependencies() {
-            override val application: Application get() = this@AmadeusApp
         }
 
         syncDependencies = object : SyncDependencies() {

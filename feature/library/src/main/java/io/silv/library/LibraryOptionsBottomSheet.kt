@@ -25,15 +25,19 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.datastore.dataStore
 import io.silv.datastore.ExplorePrefs
 import io.silv.datastore.LibraryPrefs
-import io.silv.datastore.collectAsState
+import io.silv.datastore.collectPrefAsState
+import io.silv.di.dataDeps
+import io.silv.di.rememberDataDependency
 import io.silv.ui.Converters
 import io.silv.ui.composables.CardType
 import io.silv.ui.composables.SelectCardType
@@ -54,16 +58,26 @@ fun LibraryOptionsBottomSheet(
 
     val scope = rememberCoroutineScope()
 
-    var cardType by LibraryPrefs.cardTypePrefKey.collectAsState(
+    val dataStore = rememberDataDependency { dataStore }
+
+    var cardType by LibraryPrefs.cardTypePrefKey.collectPrefAsState(
+        dataStore,
         defaultValue = CardType.Compact,
         converter = Converters.CardTypeToStringConverter,
         scope = scope,
     )
 
-    var gridCells by LibraryPrefs.gridCellsPrefKey.collectAsState(LibraryPrefs.gridCellsDefault, scope)
-    var useList by LibraryPrefs.useListPrefKey.collectAsState(false, scope)
-    var animatePlacement by LibraryPrefs.animatePlacementPrefKey.collectAsState(true, scope)
-
+    var gridCells by LibraryPrefs.gridCellsPrefKey.collectPrefAsState(
+        dataStore,
+        LibraryPrefs.gridCellsDefault,
+        scope
+    )
+    var useList by LibraryPrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
+    var animatePlacement by LibraryPrefs.animatePlacementPrefKey.collectPrefAsState(
+        dataStore,
+        true,
+        scope
+    )
 
     LaunchedEffect(Unit) {
         sheetState.show()
@@ -105,7 +119,7 @@ fun LibraryOptionsBottomSheet(
                     onCheckedChange = { animatePlacement = it }
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Animate item placement.",   style = MaterialTheme.typography.titleSmall,)
+                Text("Animate item placement.", style = MaterialTheme.typography.titleSmall)
             }
             Spacer(
                 Modifier.windowInsetsPadding(WindowInsets.systemBars),
@@ -141,9 +155,9 @@ fun GridSizeSelector(
             Text(
                 text = "$size per row",
                 style =
-                MaterialTheme.typography.labelMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                ),
+                    MaterialTheme.typography.labelMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                    ),
             )
         }
         Slider(
@@ -162,25 +176,25 @@ fun GridSizeSelector(
             },
             steps = 3,
             value =
-            when (size) {
-                1 -> 0f
-                2 -> 25f
-                3 -> 50f
-                4 -> 75f
-                else -> 100f
-            },
+                when (size) {
+                    1 -> 0f
+                    2 -> 25f
+                    3 -> 50f
+                    4 -> 75f
+                    else -> 100f
+                },
         )
         Text(
             text = "Reset",
             style =
-            MaterialTheme.typography.labelLarge.copy(
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-            ),
+                MaterialTheme.typography.labelLarge.copy(
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                ),
             modifier =
-            Modifier
-                .padding(horizontal = 12.dp)
-                .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
+                Modifier
+                    .padding(horizontal = 12.dp)
+                    .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
         )
     }
 }

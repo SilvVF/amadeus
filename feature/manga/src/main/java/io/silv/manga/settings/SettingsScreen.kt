@@ -65,7 +65,8 @@ import io.silv.datastore.FilterPrefs
 import io.silv.datastore.LibraryPrefs
 import io.silv.datastore.ReaderPrefs
 import io.silv.datastore.UserSettings
-import io.silv.datastore.collectAsState
+import io.silv.datastore.collectPrefAsState
+import io.silv.di.rememberDataDependency
 import io.silv.ui.Converters
 import io.silv.ui.ReaderLayout
 import io.silv.ui.composables.CardType
@@ -75,7 +76,7 @@ import io.silv.ui.theme.LocalSpacing
 
 import kotlin.math.roundToInt
 
-class SettingsScreen: Screen {
+class SettingsScreen : Screen {
 
     @Composable
     override fun Content() {
@@ -115,6 +116,7 @@ fun SettingsScreenContent(
 
     val navigator = LocalNavigator.current
     val space = LocalSpacing.current
+    val dataStore = rememberDataDependency { dataStore }
 
     when (state.dialogkey) {
         SettingsScreenModel.UPDATE_PERIOD_KEY -> {
@@ -127,11 +129,11 @@ fun SettingsScreenContent(
                     shadowElevation = 6.dp,
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
-                ){
+                ) {
                     Column(
                         verticalArrangement = Arrangement.Top,
                         horizontalAlignment = Alignment.Start,
-                        modifier =  Modifier.padding(space.xlarge)
+                        modifier = Modifier.padding(space.xlarge)
                     ) {
                         Text("Automatic updates", style = MaterialTheme.typography.titleLarge)
                         AutomaticUpdatePeriod.entries.fastForEach {
@@ -151,19 +153,23 @@ fun SettingsScreenContent(
                 }
             }
         }
+
         SettingsScreenModel.LIBRARY_DISPLAY_KEY -> {
             val scope = rememberCoroutineScope()
-            val cardType = LibraryPrefs.cardTypePrefKey.collectAsState(
+            val cardType = LibraryPrefs.cardTypePrefKey.collectPrefAsState(
+                dataStore,
                 defaultValue = CardType.Compact,
                 converter = Converters.CardTypeToStringConverter,
                 scope = scope,
             )
-            val gridCells = LibraryPrefs.gridCellsPrefKey.collectAsState(
+            val gridCells = LibraryPrefs.gridCellsPrefKey.collectPrefAsState(
+                dataStore,
                 LibraryPrefs.gridCellsDefault,
                 scope
             )
-            val useList = LibraryPrefs.useListPrefKey.collectAsState(false, scope)
-            val animatePlacement = LibraryPrefs.animatePlacementPrefKey.collectAsState(
+            val useList = LibraryPrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
+            val animatePlacement = LibraryPrefs.animatePlacementPrefKey.collectPrefAsState(
+                dataStore,
                 true,
                 scope
             )
@@ -176,18 +182,21 @@ fun SettingsScreenContent(
                 title = "Library display options"
             )
         }
+
         SettingsScreenModel.EXPLORE_DISPLAY_KEY -> {
             val scope = rememberCoroutineScope()
-            val cardType = ExplorePrefs.cardTypePrefKey.collectAsState(
+            val cardType = ExplorePrefs.cardTypePrefKey.collectPrefAsState(
+                dataStore,
                 defaultValue = CardType.Compact,
                 converter = Converters.CardTypeToStringConverter,
                 scope = scope,
             )
-            val gridCells = ExplorePrefs.gridCellsPrefKey.collectAsState(
+            val gridCells = ExplorePrefs.gridCellsPrefKey.collectPrefAsState(
+                dataStore,
                 LibraryPrefs.gridCellsDefault,
                 scope
             )
-            val useList = ExplorePrefs.useListPrefKey.collectAsState(false, scope)
+            val useList = ExplorePrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
             DisplayPrefsDialogContent(
                 cardType = cardType,
                 useList = useList,
@@ -197,18 +206,21 @@ fun SettingsScreenContent(
                 title = "Explore display options"
             )
         }
+
         SettingsScreenModel.FILTER_DISPLAY_KEY -> {
             val scope = rememberCoroutineScope()
-            val cardType = FilterPrefs.cardTypePrefKey.collectAsState(
+            val cardType = FilterPrefs.cardTypePrefKey.collectPrefAsState(
+                dataStore,
                 defaultValue = CardType.Compact,
                 converter = Converters.CardTypeToStringConverter,
                 scope = scope,
             )
-            val gridCells = FilterPrefs.gridCellsPrefKey.collectAsState(
+            val gridCells = FilterPrefs.gridCellsPrefKey.collectPrefAsState(
+                dataStore,
                 FilterPrefs.gridCellsDefault,
                 scope
             )
-            val useList = FilterPrefs.useListPrefKey.collectAsState(false, scope)
+            val useList = FilterPrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
             DisplayPrefsDialogContent(
                 cardType = cardType,
                 useList = useList,
@@ -218,6 +230,7 @@ fun SettingsScreenContent(
                 title = "Filter display options"
             )
         }
+
         null -> Unit
     }
 
@@ -303,19 +316,22 @@ fun SettingsScreenContent(
                 SettingsItem(
                     title = "Library",
                     description = "library display options",
-                    icon = Icons.Filled.CollectionsBookmark) {
+                    icon = Icons.Filled.CollectionsBookmark
+                ) {
                     actions.changeCurrentDialog(SettingsScreenModel.LIBRARY_DISPLAY_KEY)
                 }
                 SettingsItem(
                     title = "Explore",
                     description = "explore display options",
-                    icon = Icons.Filled.Explore) {
+                    icon = Icons.Filled.Explore
+                ) {
                     actions.changeCurrentDialog(SettingsScreenModel.EXPLORE_DISPLAY_KEY)
                 }
                 SettingsItem(
                     title = "Filter",
                     description = "filter display options",
-                    icon = Icons.Filled.AccessTime) {
+                    icon = Icons.Filled.AccessTime
+                ) {
                     actions.changeCurrentDialog(SettingsScreenModel.FILTER_DISPLAY_KEY)
                 }
             }
@@ -344,15 +360,17 @@ fun ReaderOptions(
 ) {
     val scope = rememberCoroutineScope()
     val space = LocalSpacing.current
+    val dataStore = rememberDataDependency { dataStore }
 
-    var fullscreen by ReaderPrefs.fullscreen.collectAsState(true, scope)
-    var showPageNumber by ReaderPrefs.showPageNumber.collectAsState(true, scope)
-    var layout by ReaderPrefs.layoutDirection.collectAsState(
+    var fullscreen by ReaderPrefs.fullscreen.collectPrefAsState(dataStore, true, scope)
+    var showPageNumber by ReaderPrefs.showPageNumber.collectPrefAsState(dataStore, true, scope)
+    var layout by ReaderPrefs.layoutDirection.collectPrefAsState(
+        dataStore,
         defaultValue = ReaderLayout.PagedRTL,
         converter = Converters.LayoutDirectionConverter,
         scope
     )
-    var backgroundColor by ReaderPrefs.backgroundColor.collectAsState(3, scope)
+    var backgroundColor by ReaderPrefs.backgroundColor.collectPrefAsState(dataStore, 3, scope)
 
     Column(
         modifier.padding(space.med),
@@ -429,7 +447,7 @@ fun ReaderOptions(
 fun DisplayPrefsDialogContent(
     modifier: Modifier = Modifier,
     title: String,
-    cardType:  MutableState<CardType>,
+    cardType: MutableState<CardType>,
     gridCells: MutableState<Int>,
     useList: MutableState<Boolean>,
     animatePlacement: MutableState<Boolean>?,
@@ -455,7 +473,8 @@ fun DisplayPrefsDialogContent(
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .padding(space.large), contentAlignment = Alignment.Center) {
+                        .padding(space.large), contentAlignment = Alignment.Center
+                ) {
                     Text(title)
                 }
                 UseList(
@@ -483,7 +502,10 @@ fun DisplayPrefsDialogContent(
                             onCheckedChange = { animatePlacement.value = it }
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Animate item placement.",   style = MaterialTheme.typography.titleSmall,)
+                        Text(
+                            "Animate item placement.",
+                            style = MaterialTheme.typography.titleSmall,
+                        )
                     }
                 }
                 Spacer(
@@ -520,9 +542,9 @@ fun GridSizeSelector(
             Text(
                 text = "$size per row",
                 style =
-                MaterialTheme.typography.labelMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                ),
+                    MaterialTheme.typography.labelMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                    ),
             )
         }
         Slider(
@@ -541,25 +563,25 @@ fun GridSizeSelector(
             },
             steps = 3,
             value =
-            when (size) {
-                1 -> 0f
-                2 -> 25f
-                3 -> 50f
-                4 -> 75f
-                else -> 100f
-            },
+                when (size) {
+                    1 -> 0f
+                    2 -> 25f
+                    3 -> 50f
+                    4 -> 75f
+                    else -> 100f
+                },
         )
         Text(
             text = "Reset",
             style =
-            MaterialTheme.typography.labelLarge.copy(
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-            ),
+                MaterialTheme.typography.labelLarge.copy(
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                ),
             modifier =
-            Modifier
-                .padding(horizontal = 12.dp)
-                .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
+                Modifier
+                    .padding(horizontal = 12.dp)
+                    .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
         )
     }
 }
@@ -579,6 +601,7 @@ fun SettingsTopBar(
         }
     )
 }
+
 @Composable
 fun SettingsItem(
     title: String,

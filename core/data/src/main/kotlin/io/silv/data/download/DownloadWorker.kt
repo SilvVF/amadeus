@@ -14,7 +14,7 @@ import io.silv.common.log.logcat
 import io.silv.common.model.NetworkConnectivity
 import io.silv.data.workers.createForegroundInfo
 import io.silv.di.dataDeps
-import io.silv.di.downloadDeps
+
 import io.silv.network.networkDeps
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +35,7 @@ class DownloadWorker(
     workerParams: WorkerParameters
 ) : CoroutineWorker(applicationContext, workerParams) {
 
-    private val downloadManager get() = downloadDeps.downloadManager
+    private val downloadManager get() = dataDeps.downloadManager
     private val connectivityManager get() = dataDeps.connectivity
 
     private val isOnline = connectivityManager.online.stateIn(

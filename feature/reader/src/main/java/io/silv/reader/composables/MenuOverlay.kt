@@ -77,9 +77,10 @@ import androidx.compose.ui.util.fastForEachIndexed
 import io.silv.common.model.Download
 import io.silv.data.download.QItem
 import io.silv.datastore.ReaderPrefs
-import io.silv.datastore.collectAsState
 import io.silv.data.chapter.Chapter
 import io.silv.data.manga.model.Manga
+import io.silv.datastore.collectPrefAsState
+import io.silv.di.rememberDataDependency
 import io.silv.reader.loader.ReaderChapter
 import io.silv.ui.Converters
 import io.silv.ui.ReaderLayout
@@ -542,15 +543,17 @@ fun ReaderOptions(
 ) {
     val scope = rememberCoroutineScope()
     val space = LocalSpacing.current
+    val dataStore = rememberDataDependency { dataStore }
 
-    var fullscreen by ReaderPrefs.fullscreen.collectAsState(true, scope)
-    var showPageNumber by ReaderPrefs.showPageNumber.collectAsState(true, scope)
-    var layout by ReaderPrefs.layoutDirection.collectAsState(
+    var fullscreen by ReaderPrefs.fullscreen.collectPrefAsState(dataStore, true, scope)
+    var showPageNumber by ReaderPrefs.showPageNumber.collectPrefAsState(dataStore, true, scope)
+    var layout by ReaderPrefs.layoutDirection.collectPrefAsState(
+        dataStore,
         defaultValue = ReaderLayout.PagedRTL,
         converter = Converters.LayoutDirectionConverter,
         scope
     )
-    var backgroundColor by ReaderPrefs.backgroundColor.collectAsState(3, scope)
+    var backgroundColor by ReaderPrefs.backgroundColor.collectPrefAsState(dataStore, 3, scope)
 
     Column(
         modifier.padding(space.med),

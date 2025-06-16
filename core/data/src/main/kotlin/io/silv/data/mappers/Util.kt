@@ -28,10 +28,6 @@ fun coverArtUrl(
         ?.attributes
         ?.fileName
         ?: ""
-
-    logcat("MangaCoverArt") { "$fileName ${mangaDto.relationships}" }
-    logcat("MangaCoverArt") { "coverArtUrl ${"https://uploads.mangadex.org/covers/${mangaDto.id}/$fileName"}" }
-
     return "https://uploads.mangadex.org/covers/${mangaDto.id}/$fileName"
 }
 

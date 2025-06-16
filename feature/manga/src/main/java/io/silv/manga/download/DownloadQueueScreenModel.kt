@@ -7,8 +7,7 @@ import io.silv.common.DependencyAccessor
 import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
 import io.silv.data.download.QItem
-import io.silv.di.downloadDeps
-
+import io.silv.di.dataDeps
 
 
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,7 +22,7 @@ import kotlinx.coroutines.launch
 data class DownloadItem(val download: QItem<Download>)
 
 class DownloadQueueScreenModel @OptIn(DependencyAccessor::class) constructor(
-    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
+    private val downloadManager: DownloadManager = dataDeps.downloadManager,
 ) : StateScreenModel<List<DownloadItem>>(emptyList()) {
 
     init {

@@ -10,9 +10,9 @@ plugins {
     alias(libs.plugins.org.jetbrains.kotlin.android) apply false
     alias(libs.plugins.org.jetbrains.kotlin.jvm) apply false
     alias(libs.plugins.compose.compiler) apply false
-    id("com.google.devtools.ksp") version "2.1.20-1.0.32" apply false
+    alias(libs.plugins.ksp) apply false
     alias(libs.plugins.com.android.test) apply false
-    kotlin("plugin.serialization") version "1.9.22" apply false
+    alias(libs.plugins.kotlin.serialization) apply false
 }
 
 subprojects {

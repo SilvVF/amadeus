@@ -33,7 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.silv.datastore.ExplorePrefs
 import io.silv.datastore.FilterPrefs
-import io.silv.datastore.collectAsState
+import io.silv.datastore.collectPrefAsState
+import io.silv.di.rememberDataDependency
 import io.silv.ui.Converters
 import io.silv.ui.composables.CardType
 import io.silv.ui.composables.SelectCardType
@@ -53,15 +54,21 @@ fun FilterDisplayOptionsBottomSheet(
         )
 
     val scope = rememberCoroutineScope()
+    val dataStore = rememberDataDependency { dataStore }
 
-    var cardType by FilterPrefs.cardTypePrefKey.collectAsState(
+    var cardType by FilterPrefs.cardTypePrefKey.collectPrefAsState(
+        dataStore,
         defaultValue = CardType.Compact,
         converter = Converters.CardTypeToStringConverter,
         scope = scope,
     )
 
-    var gridCells by FilterPrefs.gridCellsPrefKey.collectAsState(FilterPrefs.gridCellsDefault, scope)
-    var useList by FilterPrefs.useListPrefKey.collectAsState(false, scope)
+    var gridCells by FilterPrefs.gridCellsPrefKey.collectPrefAsState(
+        dataStore,
+        FilterPrefs.gridCellsDefault,
+        scope
+    )
+    var useList by FilterPrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
 
 
     LaunchedEffect(Unit) {
@@ -70,7 +77,7 @@ fun FilterDisplayOptionsBottomSheet(
 
     ModalBottomSheet(
         sheetState = sheetState,
-        contentWindowInsets = { WindowInsets(0,  0, 0, 0) },
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
         onDismissRequest = onDismissRequest,
         containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
     ) {
@@ -129,9 +136,9 @@ fun GridSizeSelector(
             Text(
                 text = "$size per row",
                 style =
-                MaterialTheme.typography.labelMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                ),
+                    MaterialTheme.typography.labelMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                    ),
             )
         }
         Slider(
@@ -150,25 +157,25 @@ fun GridSizeSelector(
             },
             steps = 3,
             value =
-            when (size) {
-                1 -> 0f
-                2 -> 25f
-                3 -> 50f
-                4 -> 75f
-                else -> 100f
-            },
+                when (size) {
+                    1 -> 0f
+                    2 -> 25f
+                    3 -> 50f
+                    4 -> 75f
+                    else -> 100f
+                },
         )
         Text(
             text = "Reset",
             style =
-            MaterialTheme.typography.labelLarge.copy(
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-            ),
+                MaterialTheme.typography.labelLarge.copy(
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                ),
             modifier =
-            Modifier
-                .padding(horizontal = 12.dp)
-                .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
+                Modifier
+                    .padding(horizontal = 12.dp)
+                    .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
         )
     }
 }

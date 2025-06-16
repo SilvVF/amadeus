@@ -7,7 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import io.silv.common.DependencyAccessor
-import io.silv.datastore.dataStoreDeps
+import io.silv.di.dataDeps
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.onEach
 class PagerConfig(
     private val viewer: PagerViewer,
     scope: CoroutineScope,
-    dataStore: DataStore<Preferences> = dataStoreDeps.dataStore
+    dataStore: DataStore<Preferences> = dataDeps.dataStore
 ) : ViewerConfig(scope, dataStore) {
 
     var automaticBackground by mutableStateOf(false)

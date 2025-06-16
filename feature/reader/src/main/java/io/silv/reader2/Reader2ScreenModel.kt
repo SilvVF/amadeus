@@ -20,10 +20,9 @@ import io.silv.data.download.DownloadManager
 import io.silv.data.download.DownloadProvider
 import io.silv.data.download.QItem
 import io.silv.datastore.ReaderPrefs
-import io.silv.datastore.dataStoreDeps
 import io.silv.datastore.get
 import io.silv.di.dataDeps
-import io.silv.di.downloadDeps
+
 import io.silv.data.chapter.interactor.ChapterHandler
 import io.silv.data.chapter.interactor.GetNextChapters
 import io.silv.data.chapter.Chapter
@@ -42,7 +41,9 @@ import io.silv.reader.loader.ReaderPage
 import io.silv.reader2.Reader2ScreenModel.Event
 import io.silv.ui.AppState
 import io.silv.ui.EventStateScreenModel
+import io.silv.ui.SavedStateScreenModel
 import io.silv.ui.ioCoroutineScope
+import io.silv.ui.screenStateHandle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.NonCancellable
@@ -66,12 +67,11 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     private val mangaId: String,
     private var chapterId: String,
     private var chapterPageIndex: Int,
-    val saveState: (String, Int) -> Unit,
     private val appState: AppState,
-    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
-    private val downloadProvider: DownloadProvider = downloadDeps.downloadProvider,
+    private val downloadManager: DownloadManager = dataDeps.downloadManager,
+    private val downloadProvider: DownloadProvider = dataDeps.downloadProvider,
     // private val imageSaver: ImageSaver,
-    private val dataStore: DataStore<Preferences> = dataStoreDeps.dataStore,
+    private val dataStore: DataStore<Preferences> = dataDeps.dataStore,
     //private val trackChapter: TrackChapter = Injekt.get(),
     private val getManga: GetManga = dataDeps.getManga,
     private val getChaptersByMangaId: GetChaptersByMangaId = dataDeps.getChaptersByMangaId,
@@ -79,8 +79,19 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     private val historyRepository: HistoryRepository = dataDeps.historyRepository,
     private val chapterHandler: ChapterHandler = dataDeps.chapterHandler,
     private val setMangaViewerFlags: SetMangaViewerFlags = dataDeps.setMangaViewerFlags,
-) : EventStateScreenModel<Event, Reader2ScreenModel.State>(State()) {
+    private val saveState: (state: MutableMap<String, Any>) -> Unit
+) : EventStateScreenModel<Event, Reader2ScreenModel.State>(State()), SavedStateScreenModel {
 
+    companion object {
+        const val CHAPTER_KEY = "chapterId"
+        const val MANGA_KEY = "mangaId"
+        const val PAGE_KEY = "page"
+    }
+
+    override fun restoreStateMap(): MutableMap<String, Any> {
+        return mutableMapOf(MANGA_KEY to mangaId, CHAPTER_KEY to chapterId, PAGE_KEY to chapterPageIndex)
+    }
+    override fun saveStateMap(state: MutableMap<String, Any>) = saveState(state)
 
     val manga: Manga? get() = state.value.manga
     private val loader: ChapterLoader by lazy { ChapterLoader(manga!!) }
@@ -88,8 +99,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     private var chapterReadStartTime: Long? = null
     private var chapterToDownload: Download? = null
 
-
-    val viewer = PagerViewer(scope = MainScope()) { action ->
+    val viewer = PagerViewer(scope = screenModelScope) { action ->
         when (action) {
             PagerAction.ToggleMenu -> showMenus(!state.value.menuVisible)
             is PagerAction.OnPageSelected -> onPageSelected(action.page)
@@ -224,8 +234,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * It's used only to set this chapter as active.
      */
     private fun loadNewChapter(chapter: ReaderChapter) {
-        val loader = loader ?: return
-
         ioCoroutineScope.launch {
             logcat { "Loading ${chapter.chapter.url}" }
 
@@ -401,7 +409,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
             it.copy(currentPage = pageIndex + 1)
         }
         readerChapter.requestedPage = pageIndex
-        saveState(chapterId, pageIndex)
 
         if (!incognitoMode && page.status != Page.State.ERROR) {
             readerChapter.updateChapter(

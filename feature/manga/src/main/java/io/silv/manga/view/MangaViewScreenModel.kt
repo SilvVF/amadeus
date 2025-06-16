@@ -15,7 +15,7 @@ import io.silv.data.download.QItem
 import io.silv.data.manga.GetMangaStatisticsById
 import io.silv.datastore.model.Filters
 import io.silv.di.dataDeps
-import io.silv.di.downloadDeps
+
 import io.silv.data.chapter.interactor.ChapterHandler
 import io.silv.data.chapter.Chapter
 import io.silv.data.chapter.toResource
@@ -45,7 +45,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     getMangaStatisticsById: GetMangaStatisticsById = dataDeps.getMangaStatisticsById,
     private val mangaHandler: MangaHandler = dataDeps.mangaHandler,
     private val chapterHandler: ChapterHandler = dataDeps.chapterHandler,
-    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
+    private val downloadManager: DownloadManager = dataDeps.downloadManager,
     private val coverCache: CoverCache = dataDeps.coverCache,
     mangaId: String,
 ) : EventStateScreenModel<MangaViewEvent, MangaViewState>(MangaViewState.Loading) {

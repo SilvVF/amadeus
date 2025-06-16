@@ -7,14 +7,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import io.silv.common.DependencyAccessor
-import io.silv.datastore.dataStoreDeps
+import io.silv.di.dataDeps
 
 @Stable
 class DisplayRefreshHost {
 
     internal var currentDisplayRefresh by mutableStateOf(false)
     @OptIn(DependencyAccessor::class)
-    private val readerPreferences = dataStoreDeps.dataStore
+    private val readerPreferences = dataDeps.dataStore
 
 //    internal val flashMillis = readerPreferences.get(intPreferencesKey("flashDurationMillis")) ?: 300
 //    internal val flashMode = readerPreferences.get(intPreferencesKey("flashColor")) ?:

@@ -30,7 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.silv.datastore.ExplorePrefs
-import io.silv.datastore.collectAsState
+import io.silv.datastore.collectPrefAsState
+import io.silv.di.rememberDataDependency
 import io.silv.ui.Converters
 import io.silv.ui.composables.CardType
 import io.silv.ui.composables.SelectCardType
@@ -51,15 +52,21 @@ fun DisplayOptionsBottomSheet(
         )
 
     val scope = rememberCoroutineScope()
+    val dataStore = rememberDataDependency { dataStore }
 
-    var cardType by ExplorePrefs.cardTypePrefKey.collectAsState(
+    var cardType by ExplorePrefs.cardTypePrefKey.collectPrefAsState(
+        dataStore,
         defaultValue = CardType.Compact,
         converter = Converters.CardTypeToStringConverter,
         scope = scope,
     )
 
-    var gridCells by ExplorePrefs.gridCellsPrefKey.collectAsState(ExplorePrefs.gridCellsDefault, scope)
-    var useList by ExplorePrefs.useListPrefKey.collectAsState(false, scope)
+    var gridCells by ExplorePrefs.gridCellsPrefKey.collectPrefAsState(
+        dataStore,
+        ExplorePrefs.gridCellsDefault,
+        scope
+    )
+    var useList by ExplorePrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
 
 
     LaunchedEffect(Unit) {
@@ -99,15 +106,15 @@ fun DisplayOptionsBottomSheet(
             Text(
                 text = "Clear search history",
                 style =
-                MaterialTheme.typography.labelLarge.copy(
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                ),
+                    MaterialTheme.typography.labelLarge.copy(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                    ),
                 modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(space.med)
-                    .clickable { clearSearchHistory() },
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(space.med)
+                        .clickable { clearSearchHistory() },
             )
             Spacer(
                 Modifier.windowInsetsPadding(WindowInsets.systemBars),
@@ -143,9 +150,9 @@ fun GridSizeSelector(
             Text(
                 text = "$size per row",
                 style =
-                MaterialTheme.typography.labelMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                ),
+                    MaterialTheme.typography.labelMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                    ),
             )
         }
         Slider(
@@ -164,25 +171,25 @@ fun GridSizeSelector(
             },
             steps = 3,
             value =
-            when (size) {
-                1 -> 0f
-                2 -> 25f
-                3 -> 50f
-                4 -> 75f
-                else -> 100f
-            },
+                when (size) {
+                    1 -> 0f
+                    2 -> 25f
+                    3 -> 50f
+                    4 -> 75f
+                    else -> 100f
+                },
         )
         Text(
             text = "Reset",
             style =
-            MaterialTheme.typography.labelLarge.copy(
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-            ),
+                MaterialTheme.typography.labelLarge.copy(
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                ),
             modifier =
-            Modifier
-                .padding(horizontal = 12.dp)
-                .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
+                Modifier
+                    .padding(horizontal = 12.dp)
+                    .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
         )
     }
 }

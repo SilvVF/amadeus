@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -18,13 +17,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
-import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.transitions.FadeTransition
 import io.silv.amadeus.crash.CrashActivity
 import io.silv.amadeus.crash.GlobalExceptionHandler
-import io.silv.amadeus.dependency.rememberDataDependency
 import io.silv.common.model.AppTheme
+import io.silv.di.rememberDataDependency
 import io.silv.explore.ExploreTab
 import io.silv.ui.LocalAnimatedContentScope
 import io.silv.ui.LocalAppState

@@ -48,7 +48,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.DependencyAccessor
 import io.silv.data.util.DiskUtil
 import io.silv.di.dataDeps
-import io.silv.di.downloadDeps
+
 import io.silv.manga.R
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.coroutines.Dispatchers
@@ -238,7 +238,7 @@ private fun ChapterCacheInfo(
     val context = LocalContext.current
     val space = LocalSpacing.current
 
-    val chapterCache = remember { downloadDeps.chapterCache }
+    val chapterCache = remember { dataDeps.chapterCache }
     var cacheReadableSizeSema by remember { mutableIntStateOf(0) }
     val cacheReadableSize = remember(cacheReadableSizeSema) { chapterCache.readableSize }
     val scope = rememberCoroutineScope()

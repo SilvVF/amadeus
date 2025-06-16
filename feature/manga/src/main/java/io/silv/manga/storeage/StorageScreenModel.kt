@@ -10,7 +10,7 @@ import io.silv.common.model.MangaDexSource
 import io.silv.data.download.DownloadCache
 import io.silv.data.download.DownloadManager
 import io.silv.di.dataDeps
-import io.silv.di.downloadDeps
+
 import io.silv.data.manga.interactor.GetManga
 import io.silv.data.manga.model.toResource
 import io.silv.data.manga.repository.MangaRepository
@@ -23,9 +23,9 @@ import kotlin.random.Random
 
 class StorageScreenModel @OptIn(DependencyAccessor::class) constructor(
     mangaRepository: MangaRepository = dataDeps.mangaRepository,
-    private val downloadCache: DownloadCache = downloadDeps.downloadCache,
+    private val downloadCache: DownloadCache = dataDeps.downloadCache,
     private val getManga: GetManga = dataDeps.getManga,
-    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
+    private val downloadManager: DownloadManager = dataDeps.downloadManager,
 ) : StateScreenModel<StorageScreenState>(StorageScreenState.Loading) {
 
     init {

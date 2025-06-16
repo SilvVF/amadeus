@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import io.silv.common.log.logcat
@@ -43,17 +44,15 @@ class PagerViewer(
 ) : Viewer {
 
     sealed interface UiEvent {
-        data class AnimateScrollToPage(val page: Int): UiEvent
+        data class AnimateScrollToPage(val page: Int) : UiEvent
     }
-
 
     val config: PagerConfig = PagerConfig(this, scope)
     private var preprocessed: MutableMap<Int, InsertPage> = mutableMapOf()
 
-    private val currentPageMutex = Mutex()
-
     var nextTransition: ChapterTransition.Next? = null
         private set
+
     var items = mutableStateListOf<ViewerPage>()
         private set
     var currentPage by mutableStateOf<ViewerPage?>(null)
@@ -93,9 +92,7 @@ class PagerViewer(
     init {
         snapshotFlow { pagerState.settledPage }
             .onEach {
-                currentPageMutex.withLock {
-                    handleSettledPage(it)
-                }
+                handleSettledPage(it)
             }
             .launchIn(scope)
     }
@@ -266,17 +263,20 @@ class PagerViewer(
 
         preprocessed = mutableMapOf()
 
-        items.clear()
-        items.addAll(newItems)
+        Snapshot.withMutableSnapshot {
+            items.clear()
+            items.addAll(newItems)
+        }
 
         // Will skip insert page otherwise
         insertPageLastPage?.let { moveToPage(it) }
     }
 
     override fun moveToPage(page: ReaderPage) {
+        val idx = items.indexOfFirst { it == page }.takeIf { it != -1 } ?: return
         scope.launch {
-            pagerState.animateScrollToPage(
-                items.indexOfFirst { it == page }
+            uiEvents.trySend(
+                UiEvent.AnimateScrollToPage(idx)
             )
         }
     }

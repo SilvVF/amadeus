@@ -51,6 +51,24 @@ abstract class EventStateScreenModel<EVENT, STATE>(initialState: STATE) : StateS
         )
 }
 
+interface SavedStateScreenModel: ScreenModel {
+    fun restoreStateMap(): MutableMap<String, Any>
+    fun saveStateMap(state: MutableMap<String, Any>)
+}
+
+val SavedStateScreenModel.screenStateHandle: MutableMap<String, Any>
+    get() =
+        ScreenModelStore.getOrPutDependency(
+            this,
+            name = "ScreenModelSavedStateHandle",
+            factory = { key ->
+                restoreStateMap()
+            },
+            onDispose = { scope ->
+                saveStateMap(scope)
+            },
+        )
+
 val ScreenModel.ioCoroutineScope: CoroutineScope
     get() =
         ScreenModelStore.getOrPutDependency(

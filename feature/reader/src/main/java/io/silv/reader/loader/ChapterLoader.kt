@@ -6,7 +6,7 @@ import io.silv.common.DependencyAccessor
 import io.silv.data.download.ChapterCache
 import io.silv.data.download.DownloadManager
 import io.silv.di.dataDeps
-import io.silv.di.downloadDeps
+
 import io.silv.data.manga.model.Manga
 import io.silv.network.networkDeps
 import io.silv.network.sources.HttpSource
@@ -18,12 +18,12 @@ import kotlinx.coroutines.withContext
  */
 class ChapterLoader @OptIn(DependencyAccessor::class) constructor(
     private val manga: Manga,
-    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
-    private val chapterCache: ChapterCache = downloadDeps.chapterCache,
+    private val downloadManager: DownloadManager = dataDeps.downloadManager,
+    private val chapterCache: ChapterCache = dataDeps.chapterCache,
     private val source: HttpSource = HttpSource(
         networkDeps.mangaDexApi,
         networkDeps.noCacheClient,
-        downloadDeps.imageSourceFactory,
+        dataDeps.imageSourceFactory,
     ),
     private val context: Context = dataDeps.context,
 ) {

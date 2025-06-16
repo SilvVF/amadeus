@@ -13,7 +13,7 @@ import io.silv.common.model.Download
 import io.silv.data.download.DownloadManager
 import io.silv.data.download.QItem
 import io.silv.di.dataDeps
-import io.silv.di.downloadDeps
+
 import io.silv.data.chapter.interactor.ChapterHandler
 import io.silv.data.chapter.interactor.GetBookmarkedChapters
 import io.silv.data.chapter.interactor.GetChapter
@@ -61,7 +61,7 @@ class LibraryScreenModel @OptIn(DependencyAccessor::class) constructor(
     getLibraryLastUpdated: GetLibraryLastUpdated = dataDeps.getLibraryLastUpdated,
     getBookmarkedChapters: GetBookmarkedChapters = dataDeps.getBookmarkedChapters,
     getLibraryMangaWithChapters: GetLibraryMangaWithChapters = dataDeps.getLibraryMangaWithChapters,
-    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
+    private val downloadManager: DownloadManager = dataDeps.downloadManager,
     private val getManga: GetManga = dataDeps.getManga,
     private val getChapter: GetChapter = dataDeps.getChapter,
     private val mangaHandler: MangaHandler = dataDeps.mangaHandler,

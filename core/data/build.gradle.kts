@@ -1,7 +1,8 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
-    kotlin("plugin.serialization") version "1.9.22"
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -29,8 +30,6 @@ dependencies {
 
     implementation(libs.image.decoder)
 
-    compileOnly(libs.compose.stable.marker)
-
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.unifile)
     implementation(libs.sandwich.ktor)
@@ -56,5 +55,6 @@ dependencies {
     androidTestImplementation(libs.androidx.work.testing)
     implementation(libs.bundles.work)
 
+    implementation(libs.androidx.compose.runtime)
     implementation(libs.kache)
 }

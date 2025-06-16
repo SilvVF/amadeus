@@ -52,7 +52,7 @@ import io.silv.common.DependencyAccessor
 import io.silv.common.model.ReadingStatus
 import io.silv.data.download.DownloadManager
 import io.silv.di.dataDeps
-import io.silv.di.downloadDeps
+
 import io.silv.data.history.HistoryRepository
 import io.silv.data.manga.interactor.GetLibraryMangaWithChapters
 import io.silv.manga.R
@@ -66,7 +66,7 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 class StatsScreenModel @OptIn(DependencyAccessor::class) constructor(
-    private val downloadManager: DownloadManager = downloadDeps.downloadManager,
+    private val downloadManager: DownloadManager = dataDeps.downloadManager,
     private val historyRepository: HistoryRepository = dataDeps.historyRepository,
     private val getLibraryMangaWithChapters: GetLibraryMangaWithChapters = dataDeps.getLibraryMangaWithChapters,
 ) : StateScreenModel<StatsScreenState>(StatsScreenState.Loading) {

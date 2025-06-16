@@ -58,8 +58,9 @@ import androidx.paging.compose.LazyPagingItems
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.datastore.ExplorePrefs
-import io.silv.datastore.collectAsState
+import io.silv.datastore.collectPrefAsState
 import io.silv.data.manga.model.Manga
+import io.silv.di.rememberDataDependency
 import io.silv.model.DomainSeasonalList
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
@@ -215,14 +216,16 @@ fun BrowseMangaContent(
 ) {
     val navigator = LocalNavigator.currentOrThrow
     val scope = rememberCoroutineScope()
+    val dataStore = rememberDataDependency { dataStore }
 
-    val gridCells by ExplorePrefs.gridCellsPrefKey.collectAsState(ExplorePrefs.gridCellsDefault, scope)
-    val cardType by ExplorePrefs.cardTypePrefKey.collectAsState(
+    val gridCells by ExplorePrefs.gridCellsPrefKey.collectPrefAsState(dataStore, ExplorePrefs.gridCellsDefault, scope)
+    val cardType by ExplorePrefs.cardTypePrefKey.collectPrefAsState(
+        dataStore,
         defaultValue = CardType.Compact,
         converter = Converters.CardTypeToStringConverter,
         scope = scope
     )
-    val useList by ExplorePrefs.useListPrefKey.collectAsState(false, scope)
+    val useList by ExplorePrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
     val refreshing = if (pagedType is UiPagedType.Seasonal) {

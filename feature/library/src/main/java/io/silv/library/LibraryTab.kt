@@ -108,11 +108,12 @@ import io.silv.common.model.MangaCover
 import io.silv.common.time.localDateTimeNow
 import io.silv.data.download.QItem
 import io.silv.datastore.LibraryPrefs
-import io.silv.datastore.collectAsState
 import io.silv.data.chapter.Chapter
 import io.silv.data.manga.model.Manga
 import io.silv.data.manga.model.MangaWithChapters
 import io.silv.data.update.UpdateWithRelations
+import io.silv.datastore.collectPrefAsState
+import io.silv.di.rememberDataDependency
 import io.silv.library.state.LibraryActions
 import io.silv.library.state.LibraryError
 import io.silv.library.state.LibraryMangaState
@@ -588,6 +589,7 @@ fun SuccessScreenContent(
     currentTab: LibTab,
     actions: LibraryActions,
 ) {
+    val dataStore = rememberDataDependency { dataStore }
     val showGlobalSearch by remember(state) {
         derivedStateOf {
             mangaState.filteredTagIds.isEmpty() &&
@@ -598,18 +600,24 @@ fun SuccessScreenContent(
 
     val scope = rememberCoroutineScope()
 
-    val cardType by LibraryPrefs.cardTypePrefKey.collectAsState(
+    val cardType by LibraryPrefs.cardTypePrefKey.collectPrefAsState(
+        dataStore,
         defaultValue = CardType.Compact,
         converter = Converters.CardTypeToStringConverter,
         scope = scope,
     )
 
-    val gridCells by LibraryPrefs.gridCellsPrefKey.collectAsState(
+    val gridCells by LibraryPrefs.gridCellsPrefKey.collectPrefAsState(
+        dataStore,
         LibraryPrefs.gridCellsDefault,
         scope
     )
-    val useList by LibraryPrefs.useListPrefKey.collectAsState(false, scope)
-    val animatePlacement by LibraryPrefs.animatePlacementPrefKey.collectAsState(true, scope)
+    val useList by LibraryPrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
+    val animatePlacement by LibraryPrefs.animatePlacementPrefKey.collectPrefAsState(
+        dataStore,
+        true,
+        scope
+    )
 
     AnimatedContent(
         targetState = currentTab,

@@ -29,6 +29,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
@@ -45,6 +47,8 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -65,6 +69,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.layout
@@ -93,7 +98,6 @@ import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.LocalSpacing
 
 
-
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import me.saket.swipe.SwipeAction
@@ -108,7 +112,7 @@ private enum class MenuTabs(val icon: ImageVector) {
 fun ReaderMenuOverlay(
     readerChapter: () -> ReaderChapter?,
     manga: () -> Manga?,
-    chapters: () -> List<Chapter>?,
+    chapters: () -> List<Chapter>,
     menuVisible: () -> Boolean,
     currentPage: () -> Int,
     pageCount: () -> Int,
@@ -177,7 +181,7 @@ fun ReaderMenuOverlay(
                 title = {
                     Column(
                         verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.Start
                     ) {
                         val chapter = readerChapter()
                         val chapterText = remember(chapter) {
@@ -189,12 +193,20 @@ fun ReaderMenuOverlay(
                                 }
                             } ?: ""
                         }
-                        Text(manga()?.titleEnglish.orEmpty())
+                        val contentColor = LocalContentColor.current
+                        BasicText(
+                            style = LocalTextStyle.current,
+                            text = manga()?.titleEnglish.orEmpty(),
+                            autoSize = TextAutoSize.StepBased(maxFontSize = MaterialTheme.typography.titleLarge.fontSize),
+                            maxLines = 1,
+                            color = ColorProducer { contentColor }
+                        )
                         Text(
                             chapterText,
                             style = MaterialTheme.typography.labelMedium.copy(
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = .78f)
-                            )
+                            ),
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 },
@@ -214,7 +226,7 @@ fun ReaderMenuOverlay(
                             .align(Alignment.Center)
                             .consumeWindowInsets(WindowInsets.systemBars),
                         fractionProvider = { expandableState.fraction.value },
-                        currentPageProvider =  currentPage,
+                        currentPageProvider = currentPage,
                         pageCountProvider = pageCount,
                         layoutDirectionProvider = { layoutDirection },
                         onPrevClick = loadPrevChapter,
@@ -266,14 +278,15 @@ fun ReaderMenuOverlay(
                         .fillMaxWidth()
                         .wrapContentHeight()
                 ) {
-                    when(it) {
+                    when (it) {
                         MenuTabs.Chapters.ordinal -> ChapterList(
-                            chapters = { chapters() ?: emptyList() },
+                            chapters = chapters,
                             modifier = Modifier
                                 .fillMaxHeight(0.6f)
                                 .fillMaxWidth(),
                             actions = chapterActions
                         )
+
                         MenuTabs.Options.ordinal -> ReaderOptions(
                             modifier = Modifier
                                 .fillMaxHeight(0.6f)
@@ -294,7 +307,7 @@ fun ToggleItem(
     enabled: () -> Boolean,
 ) {
     Row(
-        modifier= modifier
+        modifier = modifier
     ) {
         Text(text)
 
@@ -310,7 +323,7 @@ data class ChapterActions(
     val pauseDownloads: () -> Unit = {},
     val download: (chapterId: String) -> Unit = {},
 
-)
+    )
 
 @Composable
 private fun ExpandableScope.ChapterList(
@@ -327,7 +340,7 @@ private fun ExpandableScope.ChapterList(
             chapters,
             onReadClicked = { actions.markRead(it) },
             onDeleteClicked = { actions.delete(it) },
-            downloadsProvider =  { emptyList() },
+            downloadsProvider = { emptyList() },
             showFullTitle = true,
             onMarkAsRead = { actions.markRead(it) },
             onBookmark = { actions.bookmark(it) },
@@ -351,22 +364,22 @@ fun LazyListScope.chapterListItems(
     onDeleteClicked: (id: String) -> Unit,
     onReadClicked: (id: String) -> Unit,
 ) {
-    items (
+    items(
         items = chaptersProvider(),
         key = { c -> c.id }
-    ){ chapter ->
+    ) { chapter ->
         val space = LocalSpacing.current
 
         val archive =
             SwipeAction(
                 icon =
-                rememberVectorPainter(
-                    if (chapter.bookmarked) {
-                        Icons.TwoTone.Archive
-                    } else {
-                        Icons.TwoTone.Unarchive
-                    },
-                ),
+                    rememberVectorPainter(
+                        if (chapter.bookmarked) {
+                            Icons.TwoTone.Archive
+                        } else {
+                            Icons.TwoTone.Unarchive
+                        },
+                    ),
                 background = MaterialTheme.colorScheme.primary,
                 isUndo = chapter.bookmarked,
                 onSwipe = {
@@ -377,13 +390,13 @@ fun LazyListScope.chapterListItems(
         val read =
             SwipeAction(
                 icon =
-                rememberVectorPainter(
-                    if (chapter.read) {
-                        Icons.Filled.VisibilityOff
-                    } else {
-                        Icons.Filled.VisibilityOff
-                    },
-                ),
+                    rememberVectorPainter(
+                        if (chapter.read) {
+                            Icons.Filled.VisibilityOff
+                        } else {
+                            Icons.Filled.VisibilityOff
+                        },
+                    ),
                 background = MaterialTheme.colorScheme.primary,
                 isUndo = chapter.read,
                 onSwipe = {
@@ -397,13 +410,13 @@ fun LazyListScope.chapterListItems(
         ) {
             ChapterListItem(
                 modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clickable { onReadClicked(chapter.id) }
-                    .padding(
-                        vertical = space.med,
-                        horizontal = space.large,
-                    ),
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onReadClicked(chapter.id) }
+                        .padding(
+                            vertical = space.med,
+                            horizontal = space.large,
+                        ),
                 chapter = chapter,
                 download = downloadsProvider().fastFirstOrNull { it.data.chapter.id == chapter.id },
                 showFullTitle = showFullTitle,
@@ -477,32 +490,35 @@ private fun ChapterListItem(
                     )
                 }
                 Text(
-                    text = chapterTitleWithVolText(chapter = chapter, showFullTitle = showFullTitle),
+                    text = chapterTitleWithVolText(
+                        chapter = chapter,
+                        showFullTitle = showFullTitle
+                    ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        color =
-                        if (!chapter.read) {
-                            MaterialTheme.colorScheme.onBackground
-                        } else {
-                            Color.DarkGray
-                        },
-                    ),
+                        MaterialTheme.typography.bodyMedium.copy(
+                            color =
+                                if (!chapter.read) {
+                                    MaterialTheme.colorScheme.onBackground
+                                } else {
+                                    Color.DarkGray
+                                },
+                        ),
                 )
             }
             Spacer(modifier = Modifier.height(space.small))
             Text(
                 text = dateWithScanlationText(chapter = chapter),
                 style =
-                MaterialTheme.typography.labelLarge.copy(
-                    color =
-                    if (!chapter.read) {
-                        MaterialTheme.colorScheme.onBackground
-                    } else {
-                        Color.DarkGray
-                    },
-                ),
+                    MaterialTheme.typography.labelLarge.copy(
+                        color =
+                            if (!chapter.read) {
+                                MaterialTheme.colorScheme.onBackground
+                            } else {
+                                Color.DarkGray
+                            },
+                    ),
             )
         }
         val status by remember(download) {
@@ -529,6 +545,7 @@ private fun ChapterListItem(
                     ChapterDownloadAction.CANCEL -> onCancelClicked(
                         download?.data ?: return@ChapterDownloadIndicator
                     )
+
                     ChapterDownloadAction.DELETE -> onDeleteClicked()
                 }
             }

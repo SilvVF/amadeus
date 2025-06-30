@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.annotation.IntRange
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -89,8 +90,13 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     override fun restoreStateMap(): MutableMap<String, Any> {
-        return mutableMapOf(MANGA_KEY to mangaId, CHAPTER_KEY to chapterId, PAGE_KEY to chapterPageIndex)
+        return mutableMapOf(
+            MANGA_KEY to mangaId,
+            CHAPTER_KEY to chapterId,
+            PAGE_KEY to chapterPageIndex
+        )
     }
+
     override fun saveStateMap(state: MutableMap<String, Any>) = saveState(state)
 
     val manga: Manga? get() = state.value.manga
@@ -108,6 +114,9 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
             }
 
             PagerAction.ShowMenu -> showMenus(true)
+            is PagerAction.RetryLoad -> screenModelScope.launch {
+                preload(action.chapter)
+            }
         }
     }
 
@@ -141,30 +150,10 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
                 }
             }
             .launchIn(screenModelScope)
-
-        state.map { it.viewerChapters?.currChapter }
-            .distinctUntilChanged()
-            .filterNotNull()
-            .onEach { currentChapter ->
-                if (chapterPageIndex >= 0) {
-                    // Restore from SavedState
-                    currentChapter.requestedPage = chapterPageIndex
-                } else if (!currentChapter.chapter.read) {
-                    currentChapter.requestedPage = currentChapter.chapter.lastReadPage ?: -1
-                }
-                chapterId = currentChapter.chapter.id
-            }
-            .launchIn(screenModelScope)
-
-        state.map { it.viewerChapters }
-            .distinctUntilChanged()
-            .filterNotNull()
-            .onEach(viewer::setChapters)
-            .launchIn(screenModelScope)
     }
 
     override fun onDispose() {
-        val currentChapters = state.value.viewerChapters
+        val currentChapters = viewer.viewerChapters
         if (currentChapters != null) {
             currentChapters.unref()
             chapterToDownload?.let {
@@ -183,7 +172,12 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
             withContext(Dispatchers.IO) {
                 val manga = getManga.await(mangaId)
                 if (manga != null) {
-                    mutableState.update { it.copy(manga = manga) }
+                    mutableState.update {
+                        it.copy(
+                            manga = manga,
+                            chapters = chapterList.map { it.chapter }
+                        )
+                    }
                     logcat { "chapterid $savedChapter initial $chapterId" }
                     if (savedChapter.isNotEmpty()) chapterId = savedChapter
 
@@ -215,17 +209,17 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         )
 
         withContext(Dispatchers.Main) {
-            mutableState.update {
-                // Add new references first to avoid unnecessary recycling
-                newChapters.ref()
-                it.viewerChapters?.unref()
+            newChapters.ref()
+            viewer.viewerChapters?.currChapter?.let { cancelQueuedDownloads(it) }
 
-                chapterToDownload = cancelQueuedDownloads(newChapters.currChapter)?.data
+            mutableState.update {
                 it.copy(
-                    viewerChapters = newChapters,
                     bookmarked = newChapters.currChapter.chapter.bookmarked,
                 )
             }
+
+            viewer.viewerChapters?.unref()
+            viewer.setChapters(newChapters)
         }
     }
 
@@ -278,6 +272,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      */
     suspend fun preload(chapter: ReaderChapter) {
         if (chapter.state is ReaderChapter.State.Loaded || chapter.state == ReaderChapter.State.Loading) {
+            logcat { "chapter already loading ${chapter.chapter}" }
             return
         }
 
@@ -296,18 +291,13 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         }
 
         if (chapter.state != ReaderChapter.State.Wait && chapter.state !is ReaderChapter.State.Error) {
+            logcat { "chapter already loaded ${chapter.chapter}" }
             return
         }
-        try {
-            logcat { "Preloading ${chapter.chapter.url}" }
+        suspendRunCatching {
+            logcat { "Preloading ${chapter.chapter}" }
             loader.loadChapter(chapter)
-        } catch (e: Throwable) {
-            if (e is CancellationException) {
-                throw e
-            }
-            return
         }
-        state.value.viewerChapters?.let(viewer::setChapters)
     }
 
     /**
@@ -346,7 +336,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
 
         // Only download ahead if current + next chapter is already downloaded too to avoid jank
         if (getCurrentChapter()?.pageLoader !is DownloadPageLoader) return
-        val nextChapter = state.value.viewerChapters?.nextChapter?.chapter ?: return
+        val nextChapter = viewer.viewerChapters?.nextChapter?.chapter ?: return
 
         ioCoroutineScope.launch {
             val isNextChapterDownloaded = downloadManager.isChapterDownloaded(
@@ -394,7 +384,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         chapterToDownload = null
 
         if (chapterToDelete != null) {
-            enqueueDeleteReadChapters(chapterToDelete)
+            enqueueDeleteReadChapters(chapterToDelete.chapter)
         }
     }
 
@@ -404,10 +394,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      */
     private suspend fun updateChapterProgress(readerChapter: ReaderChapter, page: Page) {
         val pageIndex = page.index
-
-        mutableState.update {
-            it.copy(currentPage = pageIndex + 1)
-        }
         readerChapter.requestedPage = pageIndex
 
         if (!incognitoMode && page.status != Page.State.ERROR) {
@@ -464,7 +450,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * Called from the activity to load and set the next chapter as active.
      */
     suspend fun loadNextChapter() {
-        val nextChapter = state.value.viewerChapters?.nextChapter ?: return
+        val nextChapter = viewer.viewerChapters?.nextChapter ?: return
         loadAdjacent(nextChapter)
     }
 
@@ -472,7 +458,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * Called from the activity to load and set the previous chapter as active.
      */
     suspend fun loadPreviousChapter() {
-        val prevChapter = state.value.viewerChapters?.prevChapter ?: return
+        val prevChapter = viewer.viewerChapters?.prevChapter ?: return
         loadAdjacent(prevChapter)
     }
 
@@ -480,11 +466,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * Returns the currently active chapter.
      */
     private fun getCurrentChapter(): ReaderChapter? {
-        return state.value.currentChapter
-    }
-
-    fun getChapterUrl(): String? {
-        return getCurrentChapter()?.chapter?.url
+        return viewer.currentChapter
     }
 
     /**
@@ -514,34 +496,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     /**
-     * Updates the viewer position for the open manga.
-     */
-    fun setMangaReadingMode(readingMode: ReadingMode) {
-        val manga = manga ?: return
-        runBlocking(Dispatchers.IO) {
-            TODO("Set manga view flags")
-//            setMangaViewerFlags.awaitSetReadingMode(
-//                manga.id,
-//                readingMode.flagValue.toLong(),
-//            )
-            val currChapters = state.value.viewerChapters
-            if (currChapters != null) {
-                // Save current page
-                val currChapter = currChapters.currChapter
-                currChapter.requestedPage = currChapter.chapter.lastReadPage ?: -1
-
-                mutableState.update {
-                    it.copy(
-                        manga = getManga.await(manga.id),
-                        viewerChapters = currChapters,
-                    )
-                }
-            }
-            state.value.viewerChapters?.let(viewer::setChapters)
-        }
-    }
-
-    /**
      * Returns the orientation type used by this manga or the default one.
      */
     suspend fun getMangaOrientation(resolveDefault: Boolean = true): Int {
@@ -550,106 +504,9 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         return default
     }
 
-    /**
-     * Updates the orientation type for the open manga.
-     */
-    fun setMangaOrientationType(orientation: Reader2Orientation) {
-        val manga = manga ?: return
-        ioCoroutineScope.launch {
-            setMangaViewerFlags.awaitSetOrientation(manga.id, orientation.flagValue.toLong())
-            val currChapters = state.value.viewerChapters
-            if (currChapters != null) {
-                // Save current page
-                val currChapter = currChapters.currChapter
-                currChapter.requestedPage = currChapter.chapter.lastReadPage ?: -1
-
-                mutableState.update {
-                    it.copy(
-                        manga = getManga.await(manga.id),
-                        viewerChapters = currChapters,
-                    )
-                }
-                sendEvent(Event.SetOrientation(getMangaOrientation()))
-            }
-        }
-    }
-
-    suspend fun toggleCropBorders(): Boolean {
-        val isPagerType = ReadingMode.isPagerType(getMangaReadingMode())
-        return if (isPagerType) {
-            TODO("readerPreferences.cropBorders().toggle()")
-        } else {
-            TODO("readerPreferences.cropBordersWebtoon().toggle()")
-        }
-    }
 
     fun showMenus(visible: Boolean) {
         mutableState.update { it.copy(menuVisible = visible) }
-    }
-
-    fun showLoadingDialog() {
-        mutableState.update { it.copy(dialog = Dialog.Loading) }
-    }
-
-    fun openReadingModeSelectDialog() {
-        mutableState.update { it.copy(dialog = Dialog.ReadingModeSelect) }
-    }
-
-    fun openOrientationModeSelectDialog() {
-        mutableState.update { it.copy(dialog = Dialog.OrientationModeSelect) }
-    }
-
-    fun openPageDialog(page: ReaderPage) {
-        mutableState.update { it.copy(dialog = Dialog.PageActions(page)) }
-    }
-
-    fun openSettingsDialog() {
-        mutableState.update { it.copy(dialog = Dialog.Settings) }
-    }
-
-    fun closeDialog() {
-        mutableState.update { it.copy(dialog = null) }
-    }
-
-    fun setBrightnessOverlayValue(value: Int) {
-        mutableState.update { it.copy(brightnessOverlayValue = value) }
-    }
-
-    /**
-     * Saves the image of this the selected page on the pictures directory and notifies the UI of the result.
-     * There's also a notification to allow sharing the image somewhere else or deleting it.
-     */
-    fun saveImage() {
-        TODO("saveImage")
-    }
-
-    /**
-     * Shares the image of this the selected page and notifies the UI with the path of the file to share.
-     * The image must be first copied to the internal partition because there are many possible
-     * formats it can come from, like a zipped chapter, in which case it's not possible to directly
-     * get a path to the file and it has to be decompressed somewhere first. Only the last shared
-     * image will be kept so it won't be taking lots of internal disk space.
-     */
-    fun shareImage(copyToClipboard: Boolean) {
-        TODO("shareImage")
-    }
-
-    /**
-     * Sets the image of this the selected page as cover and notifies the UI of the result.
-     */
-    fun setAsCover() {
-        TODO("setAsCover")
-    }
-
-    enum class SetAsCoverResult {
-        Success,
-        AddToLibraryFirst,
-        Error,
-    }
-
-    sealed interface SaveImageResult {
-        class Success(val uri: Uri) : SaveImageResult
-        class Error(val error: Throwable) : SaveImageResult
     }
 
     /**
@@ -664,13 +521,13 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * Enqueues this [chapter] to be deleted when [deletePendingChapters] is called. The download
      * manager handles persisting it across process deaths.
      */
-    private fun enqueueDeleteReadChapters(chapter: ReaderChapter) {
-        if (!chapter.chapter.read) return
+    private fun enqueueDeleteReadChapters(chapter: Chapter) {
+        if (!chapter.read) return
         val manga = manga ?: return
 
         screenModelScope.launch(NonCancellable) {
             downloadManager.deleteChapters(
-                listOf(chapter.chapter.toResource()),
+                listOf(chapter.toResource()),
                 manga.toResource(),
             )
         }
@@ -689,37 +546,18 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     @Immutable
     data class State(
         val manga: Manga? = null,
-        val viewerChapters: ViewerChapters? = null,
+        val chapters: List<Chapter> = emptyList(),
         val bookmarked: Boolean = false,
         val isLoadingAdjacentChapter: Boolean = false,
-        val currentPage: Int = -1,
         val viewerFlags: Long? = null,
-        val dialog: Dialog? = null,
         val menuVisible: Boolean = false,
         @IntRange(from = -100, to = 100)
         val brightnessOverlayValue: Int = 0,
-    ) {
-        val currentChapter: ReaderChapter?
-            get() = viewerChapters?.currChapter
-
-        val totalPages: Int
-            get() = currentChapter?.pages?.size ?: -1
-    }
-
-    sealed interface Dialog {
-        data object Loading : Dialog
-        data object Settings : Dialog
-        data object ReadingModeSelect : Dialog
-        data object OrientationModeSelect : Dialog
-        data class PageActions(val page: ReaderPage) : Dialog
-    }
+    )
 
     sealed interface Event {
         data object PageChanged : Event
         data class SetOrientation(val orientation: Int) : Event
-        data class SetCoverResult(val result: SetAsCoverResult) : Event
-
-        data class SavedImage(val result: SaveImageResult) : Event
         data class ShareImage(val uri: Uri, val page: ReaderPage) : Event
         data class CopyImage(val uri: Uri) : Event
     }
@@ -742,27 +580,6 @@ data class ViewerChapters(
         prevChapter?.unref()
         nextChapter?.unref()
     }
-}
-
-/**
- * Interface for implementing a viewer.
- */
-interface Viewer {
-
-    /**
-     * Destroys this viewer. Called when leaving the reader or swapping viewers.
-     */
-    fun destroy() {}
-
-    /**
-     * Tells this viewer to set the given [chapters] as active.
-     */
-    fun setChapters(chapters: ViewerChapters)
-
-    /**
-     * Tells this viewer to move to the given [page].
-     */
-    fun moveToPage(page: ReaderPage)
 }
 
 class InsertPage(val parent: ReaderPage) : ReaderPage(parent.index, parent.url, parent.imageUrl) {

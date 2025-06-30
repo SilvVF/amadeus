@@ -2,54 +2,41 @@ package io.silv.reader2
 
 import android.content.Context
 import android.content.ContextWrapper
-import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -66,21 +53,13 @@ import io.silv.common.log.logcat
 import io.silv.reader.composables.ChapterActions
 import io.silv.reader.composables.ReaderMenuOverlay
 import io.silv.reader.loader.ChapterTransition
+import io.silv.reader.loader.ReaderChapter
 import io.silv.reader.loader.ReaderPage
 import io.silv.reader.loader.ViewerPage
-import io.silv.reader2.PagerViewer.UiEvent
 import io.silv.ui.LocalAppState
-import io.silv.ui.ScreenStateHandle
 import io.silv.ui.collectEvents
 import io.silv.ui.rememberLambda
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import java.io.Serializable
-import java.util.UUID
 
 private fun requireActivity(context: Context): ComponentActivity {
     return when (context) {
@@ -153,8 +132,6 @@ data class ReaderScreen2(
             when (event) {
                 is Reader2ScreenModel.Event.CopyImage -> TODO()
                 Reader2ScreenModel.Event.PageChanged -> displayRefreshHost.flash()
-                is Reader2ScreenModel.Event.SavedImage -> TODO()
-                is Reader2ScreenModel.Event.SetCoverResult -> TODO()
                 is Reader2ScreenModel.Event.SetOrientation -> setOrientation(event.orientation)
                 is Reader2ScreenModel.Event.ShareImage -> TODO()
             }
@@ -163,7 +140,7 @@ data class ReaderScreen2(
 
         screenModel.viewer.uiEvents.collectEvents { event ->
             when (event) {
-                is UiEvent.AnimateScrollToPage -> {
+                is PagerEvent.AnimateScrollToPage -> {
                     screenModel.viewer.pagerState.animateScrollToPage(event.page)
                 }
             }
@@ -220,7 +197,10 @@ private fun ReaderScreenContent(
 }
 
 @Composable
-fun PageContent(page: ViewerPage, viewer: PagerViewer) {
+fun PageContent(
+    page: ViewerPage,
+    viewer: PagerViewer
+) {
     val context = LocalContext.current
     when (page) {
         is ReaderPage -> {
@@ -230,7 +210,7 @@ fun PageContent(page: ViewerPage, viewer: PagerViewer) {
 
         is ChapterTransition -> {
             var size by remember { mutableStateOf(IntSize.Zero) }
-            Box(
+            Column(
                 Modifier
                     .fillMaxSize()
                     .onSizeChanged { size = it }
@@ -238,12 +218,30 @@ fun PageContent(page: ViewerPage, viewer: PagerViewer) {
                         detectTapGestures(onTap = {
                             viewer.handleClickEvent(it, size)
                         })
-                    }
+                    },
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     "to: ${page.to?.chapter?.title} from: ${page.from.chapter.title}",
-                    modifier = Modifier.align(Alignment.Center)
                 )
+                val to = page.to
+                if (to != null) {
+                    val state by to.stateAsFlow.collectAsState()
+                    when (state) {
+                        is ReaderChapter.State.Error -> {
+                            TextButton(
+                                onClick = { viewer.retry(to) }
+                            ) {
+                                Text("Retry")
+                            }
+                        }
+                        ReaderChapter.State.Loading -> {
+                            CircularProgressIndicator()
+                        }
+                        else -> Unit
+                    }
+                }
             }
         }
     }
@@ -355,14 +353,15 @@ fun ReaderDialogHost(
         menuVisible = { state.menuVisible },
         layoutDirection = if (viewer.l2r) LayoutDirection.Ltr else LayoutDirection.Rtl,
         chapterActions = ChapterActions(),
-        chapters = { emptyList() },
+        chapters = { state.chapters },
         currentPage = { viewer.currentPageNumber },
         pageCount = { viewer.totalPages },
         loadNextChapter = loadNextChapter,
         loadPrevChapter = loadPrevChapter,
         changePage = { page ->
             scope.launch {
-                viewer.pagerState.animateScrollToPage(page)
+                val idx = page - 1
+                viewer.pagerState.animateScrollToPage(idx.coerceAtLeast(0))
             }
         }
     ) {

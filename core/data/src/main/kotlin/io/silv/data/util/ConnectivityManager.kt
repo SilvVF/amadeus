@@ -1,10 +1,13 @@
 package io.silv.data.util
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest.Builder
+import androidx.annotation.RequiresPermission
 import androidx.core.content.getSystemService
 import io.silv.common.model.NetworkConnectivity
 import kotlinx.coroutines.channels.awaitClose
@@ -17,6 +20,7 @@ internal class NetworkConnectivityImpl(
     private val context: Context
 ): NetworkConnectivity {
 
+    @SuppressLint("MissingPermission")
     override val online: Flow<Boolean> = callbackFlow {
 
         val connectivityManager = context.getSystemService<ConnectivityManager>()
@@ -57,8 +61,7 @@ internal class NetworkConnectivityImpl(
         channel.trySend(
             with(connectivityManager) {
                 getNetworkCapabilities(activeNetwork)
-                    ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                    ?: false
+                    ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
             }
         )
 

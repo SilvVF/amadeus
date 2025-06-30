@@ -339,12 +339,11 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
                 filters.byUploadDateAsc == false -> sortedByDescending { it.createdAt }
                 else -> this
             }
+
         return sortedChapters
-            .asSequence()
             .filter { if (filters.bookmarked) it.bookmarked else true }
             .filter { if (filters.downloaded) it.downloaded else true }
             .filter { if (filters.unread) !it.read else true }
-            .toList()
     }
 }
 

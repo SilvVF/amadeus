@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Context
 import android.provider.Settings
 import androidx.core.content.getSystemService
+import androidx.work.WorkManager
 import cafe.adriel.voyager.core.registry.ScreenRegistry
 import coil3.ComponentRegistry
 import coil3.ImageLoader
@@ -43,15 +44,13 @@ import io.silv.sync.SyncDependencies
 import io.silv.sync.syncDependencies
 import kotlinx.coroutines.Dispatchers
 
-val debug = true
 
 class AmadeusApp : Application(), SingletonImageLoader.Factory {
     @OptIn(DependencyAccessor::class)
     override fun onCreate() {
         super.onCreate()
 
-        if (debug) AndroidLogcatLogger
-            .installOnDebuggableApp(this)
+        AndroidLogcatLogger.installOnDebuggableApp(this)
 
         ScreenRegistry {
             register<SharedScreen.Reader> {
@@ -145,11 +144,6 @@ class AmadeusApp : Application(), SingletonImageLoader.Factory {
             .decoderCoroutineContext(Dispatchers.IO.limitedParallelism(3))
             .allowHardware(true)
             .imageDecoderEnabled(true)
-            .apply {
-                if (debug) {
-                    logger(DebugLogger())
-                }
-            }
             .build()
     }
 }

@@ -12,13 +12,16 @@ import kotlinx.coroutines.flow.map
 class SeasonalMangaSyncManager(
     private val context: Context,
 ) : SyncManager {
-    override val isSyncing: Flow<Boolean> =
-        WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(SeasonalMangaSyncWorkName)
+
+    val workManager by lazy { WorkManager.getInstance(context) }
+
+    override val isSyncing: Flow<Boolean>
+        get() = workManager
+       .getWorkInfosForUniqueWorkFlow(SeasonalMangaSyncWorkName)
             .map(List<WorkInfo>::anyRunning)
             .conflate()
 
     override fun requestSync() {
-        val workManager = WorkManager.getInstance(context)
         workManager.enqueueUniqueWork(
             SeasonalMangaSyncWorkName,
             ExistingWorkPolicy.KEEP,

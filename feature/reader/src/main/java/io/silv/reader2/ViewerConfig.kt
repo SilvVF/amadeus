@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import io.silv.common.DependencyAccessor
+import io.silv.common.commonDeps
 import io.silv.di.dataDeps
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -17,8 +18,8 @@ import kotlinx.coroutines.flow.onEach
 
 @OptIn(DependencyAccessor::class)
 class PagerConfig(
-    private val viewer: PagerViewer,
-    scope: CoroutineScope,
+    private val isHorizontal: Boolean,
+    scope: CoroutineScope = CoroutineScope(commonDeps.dispatchers.default),
     dataStore: DataStore<Preferences> = dataDeps.dataStore
 ) : ViewerConfig(scope, dataStore) {
 
@@ -37,7 +38,7 @@ class PagerConfig(
     override var navigator: ViewerNavigation by mutableStateOf(defaultNavigation())
 
     override fun defaultNavigation(): ViewerNavigation {
-        return if(viewer.isHorizontal) {
+        return if(isHorizontal) {
             RightAndLeftNavigation()
         } else {
             LNavigation()

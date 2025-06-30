@@ -62,19 +62,22 @@ fun MenuPageSlider(
 
     val valid = !(currentPage <= 0 || pageCount <= 0)
 
+    if (!valid) {
+        return
+    }
+
     val sliderState = remember(currentPage) {
         SliderState(
             value = currentPage.toFloat().coerceAtLeast(1f),
             steps = pageCount.coerceAtLeast(1),
             valueRange = 1f..pageCount.toFloat()
-        )
-    }
-
-    SideEffect {
-        sliderState.onValueChangeFinished = {
-            onPageChange(sliderState.value.roundToInt())
+        ).apply {
+            onValueChangeFinished = {
+                onPageChange(value.roundToInt())
+            }
         }
     }
+
 
     val space = LocalSpacing.current
     val layoutDirection = layoutDirectionProvider()
@@ -132,8 +135,6 @@ fun MenuPageSlider(
             CompositionLocalProvider(
                 LocalLayoutDirection provides layoutDirection
             ) {
-
-
                 Slider(
                     state = sliderState,
                     modifier = Modifier

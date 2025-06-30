@@ -4,6 +4,7 @@ import androidx.compose.runtime.Stable
 import io.silv.common.mutablePropertyFrom
 import io.silv.data.chapter.Chapter
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.datetime.LocalDateTime
 
 @Stable
@@ -39,6 +40,8 @@ data class ReaderChapter(
             userToId, version, createdAt, updatedAt, readableAt, ableToDownload
         )
     }
+
+    val stateAsFlow get() = stateFlow
 
     var state: State by mutablePropertyFrom(stateFlow)
 

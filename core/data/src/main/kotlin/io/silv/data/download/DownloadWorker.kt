@@ -12,6 +12,7 @@ import androidx.work.WorkerParameters
 import io.silv.common.DependencyAccessor
 import io.silv.common.log.logcat
 import io.silv.common.model.NetworkConnectivity
+import io.silv.data.OSWorkManagerHelper
 import io.silv.data.workers.createForegroundInfo
 import io.silv.di.dataDeps
 
@@ -86,17 +87,17 @@ class DownloadWorker(
                 .addTag(TAG)
                 .build()
 
-            WorkManager.getInstance(context)
+            OSWorkManagerHelper.getInstance(context)
                 .enqueueUniqueWork(TAG, ExistingWorkPolicy.REPLACE, request)
         }
 
         fun stop(context: Context) {
-            WorkManager.getInstance(context)
+            OSWorkManagerHelper.getInstance(context)
                 .cancelUniqueWork(TAG)
         }
 
         suspend fun isRunning(context: Context): Boolean {
-            return WorkManager.getInstance(context)
+            return OSWorkManagerHelper.getInstance(context)
                 .getWorkInfosByTagFlow(TAG)
                 .first()
                 .let { list -> list.count { it.state == WorkInfo.State.RUNNING } == 1 }
@@ -104,7 +105,7 @@ class DownloadWorker(
         }
 
         fun isRunningFlow(context: Context): Flow<Boolean> {
-            return WorkManager.getInstance(context)
+            return OSWorkManagerHelper.getInstance(context)
                 .getWorkInfosByTagFlow(TAG)
                 .map { list -> list.count { it.state == WorkInfo.State.RUNNING } == 1 }
         }

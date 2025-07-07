@@ -85,6 +85,15 @@ abstract class EventScreenModel<EVENT> : ScreenModel {
 
     val events = mutableEvents.receiveAsFlow()
 
+    protected fun trySendEvent(event: EVENT) {
+        mutableEvents.trySend(event)
+    }
+    protected suspend fun sendEvent(event: EVENT) {
+        withContext(Dispatchers.Main.immediate) {
+            mutableEvents.send(event)
+        }
+    }
+
     protected fun <T> Flow<T>.stateInUi(initialValue: T) =
         this.stateIn(
             screenModelScope,

@@ -10,6 +10,7 @@ import io.silv.common.DependencyAccessor
 import io.silv.common.commonDeps
 import io.silv.common.model.NetworkConnectivity
 import io.silv.data.AuthorListRepository
+import io.silv.data.OSWorkManagerHelper
 import io.silv.data.RecentSearchRepositoryImpl
 import io.silv.data.TagRepository
 import io.silv.data.author.AuthorListRepositoryImpl
@@ -165,7 +166,7 @@ abstract class DataDependencies {
         )
     }
 
-    val workManager get() = WorkManager.getInstance(context)
+    val workManager get() = OSWorkManagerHelper.getInstance(context)
 
     val connectivity: NetworkConnectivity by lazy {
         NetworkConnectivityImpl(context)

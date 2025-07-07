@@ -3,8 +3,7 @@ package io.silv.manga.view
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.screenModelScope
-import com.skydoves.sandwich.ApiResponse
-import com.skydoves.sandwich.message
+import com.skydoves.sandwich.fold
 import io.silv.common.DependencyAccessor
 import io.silv.common.log.logcat
 import io.silv.common.model.Download
@@ -24,18 +23,14 @@ import io.silv.data.manga.interactor.MangaHandler
 import io.silv.data.manga.model.Manga
 import io.silv.data.manga.model.toResource
 import io.silv.model.MangaStats
-import io.silv.ui.EventStateScreenModel
+import io.silv.ui.EventScreenModel
 import io.silv.ui.ioCoroutineScope
+import kotlinx.coroutines.flow.Flow
 
 
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -47,126 +42,91 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     private val chapterHandler: ChapterHandler = dataDeps.chapterHandler,
     private val downloadManager: DownloadManager = dataDeps.downloadManager,
     private val coverCache: CoverCache = dataDeps.coverCache,
-    mangaId: String,
-) : EventStateScreenModel<MangaViewEvent, MangaViewState>(MangaViewState.Loading) {
+    private val mangaId: String,
+) : EventScreenModel<MangaViewEvent>() {
 
-    private fun updateSuccess(block: (state: MangaViewState.Success) -> MangaViewState) {
-        mutableState.update { state ->
-            (state as? MangaViewState.Success)?.let(block) ?: state
+    private val downloadsFlow = downloadManager.queueState
+
+    private val loadingArtFlow = MutableStateFlow(false)
+    private val refreshingChaptersFlow = MutableStateFlow(false)
+    private val filtersFlow = MutableStateFlow(Filters())
+
+    private val mangaState: Flow<MangaState> = combine(
+        getMangaWithChapters.subscribe(mangaId),
+        downloadsFlow,
+        filtersFlow,
+        refreshingChaptersFlow,
+        downloadManager.cacheChanges
+    ) { (manga, chapters), downloads, filters, refreshing, _ ->
+
+        val chaptersDownloaded = chapters.map { chapter ->
+            chapter.copy(
+                downloaded = downloadManager
+                    .isChapterDownloaded(
+                        chapter.title,
+                        chapter.scanlator,
+                        manga.titleEnglish
+                    )
+            )
+        }
+
+        MangaState.Success(
+            manga,
+            chaptersDownloaded,
+            chaptersDownloaded.applyFilters(filters),
+            refreshing
+        ) as MangaState
+    }.onStart {
+        val first = getMangaWithChapters.await(mangaId)
+        if (first == null) {
+            emit(MangaState.Error("failed to load manga $mangaId"))
+        } else if (first.chapters.isEmpty()) {
+            refreshChapterList()
         }
     }
 
-    private val mutableFilters = MutableStateFlow(Filters())
-
-    init {
-        combine(
-            getMangaWithChapters.subscribe(mangaId)
-                .onEach { logcat { "MangaWithChapters ${it.manga.inLibrary} ${it.chapters.size}" } }
-                .onStart {
-                    val first = getMangaWithChapters.await(mangaId)
-                    if (first == null) {
-                        mutableState.update {
-                            MangaViewState.Error("failed to get manga")
-                        }
-                    } else {
-                        if (first.chapters.isEmpty()) {
-                            mutableState.update {
-                                MangaViewState.Success(
-                                    first.manga,
-                                    refreshingChapters = true
-                                )
-                            }
-                            refreshChapterList()
-                        }
-                    }
+    val statsUiState = flow {
+        emit(StatsUiState.Loading)
+        val stats = getMangaStatisticsById.await(mangaId)
+            .fold(
+                onSuccess = {
+                    StatsUiState.Success(it)
                 },
-            downloadManager.cacheChanges,
-            downloadManager.queueState
-        ) { (manga, chapters), _, _ ->
-            mutableState.update {
-                (it.success ?: MangaViewState.Success(manga)).copy(
-                    manga = manga,
-                    chapters = chapters.map { chapter ->
-                        chapter.copy(
-                            downloaded = downloadManager
-                                .isChapterDownloaded(
-                                    chapter.title,
-                                    chapter.scanlator,
-                                    manga.titleEnglish
-                                )
-                        )
-                    }
-                        .toList(),
-                )
-            }
-        }
-            .catch { mutableState.value = MangaViewState.Error(it.localizedMessage ?: "") }
-            .launchIn(screenModelScope)
-
-        downloadManager.queueState.onEach { downloads ->
-            updateSuccess { state ->
-                state.copy(
-                    downloads = downloads.filter {
-                        it.data.chapter.id in state.chapters.map { c -> c.id }
-                    }
-                        .toList(),
-                )
-            }
-        }
-            .launchIn(screenModelScope)
-
-        state.map { it.success?.chapters }
-            .filterNotNull()
-            .combine(
-                state.map { it.success?.filters }.filterNotNull(),
-            ) { chapters, filters ->
-                updateSuccess { state ->
-                    state.copy(
-                        filteredChapters = chapters.applyFilters(filters),
-                    )
+                onFailure = {
+                    StatsUiState.Error(it)
                 }
-            }
-            .launchIn(screenModelScope)
-
-        mutableFilters.onEach {
-            updateSuccess { state -> state.copy(filters = it) }
-        }
-            .launchIn(screenModelScope)
-
-        state.map { it.success?.manga?.id }
-            .filterNotNull()
-            .distinctUntilChanged()
-            .onEach { id ->
-                val response = getMangaStatisticsById.await(id)
-                updateSuccess { state ->
-                    state.copy(
-                        statsUiState =
-                            when (response) {
-                                is ApiResponse.Success -> StatsUiState.Success(response.data)
-                                is ApiResponse.Failure -> StatsUiState.Error(response.message())
-                            },
-                    )
-                }
-            }
-            .launchIn(screenModelScope)
+            )
+        emit(stats)
     }
+
+
+    val state = combine(
+        mangaState,
+        loadingArtFlow,
+        statsUiState,
+        downloadsFlow,
+        filtersFlow,
+    ) { mangaState, loadingArt, stats, downloads, filters ->
+        MangaViewState(
+            mangaState = mangaState,
+            loadingArt = loadingArt,
+            statsUiState = stats,
+            downloads = downloads.filter {
+                it.data.chapter.id in mangaState.success?.chapters.orEmpty().map { c -> c.id }
+            },
+            filters = filters
+        )
+    }
+        .stateInUi(MangaViewState())
+
 
     fun refreshChapterList() {
         screenModelScope.launch {
-            state.value.success?.let {
+            refreshingChaptersFlow.value = true
 
-                updateSuccess {
-                    it.copy(refreshingChapters = true)
-                }
+            chapterHandler.refreshList(mangaId)
 
-                chapterHandler.refreshList(it.manga.id)
-
-                updateSuccess {
-                    it.copy(
-                        refreshingChapters = false
-                    )
-                }
-            }
+            refreshingChaptersFlow.value = false
         }
     }
 
@@ -180,7 +140,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
         screenModelScope.launch {
             chapterHandler.toggleChapterBookmarked(id)
                 .onSuccess {
-                    sendEvent(MangaViewEvent.BookmarkStatusChanged(id, it.bookmarked))
+                    trySendEvent(MangaViewEvent.BookmarkStatusChanged(id, it.bookmarked))
                 }
         }
     }
@@ -189,21 +149,21 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
         screenModelScope.launch {
             chapterHandler.toggleReadOrUnread(id)
                 .onSuccess {
-                    sendEvent(MangaViewEvent.ReadStatusChanged(id, it.read))
+                    trySendEvent(MangaViewEvent.ReadStatusChanged(id, it.read))
                 }
         }
     }
 
     fun updateMangaReadingStatus(readingStatus: ReadingStatus) {
         screenModelScope.launch {
-            state.value.success?.let {
+            state.value.mangaState.success?.let {
                 mangaHandler.updateMangaStatus(it.manga, readingStatus)
             }
         }
     }
 
     fun filterDownloaded() {
-        mutableFilters.update {
+        filtersFlow.update {
             it.copy(
                 downloaded = !it.downloaded,
             )
@@ -211,7 +171,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     fun filterByUploadDate() {
-        mutableFilters.update {
+        filtersFlow.update {
             if (it.byUploadDateAsc != null) {
                 it.copy(
                     byUploadDateAsc = !it.byUploadDateAsc!!,
@@ -227,7 +187,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     fun filterByChapterNumber() {
-        mutableFilters.update {
+        filtersFlow.update {
             if (it.byChapterAsc != null) {
                 it.copy(
                     byChapterAsc = !it.byChapterAsc!!,
@@ -243,7 +203,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     fun filterBySource() {
-        mutableFilters.update {
+        filtersFlow.update {
             if (it.bySourceAsc != null) {
                 it.copy(
                     bySourceAsc = !it.bySourceAsc!!,
@@ -259,7 +219,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     fun filterBookmarked() {
-        mutableFilters.update {
+        filtersFlow.update {
             it.copy(
                 bookmarked = !it.bookmarked,
             )
@@ -267,7 +227,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     fun filterUnread() {
-        mutableFilters.update {
+        filtersFlow.update {
             it.copy(
                 unread = !it.unread,
             )
@@ -275,7 +235,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     fun deleteChapterImages(chapterId: String) {
-        state.value.success?.let {
+        state.value.mangaState.success?.let {
             screenModelScope.launch {
                 downloadManager.deleteChapters(
                     listOf(
@@ -309,7 +269,7 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     fun downloadChapterImages(chapterId: String) {
-        state.value.success?.let {
+        state.value.mangaState.success?.let {
             ioCoroutineScope.launch {
                 logcat { "Calling download chapter images" }
                 downloadManager.downloadChapters(
@@ -379,23 +339,28 @@ data class MangaActions(
     val changeStatus: (ReadingStatus) -> Unit
 )
 
+
+data class MangaViewState(
+    val loadingArt: Boolean = false,
+    val statsUiState: StatsUiState = StatsUiState.Loading,
+    val downloads: List<QItem<Download>> = emptyList(),
+    val filters: Filters = Filters(),
+    val mangaState: MangaState = MangaState.Loading
+)
+
 @Stable
 @Immutable
-sealed interface MangaViewState {
-    data object Loading : MangaViewState
+sealed interface MangaState {
+    data object Loading : MangaState
 
     data class Success(
         val manga: Manga,
-        val downloads: List<QItem<Download>> = emptyList(),
-        val loadingArt: Boolean = false,
-        val statsUiState: StatsUiState = StatsUiState.Loading,
         val chapters: List<Chapter> = emptyList(),
         val filteredChapters: List<Chapter> = emptyList(),
-        val filters: Filters = Filters(),
         val refreshingChapters: Boolean = false
-    ) : MangaViewState
+    ) : MangaState
 
-    data class Error(val message: String) : MangaViewState
+    data class Error(val message: String) : MangaState
 
     val success: Success?
         get() = this as? Success

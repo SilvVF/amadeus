@@ -1,14 +1,15 @@
 package io.silv.ui.layout
 
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.splineBasedDecay
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.TargetedFlingBehavior
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
+import androidx.compose.foundation.gestures.animateToWithDecay
+import androidx.compose.foundation.gestures.snapTo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -19,6 +20,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -30,27 +32,43 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Velocity
-import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
 fun rememberExpandableState(
-    startProgress: DragAnchors = DragAnchors.End,
-    density: Density = LocalDensity.current
-) = rememberSaveable(
-    saver =
-    Saver(
-        save = { it.anchoredDraggableState.currentValue },
-        restore = { ExpandableState(it, density) },
-    ),
-) {
-    ExpandableState(
-        startProgress,
-        density,
-    )
+    startProgress: DragAnchors = DragAnchors.End
+): ExpandableState {
+    val state = remember {
+        AnchoredDraggableState(
+            initialValue = startProgress
+        )
+    }
+    val scope = rememberCoroutineScope()
+    val flingBehavior = AnchoredDraggableDefaults.flingBehavior(state)
+
+    return rememberSaveable<ExpandableState>(
+        saver =
+            Saver<ExpandableState, DragAnchors>(
+                save = { it.anchoredDraggableState.currentValue },
+                restore = { anchor ->
+                    ExpandableState(
+                        state.apply {
+                            scope.launch {
+                                snapTo(anchor)
+                            }
+                        },
+                        flingBehavior
+                    )
+                },
+            ),
+    ) {
+        ExpandableState(
+            state,
+            flingBehavior
+        )
+    }
 }
 
 @Stable
@@ -78,23 +96,14 @@ class ExpandableScope(private val expandableState: ExpandableState) {
 }
 
 class ExpandableState(
-    startProgress: DragAnchors,
-    density: Density,
+    val anchoredDraggableState: AnchoredDraggableState<DragAnchors>,
+    val flingBehavior: TargetedFlingBehavior
 ) {
     internal var maxHeightPx by mutableIntStateOf(0)
 
-    internal val anchoredDraggableState = AnchoredDraggableState(
-        initialValue = startProgress,
-        anchors = DraggableAnchors {},
-        positionalThreshold = { distance: Float -> distance * 0.5f },
-        velocityThreshold = { with(density) { 100.dp.toPx() } },
-        snapAnimationSpec = tween(),
-        decayAnimationSpec = splineBasedDecay(density),
-    )
-
     internal fun nestedScrollConnection(
         scrollState: ScrollableState
-    ) = object: NestedScrollConnection {
+    ) = object : NestedScrollConnection {
         override fun onPreScroll(
             available: Offset,
             source: NestedScrollSource
@@ -121,10 +130,14 @@ class ExpandableState(
                 y = anchoredDraggableState.dispatchRawDelta(delta)
             )
         }
+
         override suspend fun onPreFling(available: Velocity): Velocity {
             return if (available.y < 0 && !scrollState.canScrollBackward) {
-                anchoredDraggableState.settle(available.y)
-                available
+                val consumedY = anchoredDraggableState.animateToWithDecay(
+                    anchoredDraggableState.targetValue,
+                    available.y
+                )
+                Velocity(0f, consumedY)
             } else {
                 Velocity.Zero
             }
@@ -134,8 +147,11 @@ class ExpandableState(
             consumed: Velocity,
             available: Velocity
         ): Velocity {
-            anchoredDraggableState.settle(available.y)
-            return super.onPostFling(consumed, available)
+            val consumedY = anchoredDraggableState.animateToWithDecay(
+                anchoredDraggableState.targetValue,
+                available.y
+            )
+            return Velocity(0f, consumedY)
         }
     }
 
@@ -196,12 +212,13 @@ fun ExpandableInfoLayout(
             }
         },
         modifier =
-        modifier
-            .wrapContentHeight()
-            .anchoredDraggable(
-                state.anchoredDraggableState,
-                orientation = Orientation.Vertical
-            ),
+            modifier
+                .wrapContentHeight()
+                .anchoredDraggable(
+                    state.anchoredDraggableState,
+                    flingBehavior = state.flingBehavior,
+                    orientation = Orientation.Vertical
+                ),
     ) { measurables, constraints ->
 
         val peekPlaceable =
@@ -224,7 +241,7 @@ fun ExpandableInfoLayout(
                     DragAnchors.entries
                         .forEach { anchor ->
                             anchor at
-                                    when(anchor) {
+                                    when (anchor) {
                                         DragAnchors.Start -> 0f
                                         DragAnchors.Peek -> contentPlaceable.height.toFloat()
                                         DragAnchors.End -> totalHeight.toFloat()

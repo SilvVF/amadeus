@@ -13,7 +13,7 @@ class SeasonalMangaSyncManager(
     private val context: Context,
 ) : SyncManager {
 
-    val workManager by lazy { WorkManager.getInstance(context) }
+    val workManager get() = WorkManager.getInstance(context)
 
     override val isSyncing: Flow<Boolean>
         get() = workManager

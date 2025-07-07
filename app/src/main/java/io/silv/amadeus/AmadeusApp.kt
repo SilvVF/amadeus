@@ -5,7 +5,7 @@ import android.app.Application
 import android.content.Context
 import android.provider.Settings
 import androidx.core.content.getSystemService
-import androidx.work.WorkManager
+import androidx.work.Configuration
 import cafe.adriel.voyager.core.registry.ScreenRegistry
 import coil3.ComponentRegistry
 import coil3.ImageLoader
@@ -19,7 +19,6 @@ import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowHardware
 import coil3.request.allowRgb565
 import coil3.request.crossfade
-import coil3.util.DebugLogger
 import eu.kanade.tachiyomi.BufferedSourceFetcher
 import eu.kanade.tachiyomi.MangaCoverFactory
 import eu.kanade.tachiyomi.MangaCoverKeyer
@@ -45,7 +44,13 @@ import io.silv.sync.syncDependencies
 import kotlinx.coroutines.Dispatchers
 
 
-class AmadeusApp : Application(), SingletonImageLoader.Factory {
+class AmadeusApp() : Application(), SingletonImageLoader.Factory, Configuration.Provider {
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+                .setMinimumLoggingLevel(android.util.Log.INFO)
+                .build()
+
     @OptIn(DependencyAccessor::class)
     override fun onCreate() {
         super.onCreate()
@@ -140,7 +145,7 @@ class AmadeusApp : Application(), SingletonImageLoader.Factory {
             .allowRgb565(!isLowRamDevice(this))
             .memoryCache(memCache)
             .diskCache(diskCache)
-            .fetcherCoroutineContext (Dispatchers.IO.limitedParallelism(8))
+            .fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(8))
             .decoderCoroutineContext(Dispatchers.IO.limitedParallelism(3))
             .allowHardware(true)
             .imageDecoderEnabled(true)

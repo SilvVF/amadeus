@@ -19,6 +19,7 @@ import io.silv.reader.loader.ReaderPage
 import io.silv.reader.loader.ViewerPage
 import io.silv.reader2.ViewerNavigation.NavigationRegion
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.collectLatest
@@ -47,6 +48,7 @@ interface Viewer {
     fun moveToPage(page: ReaderPage)
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PagerViewer(
     val isHorizontal: Boolean = true,
     val l2r: Boolean = true,

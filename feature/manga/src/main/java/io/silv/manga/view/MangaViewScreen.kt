@@ -99,7 +99,10 @@ import com.skydoves.sandwich.message
 import com.skydoves.sandwich.onFailure
 import com.skydoves.sandwich.onSuccess
 import io.silv.common.DependencyAccessor
+import io.silv.common.model.Download
+import io.silv.data.download.QItem
 import io.silv.data.manga.GetMangaCoverArtById
+import io.silv.datastore.model.Filters
 import io.silv.di.dataDeps
 import io.silv.manga.composables.MangaDescription
 import io.silv.manga.composables.MangaImageWithTitle
@@ -241,29 +244,32 @@ fun MangaViewScreenContent(
     downloadActions: DownloadActions,
 ) {
     val navigator = LocalNavigator.currentOrThrow
-    when (state) {
-        is MangaViewState.Error ->
+    when (val mangaState = state.mangaState) {
+        is MangaState.Error ->
             CenterBox(Modifier.fillMaxSize()) {
                 Column {
-                    Text(state.message)
+                    Text(mangaState.message)
                     Button(onClick = { navigator.pop() }) {
                         Text(text = "Go back")
                     }
                 }
             }
-        MangaViewState.Loading ->
+        MangaState.Loading ->
             CenterBox(Modifier.fillMaxSize()) {
                 CircularProgressIndicator()
             }
-        is MangaViewState.Success ->
+        is MangaState.Success ->
             MangaViewSuccessScreen(
-                state = state,
+                state = mangaState,
                 snackbarHostState = snackbarHostState,
                 viewOnWeb = viewOnWeb,
                 filterActions = filterActions,
                 chapterActions = chapterActions,
                 mangaActions = mangaActions,
-                downloadActions = downloadActions
+                downloadActions = downloadActions,
+                downloads = state.downloads,
+                filters = state.filters,
+                statsUiState = state.statsUiState
             )
     }
 }
@@ -276,7 +282,10 @@ private const val VOLUME_ART_BOTTOM_SHEET = 0
 )
 @Composable
 fun MangaViewSuccessScreen(
-    state: MangaViewState.Success,
+    downloads: List<QItem<Download>>,
+    state: MangaState.Success,
+    filters: Filters,
+    statsUiState: StatsUiState,
     snackbarHostState: SnackbarHostState,
     viewOnWeb: (url: String) -> Unit,
     filterActions: FilterActions,
@@ -441,7 +450,7 @@ fun MangaViewSuccessScreen(
                         modifier = Modifier
                             .fillMaxWidth(),
                         padding = paddingValues,
-                        stats = state.statsUiState,
+                        stats = statsUiState,
                         viewOnWeb = {
                             viewOnWeb("https://mangadex.org/title/${state.manga.id}")
                         },
@@ -489,7 +498,7 @@ fun MangaViewSuccessScreen(
                 }
                 chapterListItems(
                     mangaViewState = state,
-                    downloads = state.downloads,
+                    downloads = downloads,
                     onDownloadClicked = chapterActions.download,
                     onDeleteClicked = chapterActions.delete,
                     onReadClicked = {
@@ -517,7 +526,7 @@ fun MangaViewSuccessScreen(
         FILTER_BOTTOM_SHEET ->
             FilterBottomSheet(
                 visible = true,
-                filters = state.filters,
+                filters = filters,
                 sheetState = sheetState,
                 onDismiss = { currentBottomSheet = null },
                 onSetAsDefaultClick = filterActions.setAsDefault,

@@ -24,6 +24,7 @@
         android:enableOnBackInvokedCallback="true"
         android:roundIcon="@drawable/amadeuslogo"
         android:supportsRtl="true"
+        tools:node="replace"
         android:theme="@style/Theme.Amadeus"
         tools:targetApi="33">
         <profileable
@@ -45,6 +46,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <!-- If you are using androidx.startup to initialize other components -->
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <provider
             android:name="androidx.core.content.FileProvider"

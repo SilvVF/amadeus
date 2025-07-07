@@ -16,6 +16,7 @@ import androidx.compose.ui.util.fastFirstOrNull
 import io.silv.common.model.Download
 import io.silv.data.download.QItem
 import io.silv.manga.view.DownloadActions
+import io.silv.manga.view.MangaState
 import io.silv.manga.view.MangaViewState
 import io.silv.ui.composables.ChapterListItem
 import io.silv.ui.theme.LocalSpacing
@@ -24,7 +25,7 @@ import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
 
 fun LazyListScope.chapterListItems(
-    mangaViewState: MangaViewState.Success,
+    mangaViewState: MangaState.Success,
     showFullTitle: Boolean,
     downloads: List<QItem<Download>>,
     onMarkAsRead: (id: String) -> Unit,

@@ -13,6 +13,7 @@ import io.silv.common.model.NetworkConnectivity
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.conflate
 
 
@@ -69,6 +70,9 @@ internal class NetworkConnectivityImpl(
             connectivityManager.unregisterNetworkCallback(callback)
         }
     }
+        .catch {
+            emit(false)
+        }
         .conflate()
 
 }

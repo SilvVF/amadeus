@@ -38,7 +38,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,7 +58,6 @@ import io.silv.reader.loader.ReaderPage
 import io.silv.reader.loader.ViewerPage
 import io.silv.ui.LocalAppState
 import io.silv.ui.collectEvents
-import io.silv.ui.rememberLambda
 import kotlinx.coroutines.launch
 
 private fun requireActivity(context: Context): ComponentActivity {
@@ -140,8 +138,8 @@ data class ReaderScreen2(
         }
 
         ReaderScreenContent(
-            state,
-            screenModel.viewer,
+            state = state,
+            viewer = screenModel.viewer,
             loadPrevChapter = {
                 lifecycleOwner.lifecycleScope.launch {
                     screenModel.loadPreviousChapter()
@@ -157,7 +155,15 @@ data class ReaderScreen2(
             },
             onDismiss = {
                 screenModel.showMenus(false)
-            }
+            },
+            actions = ChapterActions(
+                delete = screenModel::deleteChapterImages,
+                markRead = screenModel::toggleChapterRead,
+                bookmark = screenModel::toggleChapterBookmark,
+                cancelDownload = screenModel::cancelDownload,
+                pauseDownloads = screenModel::pauseDownloads,
+                download = screenModel::downloadChapterImages
+            )
         )
     }
 }
@@ -165,6 +171,7 @@ data class ReaderScreen2(
 @Composable
 private fun ReaderScreenContent(
     state: Reader2ScreenModel.State,
+    actions: ChapterActions,
     viewer: PagerViewer,
     onBack: () -> Unit,
     onDismiss: () -> Unit,
@@ -179,6 +186,7 @@ private fun ReaderScreenContent(
         onBack = onBack,
         loadNextChapter = loadNextChapter,
         loadPrevChapter = loadPrevChapter,
+        actions = actions
     ) {
         ReaderNavigationOverlay(
             overlayState = rememberReaderOverlayState(viewer.config.navigator),
@@ -361,12 +369,14 @@ fun ReaderDialogHost(
     viewer: PagerViewer,
     loadPrevChapter: () -> Unit,
     loadNextChapter: () -> Unit,
+    actions: ChapterActions,
     onDismiss: () -> Unit,
     onBack: () -> Unit,
     content: @Composable () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     ReaderMenuOverlay(
+        modifier = modifier,
         onDismissRequested = onDismiss,
         onViewOnWebClick = {},
         onBackArrowClick = onBack,
@@ -374,17 +384,18 @@ fun ReaderDialogHost(
         manga = { state.manga },
         menuVisible = { state.menuVisible },
         layoutDirection = if (viewer.l2r) LayoutDirection.Ltr else LayoutDirection.Rtl,
-        chapterActions = ChapterActions(),
+        chapterActions = actions,
         chapters = { state.chapters },
         currentPage = { viewer.currentPageNumber },
         pageCount = { viewer.totalPages },
         loadNextChapter = loadNextChapter,
         loadPrevChapter = loadPrevChapter,
         settings = state.settings,
+        downloadsProvider = { state.downloads },
         changePage = { page ->
             scope.launch {
                 val idx = page - 1
-                viewer.pagerState.animateScrollToPage(idx.coerceAtLeast(0))
+                viewer.pagerState.animateScrollToPage(idx.coerceIn(viewer.items.indices))
             }
         }
     ) {

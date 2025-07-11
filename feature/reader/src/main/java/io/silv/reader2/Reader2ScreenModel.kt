@@ -30,6 +30,7 @@ import io.silv.data.manga.model.Manga
 import io.silv.data.manga.model.toResource
 import io.silv.datastore.SettingsStore
 import io.silv.di.dataDeps
+import io.silv.reader.composables.ChapterActions
 import io.silv.reader.loader.ChapterLoader
 import io.silv.reader.loader.DownloadPageLoader
 import io.silv.reader.loader.ReaderChapter
@@ -41,15 +42,20 @@ import io.silv.ui.SavedStateScreenModel
 import io.silv.ui.ioCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
+import kotlin.collections.map
 import kotlin.coroutines.cancellation.CancellationException
 
 
@@ -97,6 +103,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     private var chapterReadStartTime: Long? = null
     private var chapterToDownload: Download? = null
 
+    private val downloadsFlow = downloadManager.queueState
     val viewer = PagerViewer(scope = screenModelScope) { action ->
         when (action) {
             PagerAction.ToggleMenu -> showMenus(!state.value.menuVisible)
@@ -114,19 +121,25 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
 
     val settings = ReaderSettingsPresenter(screenModelScope, store)
 
+    val chaptersFlow = getChaptersByMangaId.subscribe(mangaId)
+        .map { chapters ->
+            chapters.groupBy { it.scanlatorOrNull }
+                .mapValues { (_, value) ->
+                    value.sortedBy { it.chapter }
+                }
+                .values
+                .flatten()
+        }
+
+
     /**
      * Chapter list for the active manga. It's retrieved lazily and should be accessed for the first
      * time in a background thread to avoid blocking the UI.
      */
     private val chapterList by lazy {
         runBlocking {
-            getChaptersByMangaId.await(mangaId)
-                .groupBy { it.scanlatorOrNull }
-                .mapValues { (_, value) ->
-                    value.sortedBy { it.chapter }
-                }
-                .values
-                .flatten()
+            chaptersFlow
+                .first()
                 .map(::ReaderChapter)
         }
     }
@@ -143,6 +156,15 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         }
             .launchIn(screenModelScope)
 
+        downloadsFlow.onEach {
+            mutableState.update { state ->
+                state.copy(
+                    downloads = state.downloads
+                )
+            }
+        }
+            .launchIn(screenModelScope)
+
         snapshotFlow { appState.navigator?.lastItemOrNull }
             .filterNotNull()
             .distinctUntilChanged()
@@ -152,6 +174,34 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
                 }
             }
             .launchIn(screenModelScope)
+
+        screenModelScope.launch {
+            state.map { it.manga }
+                .filterNotNull()
+                .collectLatest { manga ->
+                    combine(
+                        chaptersFlow,
+                        downloadManager.queueState,
+                        downloadManager.cacheChanges,
+                        ::Triple
+                    ).collect { (chapters) ->
+                        mutableState.update { state ->
+                            state.copy(
+                                chapters = chapters.map { chapter ->
+                                    chapter.copy(
+                                        downloaded = downloadManager
+                                            .isChapterDownloaded(
+                                                chapter.title,
+                                                chapter.scanlator,
+                                                manga.titleEnglish
+                                            )
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+        }
     }
 
     override fun onDispose() {
@@ -175,10 +225,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
                 val manga = getManga.await(mangaId)
                 if (manga != null) {
                     mutableState.update {
-                        it.copy(
-                            manga = manga,
-                            chapters = chapterList.map { it.chapter }
-                        )
+                        it.copy(manga = manga)
                     }
                     logcat { "chapterid $savedChapter initial $chapterId" }
                     if (savedChapter.isNotEmpty()) chapterId = savedChapter
@@ -471,20 +518,15 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         return viewer.currentChapter
     }
 
-    /**
-     * Bookmarks the currently active chapter.
-     */
-    fun toggleChapterBookmark() {
-        val chapter = getCurrentChapter()?.chapter ?: return
+    fun toggleChapterRead(chapterId: String) {
         screenModelScope.launch(NonCancellable) {
-            chapterHandler.toggleChapterBookmarked(chapter.id)
-                .onSuccess {
-                    mutableState.update {
-                        it.copy(
-                            bookmarked = it.bookmarked,
-                        )
-                    }
-                }
+            chapterHandler.toggleReadOrUnread(chapterId)
+        }
+    }
+
+    fun toggleChapterBookmark(chapterId: String) {
+        screenModelScope.launch(NonCancellable) {
+            chapterHandler.toggleChapterBookmarked(chapterId)
         }
     }
 
@@ -526,10 +568,59 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         }
     }
 
+    fun deleteChapterImages(chapterId: String) {
+        state.value.manga?.let {
+            screenModelScope.launch {
+                downloadManager.deleteChapters(
+                    listOf(
+                        state.value.chapters.firstOrNull { it.id == chapterId }?.toResource()
+                            ?: return@launch
+                    ),
+                    it.toResource(),
+                )
+            }
+        }
+    }
+
+    fun pauseDownloads() {
+        screenModelScope.launch {
+            downloadManager.pauseDownloads()
+        }
+    }
+
+    fun resumeDownloads() {
+        screenModelScope.launch {
+            downloadManager.startDownloads()
+        }
+    }
+
+    fun cancelDownload(download: Download) {
+        screenModelScope.launch {
+            downloadManager.cancelQueuedDownloads(listOf(download))
+        }
+    }
+
+    fun downloadChapterImages(chapterId: String) {
+        state.value.manga?.let {
+            ioCoroutineScope.launch {
+                logcat { "Calling download chapter images" }
+                downloadManager.downloadChapters(
+                    it.toResource(),
+                    listOf(
+                        state.value.chapters.firstOrNull { it.id == chapterId }?.toResource()
+                            ?: return@launch,
+                    ),
+                )
+            }
+        }
+    }
+
+
     @Immutable
     data class State(
         val manga: Manga? = null,
         val chapters: List<Chapter> = emptyList(),
+        val downloads: List<QItem<Download>> = emptyList(),
         val bookmarked: Boolean = false,
         val isLoadingAdjacentChapter: Boolean = false,
         val viewerFlags: Long? = null,

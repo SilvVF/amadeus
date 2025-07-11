@@ -42,6 +42,8 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Web
 import androidx.compose.material.icons.twotone.Archive
 import androidx.compose.material.icons.twotone.Unarchive
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -125,7 +127,9 @@ private enum class MenuTabs(val icon: ImageVector) {
 
 @Composable
 fun ReaderMenuOverlay(
+    modifier: Modifier = Modifier,
     settings: ReaderSettings,
+    downloadsProvider: () -> List<QItem<Download>>,
     readerChapter: () -> ReaderChapter?,
     manga: () -> Manga?,
     chapters: () -> List<Chapter>,
@@ -166,7 +170,7 @@ fun ReaderMenuOverlay(
     val scope = rememberCoroutineScope()
 
     Box(
-        Modifier.fillMaxSize()
+        modifier.fillMaxSize()
     ) {
         content()
         AnimatedVisibility(
@@ -297,6 +301,7 @@ fun ReaderMenuOverlay(
                     when (it) {
                         MenuTabs.Chapters.ordinal -> ChapterList(
                             chapters = chapters,
+                            downloadsProvider = downloadsProvider,
                             modifier = Modifier
                                 .fillMaxHeight(0.6f)
                                 .fillMaxWidth(),
@@ -345,6 +350,7 @@ data class ChapterActions(
 @Composable
 private fun ExpandableScope.ChapterList(
     modifier: Modifier = Modifier,
+    downloadsProvider: () -> List<QItem<Download>>,
     chapters: () -> List<Chapter>,
     actions: ChapterActions,
 ) {
@@ -357,7 +363,7 @@ private fun ExpandableScope.ChapterList(
             chapters,
             onReadClicked = { actions.markRead(it) },
             onDeleteClicked = { actions.delete(it) },
-            downloadsProvider = { emptyList() },
+            downloadsProvider = downloadsProvider,
             showFullTitle = true,
             onMarkAsRead = { actions.markRead(it) },
             onBookmark = { actions.bookmark(it) },
@@ -647,13 +653,16 @@ fun ReaderOptions(
                 if (pickingCustomColor) {
                     val controller = rememberColorPickerController()
                     Dialog(
-                        onDismissRequest = {
-                            settings.events(ReaderSettingsEvent.ChangeColor(controller.selectedColor.value))
-                            pickingCustomColor = false
-                        }
+                        onDismissRequest = { pickingCustomColor = false }
                     ) {
                         HsvColorPickerColoredSelectorScreen(
                             controller = controller,
+                            onCancel = { pickingCustomColor = false },
+                            initialColor = settings.color,
+                            onConfirm = {
+                                settings.events(ReaderSettingsEvent.ChangeColor(controller.selectedColor.value))
+                                pickingCustomColor = false
+                            },
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -706,8 +715,11 @@ val Int.hex get() = this.toString(16).padStart(2, '0')
 
 @Composable
 fun HsvColorPickerColoredSelectorScreen(
-    controller: ColorPickerController,
-    modifier: Modifier = Modifier
+    onConfirm: (Color) -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+    initialColor: Color? = null,
+    controller: ColorPickerController = rememberColorPickerController()
 ) {
     var hexCode by remember { mutableStateOf("") }
     var textColor by remember { mutableStateOf(Color.Transparent) }
@@ -736,6 +748,7 @@ fun HsvColorPickerColoredSelectorScreen(
             HsvColorPicker(
                 modifier = Modifier
                     .padding(10.dp),
+                initialColor = initialColor,
                 controller = controller,
                 drawOnPosSelected = {
                     drawColorIndicator(
@@ -747,7 +760,6 @@ fun HsvColorPickerColoredSelectorScreen(
                     hexCode = colorEnvelope.hexCode
                     textColor = colorEnvelope.color
                 },
-                initialColor = Color.Red,
             )
         }
 
@@ -786,6 +798,25 @@ fun HsvColorPickerColoredSelectorScreen(
                 .align(Alignment.CenterHorizontally),
             controller = controller,
         )
+        Spacer(modifier = Modifier.weight(1f))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            Button(
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                ),
+                onClick = onCancel
+            ) {
+                Text("Cancel")
+            }
+            Button(
+                onClick = {
+                    onConfirm(controller.selectedColor.value)
+                }
+            ) {
+                Text("Confirm")
+            }
+        }
         Spacer(modifier = Modifier.weight(1f))
     }
 }

@@ -87,4 +87,5 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
 
     implementation(libs.molecule.runtime)
+    implementation(libs.compose.colorpicker)
 }

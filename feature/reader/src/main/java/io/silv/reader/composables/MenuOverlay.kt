@@ -1,10 +1,11 @@
 package io.silv.reader.composables
 
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,10 +42,10 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Web
 import androidx.compose.material.icons.twotone.Archive
 import androidx.compose.material.icons.twotone.Unarchive
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -60,44 +62,56 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.window.Dialog
+import com.github.skydoves.colorpicker.compose.AlphaSlider
+import com.github.skydoves.colorpicker.compose.AlphaTile
+import com.github.skydoves.colorpicker.compose.BrightnessSlider
+import com.github.skydoves.colorpicker.compose.ColorPickerController
+import com.github.skydoves.colorpicker.compose.HsvColorPicker
+import com.github.skydoves.colorpicker.compose.drawColorIndicator
+import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import io.silv.common.model.Download
 import io.silv.common.model.ReaderLayout
-import io.silv.data.download.QItem
 import io.silv.data.chapter.Chapter
+import io.silv.data.download.QItem
 import io.silv.data.manga.model.Manga
-import io.silv.di.rememberDataDependency
 import io.silv.reader.loader.ReaderChapter
 import io.silv.reader2.ReaderSettings
 import io.silv.reader2.ReaderSettingsEvent
 import io.silv.reader2.ReaderSettingsEvent.ChangeLayout
 import io.silv.ui.composables.ChapterDownloadAction
 import io.silv.ui.composables.ChapterDownloadIndicator
+import io.silv.ui.isLight
 import io.silv.ui.layout.DragAnchors
 import io.silv.ui.layout.ExpandableInfoLayout
 import io.silv.ui.layout.ExpandableScope
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.LocalSpacing
-
-
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import me.saket.swipe.SwipeAction
@@ -564,7 +578,6 @@ fun ReaderOptions(
     modifier: Modifier = Modifier
 ) {
     val space = LocalSpacing.current
-
     Column(
         modifier.padding(space.med),
         verticalArrangement = Arrangement.Top,
@@ -612,17 +625,55 @@ fun ReaderOptions(
                         Color.Black to "Black",
                         Color.Gray to "Gray",
                         Color.White to "White",
-                        Color.Unspecified to "Default"
                     )
                 }
+                val sharedModifier = Modifier.padding(space.small)
                 colors.fastForEach { (color, text) ->
                     FilterChip(
                         selected = settings.color == color,
                         onClick = { settings.events(ReaderSettingsEvent.ChangeColor(color)) },
                         label = { Text(text) },
-                        modifier = Modifier.padding(space.small)
+                        modifier = sharedModifier
                     )
                 }
+
+                var pickingCustomColor by rememberSaveable {
+                    mutableStateOf(false)
+                }
+                val isCustom by remember(settings.color) {
+                    derivedStateOf { settings.color !in colors.map { it.first } }
+                }
+
+                if (pickingCustomColor) {
+                    val controller = rememberColorPickerController()
+                    Dialog(
+                        onDismissRequest = {
+                            settings.events(ReaderSettingsEvent.ChangeColor(controller.selectedColor.value))
+                            pickingCustomColor = false
+                        }
+                    ) {
+                        HsvColorPickerColoredSelectorScreen(
+                            controller = controller,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+
+                FilterChip(
+                    border = if (isCustom) {
+                        BorderStroke(2.dp, settings.color)
+                    } else {
+                        FilterChipDefaults.filterChipBorder(true, false)
+                    },
+                    selected = isCustom,
+                    label = {
+                        Text("Custom ${if (isCustom) "(#${settings.color.hexCode})" else ""}")
+                    },
+                    modifier = sharedModifier,
+                    onClick = {
+                        pickingCustomColor = true
+                    }
+                )
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -639,5 +690,102 @@ fun ReaderOptions(
             })
             Text("Show page number")
         }
+    }
+}
+
+val Color.hexCode: String
+    inline get() {
+        val a: Int = (alpha * 255).toInt()
+        val r: Int = (red * 255).toInt()
+        val g: Int = (green * 255).toInt()
+        val b: Int = (blue * 255).toInt()
+        return a.hex + r.hex + g.hex + b.hex
+    }
+
+val Int.hex get() = this.toString(16).padStart(2, '0')
+
+@Composable
+fun HsvColorPickerColoredSelectorScreen(
+    controller: ColorPickerController,
+    modifier: Modifier = Modifier
+) {
+    var hexCode by remember { mutableStateOf("") }
+    var textColor by remember { mutableStateOf(Color.Transparent) }
+
+    Column(modifier) {
+        Spacer(modifier = Modifier.weight(1f))
+
+        Row(modifier = Modifier.weight(3f)) {
+            listOf(Color.Red, Color.Green, Color.Blue, Color.Yellow, Color.Gray)
+                .forEach { color ->
+                    Surface(
+                        modifier = Modifier
+                            .height(40.dp)
+                            .weight(1f)
+                            .padding(horizontal = 4.dp),
+                        color = color,
+                        shape = RoundedCornerShape(6.dp),
+                        onClick = {
+                            controller.selectByColor(color, true)
+                        },
+                    ) {}
+                }
+        }
+
+        Box(modifier = Modifier.weight(8f)) {
+            HsvColorPicker(
+                modifier = Modifier
+                    .padding(10.dp),
+                controller = controller,
+                drawOnPosSelected = {
+                    drawColorIndicator(
+                        controller.selectedPoint.value,
+                        controller.selectedColor.value,
+                    )
+                },
+                onColorChanged = { colorEnvelope ->
+                    hexCode = colorEnvelope.hexCode
+                    textColor = colorEnvelope.color
+                },
+                initialColor = Color.Red,
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        AlphaSlider(
+            modifier = Modifier
+                .testTag("HSV_AlphaSlider")
+                .fillMaxWidth()
+                .padding(10.dp)
+                .height(35.dp)
+                .align(Alignment.CenterHorizontally),
+            controller = controller,
+        )
+
+        BrightnessSlider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp)
+                .height(35.dp)
+                .align(Alignment.CenterHorizontally),
+            controller = controller,
+        )
+
+        Text(
+            text = "#$hexCode",
+            color = textColor,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+        AlphaTile(
+            modifier = Modifier
+                .size(80.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .align(Alignment.CenterHorizontally),
+            controller = controller,
+        )
+        Spacer(modifier = Modifier.weight(1f))
     }
 }

@@ -136,6 +136,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
 
     init {
         settings.state.onEach {
+            viewer.setReaderLayout(it.layout)
             mutableState.update { state ->
                 state.copy(settings = it)
             }
@@ -540,7 +541,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
 
     sealed interface Event {
         data object PageChanged : Event
-        data class SetOrientation(val orientation: Int) : Event
         data class ShareImage(val uri: Uri, val page: ReaderPage) : Event
         data class CopyImage(val uri: Uri) : Event
     }

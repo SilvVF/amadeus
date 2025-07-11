@@ -92,7 +92,7 @@ fun SettingsScreenContent(
     val dismiss = { state.events(SettingsEvent.ChangeDialog(null)) }
 
     when (state.dialog) {
-        SettingsScreenModel.Dialog.UpdatePeriod -> {
+        Dialog.UpdatePeriod -> {
             BasicAlertDialog(
                 onDismissRequest = dismiss,
                 properties = DialogProperties(),
@@ -133,7 +133,7 @@ fun SettingsScreenContent(
             }
         }
 
-        SettingsScreenModel.Dialog.Library -> {
+        Dialog.Library -> {
             DisplayPrefsDialogContent(
                 cardType = state.librarySettings.cardType,
                 useList = state.librarySettings.useList,
@@ -160,7 +160,7 @@ fun SettingsScreenContent(
             )
         }
 
-        SettingsScreenModel.Dialog.Explore -> {
+        Dialog.Explore -> {
             DisplayPrefsDialogContent(
                 cardType = state.exploreSettings.cardType,
                 useList = state.exploreSettings.useList,
@@ -185,7 +185,7 @@ fun SettingsScreenContent(
             )
         }
 
-        SettingsScreenModel.Dialog.Filter -> {
+        Dialog.Filter -> {
             DisplayPrefsDialogContent(
                 cardType = state.filterSettings.cardType,
                 useList = state.filterSettings.useList,

@@ -12,6 +12,8 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import io.silv.common.log.logcat
+import io.silv.common.model.PagedType
+import io.silv.common.model.ReaderLayout
 import io.silv.data.chapter.Chapter
 import io.silv.reader.loader.ChapterTransition
 import io.silv.reader.loader.ReaderChapter
@@ -50,10 +52,7 @@ interface Viewer {
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PagerViewer(
-    val isHorizontal: Boolean = true,
-    val l2r: Boolean = true,
     val scope: CoroutineScope,
-    val config: PagerConfig = PagerConfig(isHorizontal),
     val onAction: (PagerAction) -> Unit
 ) : Viewer {
 
@@ -65,6 +64,16 @@ class PagerViewer(
         private set
     var currentChapter by mutableStateOf<ReaderChapter?>(null)
         private set
+
+    var isHorizontal by mutableStateOf(false)
+        private set
+
+    var l2r: Boolean by mutableStateOf(false)
+        private set
+
+    val config: PagerConfig by derivedStateOf {
+        PagerConfig(isHorizontal)
+    }
 
     val pagerState = PagerState { items.size }
 
@@ -124,6 +133,23 @@ class PagerViewer(
         snapshotFlow { pagerState.settledPage }
             .onEach(::handleSettledPage)
             .launchIn(scope)
+    }
+
+    fun setReaderLayout(layout: ReaderLayout) {
+        when(layout) {
+            ReaderLayout.PagedRTL -> {
+                isHorizontal = true
+                l2r = false
+            }
+            ReaderLayout.PagedLTR -> {
+                isHorizontal = true
+                l2r = true
+            }
+            ReaderLayout.Vertical -> {
+                isHorizontal = false
+                l2r = true
+            }
+        }
     }
 
     fun retry(chapter: ReaderChapter) {

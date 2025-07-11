@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -118,13 +119,6 @@ data class ReaderScreen2(
             }
         }
 
-        val setOrientation = rememberLambda { orientation: Int ->
-            val newOrientation = Reader2Orientation.fromPreference(orientation)
-            val activity = requireActivity(context)
-            if (newOrientation.flag != activity.requestedOrientation) {
-                activity.requestedOrientation = newOrientation.flag
-            }
-        }
 
         val displayRefreshHost = remember { DisplayRefreshHost() }
 
@@ -132,7 +126,6 @@ data class ReaderScreen2(
             when (event) {
                 is Reader2ScreenModel.Event.CopyImage -> TODO()
                 Reader2ScreenModel.Event.PageChanged -> displayRefreshHost.flash()
-                is Reader2ScreenModel.Event.SetOrientation -> setOrientation(event.orientation)
                 is Reader2ScreenModel.Event.ShareImage -> TODO()
             }
         }
@@ -223,7 +216,7 @@ fun PageContent(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "to: ${page.to?.chapter?.title} from: ${page.from.chapter.title}",
+                    "to: ${page.to?.chapter?.title}",
                 )
                 val to = page.to
                 if (to != null) {
@@ -236,10 +229,32 @@ fun PageContent(
                                 Text("Retry")
                             }
                         }
-                        ReaderChapter.State.Loading -> {
+                        ReaderChapter.State.Loading, ReaderChapter.State.Wait -> {
                             CircularProgressIndicator()
                         }
-                        else -> Unit
+                        is ReaderChapter.State.Loaded -> {
+                            Text("Ready")
+                        }
+                    }
+                }
+                Text(
+                    "from: ${page.from.chapter.title}",
+                )
+                val from = page.from
+                val state by from.stateAsFlow.collectAsState()
+                when (state) {
+                    is ReaderChapter.State.Error -> {
+                        TextButton(
+                            onClick = { viewer.retry(from) }
+                        ) {
+                            Text("Retry")
+                        }
+                    }
+                    ReaderChapter.State.Loading, ReaderChapter.State.Wait -> {
+                        CircularProgressIndicator()
+                    }
+                    is ReaderChapter.State.Loaded -> {
+                        Text("Ready")
                     }
                 }
             }
@@ -249,6 +264,7 @@ fun PageContent(
 
 @Composable
 fun ComposeViewPager(
+    state: Reader2ScreenModel.State,
     pagerViewer: PagerViewer,
     modifier: Modifier = Modifier,
 ) {
@@ -275,13 +291,16 @@ fun ComposeViewPager(
                 PageContent(page, pagerViewer)
             }
         }
-        PageIndicatorText(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .windowInsetsPadding(WindowInsets.systemBars),
-            currentPage = pagerViewer.currentPageNumber,
-            totalPages = pagerViewer.totalPages,
-        )
+
+        if (state.settings.showPageNumber) {
+            PageIndicatorText(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(WindowInsets.systemBars),
+                currentPage = pagerViewer.currentPageNumber,
+                totalPages = pagerViewer.totalPages,
+            )
+        }
     }
 }
 
@@ -327,8 +346,11 @@ fun ReaderContainer(
     viewer: PagerViewer,
     state: Reader2ScreenModel.State
 ) {
-    Surface(Modifier.fillMaxSize()) {
-        ComposeViewPager(viewer)
+    Surface(
+        Modifier.fillMaxSize(),
+        color = state.settings.color
+    ) {
+        ComposeViewPager(state, viewer)
     }
 }
 

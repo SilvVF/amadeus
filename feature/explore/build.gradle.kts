@@ -69,4 +69,6 @@ dependencies {
 
     // COIL
     implementation(libs.bundles.coil)
+
+    implementation(libs.molecule.runtime)
 }

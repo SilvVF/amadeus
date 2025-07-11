@@ -3,16 +3,17 @@ package io.silv.manga.view
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.screenModelScope
+import com.skydoves.flow.operators.restartable.restartableStateIn
 import com.skydoves.sandwich.fold
 import io.silv.common.DependencyAccessor
 import io.silv.common.log.logcat
 import io.silv.common.model.Download
+import io.silv.common.model.Filters
 import io.silv.common.model.ReadingStatus
 import io.silv.data.download.CoverCache
 import io.silv.data.download.DownloadManager
 import io.silv.data.download.QItem
 import io.silv.data.manga.GetMangaStatisticsById
-import io.silv.datastore.model.Filters
 import io.silv.di.dataDeps
 
 import io.silv.data.chapter.interactor.ChapterHandler
@@ -29,6 +30,9 @@ import kotlinx.coroutines.flow.Flow
 
 
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.WhileSubscribed
+import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
@@ -41,7 +45,6 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     private val mangaHandler: MangaHandler = dataDeps.mangaHandler,
     private val chapterHandler: ChapterHandler = dataDeps.chapterHandler,
     private val downloadManager: DownloadManager = dataDeps.downloadManager,
-    private val coverCache: CoverCache = dataDeps.coverCache,
     private val mangaId: String,
 ) : EventScreenModel<MangaViewEvent>() {
 
@@ -86,7 +89,6 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     val statsUiState = flow {
-        emit(StatsUiState.Loading)
         val stats = getMangaStatisticsById.await(mangaId)
             .fold(
                 onSuccess = {
@@ -98,6 +100,13 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
             )
         emit(stats)
     }
+        .restartableStateIn(
+            screenModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            StatsUiState.Loading
+        )
+
+
 
 
     val state = combine(
@@ -119,6 +128,9 @@ class MangaViewScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
         .stateInUi(MangaViewState())
 
+    fun refreshStats() {
+        statsUiState.restart()
+    }
 
     fun refreshChapterList() {
         screenModelScope.launch {

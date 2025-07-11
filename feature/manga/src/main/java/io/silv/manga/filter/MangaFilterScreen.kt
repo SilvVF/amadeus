@@ -46,15 +46,10 @@ import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.model.TimePeriod
-import io.silv.datastore.FilterPrefs
-import io.silv.datastore.collectPrefAsState
-import io.silv.di.rememberDataDependency
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.navigation.replace
 import io.silv.ui.CenterBox
-import io.silv.ui.Converters
-import io.silv.ui.composables.CardType
 import io.silv.ui.composables.mangaGrid
 import io.silv.ui.composables.mangaList
 import io.silv.ui.layout.TopAppBarWithBottomContent
@@ -87,6 +82,7 @@ class MangaFilterScreen(
 
         if (optionsVisible) {
             FilterDisplayOptionsBottomSheet(
+                settings = state.settings,
                 optionsTitle = {
                     Text("Filter options")
                 },
@@ -179,24 +175,6 @@ class MangaFilterScreen(
                 )
             },
         ) { paddingValues ->
-
-            val scope = rememberCoroutineScope()
-            val dataStore = rememberDataDependency { dataStore }
-
-            val cardType by FilterPrefs.cardTypePrefKey.collectPrefAsState(
-                dataStore,
-                defaultValue = CardType.Compact,
-                converter = Converters.CardTypeToStringConverter,
-                scope = scope,
-            )
-
-            val gridCells by FilterPrefs.gridCellsPrefKey.collectPrefAsState(
-                dataStore,
-                FilterPrefs.gridCellsDefault,
-                scope
-            )
-            val useList by FilterPrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
-
             when {
                 timePeriodItems.loadState.refresh is LoadState.Loading -> {
                     CenterBox(Modifier.fillMaxSize()) {
@@ -230,7 +208,7 @@ class MangaFilterScreen(
                     }
                 }
 
-                useList -> {
+                state.settings.useList -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = paddingValues
@@ -246,12 +224,12 @@ class MangaFilterScreen(
                 else -> {
                     LazyVerticalGrid(
                         modifier = Modifier.fillMaxSize(),
-                        columns = GridCells.Fixed(gridCells),
+                        columns = GridCells.Fixed(state.settings.gridCells),
                         contentPadding = paddingValues,
                     ) {
                         mangaGrid(
                             manga = timePeriodItems,
-                            cardType = cardType,
+                            cardType = state.settings.cardType,
                             onTagClick = { manga, tag ->
                                 manga.tagToId[tag]?.let { id ->
                                     navigator.replace(

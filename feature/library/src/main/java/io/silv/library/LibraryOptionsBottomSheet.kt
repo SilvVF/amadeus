@@ -24,30 +24,91 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.datastore.dataStore
-import io.silv.datastore.ExplorePrefs
-import io.silv.datastore.LibraryPrefs
-import io.silv.datastore.collectPrefAsState
-import io.silv.di.dataDeps
-import io.silv.di.rememberDataDependency
-import io.silv.ui.Converters
-import io.silv.ui.composables.CardType
+import androidx.datastore.preferences.core.Preferences
+import app.cash.molecule.AndroidUiDispatcher
+import app.cash.molecule.RecompositionMode
+import app.cash.molecule.launchMolecule
+import io.silv.common.model.CardType
+import io.silv.datastore.Keys
+import io.silv.datastore.SettingsStore
 import io.silv.ui.composables.SelectCardType
 import io.silv.ui.composables.UseList
 import io.silv.ui.theme.LocalSpacing
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+
+sealed interface LibrarySettingsEvent {
+    data class ChangeCardType(val cardType: CardType): LibrarySettingsEvent
+    data class ChangeGridCells(val gridCells: Int): LibrarySettingsEvent
+    data object ToggleUseList: LibrarySettingsEvent
+    data object ToggleAnimateItems: LibrarySettingsEvent
+}
+
+data class LibrarySettings(
+    val cardType: CardType = CardType.Compact,
+    val gridCells: Int = 2,
+    val useList: Boolean = false,
+    val animateItems: Boolean = true,
+    val events: (LibrarySettingsEvent) -> Unit = {}
+)
+
+class LibrarySettingsPresenter(
+    parentScope: CoroutineScope,
+    private val settingsStore: SettingsStore
+) {
+    private val scope = CoroutineScope(parentScope.coroutineContext + AndroidUiDispatcher.Main)
+
+    val state = scope.launchMolecule(mode = RecompositionMode.ContextClock) {
+        present()
+    }
+
+    @Composable
+    fun present(): LibrarySettings {
+        val scope = rememberCoroutineScope()
+
+        val cardType by settingsStore.libraryCardType.collectAsState()
+        val cells by settingsStore.libraryGridCells.collectAsState()
+        val useList by rememberUpdatedState(settingsStore.libraryUseList.collectAsState().value)
+        val animateItems by rememberUpdatedState(settingsStore.libraryAnimatePlacementPrefKey.collectAsState().value)
+
+        fun <T> editSettings(
+            key: Preferences.Key<T>,
+            value: T
+        ) = scope.launch {
+            settingsStore.edit { prefs ->
+                prefs[key] = value
+            }
+        }
+
+        return LibrarySettings(
+            cardType = cardType,
+            gridCells = cells,
+            useList = useList,
+            animateItems = animateItems
+        ) {
+            when(it) {
+                is LibrarySettingsEvent.ChangeCardType -> editSettings(Keys.LibraryPrefs.cardTypePrefKey, it.cardType.ordinal)
+                is LibrarySettingsEvent.ChangeGridCells -> editSettings(Keys.LibraryPrefs.gridCellsPrefKey, it.gridCells)
+                LibrarySettingsEvent.ToggleUseList -> editSettings(Keys.LibraryPrefs.useListPrefKey, !useList)
+                LibrarySettingsEvent.ToggleAnimateItems -> editSettings(Keys.LibraryPrefs.animatePlacementPrefKey, !animateItems)
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryOptionsBottomSheet(
+    state: LibrarySettings,
     optionsTitle: @Composable () -> Unit = {},
     onDismissRequest: () -> Unit,
 ) {
@@ -56,28 +117,6 @@ fun LibraryOptionsBottomSheet(
             skipPartiallyExpanded = true,
         )
 
-    val scope = rememberCoroutineScope()
-
-    val dataStore = rememberDataDependency { dataStore }
-
-    var cardType by LibraryPrefs.cardTypePrefKey.collectPrefAsState(
-        dataStore,
-        defaultValue = CardType.Compact,
-        converter = Converters.CardTypeToStringConverter,
-        scope = scope,
-    )
-
-    var gridCells by LibraryPrefs.gridCellsPrefKey.collectPrefAsState(
-        dataStore,
-        LibraryPrefs.gridCellsDefault,
-        scope
-    )
-    var useList by LibraryPrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
-    var animatePlacement by LibraryPrefs.animatePlacementPrefKey.collectPrefAsState(
-        dataStore,
-        true,
-        scope
-    )
 
     LaunchedEffect(Unit) {
         sheetState.show()
@@ -96,27 +135,27 @@ fun LibraryOptionsBottomSheet(
                 optionsTitle()
             }
             UseList(
-                checked = useList,
-                onCheckChanged = { useList = it },
+                checked = state.useList,
+                onCheckChanged = { state.events(LibrarySettingsEvent.ToggleUseList) },
                 modifier = Modifier.fillMaxWidth()
             )
             SelectCardType(
-                cardType = cardType,
+                cardType = state.cardType,
                 onCardTypeSelected = {
-                    cardType = it
+                    state.events(LibrarySettingsEvent.ChangeCardType(it))
                 },
             )
             GridSizeSelector(
                 Modifier.fillMaxWidth(),
                 onSizeSelected = {
-                    gridCells = it
+                    state.events(LibrarySettingsEvent.ChangeGridCells(it))
                 },
-                size = gridCells,
+                size = state.gridCells,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
-                    checked = animatePlacement,
-                    onCheckedChange = { animatePlacement = it }
+                    checked = state.animateItems,
+                    onCheckedChange = { state.events(LibrarySettingsEvent.ToggleAnimateItems) }
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("Animate item placement.", style = MaterialTheme.typography.titleSmall)
@@ -194,7 +233,7 @@ fun GridSizeSelector(
             modifier =
                 Modifier
                     .padding(horizontal = 12.dp)
-                    .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
+                    .clickable { onSizeSelected(Keys.GRID_CELLS_DEFAULT) },
         )
     }
 }

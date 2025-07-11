@@ -13,23 +13,6 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-interface PrefsConverter<T, V> {
-    fun convertTo(value: T): V
-    fun convertFrom(value: V): T
-
-    companion object {
-        fun <T, V> create(
-            convertTo: (obj: T) -> V,
-            convertFrom: (obj: V) -> T
-        ): PrefsConverter<T, V> {
-            return object : PrefsConverter<T, V> {
-                override fun convertFrom(value: V): T = convertFrom(value)
-                override fun convertTo(value: T): V = convertTo(value)
-            }
-        }
-    }
-}
-
 fun <T> mutablePropertyFrom(stateFlow: MutableStateFlow<T>) = object :
     ReadWriteProperty<Any?, T> {
     override fun getValue(thisRef: Any?, property: KProperty<*>): T = stateFlow.value

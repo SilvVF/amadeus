@@ -358,6 +358,7 @@ fun ReaderDialogHost(
         pageCount = { viewer.totalPages },
         loadNextChapter = loadNextChapter,
         loadPrevChapter = loadPrevChapter,
+        settings = state.settings,
         changePage = { page ->
             scope.launch {
                 val idx = page - 1

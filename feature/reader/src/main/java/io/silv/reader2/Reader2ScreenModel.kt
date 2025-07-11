@@ -4,9 +4,6 @@ import android.net.Uri
 import androidx.annotation.IntRange
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.snapshots.Snapshot
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.DependencyAccessor
 import io.silv.common.coroutine.suspendRunCatching
@@ -17,17 +14,13 @@ import io.silv.common.model.Download
 import io.silv.common.model.Page
 import io.silv.common.time.epochMillis
 import io.silv.common.time.localDateTimeNow
+import io.silv.data.chapter.Chapter
+import io.silv.data.chapter.interactor.ChapterHandler
+import io.silv.data.chapter.interactor.GetNextChapters
+import io.silv.data.chapter.toResource
 import io.silv.data.download.DownloadManager
 import io.silv.data.download.DownloadProvider
 import io.silv.data.download.QItem
-import io.silv.datastore.ReaderPrefs
-import io.silv.datastore.get
-import io.silv.di.dataDeps
-
-import io.silv.data.chapter.interactor.ChapterHandler
-import io.silv.data.chapter.interactor.GetNextChapters
-import io.silv.data.chapter.Chapter
-import io.silv.data.chapter.toResource
 import io.silv.data.history.HistoryRepository
 import io.silv.data.history.HistoryUpdate
 import io.silv.data.manga.interactor.GetChaptersByMangaId
@@ -35,6 +28,8 @@ import io.silv.data.manga.interactor.GetManga
 import io.silv.data.manga.interactor.SetMangaViewerFlags
 import io.silv.data.manga.model.Manga
 import io.silv.data.manga.model.toResource
+import io.silv.datastore.SettingsStore
+import io.silv.di.dataDeps
 import io.silv.reader.loader.ChapterLoader
 import io.silv.reader.loader.DownloadPageLoader
 import io.silv.reader.loader.ReaderChapter
@@ -44,14 +39,11 @@ import io.silv.ui.AppState
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.SavedStateScreenModel
 import io.silv.ui.ioCoroutineScope
-import io.silv.ui.screenStateHandle
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -72,7 +64,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     private val downloadManager: DownloadManager = dataDeps.downloadManager,
     private val downloadProvider: DownloadProvider = dataDeps.downloadProvider,
     // private val imageSaver: ImageSaver,
-    private val dataStore: DataStore<Preferences> = dataDeps.dataStore,
+    private val store: SettingsStore = dataDeps.settingsStore,
     //private val trackChapter: TrackChapter = Injekt.get(),
     private val getManga: GetManga = dataDeps.getManga,
     private val getChaptersByMangaId: GetChaptersByMangaId = dataDeps.getChaptersByMangaId,
@@ -120,6 +112,8 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         }
     }
 
+    val settings = ReaderSettingsPresenter(screenModelScope, store)
+
     /**
      * Chapter list for the active manga. It's retrieved lazily and should be accessed for the first
      * time in a background thread to avoid blocking the UI.
@@ -141,6 +135,13 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     private val downloadAheadAmount = 4
 
     init {
+        settings.state.onEach {
+            mutableState.update { state ->
+                state.copy(settings = it)
+            }
+        }
+            .launchIn(screenModelScope)
+
         snapshotFlow { appState.navigator?.lastItemOrNull }
             .filterNotNull()
             .distinctUntilChanged()
@@ -372,8 +373,8 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * If both conditions are satisfied enqueues chapter for delete
      * @param currentChapter current chapter, which is going to be marked as read.
      */
-    private suspend fun deleteChapterIfNeeded(currentChapter: ReaderChapter) {
-        val removeAfterReadSlots = dataStore.get(ReaderPrefs.removeAfterReadSlots) ?: -1
+    private fun deleteChapterIfNeeded(currentChapter: ReaderChapter) {
+        val removeAfterReadSlots = state.value.settings.removeAfterReadSlots
         if (removeAfterReadSlots == -1) return
 
         // Determine which chapter should be deleted and enqueue
@@ -486,25 +487,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         }
     }
 
-    /**
-     * Returns the viewer position used by this manga or the default one.
-     */
-    suspend fun getMangaReadingMode(resolveDefault: Boolean = true): Int {
-        val default =
-            dataStore.get(ReaderPrefs.defaultReadingMode) ?: ReadingMode.LEFT_TO_RIGHT.flagValue
-        return default
-    }
-
-    /**
-     * Returns the orientation type used by this manga or the default one.
-     */
-    suspend fun getMangaOrientation(resolveDefault: Boolean = true): Int {
-        val default =
-            dataStore.get(ReaderPrefs.defaultOrientationType) ?: Reader2Orientation.FREE.flagValue
-        return default
-    }
-
-
     fun showMenus(visible: Boolean) {
         mutableState.update { it.copy(menuVisible = visible) }
     }
@@ -551,6 +533,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         val isLoadingAdjacentChapter: Boolean = false,
         val viewerFlags: Long? = null,
         val menuVisible: Boolean = false,
+        val settings: ReaderSettings = ReaderSettings(),
         @IntRange(from = -100, to = 100)
         val brightnessOverlayValue: Int = 0,
     )

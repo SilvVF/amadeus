@@ -46,24 +46,18 @@ import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import io.silv.common.model.CardType
 import io.silv.data.manga.model.Manga
 import io.silv.ui.Language
 import io.silv.ui.theme.LocalSpacing
 import io.silv.ui.tryApplySharedElementTransition
-
-
-@Stable
-enum class CardType(val string: String) {
-    SemiCompact("Semi-Compact Card"),
-    Compact("Compact Card"),
-    ExtraCompact("Extra-Compact Card"),
-}
-
 
 @Composable
 fun MangaListItem(
@@ -154,7 +148,9 @@ fun MangaGridItem(
         modifier
             .heightIn(
                 min = 90.dp,
-                max = (LocalConfiguration.current.screenHeightDp / 2).dp,
+                max = with(LocalDensity.current) {
+                    LocalWindowInfo.current.containerSize.height.toDp() / 2
+                },
             ),
     ) {
         Box(

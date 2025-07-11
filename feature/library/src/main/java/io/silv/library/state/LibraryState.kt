@@ -5,6 +5,7 @@ import io.silv.common.model.Download
 import io.silv.data.chapter.Chapter
 import io.silv.data.manga.model.Manga
 import io.silv.data.manga.model.MangaWithChapters
+import io.silv.library.LibrarySettings
 import io.silv.library.UiChapterUpdate
 
 
@@ -31,7 +32,8 @@ data class LibraryState(
     val updatingLibrary: Boolean = false,
     val bookmarkedChapters: List<Pair<Manga, List<Chapter>>> = emptyList(),
     val updates: List<Pair<Int, List<UiChapterUpdate>>> = emptyList(),
-    val libraryMangaState: LibraryMangaState = LibraryMangaState.Loading
+    val libraryMangaState: LibraryMangaState = LibraryMangaState.Loading,
+    val settings: LibrarySettings = LibrarySettings(),
 )
 
 sealed interface LibraryMangaState {

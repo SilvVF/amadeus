@@ -80,15 +80,15 @@ import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import io.silv.common.model.Download
+import io.silv.common.model.ReaderLayout
 import io.silv.data.download.QItem
-import io.silv.datastore.ReaderPrefs
 import io.silv.data.chapter.Chapter
 import io.silv.data.manga.model.Manga
-import io.silv.datastore.collectPrefAsState
 import io.silv.di.rememberDataDependency
 import io.silv.reader.loader.ReaderChapter
-import io.silv.ui.Converters
-import io.silv.ui.ReaderLayout
+import io.silv.reader2.ReaderSettings
+import io.silv.reader2.ReaderSettingsEvent
+import io.silv.reader2.ReaderSettingsEvent.ChangeLayout
 import io.silv.ui.composables.ChapterDownloadAction
 import io.silv.ui.composables.ChapterDownloadIndicator
 import io.silv.ui.layout.DragAnchors
@@ -105,11 +105,13 @@ import me.saket.swipe.SwipeableActionsBox
 import kotlin.math.roundToInt
 
 private enum class MenuTabs(val icon: ImageVector) {
-    Chapters(Icons.Filled.FormatListNumbered), Options(Icons.Filled.Tune)
+    Chapters(Icons.Filled.FormatListNumbered),
+    Options(Icons.Filled.Tune)
 }
 
 @Composable
 fun ReaderMenuOverlay(
+    settings: ReaderSettings,
     readerChapter: () -> ReaderChapter?,
     manga: () -> Manga?,
     chapters: () -> List<Chapter>,
@@ -288,6 +290,7 @@ fun ReaderMenuOverlay(
                         )
 
                         MenuTabs.Options.ordinal -> ReaderOptions(
+                            settings = settings,
                             modifier = Modifier
                                 .fillMaxHeight(0.6f)
                                 .fillMaxWidth()
@@ -553,24 +556,14 @@ private fun ChapterListItem(
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ReaderOptions(
+    settings: ReaderSettings,
     modifier: Modifier = Modifier
 ) {
-    val scope = rememberCoroutineScope()
     val space = LocalSpacing.current
-    val dataStore = rememberDataDependency { dataStore }
-
-    var fullscreen by ReaderPrefs.fullscreen.collectPrefAsState(dataStore, true, scope)
-    var showPageNumber by ReaderPrefs.showPageNumber.collectPrefAsState(dataStore, true, scope)
-    var layout by ReaderPrefs.layoutDirection.collectPrefAsState(
-        dataStore,
-        defaultValue = ReaderLayout.PagedRTL,
-        converter = Converters.LayoutDirectionConverter,
-        scope
-    )
-    var backgroundColor by ReaderPrefs.backgroundColor.collectPrefAsState(dataStore, 3, scope)
 
     Column(
         modifier.padding(space.med),
@@ -585,23 +578,24 @@ fun ReaderOptions(
             FlowRow(
                 verticalArrangement = Arrangement.Center
             ) {
+                val sharedModifier = Modifier.padding(space.small)
                 FilterChip(
-                    selected = layout == ReaderLayout.PagedLTR,
-                    onClick = { layout = ReaderLayout.PagedLTR },
+                    selected = settings.layout == ReaderLayout.PagedLTR,
+                    onClick = { settings.events(ChangeLayout(ReaderLayout.PagedLTR)) },
                     label = { Text("Paged (left to right)") },
-                    modifier = Modifier.padding(space.small)
+                    modifier = sharedModifier
                 )
                 FilterChip(
-                    selected = layout == ReaderLayout.PagedRTL,
-                    onClick = { layout = ReaderLayout.PagedRTL },
+                    selected = settings.layout == ReaderLayout.PagedRTL,
+                    onClick = { settings.events(ChangeLayout(ReaderLayout.PagedRTL)) },
                     label = { Text("Paged (right to left)") },
-                    modifier = Modifier.padding(space.small)
+                    modifier = sharedModifier
                 )
                 FilterChip(
-                    selected = layout == ReaderLayout.Vertical,
-                    onClick = { layout = ReaderLayout.Vertical },
+                    selected = settings.layout == ReaderLayout.Vertical,
+                    onClick = { settings.events(ChangeLayout(ReaderLayout.Vertical)) },
                     label = { Text("Vertical") },
-                    modifier = Modifier.padding(space.small)
+                    modifier = sharedModifier
                 )
             }
         }
@@ -621,22 +615,28 @@ fun ReaderOptions(
                         Color.Unspecified to "Default"
                     )
                 }
-                colors.fastForEachIndexed { i, c ->
+                colors.fastForEach { (color, text) ->
                     FilterChip(
-                        selected = backgroundColor == i,
-                        onClick = { backgroundColor = i },
-                        label = { Text(c.second) },
+                        selected = settings.color == color,
+                        onClick = { settings.events(ReaderSettingsEvent.ChangeColor(color)) },
+                        label = { Text(text) },
                         modifier = Modifier.padding(space.small)
                     )
                 }
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = fullscreen, onCheckedChange = { fullscreen = it })
+            Checkbox(checked = settings.fullscreen, onCheckedChange = {
+                settings.events(ReaderSettingsEvent.ToggleFullscreen)
+            })
             Text("Fullscreen")
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = showPageNumber, onCheckedChange = { showPageNumber = it })
+            Checkbox(checked = settings.showPageNumber, onCheckedChange = {
+                settings.events(
+                    ReaderSettingsEvent.ToggleShowPageNumber
+                )
+            })
             Text("Show page number")
         }
     }

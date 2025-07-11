@@ -1,4 +1,4 @@
-package io.silv.manga.settings
+package io.silv.amadeus.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,41 +39,30 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import io.silv.amadeus.settings.SettingsScreenModel.Dialog
 import io.silv.common.model.AppTheme
 import io.silv.common.model.AutomaticUpdatePeriod
-import io.silv.datastore.ExplorePrefs
-import io.silv.datastore.FilterPrefs
-import io.silv.datastore.LibraryPrefs
-import io.silv.datastore.ReaderPrefs
-import io.silv.datastore.UserSettings
-import io.silv.datastore.collectPrefAsState
-import io.silv.di.rememberDataDependency
-import io.silv.ui.Converters
-import io.silv.ui.ReaderLayout
-import io.silv.ui.composables.CardType
+import io.silv.common.model.CardType
+import io.silv.datastore.Keys
+import io.silv.explore.ExploreSettingsEvent
+import io.silv.library.LibrarySettingsEvent
+import io.silv.manga.filter.FilterSettingsEvent
+import io.silv.reader.composables.ReaderOptions
 import io.silv.ui.composables.SelectCardType
 import io.silv.ui.composables.UseList
 import io.silv.ui.theme.LocalSpacing
-
 import kotlin.math.roundToInt
 
 class SettingsScreen : Screen {
@@ -83,45 +72,29 @@ class SettingsScreen : Screen {
 
         val screenModel = rememberScreenModel { SettingsScreenModel() }
 
-        val settings by screenModel.settingsPrefs.collectAsStateWithLifecycle()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         SettingsScreenContent(
-            settings = settings,
             state = state,
-            actions = SettingsActions(
-                changeCurrentDialog = screenModel::changeCurrentDialog,
-                changeUpdatePeriod = screenModel::changeAutomaticUpdatePeriod,
-                changeTheme = screenModel::changeAppTheme
-            )
         )
     }
 }
-
-@Stable
-data class SettingsActions(
-    val changeCurrentDialog: (String?) -> Unit,
-    val changeUpdatePeriod: (AutomaticUpdatePeriod) -> Unit,
-    val changeTheme: (AppTheme) -> Unit
-)
-
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreenContent(
     state: SettingsState,
-    settings: UserSettings,
-    actions: SettingsActions
 ) {
 
     val navigator = LocalNavigator.current
     val space = LocalSpacing.current
-    val dataStore = rememberDataDependency { dataStore }
 
-    when (state.dialogkey) {
-        SettingsScreenModel.UPDATE_PERIOD_KEY -> {
+    val dismiss = { state.events(SettingsEvent.ChangeDialog(null)) }
+
+    when (state.dialog) {
+        SettingsScreenModel.Dialog.UpdatePeriod -> {
             BasicAlertDialog(
-                onDismissRequest = { actions.changeCurrentDialog(null) },
+                onDismissRequest = dismiss,
                 properties = DialogProperties(),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -143,8 +116,14 @@ fun SettingsScreenContent(
                                 modifier = Modifier.padding(space.med)
                             ) {
                                 RadioButton(
-                                    selected = settings.updateInterval == it,
-                                    onClick = { actions.changeUpdatePeriod(it) }
+                                    selected = state.appSettings.automaticUpdatePeriod == it,
+                                    onClick = {
+                                        state.appSettings.events(
+                                            AppSettingsEvent.ChangeUpdateInterval(
+                                                it
+                                            )
+                                        )
+                                    }
                                 )
                                 Text(it.toString())
                             }
@@ -154,79 +133,73 @@ fun SettingsScreenContent(
             }
         }
 
-        SettingsScreenModel.LIBRARY_DISPLAY_KEY -> {
-            val scope = rememberCoroutineScope()
-            val cardType = LibraryPrefs.cardTypePrefKey.collectPrefAsState(
-                dataStore,
-                defaultValue = CardType.Compact,
-                converter = Converters.CardTypeToStringConverter,
-                scope = scope,
-            )
-            val gridCells = LibraryPrefs.gridCellsPrefKey.collectPrefAsState(
-                dataStore,
-                LibraryPrefs.gridCellsDefault,
-                scope
-            )
-            val useList = LibraryPrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
-            val animatePlacement = LibraryPrefs.animatePlacementPrefKey.collectPrefAsState(
-                dataStore,
-                true,
-                scope
-            )
+        SettingsScreenModel.Dialog.Library -> {
             DisplayPrefsDialogContent(
-                cardType = cardType,
-                useList = useList,
-                gridCells = gridCells,
-                animatePlacement = animatePlacement,
-                onDismiss = { actions.changeCurrentDialog(null) },
+                cardType = state.librarySettings.cardType,
+                useList = state.librarySettings.useList,
+                gridCells = state.librarySettings.gridCells,
+                animatePlacement = state.librarySettings.animateItems,
+                onDismiss = dismiss,
+                changeUseList = { state.librarySettings.events(LibrarySettingsEvent.ToggleUseList) },
+                changeAnimateItem = { state.librarySettings.events(LibrarySettingsEvent.ToggleAnimateItems) },
+                changeCardType = {
+                    state.librarySettings.events(
+                        LibrarySettingsEvent.ChangeCardType(
+                            it
+                        )
+                    )
+                },
+                changeGridCells = {
+                    state.librarySettings.events(
+                        LibrarySettingsEvent.ChangeGridCells(
+                            it
+                        )
+                    )
+                },
                 title = "Library display options"
             )
         }
 
-        SettingsScreenModel.EXPLORE_DISPLAY_KEY -> {
-            val scope = rememberCoroutineScope()
-            val cardType = ExplorePrefs.cardTypePrefKey.collectPrefAsState(
-                dataStore,
-                defaultValue = CardType.Compact,
-                converter = Converters.CardTypeToStringConverter,
-                scope = scope,
-            )
-            val gridCells = ExplorePrefs.gridCellsPrefKey.collectPrefAsState(
-                dataStore,
-                LibraryPrefs.gridCellsDefault,
-                scope
-            )
-            val useList = ExplorePrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
+        SettingsScreenModel.Dialog.Explore -> {
             DisplayPrefsDialogContent(
-                cardType = cardType,
-                useList = useList,
-                gridCells = gridCells,
-                animatePlacement = null,
-                onDismiss = { actions.changeCurrentDialog(null) },
+                cardType = state.exploreSettings.cardType,
+                useList = state.exploreSettings.useList,
+                gridCells = state.exploreSettings.gridCells,
+                onDismiss = dismiss,
+                changeUseList = { state.exploreSettings.events(ExploreSettingsEvent.ToggleUseList) },
+                changeCardType = {
+                    state.exploreSettings.events(
+                        ExploreSettingsEvent.ChangeCardType(
+                            it
+                        )
+                    )
+                },
+                changeGridCells = {
+                    state.exploreSettings.events(
+                        ExploreSettingsEvent.ChangeGridCells(
+                            it
+                        )
+                    )
+                },
                 title = "Explore display options"
             )
         }
 
-        SettingsScreenModel.FILTER_DISPLAY_KEY -> {
-            val scope = rememberCoroutineScope()
-            val cardType = FilterPrefs.cardTypePrefKey.collectPrefAsState(
-                dataStore,
-                defaultValue = CardType.Compact,
-                converter = Converters.CardTypeToStringConverter,
-                scope = scope,
-            )
-            val gridCells = FilterPrefs.gridCellsPrefKey.collectPrefAsState(
-                dataStore,
-                FilterPrefs.gridCellsDefault,
-                scope
-            )
-            val useList = FilterPrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
+        SettingsScreenModel.Dialog.Filter -> {
             DisplayPrefsDialogContent(
-                cardType = cardType,
-                useList = useList,
-                gridCells = gridCells,
-                animatePlacement = null,
-                onDismiss = { actions.changeCurrentDialog(null) },
+                cardType = state.filterSettings.cardType,
+                useList = state.filterSettings.useList,
+                gridCells = state.filterSettings.gridCells,
+                onDismiss = dismiss,
+                changeUseList = { state.filterSettings.events(FilterSettingsEvent.ToggleUseList) },
+                changeCardType = { state.filterSettings.events(FilterSettingsEvent.ChangeCardType(it)) },
+                changeGridCells = {
+                    state.filterSettings.events(
+                        FilterSettingsEvent.ChangeGridCells(
+                            it
+                        )
+                    )
+                },
                 title = "Filter display options"
             )
         }
@@ -263,8 +236,8 @@ fun SettingsScreenContent(
                 ) {
                     AppTheme.entries.fastForEach {
                         FilterChip(
-                            selected = settings.theme == it,
-                            onClick = { actions.changeTheme(it) },
+                            selected = state.appSettings.theme == it,
+                            onClick = { state.appSettings.events(AppSettingsEvent.ChangeTheme(it)) },
                             label = { Text(it.toString()) },
                             modifier = Modifier.padding(space.small)
                         )
@@ -282,7 +255,7 @@ fun SettingsScreenContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { actions.changeCurrentDialog(SettingsScreenModel.UPDATE_PERIOD_KEY) }
+                    .clickable { state.events(SettingsEvent.ChangeDialog(Dialog.UpdatePeriod)) }
                     .padding(space.large),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
@@ -290,7 +263,7 @@ fun SettingsScreenContent(
                 Text("Automatic updates", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(space.small))
                 Text(
-                    "${settings.updateInterval}",
+                    "${state.appSettings.automaticUpdatePeriod}",
                     style = MaterialTheme.typography.labelMedium.copy(
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = .78f)
                     )
@@ -318,21 +291,21 @@ fun SettingsScreenContent(
                     description = "library display options",
                     icon = Icons.Filled.CollectionsBookmark
                 ) {
-                    actions.changeCurrentDialog(SettingsScreenModel.LIBRARY_DISPLAY_KEY)
+                    state.events(SettingsEvent.ChangeDialog(Dialog.Library))
                 }
                 SettingsItem(
                     title = "Explore",
                     description = "explore display options",
                     icon = Icons.Filled.Explore
                 ) {
-                    actions.changeCurrentDialog(SettingsScreenModel.EXPLORE_DISPLAY_KEY)
+                    state.events(SettingsEvent.ChangeDialog(Dialog.Explore))
                 }
                 SettingsItem(
                     title = "Filter",
                     description = "filter display options",
                     icon = Icons.Filled.AccessTime
                 ) {
-                    actions.changeCurrentDialog(SettingsScreenModel.FILTER_DISPLAY_KEY)
+                    state.events(SettingsEvent.ChangeDialog(Dialog.Filter))
                 }
             }
             HorizontalDivider()
@@ -346,112 +319,24 @@ fun SettingsScreenContent(
                     .padding(top = space.large)
             )
             Spacer(modifier = Modifier.height(space.large))
-            ReaderOptions(
-                modifier = Modifier.fillMaxWidth()
-            )
+            ReaderOptions(settings = state.readerSettings)
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Composable
-fun ReaderOptions(
-    modifier: Modifier = Modifier
-) {
-    val scope = rememberCoroutineScope()
-    val space = LocalSpacing.current
-    val dataStore = rememberDataDependency { dataStore }
-
-    var fullscreen by ReaderPrefs.fullscreen.collectPrefAsState(dataStore, true, scope)
-    var showPageNumber by ReaderPrefs.showPageNumber.collectPrefAsState(dataStore, true, scope)
-    var layout by ReaderPrefs.layoutDirection.collectPrefAsState(
-        dataStore,
-        defaultValue = ReaderLayout.PagedRTL,
-        converter = Converters.LayoutDirectionConverter,
-        scope
-    )
-    var backgroundColor by ReaderPrefs.backgroundColor.collectPrefAsState(dataStore, 3, scope)
-
-    Column(
-        modifier.padding(space.med),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start
-    ) {
-        Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(text = "Reading mode")
-            FlowRow(
-                verticalArrangement = Arrangement.Center
-            ) {
-                FilterChip(
-                    selected = layout == ReaderLayout.PagedLTR,
-                    onClick = { layout = ReaderLayout.PagedLTR },
-                    label = { Text("Paged (left to right)") },
-                    modifier = Modifier.padding(space.small)
-                )
-                FilterChip(
-                    selected = layout == ReaderLayout.PagedRTL,
-                    onClick = { layout = ReaderLayout.PagedRTL },
-                    label = { Text("Paged (right to left)") },
-                    modifier = Modifier.padding(space.small)
-                )
-                FilterChip(
-                    selected = layout == ReaderLayout.Vertical,
-                    onClick = { layout = ReaderLayout.Vertical },
-                    label = { Text("Vertical") },
-                    modifier = Modifier.padding(space.small)
-                )
-            }
-        }
-        Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(text = "Background color")
-            FlowRow(
-                verticalArrangement = Arrangement.Center
-            ) {
-                val colors = remember {
-                    listOf(
-                        Color.Black to "Black",
-                        Color.Gray to "Gray",
-                        Color.White to "White",
-                        Color.Unspecified to "Default"
-                    )
-                }
-                colors.fastForEachIndexed { i, c ->
-                    FilterChip(
-                        selected = backgroundColor == i,
-                        onClick = { backgroundColor = i },
-                        label = { Text(c.second) },
-                        modifier = Modifier.padding(space.small)
-                    )
-                }
-            }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = fullscreen, onCheckedChange = { fullscreen = it })
-            Text("Fullscreen")
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = showPageNumber, onCheckedChange = { showPageNumber = it })
-            Text("Show page number")
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DisplayPrefsDialogContent(
     modifier: Modifier = Modifier,
     title: String,
-    cardType: MutableState<CardType>,
-    gridCells: MutableState<Int>,
-    useList: MutableState<Boolean>,
-    animatePlacement: MutableState<Boolean>?,
-    onDismiss: () -> Unit
+    cardType: CardType,
+    gridCells: Int,
+    useList: Boolean,
+    changeUseList: (Boolean) -> Unit,
+    changeGridCells: (Int) -> Unit,
+    changeCardType: (CardType) -> Unit,
+    onDismiss: () -> Unit,
+    changeAnimateItem: (Boolean) -> Unit = {},
+    animatePlacement: Boolean? = null
 ) {
     val space = LocalSpacing.current
     BasicAlertDialog(
@@ -478,28 +363,26 @@ fun DisplayPrefsDialogContent(
                     Text(title)
                 }
                 UseList(
-                    checked = useList.value,
-                    onCheckChanged = { useList.value = it },
+                    checked = useList,
+                    onCheckChanged = { changeUseList(it) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 SelectCardType(
-                    cardType = cardType.value,
+                    cardType = cardType,
                     onCardTypeSelected = {
-                        cardType.value = it
+                        changeCardType(it)
                     },
                 )
                 GridSizeSelector(
                     Modifier.fillMaxWidth(),
-                    onSizeSelected = {
-                        gridCells.value = it
-                    },
-                    size = gridCells.value,
+                    onSizeSelected = changeGridCells,
+                    size = gridCells,
                 )
                 if (animatePlacement != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
-                            checked = animatePlacement.value,
-                            onCheckedChange = { animatePlacement.value = it }
+                            checked = animatePlacement,
+                            onCheckedChange = changeAnimateItem
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
@@ -581,7 +464,7 @@ fun GridSizeSelector(
             modifier =
                 Modifier
                     .padding(horizontal = 12.dp)
-                    .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
+                    .clickable { onSizeSelected(Keys.GRID_CELLS_DEFAULT) },
         )
     }
 }

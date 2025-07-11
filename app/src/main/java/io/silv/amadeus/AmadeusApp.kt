@@ -89,6 +89,7 @@ class AmadeusApp() : Application(), SingletonImageLoader.Factory, Configuration.
             override val application: Application get() = this@AmadeusApp
         }
 
+        dataDeps.settingsStore.load()
         Sync.init(this)
     }
 

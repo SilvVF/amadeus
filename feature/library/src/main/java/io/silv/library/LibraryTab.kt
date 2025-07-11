@@ -103,17 +103,15 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import coil3.compose.AsyncImage
+import io.silv.common.model.CardType
 import io.silv.common.model.Download
 import io.silv.common.model.MangaCover
 import io.silv.common.time.localDateTimeNow
-import io.silv.data.download.QItem
-import io.silv.datastore.LibraryPrefs
 import io.silv.data.chapter.Chapter
+import io.silv.data.download.QItem
 import io.silv.data.manga.model.Manga
 import io.silv.data.manga.model.MangaWithChapters
 import io.silv.data.update.UpdateWithRelations
-import io.silv.datastore.collectPrefAsState
-import io.silv.di.rememberDataDependency
 import io.silv.library.state.LibraryActions
 import io.silv.library.state.LibraryError
 import io.silv.library.state.LibraryMangaState
@@ -121,11 +119,9 @@ import io.silv.library.state.LibraryState
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.CenterBox
-import io.silv.ui.Converters
 import io.silv.ui.LaunchedOnReselect
 import io.silv.ui.LocalAppState
 import io.silv.ui.ReselectTab
-import io.silv.ui.composables.CardType
 import io.silv.ui.composables.ChapterDownloadAction
 import io.silv.ui.composables.ChapterDownloadIndicator
 import io.silv.ui.composables.ChapterListItem
@@ -141,7 +137,6 @@ import io.silv.ui.layout.TopAppBarWithBottomContent
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.AmadeusTheme
 import io.silv.ui.theme.LocalSpacing
-
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.flowOf
@@ -347,7 +342,9 @@ fun LibraryScreenContent(
     var currentBottomSheet: LibraryBottomSheet? by remember { mutableStateOf(null) }
 
     when (currentBottomSheet) {
-        LibraryBottomSheet.DisplayOptions -> LibraryOptionsBottomSheet {
+        LibraryBottomSheet.DisplayOptions -> LibraryOptionsBottomSheet(
+            stateProvider().settings
+        ) {
             currentBottomSheet = null
         }
 
@@ -589,7 +586,6 @@ fun SuccessScreenContent(
     currentTab: LibTab,
     actions: LibraryActions,
 ) {
-    val dataStore = rememberDataDependency { dataStore }
     val showGlobalSearch by remember(state) {
         derivedStateOf {
             mangaState.filteredTagIds.isEmpty() &&
@@ -597,27 +593,6 @@ fun SuccessScreenContent(
                     mangaState.filteredText.isNotBlank()
         }
     }
-
-    val scope = rememberCoroutineScope()
-
-    val cardType by LibraryPrefs.cardTypePrefKey.collectPrefAsState(
-        dataStore,
-        defaultValue = CardType.Compact,
-        converter = Converters.CardTypeToStringConverter,
-        scope = scope,
-    )
-
-    val gridCells by LibraryPrefs.gridCellsPrefKey.collectPrefAsState(
-        dataStore,
-        LibraryPrefs.gridCellsDefault,
-        scope
-    )
-    val useList by LibraryPrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
-    val animatePlacement by LibraryPrefs.animatePlacementPrefKey.collectPrefAsState(
-        dataStore,
-        true,
-        scope
-    )
 
     AnimatedContent(
         targetState = currentTab,
@@ -633,10 +608,10 @@ fun SuccessScreenContent(
     ) { targetStateTab ->
         when (targetStateTab) {
             LibTab.Library -> LibraryManga(
-                useList = useList,
-                cardType = cardType,
-                gridCells = gridCells,
-                animatePlacement = animatePlacement,
+                useList = state.settings.useList,
+                cardType = state.settings.cardType,
+                gridCells = state.settings.gridCells,
+                animatePlacement = state.settings.animateItems,
                 paddingValues = paddingValues,
                 showGlobalSearch = showGlobalSearch,
                 state = mangaState,

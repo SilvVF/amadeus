@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -16,6 +17,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.navigator.Navigator
 import io.silv.amadeus.crash.CrashActivity
@@ -45,9 +47,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
+
             val windowSizeClass = calculateWindowSizeClass(this)
             val settingsStore = rememberDataDependency { settingsStore }
             val connectivity = rememberDataDependency { connectivity }
+
+            val initialized by settingsStore.initialized.collectAsStateWithLifecycle()
 
             val appState =
                 rememberAppState(
@@ -57,9 +62,13 @@ class MainActivity : ComponentActivity() {
                     baseScreen = NavHost
                 )
 
-            val theme by produceState(initialValue = AppTheme.DYNAMIC_COLOR_DEFAULT) {
-                settingsStore.observe().onEach { value = it.theme }.launchIn(this)
+
+            if (!initialized) {
+                return@setContent
             }
+
+            val theme by settingsStore.theme.collectAsStateWithLifecycle()
+
 
             AmadeusTheme(theme) {
                 Surface(

@@ -29,19 +29,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import io.silv.datastore.ExplorePrefs
-import io.silv.datastore.collectPrefAsState
-import io.silv.di.rememberDataDependency
-import io.silv.ui.Converters
-import io.silv.ui.composables.CardType
+import io.silv.datastore.Keys
+import io.silv.explore.ExploreSettings
+import io.silv.explore.ExploreSettingsEvent
 import io.silv.ui.composables.SelectCardType
 import io.silv.ui.composables.UseList
 import io.silv.ui.theme.LocalSpacing
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DisplayOptionsBottomSheet(
+    settings: ExploreSettings,
     optionsTitle: @Composable () -> Unit = {},
     clearSearchHistory: () -> Unit,
     onDismissRequest: () -> Unit,
@@ -50,24 +48,6 @@ fun DisplayOptionsBottomSheet(
         rememberModalBottomSheetState(
             skipPartiallyExpanded = true,
         )
-
-    val scope = rememberCoroutineScope()
-    val dataStore = rememberDataDependency { dataStore }
-
-    var cardType by ExplorePrefs.cardTypePrefKey.collectPrefAsState(
-        dataStore,
-        defaultValue = CardType.Compact,
-        converter = Converters.CardTypeToStringConverter,
-        scope = scope,
-    )
-
-    var gridCells by ExplorePrefs.gridCellsPrefKey.collectPrefAsState(
-        dataStore,
-        ExplorePrefs.gridCellsDefault,
-        scope
-    )
-    var useList by ExplorePrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
-
 
     LaunchedEffect(Unit) {
         sheetState.show()
@@ -86,22 +66,22 @@ fun DisplayOptionsBottomSheet(
                 optionsTitle()
             }
             UseList(
-                checked = useList,
-                onCheckChanged = { useList = it },
+                checked = settings.useList,
+                onCheckChanged = { settings.events(ExploreSettingsEvent.ToggleUseList) },
                 modifier = Modifier.fillMaxWidth()
             )
             SelectCardType(
-                cardType = cardType,
+                cardType = settings.cardType,
                 onCardTypeSelected = {
-                    cardType = it
+                    settings.events(ExploreSettingsEvent.ChangeCardType(it))
                 },
             )
             GridSizeSelector(
                 Modifier.fillMaxWidth(),
                 onSizeSelected = {
-                    gridCells = it
+                    settings.events(ExploreSettingsEvent.ChangeGridCells(it))
                 },
-                size = gridCells,
+                size = settings.gridCells,
             )
             Text(
                 text = "Clear search history",
@@ -189,7 +169,7 @@ fun GridSizeSelector(
             modifier =
                 Modifier
                     .padding(horizontal = 12.dp)
-                    .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
+                    .clickable { onSizeSelected(Keys.GRID_CELLS_DEFAULT) },
         )
     }
 }

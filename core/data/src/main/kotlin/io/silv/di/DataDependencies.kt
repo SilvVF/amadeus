@@ -4,11 +4,9 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
-import androidx.work.WorkManager
-import io.silv.common.CommonDependencies
 import io.silv.common.DependencyAccessor
 import io.silv.common.commonDeps
-import io.silv.common.model.NetworkConnectivity
+import io.silv.common.NetworkConnectivity
 import io.silv.data.AuthorListRepository
 import io.silv.data.OSWorkManagerHelper
 import io.silv.data.RecentSearchRepositoryImpl
@@ -92,9 +90,7 @@ abstract class DataDependencies {
 
     val dataStore: DataStore<Preferences> = context.dataStore
 
-    val settingsStore: SettingsStore by lazy {
-        SettingsStore(context)
-    }
+    val settingsStore: SettingsStore by lazy { SettingsStore(dataStore) }
 
     val downloadStore: DownloadStore by lazy {
         DownloadStore(context)

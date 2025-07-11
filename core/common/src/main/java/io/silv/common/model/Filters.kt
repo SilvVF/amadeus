@@ -1,4 +1,4 @@
-package io.silv.datastore.model
+package io.silv.common.model
 
 import kotlinx.serialization.Serializable
 

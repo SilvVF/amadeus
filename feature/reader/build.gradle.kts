@@ -85,4 +85,6 @@ dependencies {
 
     implementation(libs.bundles.coil)
     debugImplementation(libs.androidx.ui.tooling)
+
+    implementation(libs.molecule.runtime)
 }

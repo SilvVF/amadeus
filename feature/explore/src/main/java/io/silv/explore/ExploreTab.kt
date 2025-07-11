@@ -114,6 +114,7 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
                         Text("Explore display options")
                     },
                     onDismissRequest = { showDisplayOptionsBottomSheet = false },
+                    settings = state.settings,
                     clearSearchHistory = screenModel::clearSearchHistory,
                 )
             showFiltersBottomSheet ->
@@ -212,6 +213,7 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
                             )
                         },
                         pagedType = state.pagedType,
+                        settings = state.settings
                     )
                 }
                 ExpandableInfoLayout(

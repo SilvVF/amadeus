@@ -1,4 +1,4 @@
-package io.silv.common.model
+package io.silv.common
 
 import kotlinx.coroutines.flow.Flow
 

@@ -1,6 +1,5 @@
 package io.silv.manga.filter
 
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
@@ -24,27 +22,86 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import io.silv.datastore.ExplorePrefs
-import io.silv.datastore.FilterPrefs
-import io.silv.datastore.collectPrefAsState
-import io.silv.di.rememberDataDependency
-import io.silv.ui.Converters
-import io.silv.ui.composables.CardType
+import app.cash.molecule.RecompositionMode
+import app.cash.molecule.launchMolecule
+import io.silv.common.model.CardType
+import io.silv.datastore.Keys
+import io.silv.datastore.SettingsStore
 import io.silv.ui.composables.SelectCardType
 import io.silv.ui.composables.UseList
 import io.silv.ui.theme.LocalSpacing
+import kotlinx.coroutines.CoroutineScope
 import kotlin.math.roundToInt
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.datastore.preferences.core.Preferences
+import app.cash.molecule.AndroidUiDispatcher
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
+sealed interface FilterSettingsEvent {
+    data object ToggleUseList: FilterSettingsEvent
+    data class ChangeCardType(val cardType: CardType): FilterSettingsEvent
+    data class ChangeGridCells(val gridCells: Int): FilterSettingsEvent
+}
+
+data class FilterSettings(
+    val useList: Boolean = false,
+    val cardType: CardType = CardType.Compact,
+    val gridCells: Int = Keys.GRID_CELLS_DEFAULT,
+    val events: (FilterSettingsEvent) -> Unit = {}
+)
+
+class FilterSettingsPresenter(
+    parentScope: CoroutineScope,
+    private val store: SettingsStore,
+) {
+    private val scope = CoroutineScope(parentScope.coroutineContext + AndroidUiDispatcher.Main)
+
+    val state = scope.launchMolecule(RecompositionMode.ContextClock) {
+        present()
+    }
+
+    @Composable
+    fun present(): FilterSettings {
+
+        val scope = rememberCoroutineScope()
+
+        val useList by rememberUpdatedState(store.filterUseList.collectAsState().value)
+        val cardType by store.filterCardType.collectAsState()
+        val gridCells by store.filterGridCells.collectAsState()
+
+        fun <T> editSettings(key: Preferences.Key<T>, value: T) {
+            scope.launch {
+                store.edit { prefs ->
+                    prefs[key] = value
+                }
+            }
+        }
+
+        return FilterSettings(
+            useList = useList,
+            cardType = cardType,
+            gridCells = gridCells,
+        ) { event ->
+            when(event) {
+                is FilterSettingsEvent.ChangeCardType -> editSettings(Keys.FilterPrefs.cardTypePrefKey, event.cardType.ordinal)
+                is FilterSettingsEvent.ChangeGridCells -> editSettings(Keys.FilterPrefs.gridCellsPrefKey, event.gridCells)
+                FilterSettingsEvent.ToggleUseList -> editSettings(Keys.FilterPrefs.useListPrefKey, !useList)
+            }
+        }
+    }
+
+}
+
 @Composable
 fun FilterDisplayOptionsBottomSheet(
+    settings: FilterSettings,
     optionsTitle: @Composable () -> Unit = {},
     onDismissRequest: () -> Unit,
 ) {
@@ -52,23 +109,6 @@ fun FilterDisplayOptionsBottomSheet(
         rememberModalBottomSheetState(
             skipPartiallyExpanded = true,
         )
-
-    val scope = rememberCoroutineScope()
-    val dataStore = rememberDataDependency { dataStore }
-
-    var cardType by FilterPrefs.cardTypePrefKey.collectPrefAsState(
-        dataStore,
-        defaultValue = CardType.Compact,
-        converter = Converters.CardTypeToStringConverter,
-        scope = scope,
-    )
-
-    var gridCells by FilterPrefs.gridCellsPrefKey.collectPrefAsState(
-        dataStore,
-        FilterPrefs.gridCellsDefault,
-        scope
-    )
-    var useList by FilterPrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
 
 
     LaunchedEffect(Unit) {
@@ -89,20 +129,20 @@ fun FilterDisplayOptionsBottomSheet(
                 optionsTitle()
             }
             UseList(
-                checked = useList,
-                onCheckChanged = { useList = it },
+                checked = settings.useList,
+                onCheckChanged = { settings.events(FilterSettingsEvent.ToggleUseList) },
                 modifier = Modifier.fillMaxWidth()
             )
             SelectCardType(
-                cardType = cardType,
-                onCardTypeSelected = { cardType = it },
+                cardType = settings.cardType,
+                onCardTypeSelected = { settings.events(FilterSettingsEvent.ChangeCardType(it)) },
             )
             GridSizeSelector(
                 Modifier.fillMaxWidth(),
                 onSizeSelected = {
-                    gridCells = it
+                    settings.events(FilterSettingsEvent.ChangeGridCells(it))
                 },
-                size = gridCells,
+                size = settings.gridCells,
             )
             Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars))
         }
@@ -175,7 +215,7 @@ fun GridSizeSelector(
             modifier =
                 Modifier
                     .padding(horizontal = 12.dp)
-                    .clickable { onSizeSelected(ExplorePrefs.gridCellsDefault) },
+                    .clickable { onSizeSelected(Keys.GRID_CELLS_DEFAULT) },
         )
     }
 }

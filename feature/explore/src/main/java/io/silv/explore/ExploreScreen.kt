@@ -57,17 +57,14 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import io.silv.datastore.ExplorePrefs
-import io.silv.datastore.collectPrefAsState
+import io.silv.common.model.CardType
 import io.silv.data.manga.model.Manga
 import io.silv.di.rememberDataDependency
 import io.silv.model.DomainSeasonalList
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.CenterBox
-import io.silv.ui.Converters
 import io.silv.ui.composables.AnimatedBoxShimmer
-import io.silv.ui.composables.CardType
 import io.silv.ui.composables.MangaGridItem
 import io.silv.ui.composables.MangaListItem
 import io.silv.ui.composables.mangaGrid
@@ -204,6 +201,7 @@ fun ExpandableInfoLayoutContent(
 @Composable
 fun BrowseMangaContent(
     modifier: Modifier,
+    settings: ExploreSettings,
     contentPaddingValues: PaddingValues,
     pagedType: UiPagedType,
     gridState: LazyGridState = rememberLazyGridState(),
@@ -215,17 +213,7 @@ fun BrowseMangaContent(
     onBookmarkClick: (mangaId: String) -> Unit,
 ) {
     val navigator = LocalNavigator.currentOrThrow
-    val scope = rememberCoroutineScope()
-    val dataStore = rememberDataDependency { dataStore }
 
-    val gridCells by ExplorePrefs.gridCellsPrefKey.collectPrefAsState(dataStore, ExplorePrefs.gridCellsDefault, scope)
-    val cardType by ExplorePrefs.cardTypePrefKey.collectPrefAsState(
-        dataStore,
-        defaultValue = CardType.Compact,
-        converter = Converters.CardTypeToStringConverter,
-        scope = scope
-    )
-    val useList by ExplorePrefs.useListPrefKey.collectPrefAsState(dataStore, false, scope)
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
     val refreshing = if (pagedType is UiPagedType.Seasonal) {
@@ -247,7 +235,7 @@ fun BrowseMangaContent(
             }
         }
         else -> {
-            if (useList) {
+            if (settings.useList) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = contentPaddingValues,
@@ -290,13 +278,13 @@ fun BrowseMangaContent(
                 LazyVerticalGrid(
                     modifier = modifier.fillMaxSize(),
                     state = gridState,
-                    columns = GridCells.Fixed(gridCells),
+                    columns = GridCells.Fixed(settings.gridCells),
                     contentPadding = contentPaddingValues,
                 ) {
                     if (pagedType is UiPagedType.Seasonal) {
                         item(
                             key = "seasonal-tags",
-                            span = { GridItemSpan(gridCells) },
+                            span = { GridItemSpan(settings.gridCells) },
                         ) {
                             SeasonalListTags(
                                 seasonalLists = seasonalLists,
@@ -308,7 +296,7 @@ fun BrowseMangaContent(
                             )
                         }
                         seasonalMangaGrid(
-                            cardType,
+                            settings.cardType,
                             seasonalLists.getOrNull(selectedIndex),
                             onMangaClick = onMangaClick,
                             onBookmarkClick = {
@@ -319,7 +307,7 @@ fun BrowseMangaContent(
                     } else {
                         mangaGrid(
                             manga = mangaList,
-                            cardType = cardType,
+                            cardType = settings.cardType,
                             onBookmarkClick = { manga ->
                                 onBookmarkClick(manga.id)
                             },

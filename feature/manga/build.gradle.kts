@@ -86,7 +86,7 @@ dependencies {
     // VOYAGER
     implementation(libs.bundles.voyager)
 
-    
-
     implementation(libs.bundles.coil)
+
+    implementation(libs.molecule.runtime)
 }

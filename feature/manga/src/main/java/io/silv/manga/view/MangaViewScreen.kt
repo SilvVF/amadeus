@@ -100,9 +100,9 @@ import com.skydoves.sandwich.onFailure
 import com.skydoves.sandwich.onSuccess
 import io.silv.common.DependencyAccessor
 import io.silv.common.model.Download
+import io.silv.common.model.Filters
 import io.silv.data.download.QItem
 import io.silv.data.manga.GetMangaCoverArtById
-import io.silv.datastore.model.Filters
 import io.silv.di.dataDeps
 import io.silv.manga.composables.MangaDescription
 import io.silv.manga.composables.MangaImageWithTitle

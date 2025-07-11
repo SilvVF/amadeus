@@ -94,6 +94,8 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
+    implementation(libs.font.awesome)
+
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation(libs.image.decoder)
     // Datastore
@@ -123,4 +125,6 @@ dependencies {
     implementation(libs.unifile)
     implementation(libs.coil.network.okhttp)
     implementation(libs.coil.ktor)
+
+    implementation(libs.molecule.runtime)
 }

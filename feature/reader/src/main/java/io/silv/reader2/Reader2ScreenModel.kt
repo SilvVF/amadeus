@@ -3,7 +3,6 @@ package io.silv.reader2
 import android.net.Uri
 import androidx.annotation.IntRange
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.common.DependencyAccessor
 import io.silv.common.coroutine.suspendRunCatching
@@ -16,27 +15,24 @@ import io.silv.common.time.epochMillis
 import io.silv.common.time.localDateTimeNow
 import io.silv.data.chapter.Chapter
 import io.silv.data.chapter.interactor.ChapterHandler
+import io.silv.data.chapter.interactor.GetChapter
 import io.silv.data.chapter.interactor.GetNextChapters
 import io.silv.data.chapter.toResource
 import io.silv.data.download.DownloadManager
-import io.silv.data.download.DownloadProvider
 import io.silv.data.download.QItem
 import io.silv.data.history.HistoryRepository
 import io.silv.data.history.HistoryUpdate
 import io.silv.data.manga.interactor.GetChaptersByMangaId
 import io.silv.data.manga.interactor.GetManga
-import io.silv.data.manga.interactor.SetMangaViewerFlags
 import io.silv.data.manga.model.Manga
 import io.silv.data.manga.model.toResource
 import io.silv.datastore.SettingsStore
 import io.silv.di.dataDeps
-import io.silv.reader.composables.ChapterActions
 import io.silv.reader.loader.ChapterLoader
 import io.silv.reader.loader.DownloadPageLoader
 import io.silv.reader.loader.ReaderChapter
 import io.silv.reader.loader.ReaderPage
 import io.silv.reader2.Reader2ScreenModel.Event
-import io.silv.ui.AppState
 import io.silv.ui.EventStateScreenModel
 import io.silv.ui.SavedStateScreenModel
 import io.silv.ui.ioCoroutineScope
@@ -44,7 +40,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
@@ -55,7 +50,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import kotlin.collections.map
 import kotlin.coroutines.cancellation.CancellationException
 
 
@@ -66,18 +60,14 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     private val mangaId: String,
     private var chapterId: String,
     private var chapterPageIndex: Int,
-    private val appState: AppState,
     private val downloadManager: DownloadManager = dataDeps.downloadManager,
-    private val downloadProvider: DownloadProvider = dataDeps.downloadProvider,
-    // private val imageSaver: ImageSaver,
     private val store: SettingsStore = dataDeps.settingsStore,
-    //private val trackChapter: TrackChapter = Injekt.get(),
     private val getManga: GetManga = dataDeps.getManga,
+    private val getChapter: GetChapter = dataDeps.getChapter,
     private val getChaptersByMangaId: GetChaptersByMangaId = dataDeps.getChaptersByMangaId,
     private val getNextChapters: GetNextChapters = dataDeps.getNextChapters,
     private val historyRepository: HistoryRepository = dataDeps.historyRepository,
     private val chapterHandler: ChapterHandler = dataDeps.chapterHandler,
-    private val setMangaViewerFlags: SetMangaViewerFlags = dataDeps.setMangaViewerFlags,
     private val saveState: (state: MutableMap<String, Any>) -> Unit
 ) : EventStateScreenModel<Event, Reader2ScreenModel.State>(State()), SavedStateScreenModel {
 
@@ -103,8 +93,13 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     private var chapterReadStartTime: Long? = null
     private var chapterToDownload: Download? = null
 
+    private val settings = ReaderSettingsPresenter(screenModelScope, store)
+        .state
+        .stateInUi(ReaderSettings())
+
     private val downloadsFlow = downloadManager.queueState
-    val viewer = PagerViewer(scope = screenModelScope) { action ->
+
+    val viewer = PagerViewer(screenModelScope) { action ->
         when (action) {
             PagerAction.ToggleMenu -> showMenus(!state.value.menuVisible)
             is PagerAction.OnPageSelected -> onPageSelected(action.page)
@@ -118,8 +113,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
             }
         }
     }
-
-    val settings = ReaderSettingsPresenter(screenModelScope, store)
 
     val chaptersFlow = getChaptersByMangaId.subscribe(mangaId)
         .map { chapters ->
@@ -136,7 +129,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * Chapter list for the active manga. It's retrieved lazily and should be accessed for the first
      * time in a background thread to avoid blocking the UI.
      */
-    private val chapterList by lazy {
+    private val readerChapters by lazy {
         runBlocking {
             chaptersFlow
                 .first()
@@ -145,15 +138,10 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     }
 
     private val incognitoMode = false
-    private val downloadAheadAmount = 4
+    private val downloadAheadAmount = 0
 
     init {
-        settings.state.onEach {
-            viewer.setReaderLayout(it.layout)
-            mutableState.update { state ->
-                state.copy(settings = it)
-            }
-        }
+        settings.onEach(viewer::updateSettings)
             .launchIn(screenModelScope)
 
         downloadsFlow.onEach {
@@ -163,16 +151,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
                 )
             }
         }
-            .launchIn(screenModelScope)
-
-        snapshotFlow { appState.navigator?.lastItemOrNull }
-            .filterNotNull()
-            .distinctUntilChanged()
-            .onEach {
-                if (it !is ReaderScreen2) {
-                    deletePendingChapters()
-                }
-            }
             .launchIn(screenModelScope)
 
         screenModelScope.launch {
@@ -230,7 +208,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
                     logcat { "chapterid $savedChapter initial $chapterId" }
                     if (savedChapter.isNotEmpty()) chapterId = savedChapter
 
-                    loadChapter(loader, chapterList.first { chapterId == it.chapter.id })
+                    loadChapter(loader, readerChapters.first { chapterId == it.chapter.id })
                     true
                 } else {
                     // Unlikely but okay
@@ -250,11 +228,11 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
     ) {
         loader.loadChapter(chapter)
 
-        val chapterPos = chapterList.indexOf(chapter)
+        val chapterPos = readerChapters.indexOf(chapter)
         val newChapters = ViewerChapters(
             chapter,
-            chapterList.getOrNull(chapterPos - 1),
-            chapterList.getOrNull(chapterPos + 1),
+            readerChapters.getOrNull(chapterPos - 1),
+            readerChapters.getOrNull(chapterPos + 1),
         )
 
         withContext(Dispatchers.Main) {
@@ -422,15 +400,13 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
      * @param currentChapter current chapter, which is going to be marked as read.
      */
     private fun deleteChapterIfNeeded(currentChapter: ReaderChapter) {
-        val removeAfterReadSlots = state.value.settings.removeAfterReadSlots
+        val removeAfterReadSlots = settings.value.removeAfterReadSlots
         if (removeAfterReadSlots == -1) return
 
         // Determine which chapter should be deleted and enqueue
-        val currentChapterPosition = chapterList.indexOf(currentChapter)
-        val chapterToDelete = chapterList.getOrNull(currentChapterPosition - removeAfterReadSlots)
-
-        // If chapter is completely read, no need to download it
-        chapterToDownload = null
+        val currentChapterPosition = readerChapters.indexOf(currentChapter)
+        val chapterToDelete =
+            readerChapters.getOrNull(currentChapterPosition - removeAfterReadSlots)
 
         if (chapterToDelete != null) {
             enqueueDeleteReadChapters(chapterToDelete.chapter)
@@ -558,58 +534,36 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         }
     }
 
-    /**
-     * Deletes all the pending chapters. This operation will run in a background thread and errors
-     * are ignored.
-     */
-    private fun deletePendingChapters() {
-        screenModelScope.launch(NonCancellable) {
-
-        }
-    }
-
     fun deleteChapterImages(chapterId: String) {
-        state.value.manga?.let {
-            screenModelScope.launch {
+        state.value.manga?.let { manga ->
+            screenModelScope.launch(NonCancellable) {
+                val chapter = getChapter.await(chapterId) ?: return@launch
                 downloadManager.deleteChapters(
-                    listOf(
-                        state.value.chapters.firstOrNull { it.id == chapterId }?.toResource()
-                            ?: return@launch
-                    ),
-                    it.toResource(),
+                    listOf(chapter.toResource()),
+                    manga.toResource(),
                 )
             }
         }
     }
 
     fun pauseDownloads() {
-        screenModelScope.launch {
-            downloadManager.pauseDownloads()
-        }
+        downloadManager.pauseDownloads()
     }
 
     fun resumeDownloads() {
-        screenModelScope.launch {
-            downloadManager.startDownloads()
-        }
+        downloadManager.startDownloads()
     }
 
     fun cancelDownload(download: Download) {
-        screenModelScope.launch {
-            downloadManager.cancelQueuedDownloads(listOf(download))
-        }
+        downloadManager.cancelQueuedDownloads(listOf(download))
     }
 
     fun downloadChapterImages(chapterId: String) {
         state.value.manga?.let {
-            ioCoroutineScope.launch {
-                logcat { "Calling download chapter images" }
+            screenModelScope.launch {
                 downloadManager.downloadChapters(
                     it.toResource(),
-                    listOf(
-                        state.value.chapters.firstOrNull { it.id == chapterId }?.toResource()
-                            ?: return@launch,
-                    ),
+                    listOf(getChapter.await(chapterId)?.toResource() ?: return@launch),
                 )
             }
         }
@@ -623,11 +577,7 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         val downloads: List<QItem<Download>> = emptyList(),
         val bookmarked: Boolean = false,
         val isLoadingAdjacentChapter: Boolean = false,
-        val viewerFlags: Long? = null,
         val menuVisible: Boolean = false,
-        val settings: ReaderSettings = ReaderSettings(),
-        @IntRange(from = -100, to = 100)
-        val brightnessOverlayValue: Int = 0,
     )
 
     sealed interface Event {

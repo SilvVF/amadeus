@@ -1,4 +1,4 @@
-package io.silv.domain.chapter.repository
+package io.silv.data.chapter.repository
 
 import io.silv.data.chapter.Chapter
 import kotlinx.coroutines.flow.Flow

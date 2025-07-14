@@ -47,6 +47,7 @@ import okio.BufferedSource
 
 @Composable
 fun PagerPage(
+    onPageClick: (Offset, IntSize) -> Unit,
     pageState: PageState,
     modifier: Modifier = Modifier,
     zoomState: ZoomableImageState = rememberZoomableImageState(),
@@ -76,7 +77,7 @@ fun PagerPage(
                     contentDescription = pageState.page.url,
                     onClick = {
                         if (size != IntSize.Zero) {
-                            pageState.events(ViewerEvent.Click(it, size))
+                           onPageClick(it, size)
                         }
                     }
                 )

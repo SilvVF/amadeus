@@ -29,12 +29,14 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -49,9 +51,9 @@ import kotlin.math.roundToInt
 @Composable
 fun MenuPageSlider(
     modifier: Modifier = Modifier,
-    fractionProvider:() -> Float,
-    layoutDirectionProvider: () -> LayoutDirection,
+    fractionProvider: () -> Float,
     currentPageProvider: () -> Int,
+    l2r: Boolean,
     pageCountProvider: () -> Int,
     onPrevClick: () -> Unit,
     onNextClick: () -> Unit,
@@ -61,10 +63,6 @@ fun MenuPageSlider(
     val currentPage = currentPageProvider()
 
     val valid = !(currentPage <= 0 || pageCount <= 0)
-
-    if (!valid) {
-        return
-    }
 
     val sliderState = remember(currentPage) {
         SliderState(
@@ -80,20 +78,11 @@ fun MenuPageSlider(
 
 
     val space = LocalSpacing.current
-    val layoutDirection = layoutDirectionProvider()
-
-    fun leftButtonClick() {
-        when (layoutDirection) {
-            Ltr -> onPrevClick()
-            Rtl -> onNextClick()
-        }
+    val leftButtonClick = {
+        if (l2r) { onPrevClick() } else { onNextClick() }
     }
-    
-    fun rightButtonClick() {
-        when (layoutDirection) {
-            Ltr -> onNextClick()
-            Rtl -> onPrevClick()
-        }
+    val rightButtonClick = {
+        if (l2r) { onNextClick() } else { onPrevClick() }
     }
 
 
@@ -115,7 +104,7 @@ fun MenuPageSlider(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         IconButton(
-            onClick = ::leftButtonClick,
+            onClick = leftButtonClick,
             modifier = Modifier.padding(space.small),
             colors = IconButtonDefaults.iconButtonColors(
                 contentColor = LocalContentColor.current.copy(alpha = fraction)
@@ -132,18 +121,13 @@ fun MenuPageSlider(
             modifier = Modifier.padding(space.small)
         )
         if (fraction > 0f && valid) {
-            CompositionLocalProvider(
-                LocalLayoutDirection provides layoutDirection
-            ) {
-                Slider(
-                    state = sliderState,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(space.small),
-                    colors = sliderColors(fraction = fraction),
-
-                )
-            }
+            Slider(
+                state = sliderState,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(space.small),
+                colors = sliderColors(fraction = fraction)
+            )
         }
         Text(
             text = if (valid) "$pageCount" else "",
@@ -151,7 +135,7 @@ fun MenuPageSlider(
             color = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
         )
         IconButton(
-            onClick = ::rightButtonClick,
+            onClick = rightButtonClick,
             modifier = Modifier.padding(space.small),
             colors = IconButtonDefaults.iconButtonColors(
                 contentColor = LocalContentColor.current.copy(alpha = fraction)
@@ -169,7 +153,8 @@ fun MenuPageSlider(
 private fun sliderColors(fraction: Float): SliderColors = SliderDefaults.colors(
     thumbColor = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
     disabledThumbColor = MaterialTheme.colorScheme.onSurface.copy(alpha = fraction).compositeOver(
-        MaterialTheme.colorScheme.surface),
+        MaterialTheme.colorScheme.surface
+    ),
     activeTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = fraction),
     inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = fraction),
     disabledActiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = fraction),

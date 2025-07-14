@@ -61,6 +61,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
@@ -75,12 +76,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -108,7 +109,6 @@ import io.silv.reader2.ReaderSettingsEvent
 import io.silv.reader2.ReaderSettingsEvent.ChangeLayout
 import io.silv.ui.composables.ChapterDownloadAction
 import io.silv.ui.composables.ChapterDownloadIndicator
-import io.silv.ui.isLight
 import io.silv.ui.layout.DragAnchors
 import io.silv.ui.layout.ExpandableInfoLayout
 import io.silv.ui.layout.ExpandableScope
@@ -136,7 +136,7 @@ fun ReaderMenuOverlay(
     menuVisible: () -> Boolean,
     currentPage: () -> Int,
     pageCount: () -> Int,
-    layoutDirection: LayoutDirection,
+    l2r: Boolean,
     onDismissRequested: () -> Unit,
     loadPrevChapter: () -> Unit,
     loadNextChapter: () -> Unit,
@@ -248,10 +248,10 @@ fun ReaderMenuOverlay(
                         fractionProvider = { expandableState.fraction.value },
                         currentPageProvider = currentPage,
                         pageCountProvider = pageCount,
-                        layoutDirectionProvider = { layoutDirection },
                         onPrevClick = loadPrevChapter,
                         onNextClick = loadNextChapter,
-                        onPageChange = changePage
+                        onPageChange = changePage,
+                        l2r = l2r
                     )
                     TabRow(
                         selectedTabIndex = menuPagerState.currentPage,

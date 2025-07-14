@@ -1,7 +1,7 @@
 package io.silv.data.chapter.interactor
 
 import io.silv.data.chapter.Chapter
-import io.silv.domain.chapter.repository.ChapterRepository
+import io.silv.data.chapter.repository.ChapterRepository
 
 import kotlinx.coroutines.flow.Flow
 

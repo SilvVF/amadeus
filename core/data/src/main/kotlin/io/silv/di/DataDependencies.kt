@@ -5,18 +5,17 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import io.silv.common.DependencyAccessor
-import io.silv.common.commonDeps
 import io.silv.common.NetworkConnectivity
-import io.silv.data.AuthorListRepository
+import io.silv.common.commonDeps
 import io.silv.data.OSWorkManagerHelper
 import io.silv.data.RecentSearchRepositoryImpl
 import io.silv.data.TagRepository
-import io.silv.data.author.AuthorListRepositoryImpl
 import io.silv.data.chapter.ChapterRepositoryImpl
 import io.silv.data.chapter.interactor.ChapterHandler
 import io.silv.data.chapter.interactor.GetBookmarkedChapters
 import io.silv.data.chapter.interactor.GetChapter
 import io.silv.data.chapter.interactor.GetNextChapters
+import io.silv.data.chapter.repository.ChapterRepository
 import io.silv.data.download.ChapterCache
 import io.silv.data.download.CoverCache
 import io.silv.data.download.DownloadCache
@@ -33,20 +32,16 @@ import io.silv.data.manga.MangaPagingSourceFactoryImpl
 import io.silv.data.manga.MangaRepositoryImpl
 import io.silv.data.manga.SeasonalMangaRepositoryImpl
 import io.silv.data.manga.SubscribeToPagingData
-import io.silv.data.manga.YearlyTopMangaFetcher
 import io.silv.data.manga.interactor.GetChaptersByMangaId
 import io.silv.data.manga.interactor.GetLibraryMangaWithChapters
 import io.silv.data.manga.interactor.GetManga
 import io.silv.data.manga.interactor.GetMangaWithChapters
 import io.silv.data.manga.interactor.MangaHandler
-import io.silv.data.manga.interactor.SetMangaViewerFlags
 import io.silv.data.manga.repository.MangaRepository
 import io.silv.data.manga.repository.SeasonalMangaRepository
-import io.silv.data.manga.repository.TopYearlyFetcher
 import io.silv.data.search.RecentSearchHandler
 import io.silv.data.search.RecentSearchRepository
 import io.silv.data.tags.TagRepositoryImpl
-import io.silv.data.update.GetUpdateCount
 import io.silv.data.update.UpdatesRepository
 import io.silv.data.updates.MangaUpdateJob
 import io.silv.data.updates.UpdatesRepositoryImpl
@@ -56,7 +51,6 @@ import io.silv.database.AmadeusDatabase
 import io.silv.datastore.DownloadStore
 import io.silv.datastore.SettingsStore
 import io.silv.datastore.dataStore
-import io.silv.domain.chapter.repository.ChapterRepository
 import io.silv.network.networkDeps
 import io.silv.network.sources.ImageSourceFactory
 
@@ -80,8 +74,6 @@ abstract class DataDependencies {
     }
 
     val chapterDao by lazy { db.chapterDao() }
-    val seasonRemoteKeys by lazy { db.seasonalRemoteKeysDao() }
-    val seasonalListDao by lazy { db.seasonalListDao() }
     val tagDao by lazy { db.tagDao() }
     val sourceMangaDao by lazy { db.sourceMangaDao() }
     val updatesDao by lazy { db.updatesDao() }
@@ -119,11 +111,9 @@ abstract class DataDependencies {
     val getBookmarkedChapters get() = GetBookmarkedChapters(chapterRepository)
     val getLibraryMangaWithChapters get() = GetLibraryMangaWithChapters(mangaRepository)
     val getMangaStatisticsById get() = GetMangaStatisticsById(networkDeps.mangaDexApi)
-    val getUpdateCount get() = GetUpdateCount(updatesRepository)
     val getMangaCoverArtById get() = GetMangaCoverArtById(networkDeps.mangaDexApi)
     val getChaptersByMangaId get() = GetChaptersByMangaId(chapterRepository)
     val getNextChapters get() = GetNextChapters(getChaptersByMangaId, getManga)
-    val setMangaViewerFlags get() = SetMangaViewerFlags(mangaRepository)
 
     val chapterCache by lazy { ChapterCache(context, networkDeps.json) }
 
@@ -202,18 +192,11 @@ abstract class DataDependencies {
             mangaRepository
         )
     }
-    val topYearlyFetcher: TopYearlyFetcher by lazy {
-        YearlyTopMangaFetcher(
-            networkDeps.mangaDexApi, mangaRepository, getManga, commonDeps.dispatchers
-        )
-    }
+
     val tagRepository: TagRepository by lazy {
         TagRepositoryImpl(
             tagDao, networkDeps.mangaDexApi
         )
-    }
-    val authorListRepository: AuthorListRepository by lazy {
-        AuthorListRepositoryImpl(networkDeps.mangaDexApi, commonDeps.dispatchers)
     }
 
     val mangaUpdateJob by lazy {

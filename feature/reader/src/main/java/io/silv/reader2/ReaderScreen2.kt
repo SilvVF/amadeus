@@ -50,6 +50,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.log.LogPriority
 import io.silv.common.log.asLog
 import io.silv.common.log.logcat
+import io.silv.common.model.ReaderLayout
 import io.silv.reader.composables.ChapterActions
 import io.silv.reader.composables.ReaderMenuOverlay
 import io.silv.reader.loader.ChapterTransition
@@ -81,7 +82,6 @@ data class ReaderScreen2(
     override fun Content() {
 
         val appState = LocalAppState.current
-        val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
         val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -89,8 +89,7 @@ data class ReaderScreen2(
             Reader2ScreenModel(
                 chapterId = chapterId,
                 chapterPageIndex = page,
-                mangaId = mangaId,
-                appState = appState
+                mangaId = mangaId
             ) { state ->
                 page = (state[Reader2ScreenModel.PAGE_KEY] as? Int) ?: 0
                 chapterId = (state[Reader2ScreenModel.CHAPTER_KEY] as? String) ?: chapterId
@@ -127,16 +126,6 @@ data class ReaderScreen2(
                 is Reader2ScreenModel.Event.ShareImage -> TODO()
             }
         }
-
-
-        screenModel.viewer.uiEvents.collectEvents { event ->
-            when (event) {
-                is PagerEvent.AnimateScrollToPage -> {
-                    screenModel.viewer.pagerState.animateScrollToPage(event.page)
-                }
-            }
-        }
-
         ReaderScreenContent(
             state = state,
             viewer = screenModel.viewer,
@@ -189,10 +178,10 @@ private fun ReaderScreenContent(
         actions = actions
     ) {
         ReaderNavigationOverlay(
-            overlayState = rememberReaderOverlayState(viewer.config.navigator),
+            overlayState = rememberReaderOverlayState(viewer.navigator),
             modifier = Modifier.fillMaxSize()
         ) {
-            ReaderContainer(viewer, state)
+            ReaderContainer(viewer)
         }
     }
 }
@@ -202,11 +191,19 @@ fun PageContent(
     page: ViewerPage,
     viewer: PagerViewer
 ) {
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     when (page) {
         is ReaderPage -> {
             val state = pagePresenter(viewer, context, page)
-            PagerPage(state)
+            PagerPage(
+                onPageClick = { offset, size ->
+                    scope.launch {
+                        viewer.handleClickEvent(offset, size)
+                    }
+                },
+                state
+            )
         }
 
         is ChapterTransition -> {
@@ -216,8 +213,10 @@ fun PageContent(
                     .fillMaxSize()
                     .onSizeChanged { size = it }
                     .pointerInput(Unit) {
-                        detectTapGestures(onTap = {
-                            viewer.handleClickEvent(it, size)
+                        detectTapGestures(onTap = { offset ->
+                            scope.launch {
+                                viewer.handleClickEvent(offset, size)
+                            }
                         })
                     },
                 verticalArrangement = Arrangement.Center,
@@ -237,9 +236,11 @@ fun PageContent(
                                 Text("Retry")
                             }
                         }
+
                         ReaderChapter.State.Loading, ReaderChapter.State.Wait -> {
                             CircularProgressIndicator()
                         }
+
                         is ReaderChapter.State.Loaded -> {
                             Text("Ready")
                         }
@@ -258,9 +259,11 @@ fun PageContent(
                             Text("Retry")
                         }
                     }
+
                     ReaderChapter.State.Loading, ReaderChapter.State.Wait -> {
                         CircularProgressIndicator()
                     }
+
                     is ReaderChapter.State.Loaded -> {
                         Text("Ready")
                     }
@@ -272,12 +275,12 @@ fun PageContent(
 
 @Composable
 fun ComposeViewPager(
-    state: Reader2ScreenModel.State,
     pagerViewer: PagerViewer,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier) {
         if (pagerViewer.isHorizontal) {
+
             HorizontalPager(
                 pagerViewer.pagerState,
                 beyondViewportPageCount = 1,
@@ -300,7 +303,7 @@ fun ComposeViewPager(
             }
         }
 
-        if (state.settings.showPageNumber) {
+        if (pagerViewer.settings.showPageNumber) {
             PageIndicatorText(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -352,13 +355,12 @@ private fun PageIndicatorText(
 @Composable
 fun ReaderContainer(
     viewer: PagerViewer,
-    state: Reader2ScreenModel.State
 ) {
     Surface(
         Modifier.fillMaxSize(),
-        color = state.settings.color
+        color = viewer.settings.color
     ) {
-        ComposeViewPager(state, viewer)
+        ComposeViewPager(viewer)
     }
 }
 
@@ -383,14 +385,14 @@ fun ReaderDialogHost(
         readerChapter = { viewer.currentChapter },
         manga = { state.manga },
         menuVisible = { state.menuVisible },
-        layoutDirection = if (viewer.l2r) LayoutDirection.Ltr else LayoutDirection.Rtl,
+        l2r = viewer.l2r,
         chapterActions = actions,
         chapters = { state.chapters },
         currentPage = { viewer.currentPageNumber },
         pageCount = { viewer.totalPages },
         loadNextChapter = loadNextChapter,
         loadPrevChapter = loadPrevChapter,
-        settings = state.settings,
+        settings = viewer.settings,
         downloadsProvider = { state.downloads },
         changePage = { page ->
             scope.launch {

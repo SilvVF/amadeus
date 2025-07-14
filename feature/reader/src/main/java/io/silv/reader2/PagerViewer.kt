@@ -1,6 +1,5 @@
 package io.silv.reader2
 
-import androidx.compose.animation.core.snap
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -12,7 +11,6 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import io.silv.common.log.logcat
-import io.silv.common.model.PagedType
 import io.silv.common.model.ReaderLayout
 import io.silv.data.chapter.Chapter
 import io.silv.reader.loader.ChapterTransition
@@ -22,9 +20,6 @@ import io.silv.reader.loader.ViewerPage
 import io.silv.reader2.ViewerNavigation.NavigationRegion
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
@@ -42,20 +37,13 @@ sealed interface PagerAction {
     data class RetryLoad(val chapter: ReaderChapter) : PagerAction
 }
 
-sealed interface PagerEvent {
-    data class AnimateScrollToPage(val page: Int) : PagerEvent
-}
-
-interface Viewer {
-    fun moveToPage(page: ReaderPage)
-}
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class PagerViewer(
-    val scope: CoroutineScope,
-    val onAction: (PagerAction) -> Unit
-) : Viewer {
-
+    scope: CoroutineScope,
+    private val onAction: (PagerAction) -> Unit
+) {
+    var settings by mutableStateOf(ReaderSettings())
+        private set
     var viewerChapters by mutableStateOf<ViewerChapters?>(null)
         private set
     var items = mutableStateListOf<ViewerPage>()
@@ -65,22 +53,7 @@ class PagerViewer(
     var currentChapter by mutableStateOf<ReaderChapter?>(null)
         private set
 
-    var isHorizontal by mutableStateOf(false)
-        private set
-
-    var l2r: Boolean by mutableStateOf(false)
-        private set
-
-    val config: PagerConfig by derivedStateOf {
-        PagerConfig(isHorizontal)
-    }
-
     val pagerState = PagerState { items.size }
-
-    val uiEvents = Channel<PagerEvent>(UNLIMITED)
-
-    private var nextTransition: ChapterTransition.Next? = null
-    private var preprocessed: MutableMap<Int, InsertPage> = mutableMapOf()
 
     val totalPages by derivedStateOf {
         currentChapter?.pages?.size ?: -1
@@ -99,6 +72,32 @@ class PagerViewer(
                 else -> null
             }
         } + 1
+    }
+
+
+    private var nextTransition: ChapterTransition.Next? = null
+    private var preprocessed: MutableMap<Int, InsertPage> = mutableMapOf()
+
+    val navigator by derivedStateOf {
+        when (settings.layout) {
+            ReaderLayout.PagedRTL, ReaderLayout.PagedLTR -> RightAndLeftNavigation()
+            ReaderLayout.Vertical -> LNavigation()
+        }
+    }
+
+    val isHorizontal by derivedStateOf{
+        when (settings.layout) {
+            ReaderLayout.PagedRTL, ReaderLayout.PagedLTR -> true
+            ReaderLayout.Vertical -> false
+        }
+    }
+
+
+    val l2r by derivedStateOf {
+        when (settings.layout) {
+            ReaderLayout.PagedRTL -> false
+            ReaderLayout.PagedLTR, ReaderLayout.Vertical -> true
+        }
     }
 
     init {
@@ -135,31 +134,12 @@ class PagerViewer(
             .launchIn(scope)
     }
 
-    fun setReaderLayout(layout: ReaderLayout) {
-        when(layout) {
-            ReaderLayout.PagedRTL -> {
-                isHorizontal = true
-                l2r = false
-            }
-            ReaderLayout.PagedLTR -> {
-                isHorizontal = true
-                l2r = true
-            }
-            ReaderLayout.Vertical -> {
-                isHorizontal = false
-                l2r = true
-            }
-        }
+    fun updateSettings(settings: ReaderSettings) {
+        this.settings = settings
     }
 
     fun retry(chapter: ReaderChapter) {
         onAction(PagerAction.RetryLoad(chapter))
-    }
-
-    private fun animateScrollToPage(page: Int) {
-        uiEvents.trySend(
-            PagerEvent.AnimateScrollToPage(page)
-        )
     }
 
     private fun handleSettledPage(idx: Int) {
@@ -212,7 +192,11 @@ class PagerViewer(
      * Called when a [ReaderPage] is marked as active. It notifies the
      * activity of the change and requests the preload of the next chapter if this is the last page.
      */
-    private fun onReaderPageSelected(page: ReaderPage, allowPreload: Boolean, forward: Boolean) {
+    private fun onReaderPageSelected(
+        page: ReaderPage,
+        allowPreload: Boolean,
+        forward: Boolean
+    ) {
         val pages = page.chapter.pages ?: return
         logcat { "onReaderPageSelected: ${page.number}/${pages.size}" }
         onAction(PagerAction.OnPageSelected(page))
@@ -256,7 +240,10 @@ class PagerViewer(
         return calculateChapterGap(higherChapter.chapter, lowerChapter.chapter)
     }
 
-    private fun calculateChapterGap(higherChapterNumber: Double, lowerChapterNumber: Double): Int {
+    private fun calculateChapterGap(
+        higherChapterNumber: Double,
+        lowerChapterNumber: Double
+    ): Int {
         if (higherChapterNumber < 0.0 || lowerChapterNumber < 0.0) return 0
         return floor(higherChapterNumber).toInt() - floor(lowerChapterNumber).toInt() - 1
     }
@@ -335,43 +322,33 @@ class PagerViewer(
         }
 
         // Will skip insert page otherwise
-        insertPageLastPage?.let { moveToPage(it) }
-    }
-
-    override fun moveToPage(page: ReaderPage) {
-        val idx = items.indexOfFirst { it == page }.takeIf { it != -1 } ?: return
-        scope.launch {
-            uiEvents.trySend(
-                PagerEvent.AnimateScrollToPage(idx)
-            )
+        insertPageLastPage?.let { page ->
+            val idx = items.indexOfFirst { it == page }.takeIf { it != -1 } ?: return
+            pagerState.requestScrollToPage(idx)
         }
     }
 
-    fun handleClickEvent(offset: Offset, size: IntSize) {
+
+    suspend fun handleClickEvent(offset: Offset, size: IntSize) {
         logcat { "$offset" }
-        when (config.navigator.getAction(offset, size)) {
+        when (navigator.getAction(offset, size)) {
             NavigationRegion.MENU -> onAction(PagerAction.ToggleMenu)
-            NavigationRegion.NEXT -> if (l2r || !isHorizontal) {
-                animateScrollToPage(pagerState.currentPage + 1)
-            } else {
-                animateScrollToPage(pagerState.currentPage - 1)
-            }
+            NavigationRegion.NEXT -> pagerState.animateScrollToPage(pagerState.currentPage + 1)
+            NavigationRegion.PREV ->  pagerState.animateScrollToPage(pagerState.currentPage - 1)
 
-            NavigationRegion.PREV -> if (l2r || !isHorizontal) {
-                animateScrollToPage(pagerState.currentPage - 1)
+            NavigationRegion.RIGHT -> if (l2r) {
+                pagerState.animateScrollToPage(pagerState.currentPage + 1)
             } else {
-                animateScrollToPage(pagerState.currentPage + 1)
+                pagerState.animateScrollToPage(pagerState.currentPage - 1)
             }
-
-            NavigationRegion.RIGHT -> animateScrollToPage(pagerState.currentPage + 1)
-            NavigationRegion.LEFT -> animateScrollToPage(pagerState.currentPage - 1)
+            NavigationRegion.LEFT ->  if (l2r) {
+                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+            } else {
+                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+            }
         }
     }
 
-    fun cleanupPageSplit() {
-        val insertPages = items.filterIsInstance<InsertPage>()
-        items.removeAll(insertPages)
-    }
 
     fun onPageSplit(currentPage: Any?, newPage: InsertPage) {
         if (currentPage !is ReaderPage) return

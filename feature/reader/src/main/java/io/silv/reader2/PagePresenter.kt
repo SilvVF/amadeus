@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.geometry.Offset
@@ -27,11 +28,11 @@ import okio.BufferedSource
 
 
 private fun process(viewer: PagerViewer, page: ReaderPage, imageSource: BufferedSource): BufferedSource {
-    if (viewer.config.dualPageRotateToFit) {
+    if (viewer.settings.dualPageRotateToFit) {
         return rotateDualPage(viewer, imageSource)
     }
 
-    if (!viewer.config.dualPageSplit) {
+    if (!viewer.settings.dualPageSplit) {
         return imageSource
     }
 
@@ -52,7 +53,7 @@ private fun process(viewer: PagerViewer, page: ReaderPage, imageSource: Buffered
 private fun rotateDualPage(viewer: PagerViewer, imageSource: BufferedSource): BufferedSource {
     val isDoublePage = ImageUtil.isWideImage(imageSource)
     return if (isDoublePage) {
-        val rotation = if (viewer.config.dualPageRotateToFitInvert) -90f else 90f
+        val rotation = if (viewer.settings.dualPageRotateToFitInvert) -90f else 90f
         ImageUtil.rotateImage(imageSource, rotation)
     } else {
         imageSource
@@ -67,7 +68,7 @@ private fun splitInHalf(viewer: PagerViewer, page: ReaderPage, imageSource: Buff
         else -> ImageUtil.Side.RIGHT
     }
 
-    if (viewer.config.dualPageInvert) {
+    if (viewer.settings.dualPageInvert) {
         side = when (side) {
             ImageUtil.Side.RIGHT -> ImageUtil.Side.LEFT
             ImageUtil.Side.LEFT -> ImageUtil.Side.RIGHT
@@ -83,15 +84,10 @@ private fun onPageSplit(viewer: PagerViewer, page: ReaderPage) {
 }
 
 
-sealed class ViewerEvent {
-    data class Click(val offset: Offset, val size: IntSize) : ViewerEvent()
-}
-
 data class PageState(
     val image: ImageRequest?,
     val status: Page.State,
     val page: ReaderPage,
-    val events: (ViewerEvent) -> Unit
 )
 
 @Composable
@@ -121,7 +117,7 @@ fun pagePresenter(
                             process(viewer, page, Buffer().readFrom(ins))
                         }
                         val isAnimated = ImageUtil.isAnimatedAndSupported(source)
-                        val background = if (!isAnimated && viewer.config.automaticBackground) {
+                        val background = if (!isAnimated && viewer.settings.automaticBackground) {
                             ImageUtil.chooseBackground(context, source.peek().inputStream())
                         } else {
                             null
@@ -140,9 +136,5 @@ fun pagePresenter(
         image,
         status,
         page,
-    ) { event ->
-        when (event)  {
-            is ViewerEvent.Click -> viewer.handleClickEvent(event.offset, event.size)
-        }
-    }
+    )
 }

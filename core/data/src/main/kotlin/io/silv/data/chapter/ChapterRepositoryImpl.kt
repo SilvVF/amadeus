@@ -14,7 +14,7 @@ import io.silv.data.mappers.toChapterEntity
 import io.silv.data.util.GetChapterList
 import io.silv.database.AmadeusDatabase
 import io.silv.database.dao.ChapterDao
-import io.silv.domain.chapter.repository.ChapterRepository
+import io.silv.data.chapter.repository.ChapterRepository
 
 import io.silv.network.MangaDexApi
 import io.silv.network.model.chapter.ChapterDto

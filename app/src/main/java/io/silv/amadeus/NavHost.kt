@@ -69,7 +69,7 @@ object NavHost : Screen {
                         }
                     ) { paddingValues ->
                         AnimatedContent(
-                            modifier = Modifier.fillMaxSize().padding(paddingValues),
+                            modifier = Modifier.fillMaxSize().padding(bottom = paddingValues.calculateBottomPadding()),
                             targetState = tabNavigator.current,
                             transitionSpec = {
                                 fadeIn() togetherWith fadeOut()

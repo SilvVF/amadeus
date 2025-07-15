@@ -97,7 +97,6 @@ dependencies {
     implementation(libs.font.awesome)
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
-    implementation(libs.image.decoder)
     // Datastore
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.okio)

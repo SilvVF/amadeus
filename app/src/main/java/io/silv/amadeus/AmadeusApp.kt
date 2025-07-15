@@ -1,5 +1,4 @@
 package io.silv.amadeus
-
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
@@ -24,7 +23,6 @@ import eu.kanade.tachiyomi.MangaCoverFactory
 import eu.kanade.tachiyomi.MangaCoverKeyer
 import eu.kanade.tachiyomi.MangaFactory
 import eu.kanade.tachiyomi.MangaKeyer
-import eu.kanade.tachiyomi.data.coil.TachiyomiImageDecoder
 import io.silv.common.CommonDependencies
 import io.silv.common.DependencyAccessor
 import io.silv.common.commonDeps
@@ -125,7 +123,6 @@ class AmadeusApp() : Application(), SingletonImageLoader.Factory, Configuration.
                     .add(
                         OkHttpNetworkFetcherFactory()
                     )
-                    .add(TachiyomiImageDecoder.Factory())
                     .add(BufferedSourceFetcher.Factory())
                     .add(MangaFactory(client, cache))
                     .add(MangaCoverFactory(client, cache))

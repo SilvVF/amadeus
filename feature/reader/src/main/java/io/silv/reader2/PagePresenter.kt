@@ -27,15 +27,11 @@ import okio.Buffer
 import okio.BufferedSource
 
 
-private fun process(viewer: PagerViewer, page: ReaderPage, imageSource: BufferedSource): BufferedSource {
-    if (viewer.settings.dualPageRotateToFit) {
-        return rotateDualPage(viewer, imageSource)
-    }
-
-    if (!viewer.settings.dualPageSplit) {
-        return imageSource
-    }
-
+private fun process(
+    viewer: PagerViewer,
+    page: ReaderPage,
+    imageSource: BufferedSource
+): BufferedSource {
     if (page is InsertPage) {
         return splitInHalf(viewer, page, imageSource)
     }
@@ -50,17 +46,11 @@ private fun process(viewer: PagerViewer, page: ReaderPage, imageSource: Buffered
     return splitInHalf(viewer, page, imageSource)
 }
 
-private fun rotateDualPage(viewer: PagerViewer, imageSource: BufferedSource): BufferedSource {
-    val isDoublePage = ImageUtil.isWideImage(imageSource)
-    return if (isDoublePage) {
-        val rotation = if (viewer.settings.dualPageRotateToFitInvert) -90f else 90f
-        ImageUtil.rotateImage(imageSource, rotation)
-    } else {
-        imageSource
-    }
-}
-
-private fun splitInHalf(viewer: PagerViewer, page: ReaderPage, imageSource: BufferedSource): BufferedSource {
+private fun splitInHalf(
+    viewer: PagerViewer,
+    page: ReaderPage,
+    imageSource: BufferedSource
+): BufferedSource {
     var side = when {
         viewer.l2r && page is InsertPage -> ImageUtil.Side.RIGHT
         !viewer.l2r && page is InsertPage -> ImageUtil.Side.LEFT
@@ -112,17 +102,10 @@ fun pagePresenter(
             .filter { it == Page.State.READY }
             .collectLatest { state ->
                 suspendRunCatching {
-                    val (source, isAnimated, background) = withContext(Dispatchers.IO) {
-                        val source = page.stream!!().use { ins ->
+                    val source = withContext(Dispatchers.IO) {
+                        page.stream!!().use { ins ->
                             process(viewer, page, Buffer().readFrom(ins))
-                        }
-                        val isAnimated = ImageUtil.isAnimatedAndSupported(source)
-                        val background = if (!isAnimated && viewer.settings.automaticBackground) {
-                            ImageUtil.chooseBackground(context, source.peek().inputStream())
-                        } else {
-                            null
-                        }
-                        Triple(source.readByteArray(), isAnimated, background)
+                        }.readByteArray()
                     }
                     image = ImageRequest.Builder(context)
                         .data(source)

@@ -10,7 +10,7 @@ datastorePreferences = "1.1.7"
 desugar_jdk_libs = "2.1.5"
 fontAwesome = "1.1.1"
 imageDecoder = "41c059e540"
-kache = "2.1.1"
+ kache = "2.1.1"
 jsoup = "1.20.1"
 kotlinxCoroutinesAndroid = "1.10.2"
 kotlinxIoOkio = "0.7.0"
@@ -144,7 +144,6 @@ coil-gif = { module = "io.coil-kt.coil3:coil-gif", version.ref = "coil" }
 coil-svg = { module = "io.coil-kt.coil3:coil-svg", version.ref = "coil" }
 
 zoomable-image-coil = { module = "me.saket.telephoto:zoomable-image-coil", version.ref = "zoomableImageCoil" }
-image-decoder = { module = "com.github.tachiyomiorg:image-decoder", version.ref = "imageDecoder" }
 kache = { module = "com.mayakapps.kache:file-kache", version.ref = "kache" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 unifile = { module = "com.github.tachiyomiorg:unifile", version.ref = "unifile" }

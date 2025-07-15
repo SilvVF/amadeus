@@ -1,5 +1,6 @@
 package io.silv.manga.storeage
 
+import android.content.Context
 import android.text.format.Formatter
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -24,8 +25,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -40,22 +44,31 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFold
 import androidx.compose.ui.util.fastForEach
+import androidx.datastore.core.Storage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.common.DependencyAccessor
+import io.silv.data.download.ChapterCache
+import io.silv.data.manga.repository.MangaRepository
 import io.silv.data.util.DiskUtil
 import io.silv.di.dataDeps
+import io.silv.di.rememberDataDependency
 
 import io.silv.manga.R
 import io.silv.ui.theme.LocalSpacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.io.IOException
 import java.io.File
+
 
 
 class StorageScreen : Screen {
@@ -67,6 +80,9 @@ class StorageScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val screenModel = rememberScreenModel { StorageScreenModel() }
         val state = screenModel.state.collectAsStateWithLifecycle()
+        val context = LocalContext.current
+
+        val storageState = storageInfoPresenter(context)
 
         Scaffold(
             topBar = {
@@ -89,16 +105,19 @@ class StorageScreen : Screen {
                     .padding(paddingValues)
             ) {
                 StorageInfo(
+                    storageState,
                     Modifier
                         .fillMaxWidth()
                         .padding(space.large)
                 )
                 Spacer(modifier = Modifier.height(space.med))
                 ChapterCacheInfo(
+                    storageState,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(space.med))
                 UnusedMangaInfo(
+                    storageState,
                     modifier = Modifier.fillMaxWidth()
                 )
                 when (val storage = state.value) {
@@ -181,22 +200,75 @@ class StorageScreen : Screen {
     }
 }
 
+
+sealed interface StorageEvent {
+    data object DeleteUnusedManga: StorageEvent
+    data object ClearCache: StorageEvent
+}
+
+data class StorageInfoState(
+    val unusedManga: Int,
+    val cacheSize: String,
+    val infos: List<FileInfo>,
+    val events: (StorageEvent) -> Unit
+)
+
+data class FileInfo(
+    val absPath: String,
+    val available: Long,
+    val availableText: String,
+    val total: Long,
+    val totalText: String
+)
+
 @OptIn(DependencyAccessor::class)
 @Composable
-fun UnusedMangaInfo(
-    modifier: Modifier = Modifier
-) {
-    val mangaRepository = remember { dataDeps.mangaRepository }
+fun storageInfoPresenter(
+    context: Context,
+    mangaRepository: MangaRepository = dataDeps.mangaRepository,
+    chapterCache: ChapterCache = dataDeps.chapterCache,
+): StorageInfoState {
+    val scope = rememberCoroutineScope()
     val unusedCount by mangaRepository.observeUnusedCount()
         .collectAsStateWithLifecycle(initialValue = 0)
+    var cacheInvalidate by remember { mutableIntStateOf(0) }
 
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val space = LocalSpacing.current
+    var readableSize by remember { mutableStateOf("") }
 
-    Column(
-        modifier = modifier
-            .clickable {
+    val storages by produceState<List<FileInfo>>(emptyList()) {
+        val info = withContext(Dispatchers.IO) {
+            DiskUtil.getExternalStorages(context).map { file ->
+                val available = DiskUtil.getAvailableStorageSpace(file)
+                val total = DiskUtil.getTotalStorageSpace(file)
+                FileInfo(
+                    absPath = file.absolutePath,
+                    available,
+                    Formatter.formatFileSize(context, available),
+                    total,
+                    Formatter.formatFileSize(context, total)
+                )
+            }
+        }
+        value = info
+    }
+
+    LaunchedEffect(cacheInvalidate) {
+        readableSize = withContext(Dispatchers.IO) {
+            try {
+                chapterCache.readableSize()
+            } catch (e: IOException) {
+                "failed to get size ${e.message}"
+            }
+        }
+    }
+
+    return StorageInfoState(
+        unusedManga = unusedCount,
+        cacheSize = readableSize,
+        infos = storages
+    ) { event ->
+        when(event) {
+            StorageEvent.DeleteUnusedManga -> {
                 scope.launch(NonCancellable) {
                     try {
                         mangaRepository.deleteUnused()
@@ -223,29 +295,8 @@ fun UnusedMangaInfo(
                     }
                 }
             }
-            .padding(space.large)
-    ) {
-        Text("Clear unused manga", style = MaterialTheme.typography.titleMedium)
-        Text(text = "Unused: $unusedCount", style = MaterialTheme.typography.labelMedium)
-    }
-}
 
-@OptIn(DependencyAccessor::class)
-@Composable
-private fun ChapterCacheInfo(
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-    val space = LocalSpacing.current
-
-    val chapterCache = remember { dataDeps.chapterCache }
-    var cacheReadableSizeSema by remember { mutableIntStateOf(0) }
-    val cacheReadableSize = remember(cacheReadableSizeSema) { chapterCache.readableSize }
-    val scope = rememberCoroutineScope()
-
-    Column(
-        modifier = modifier
-            .clickable {
+            StorageEvent.ClearCache -> {
                 scope.launch(NonCancellable) {
                     try {
                         val deletedFiles = chapterCache.clear()
@@ -257,7 +308,7 @@ private fun ChapterCacheInfo(
                                     Toast.LENGTH_SHORT
                                 )
                                 .show()
-                            cacheReadableSizeSema++
+                            cacheInvalidate += 1
                         }
                     } catch (e: Throwable) {
                         withContext(Dispatchers.Main.immediate) {
@@ -272,26 +323,60 @@ private fun ChapterCacheInfo(
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(DependencyAccessor::class)
+@Composable
+fun UnusedMangaInfo(
+    state: StorageInfoState,
+    modifier: Modifier = Modifier
+) {
+    val space = LocalSpacing.current
+
+    Column(
+        modifier = modifier
+            .clickable {
+                state.events(StorageEvent.DeleteUnusedManga)
+            }
+            .padding(space.large)
+    ) {
+        Text("Clear unused manga", style = MaterialTheme.typography.titleMedium)
+        Text(text = "Unused: ${state.unusedManga}", style = MaterialTheme.typography.labelMedium)
+    }
+}
+
+@OptIn(DependencyAccessor::class)
+@Composable
+private fun ChapterCacheInfo(
+    state: StorageInfoState,
+    modifier: Modifier = Modifier
+) {
+    val space = LocalSpacing.current
+    Column(
+        modifier = modifier
+            .clickable {
+               state.events(StorageEvent.ClearCache)
+            }
             .padding(space.large)
     ) {
         Text("Clear chapter cache", style = MaterialTheme.typography.titleMedium)
-        Text(text = "Used: $cacheReadableSize", style = MaterialTheme.typography.labelMedium)
+        Text(text = "Used: ${state.cacheSize}", style = MaterialTheme.typography.labelMedium)
     }
 }
 
 @Composable
 fun StorageInfo(
+    state: StorageInfoState,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val space = LocalSpacing.current
-    val storages = remember { DiskUtil.getExternalStorages(context) }
-
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(space.small),
     ) {
-        storages.forEach {
+        state.infos.forEach {
             StorageInfo(it)
         }
     }
@@ -299,21 +384,14 @@ fun StorageInfo(
 
 @Composable
 private fun StorageInfo(
-    file: File,
+    file: FileInfo,
 ) {
-    val context = LocalContext.current
     val space = LocalSpacing.current
-
-    val available = remember(file) { DiskUtil.getAvailableStorageSpace(file) }
-    val availableText = remember(available) { Formatter.formatFileSize(context, available) }
-    val total = remember(file) { DiskUtil.getTotalStorageSpace(file) }
-    val totalText = remember(total) { Formatter.formatFileSize(context, total) }
-
     Column(
         verticalArrangement = Arrangement.spacedBy(space.xs),
     ) {
         Text(
-            text = file.absolutePath,
+            text = file.absPath,
             style = MaterialTheme.typography.headlineSmall,
         )
 
@@ -322,11 +400,11 @@ private fun StorageInfo(
                 .clip(MaterialTheme.shapes.small)
                 .fillMaxWidth()
                 .height(12.dp),
-            progress = { (1 - (available / total.toFloat())) },
+            progress = { (1 - (file.available / file.total.toFloat())) },
         )
 
         Text(
-            text = stringResource(R.string.available_disk_space_info, availableText, totalText),
+            text = stringResource(R.string.available_disk_space_info, file.availableText, file.totalText),
             modifier = Modifier.alpha(0.78f),
             style = MaterialTheme.typography.bodySmall,
         )

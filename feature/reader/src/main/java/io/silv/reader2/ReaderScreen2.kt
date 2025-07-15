@@ -126,17 +126,36 @@ data class ReaderScreen2(
                 is Reader2ScreenModel.Event.ShareImage -> TODO()
             }
         }
+
+        val scope = rememberCoroutineScope()
+
+        val animateToFirstPage = {
+            scope.launch {
+                with(screenModel.viewer) {
+                    val idx = items.indexOfFirst {
+                        when (it) {
+                            is ChapterTransition -> false
+                            is ReaderPage -> it.chapter.chapter.id == viewerChapters?.currChapter?.chapter?.id && it.number == 1
+                        }
+                    }
+                    if (idx != -1) pagerState.animateScrollToPage(idx)
+                }
+            }
+        }
+
         ReaderScreenContent(
             state = state,
             viewer = screenModel.viewer,
             loadPrevChapter = {
                 lifecycleOwner.lifecycleScope.launch {
                     screenModel.loadPreviousChapter()
+                    animateToFirstPage()
                 }
             },
             loadNextChapter = {
                 lifecycleOwner.lifecycleScope.launch {
                     screenModel.loadNextChapter()
+                    animateToFirstPage()
                 }
             },
             onBack = {
@@ -169,8 +188,8 @@ private fun ReaderScreenContent(
 ) {
     ReaderDialogHost(
         Modifier.fillMaxSize(),
-        state,
-        viewer,
+        state = state,
+        viewer = viewer,
         onDismiss = onDismiss,
         onBack = onBack,
         loadNextChapter = loadNextChapter,
@@ -377,6 +396,7 @@ fun ReaderDialogHost(
     content: @Composable () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+
     ReaderMenuOverlay(
         modifier = modifier,
         onDismissRequested = onDismiss,
@@ -387,13 +407,13 @@ fun ReaderDialogHost(
         menuVisible = { state.menuVisible },
         l2r = viewer.l2r,
         chapterActions = actions,
-        chapters = { state.chapters },
+        chapters = state.chapters,
         currentPage = { viewer.currentPageNumber },
         pageCount = { viewer.totalPages },
         loadNextChapter = loadNextChapter,
         loadPrevChapter = loadPrevChapter,
         settings = viewer.settings,
-        downloadsProvider = { state.downloads },
+        downloadsProvider = state.downloads,
         changePage = { page ->
             scope.launch {
                 val idx = page - 1

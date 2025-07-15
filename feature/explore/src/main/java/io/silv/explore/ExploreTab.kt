@@ -157,9 +157,7 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
                     onWebClick = {
                         context.openOnWeb("https://mangadex.org", "View manga using.")
                             .onFailure {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Couldn't open url.")
-                                }
+                                appState.showSnackBar("Couldn't open url.")
                             }
                     },
                     onDisplayOptionsClick = {

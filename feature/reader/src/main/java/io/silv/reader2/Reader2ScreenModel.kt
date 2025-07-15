@@ -97,8 +97,6 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         .state
         .stateInUi(ReaderSettings())
 
-    private val downloadsFlow = downloadManager.queueState
-
     val viewer = PagerViewer(screenModelScope) { action ->
         when (action) {
             PagerAction.ToggleMenu -> showMenus(!state.value.menuVisible)
@@ -144,41 +142,37 @@ class Reader2ScreenModel @OptIn(DependencyAccessor::class) constructor(
         settings.onEach(viewer::updateSettings)
             .launchIn(screenModelScope)
 
-        downloadsFlow.onEach {
+        downloadManager.queueState.onEach {
             mutableState.update { state ->
                 state.copy(
-                    downloads = state.downloads
+                    downloads = it,
                 )
             }
         }
             .launchIn(screenModelScope)
 
         screenModelScope.launch {
-            state.map { it.manga }
-                .filterNotNull()
-                .collectLatest { manga ->
-                    combine(
-                        chaptersFlow,
-                        downloadManager.queueState,
-                        downloadManager.cacheChanges,
-                        ::Triple
-                    ).collect { (chapters) ->
-                        mutableState.update { state ->
-                            state.copy(
-                                chapters = chapters.map { chapter ->
-                                    chapter.copy(
-                                        downloaded = downloadManager
-                                            .isChapterDownloaded(
-                                                chapter.title,
-                                                chapter.scanlator,
-                                                manga.titleEnglish
-                                            )
+            combine(
+                chaptersFlow,
+                state.map { it.manga }.filterNotNull(),
+                downloadManager.cacheChanges,
+                ::Triple
+            ).collectLatest { (chapters, manga) ->
+                mutableState.update { state ->
+                    state.copy(
+                        chapters = chapters.map { chapter ->
+                            chapter.copy(
+                                downloaded = downloadManager
+                                    .isChapterDownloaded(
+                                        chapter.title,
+                                        chapter.scanlator,
+                                        manga.titleEnglish
                                     )
-                                }
                             )
                         }
-                    }
+                    )
                 }
+            }
         }
     }
 

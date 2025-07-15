@@ -110,6 +110,7 @@ import io.silv.manga.composables.chapterListItems
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.CenterBox
+import io.silv.ui.LocalAppState
 import io.silv.ui.collectEvents
 import io.silv.ui.isScrollingUp
 import io.silv.ui.layout.PullRefresh
@@ -130,60 +131,46 @@ class MangaViewScreen(
         val screenModel = rememberScreenModel { MangaViewScreenModel(mangaId = mangaId) }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
-
-        val snackbarHostState = remember { SnackbarHostState() }
+        val appState = LocalAppState.current
 
         screenModel.collectEvents { event ->
-            suspend fun showSnackBar(message: String) {
-                snackbarHostState.showSnackbar(
-                    message = message,
-                    withDismissAction = true,
-                    duration = SnackbarDuration.Short,
-                )
-            }
             when (event) {
-                is MangaViewEvent.FailedToLoadChapterList -> showSnackBar(event.message)
-                is MangaViewEvent.FailedToLoadVolumeArt -> showSnackBar(event.message)
+                is MangaViewEvent.FailedToLoadChapterList -> appState.showSnackBar(event.message)
+                is MangaViewEvent.FailedToLoadVolumeArt -> appState.showSnackBar(event.message)
                 is MangaViewEvent.BookmarkStatusChanged -> {
-                    val result =
-                        snackbarHostState.showSnackbar(
-                            message =
+                    appState.showSnackBar(
+                        message =
                             if (event.bookmarked) {
                                 "Bookmarked"
                             } else {
                                 "Removed Bookmark"
                             },
-                            withDismissAction = true,
-                            actionLabel = "Undo",
-                            duration = SnackbarDuration.Short,
-                        )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed -> screenModel.changeChapterBookmarked(
-                            event.id
-                        )
-                    }
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short,
+                        onActionPerformed = {
+                            screenModel.changeChapterBookmarked(
+                                event.id
+                            )
+                        }
+                    )
                 }
 
                 is MangaViewEvent.ReadStatusChanged -> {
-                    val result =
-                        snackbarHostState.showSnackbar(
-                            message =
+                    appState.showSnackBar(
+                        message =
                             if (event.read) {
                                 "Marked as read"
                             } else {
                                 "Marked as unread"
                             },
-                            withDismissAction = true,
-                            actionLabel = "Undo",
-                            duration = SnackbarDuration.Short,
-                        )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed -> screenModel.changeChapterReadStatus(
-                            event.id
-                        )
-                    }
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short,
+                        onActionPerformed = {
+                            screenModel.changeChapterReadStatus(
+                                event.id
+                            )
+                        }
+                    )
                 }
             }
         }
@@ -193,38 +180,37 @@ class MangaViewScreen(
 
         MangaViewScreenContent(
             state = state,
-            snackbarHostState = snackbarHostState,
             viewOnWeb = { url ->
                 context.openOnWeb(url, "View manga using.")
                     .onFailure {
                         scope.launch {
-                            snackbarHostState.showSnackbar("Couldn't open url.")
+                            appState.showSnackBar("Couldn't open url.")
                         }
                     }
             },
             filterActions =
-            FilterActions(
-                downloaded = screenModel::filterDownloaded,
-                uploadDate = screenModel::filterByUploadDate,
-                chapterNumber = screenModel::filterByChapterNumber,
-                source = screenModel::filterBySource,
-                bookmarked = screenModel::filterBookmarked,
-                unread = screenModel::filterUnread,
-                setAsDefault = {},
-            ),
+                FilterActions(
+                    downloaded = screenModel::filterDownloaded,
+                    uploadDate = screenModel::filterByUploadDate,
+                    chapterNumber = screenModel::filterByChapterNumber,
+                    source = screenModel::filterBySource,
+                    bookmarked = screenModel::filterBookmarked,
+                    unread = screenModel::filterUnread,
+                    setAsDefault = {},
+                ),
             chapterActions =
-            ChapterActions(
-                bookmark = screenModel::changeChapterBookmarked,
-                read = screenModel::changeChapterReadStatus,
-                download = screenModel::downloadChapterImages,
-                delete = screenModel::deleteChapterImages,
-                refresh = screenModel::refreshChapterList
-            ),
+                ChapterActions(
+                    bookmark = screenModel::changeChapterBookmarked,
+                    read = screenModel::changeChapterReadStatus,
+                    download = screenModel::downloadChapterImages,
+                    delete = screenModel::deleteChapterImages,
+                    refresh = screenModel::refreshChapterList
+                ),
             mangaActions =
-            MangaActions(
-                addToLibrary = screenModel::toggleLibraryManga,
-                changeStatus = screenModel::updateMangaReadingStatus
-            ),
+                MangaActions(
+                    addToLibrary = screenModel::toggleLibraryManga,
+                    changeStatus = screenModel::updateMangaReadingStatus
+                ),
             downloadActions = DownloadActions(
                 pause = screenModel::pauseDownload,
                 cancel = screenModel::cancelDownload
@@ -236,7 +222,6 @@ class MangaViewScreen(
 @Composable
 fun MangaViewScreenContent(
     state: MangaViewState,
-    snackbarHostState: SnackbarHostState,
     viewOnWeb: (url: String) -> Unit,
     filterActions: FilterActions,
     chapterActions: ChapterActions,
@@ -254,14 +239,15 @@ fun MangaViewScreenContent(
                     }
                 }
             }
+
         MangaState.Loading ->
             CenterBox(Modifier.fillMaxSize()) {
                 CircularProgressIndicator()
             }
+
         is MangaState.Success ->
             MangaViewSuccessScreen(
                 state = mangaState,
-                snackbarHostState = snackbarHostState,
                 viewOnWeb = viewOnWeb,
                 filterActions = filterActions,
                 chapterActions = chapterActions,
@@ -277,7 +263,8 @@ fun MangaViewScreenContent(
 private const val FILTER_BOTTOM_SHEET = 1
 private const val VOLUME_ART_BOTTOM_SHEET = 0
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, DependencyAccessor::class,
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, DependencyAccessor::class,
     ExperimentalSharedTransitionApi::class
 )
 @Composable
@@ -286,7 +273,6 @@ fun MangaViewSuccessScreen(
     state: MangaState.Success,
     filters: Filters,
     statsUiState: StatsUiState,
-    snackbarHostState: SnackbarHostState,
     viewOnWeb: (url: String) -> Unit,
     filterActions: FilterActions,
     chapterActions: ChapterActions,
@@ -318,15 +304,15 @@ fun MangaViewSuccessScreen(
 
             TopAppBar(
                 colors =
-                TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                             .copy(alpha = scrollBehavior.state.overlappedFraction.coerceIn(0f, 1f)),
-                ),
+                    ),
                 title = {
                     AnimatedVisibility(
                         visible = collapsed,
-                        enter = slideInVertically { it  } + fadeIn(),
+                        enter = slideInVertically { it } + fadeIn(),
                         exit = slideOutVertically { it } + fadeOut()
                     ) {
                         Text(
@@ -351,7 +337,7 @@ fun MangaViewSuccessScreen(
                 },
                 actions = {
                     val primary = MaterialTheme.colorScheme.primary
-                    val background =  MaterialTheme.colorScheme.onBackground
+                    val background = MaterialTheme.colorScheme.onBackground
 
                     val (icon, tint) = remember(state.manga, primary, background) {
                         if (state.manga.inLibrary)
@@ -394,7 +380,6 @@ fun MangaViewSuccessScreen(
                 scrollBehavior = scrollBehavior,
             )
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.systemBars),
         floatingActionButton = {
             AnimatedVisibility(
@@ -418,7 +403,9 @@ fun MangaViewSuccessScreen(
                     onClick = {
                         val lastUnread =
                             state.chapters
-                                .sortedBy { chapter -> chapter.takeIf { it.validNumber }?.chapter ?: Double.MAX_VALUE }
+                                .sortedBy { chapter ->
+                                    chapter.takeIf { it.validNumber }?.chapter ?: Double.MAX_VALUE
+                                }
                                 .fastFirstOrNull { !it.read }
                                 ?: state.success?.chapters?.minByOrNull { it.chapter }
                                 ?: return@ExtendedFloatingActionButton
@@ -439,10 +426,10 @@ fun MangaViewSuccessScreen(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding =
-                PaddingValues(
-                    start = paddingValues.calculateStartPadding(LocalLayoutDirection.current),
-                    end = paddingValues.calculateEndPadding(LocalLayoutDirection.current),
-                ),
+                    PaddingValues(
+                        start = paddingValues.calculateStartPadding(LocalLayoutDirection.current),
+                        end = paddingValues.calculateEndPadding(LocalLayoutDirection.current),
+                    ),
             ) {
                 item(key = "manga-poster") {
                     MangaImageWithTitle(
@@ -540,6 +527,7 @@ fun MangaViewSuccessScreen(
                 hideSourceTitle = { showSourceTitle = false },
                 showSourceTitle = { showSourceTitle = true },
             )
+
         VOLUME_ART_BOTTOM_SHEET ->
             ModalBottomSheet(
                 contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
@@ -575,7 +563,8 @@ fun MangaViewSuccessScreen(
                     CenterBox(
                         Modifier
                             .height(400.dp)
-                            .fillMaxWidth()) {
+                            .fillMaxWidth()
+                    ) {
                         CircularProgressIndicator()
                     }
                 } else if (error != null) {
@@ -591,7 +580,11 @@ fun MangaViewSuccessScreen(
                         }
                     }
                 } else {
-                    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Top,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         val pagerState = rememberPagerState { coverImages.size }
                         HorizontalPager(
                             state = pagerState,
@@ -607,9 +600,9 @@ fun MangaViewSuccessScreen(
                                 placeholder = ColorPainter(Color(0x1F888888)),
                                 contentDescription = null,
                                 modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .padding(space.med),
+                                    Modifier
+                                        .fillMaxSize()
+                                        .padding(space.med),
                                 contentScale = ContentScale.Fit,
                             )
                         }

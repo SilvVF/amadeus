@@ -61,10 +61,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,16 +79,15 @@ import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.skydoves.colorpicker.compose.AlphaSlider
 import com.github.skydoves.colorpicker.compose.AlphaTile
 import com.github.skydoves.colorpicker.compose.BrightnessSlider
@@ -103,6 +100,7 @@ import io.silv.common.model.ReaderLayout
 import io.silv.data.chapter.Chapter
 import io.silv.data.download.QItem
 import io.silv.data.manga.model.Manga
+import io.silv.reader.composables.ChapterList
 import io.silv.reader.loader.ReaderChapter
 import io.silv.reader2.ReaderSettings
 import io.silv.reader2.ReaderSettingsEvent
@@ -114,11 +112,11 @@ import io.silv.ui.layout.ExpandableInfoLayout
 import io.silv.ui.layout.ExpandableScope
 import io.silv.ui.layout.rememberExpandableState
 import io.silv.ui.theme.LocalSpacing
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
 import kotlin.math.roundToInt
+import kotlin.toString
 
 private enum class MenuTabs(val icon: ImageVector) {
     Chapters(Icons.Filled.FormatListNumbered),
@@ -126,27 +124,15 @@ private enum class MenuTabs(val icon: ImageVector) {
 }
 
 @Composable
-fun ReaderMenuOverlay(
+private fun OverlayWithTabsLayout(
     modifier: Modifier = Modifier,
-    settings: ReaderSettings,
-    downloadsProvider: () -> List<QItem<Download>>,
-    readerChapter: () -> ReaderChapter?,
-    manga: () -> Manga?,
-    chapters: () -> List<Chapter>,
     menuVisible: () -> Boolean,
-    currentPage: () -> Int,
-    pageCount: () -> Int,
-    l2r: Boolean,
     onDismissRequested: () -> Unit,
-    loadPrevChapter: () -> Unit,
-    loadNextChapter: () -> Unit,
-    changePage: (page: Int) -> Unit,
-    onBackArrowClick: () -> Unit,
-    onViewOnWebClick: () -> Unit,
-    chapterActions: ChapterActions,
+    topBar: @Composable () -> Unit,
+    menu: @Composable ExpandableScope.(MenuTabs) -> Unit,
+    pageSelector: @Composable (fraction: Float) -> Unit,
     content: @Composable () -> Unit,
 ) {
-    val space = LocalSpacing.current
     val expandableState = rememberExpandableState(startProgress = DragAnchors.End)
 
     LaunchedEffect(Unit) {
@@ -164,9 +150,8 @@ fun ReaderMenuOverlay(
         }
     }
 
-    val tabs = remember { MenuTabs.entries }
-
-    val menuPagerState = rememberPagerState { tabs.size }
+    val space = LocalSpacing.current
+    val menuPagerState = rememberPagerState { MenuTabs.entries.size }
     val scope = rememberCoroutineScope()
 
     Box(
@@ -178,81 +163,23 @@ fun ReaderMenuOverlay(
             enter = slideInVertically { -it },
             exit = slideOutVertically { -it }
         ) {
-            LargeTopAppBar(
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
-                ),
-                navigationIcon = {
-                    IconButton(onClick = onBackArrowClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                            contentDescription = null
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onViewOnWebClick) {
-                        Icon(
-                            imageVector = Icons.Default.Web,
-                            contentDescription = null
-                        )
-                    }
-                },
-                title = {
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        val chapter = readerChapter()
-                        val chapterText = remember(chapter) {
-                            chapter?.let {
-                                if (chapter.chapter.validNumber) {
-                                    "Ch.${chapter.chapter.chapter} - ${chapter.chapter.title}"
-                                } else {
-                                    chapter.chapter.title
-                                }
-                            } ?: ""
-                        }
-                        val contentColor = LocalContentColor.current
-                        BasicText(
-                            style = LocalTextStyle.current,
-                            text = manga()?.titleEnglish.orEmpty(),
-                            autoSize = TextAutoSize.StepBased(maxFontSize = MaterialTheme.typography.titleLarge.fontSize),
-                            maxLines = 1,
-                            color = ColorProducer { contentColor }
-                        )
-                        Text(
-                            chapterText,
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .78f)
-                            ),
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                },
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-            )
+            Box(Modifier.align(Alignment.TopCenter)) {
+                topBar()
+            }
         }
         ExpandableInfoLayout(
             modifier = Modifier.align(Alignment.BottomCenter),
             state = expandableState,
             peekContent = {
                 Box {
-                    MenuPageSlider(
-                        modifier = Modifier
+                    Box(
+                        Modifier
                             .padding(space.large)
                             .align(Alignment.Center)
-                            .consumeWindowInsets(WindowInsets.systemBars),
-                        fractionProvider = { expandableState.fraction.value },
-                        currentPageProvider = currentPage,
-                        pageCountProvider = pageCount,
-                        onPrevClick = loadPrevChapter,
-                        onNextClick = loadNextChapter,
-                        onPageChange = changePage,
-                        l2r = l2r
-                    )
+                            .consumeWindowInsets(WindowInsets.systemBars)
+                    ) {
+                        pageSelector(expandableState.fraction.value)
+                    }
                     TabRow(
                         selectedTabIndex = menuPagerState.currentPage,
                         containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
@@ -271,7 +198,7 @@ fun ReaderMenuOverlay(
                             }
                             .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
                     ) {
-                        tabs.fastForEach { menuTab ->
+                        MenuTabs.entries.fastForEach { menuTab ->
                             Tab(
                                 selected = menuPagerState.currentPage == menuTab.ordinal,
                                 text = { Text(menuTab.toString()) },
@@ -298,29 +225,145 @@ fun ReaderMenuOverlay(
                         .fillMaxWidth()
                         .wrapContentHeight()
                 ) {
-                    when (it) {
-                        MenuTabs.Chapters.ordinal -> ChapterList(
-                            chapters = chapters,
-                            downloadsProvider = downloadsProvider,
-                            modifier = Modifier
-                                .fillMaxHeight(0.6f)
-                                .fillMaxWidth(),
-                            actions = chapterActions
-                        )
-
-                        MenuTabs.Options.ordinal -> ReaderOptions(
-                            settings = settings,
-                            modifier = Modifier
-                                .fillMaxHeight(0.6f)
-                                .fillMaxWidth()
-                        )
-                    }
+                    menu(MenuTabs.entries[it])
                 }
             }
         }
     }
 }
 
+@Composable
+fun ReaderMenuOverlay(
+    modifier: Modifier = Modifier,
+    settings: ReaderSettings,
+    downloadsProvider: List<QItem<Download>>,
+    readerChapter: () -> ReaderChapter?,
+    manga: () -> Manga?,
+    chapters: List<Chapter>,
+    menuVisible: () -> Boolean,
+    currentPage: () -> Int,
+    pageCount: () -> Int,
+    l2r: Boolean,
+    onDismissRequested: () -> Unit,
+    loadPrevChapter: () -> Unit,
+    loadNextChapter: () -> Unit,
+    changePage: (page: Int) -> Unit,
+    onBackArrowClick: () -> Unit,
+    onViewOnWebClick: () -> Unit,
+    chapterActions: ChapterActions,
+    content: @Composable () -> Unit,
+) {
+    OverlayWithTabsLayout(
+        modifier = modifier,
+        menuVisible = menuVisible,
+        onDismissRequested = onDismissRequested,
+        topBar = {
+           ReaderTopBar(
+               manga = manga,
+               onBackArrowClick,
+               onViewOnWebClick,
+               readerChapter = readerChapter,
+           )
+        },
+        pageSelector = { fraction ->
+            MenuPageSlider(
+                fractionProvider = { fraction },
+                page = currentPage(),
+                pageCountProvider = pageCount,
+                onPrevClick = loadPrevChapter,
+                onNextClick = loadNextChapter,
+                onPageChange = changePage,
+                l2r = l2r
+            )
+        },
+        menu = { menu ->
+            when (menu) {
+                MenuTabs.Chapters -> ChapterList(
+                    chapters = chapters,
+                    downloadsProvider = downloadsProvider,
+                    modifier = Modifier
+                        .fillMaxHeight(0.6f)
+                        .fillMaxWidth(),
+                    actions = chapterActions
+                )
+
+                MenuTabs.Options -> ReaderOptions(
+                    settings = settings,
+                    modifier = Modifier
+                        .fillMaxHeight(0.6f)
+                        .fillMaxWidth()
+                )
+            }
+        }
+    ) {
+        content()
+    }
+}
+
+
+@Composable
+private fun ReaderTopBar(
+    manga: () -> Manga?,
+    onBackArrowClick: () -> Unit,
+    onViewOnWebClick: () -> Unit,
+    readerChapter: () -> ReaderChapter?,
+    modifier: Modifier = Modifier
+) {
+    LargeTopAppBar(
+        colors = TopAppBarDefaults.largeTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+        ),
+        navigationIcon = {
+            IconButton(onClick = onBackArrowClick) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                    contentDescription = null
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = onViewOnWebClick) {
+                Icon(
+                    imageVector = Icons.Default.Web,
+                    contentDescription = null
+                )
+            }
+        },
+        title = {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start
+            ) {
+                val chapter = readerChapter()
+                val chapterText = remember(chapter) {
+                    chapter?.let {
+                        if (chapter.chapter.validNumber) {
+                            "Ch.${chapter.chapter.chapter} - ${chapter.chapter.title}"
+                        } else {
+                            chapter.chapter.title
+                        }
+                    } ?: ""
+                }
+                val contentColor = LocalContentColor.current
+                BasicText(
+                    style = LocalTextStyle.current,
+                    text = manga()?.titleEnglish.orEmpty(),
+                    autoSize = TextAutoSize.StepBased(maxFontSize = MaterialTheme.typography.titleLarge.fontSize),
+                    maxLines = 1,
+                    color = ColorProducer { contentColor }
+                )
+                Text(
+                    chapterText,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .78f)
+                    ),
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        },
+        modifier = modifier.fillMaxWidth()
+    )
+}
 
 @Composable
 fun ToggleItem(
@@ -339,19 +382,19 @@ fun ToggleItem(
 @Stable
 data class ChapterActions(
     val delete: (chapterId: String) -> Unit = {},
+    val loadChapter: (chapterId: String) -> Unit = {},
     val markRead: (chapterId: String) -> Unit = {},
     val bookmark: (chapterId: String) -> Unit = {},
     val cancelDownload: (download: Download) -> Unit = {},
     val pauseDownloads: () -> Unit = {},
-    val download: (chapterId: String) -> Unit = {},
-
-    )
+    val download: (chapterId: String) -> Unit = {}
+)
 
 @Composable
 private fun ExpandableScope.ChapterList(
     modifier: Modifier = Modifier,
-    downloadsProvider: () -> List<QItem<Download>>,
-    chapters: () -> List<Chapter>,
+    downloadsProvider: List<QItem<Download>>,
+    chapters: List<Chapter>,
     actions: ChapterActions,
 ) {
     val lazyListState = rememberLazyListState()
@@ -361,7 +404,7 @@ private fun ExpandableScope.ChapterList(
     ) {
         chapterListItems(
             chapters,
-            onReadClicked = { actions.markRead(it) },
+            onReadClicked = { actions.loadChapter(it) },
             onDeleteClicked = { actions.delete(it) },
             downloadsProvider = downloadsProvider,
             showFullTitle = true,
@@ -376,8 +419,8 @@ private fun ExpandableScope.ChapterList(
 
 
 fun LazyListScope.chapterListItems(
-    chaptersProvider: () -> List<Chapter>,
-    downloadsProvider: () -> List<QItem<Download>>,
+    chaptersProvider: List<Chapter>,
+    downloadsProvider: List<QItem<Download>>,
     showFullTitle: Boolean,
     onMarkAsRead: (id: String) -> Unit,
     onBookmark: (id: String) -> Unit,
@@ -388,7 +431,7 @@ fun LazyListScope.chapterListItems(
     onReadClicked: (id: String) -> Unit,
 ) {
     items(
-        items = chaptersProvider(),
+        items = chaptersProvider,
         key = { c -> c.id }
     ) { chapter ->
         val space = LocalSpacing.current
@@ -427,6 +470,10 @@ fun LazyListScope.chapterListItems(
                 },
             )
 
+        val download by remember(downloadsProvider) {
+            derivedStateOf { downloadsProvider.fastFirstOrNull { it.data.chapter.id == chapter.id } }
+        }
+
         SwipeableActionsBox(
             startActions = listOf(archive),
             endActions = listOf(read),
@@ -441,7 +488,7 @@ fun LazyListScope.chapterListItems(
                             horizontal = space.large,
                         ),
                 chapter = chapter,
-                download = downloadsProvider().fastFirstOrNull { it.data.chapter.id == chapter.id },
+                download = download,
                 showFullTitle = showFullTitle,
                 onDownloadClicked = { onDownloadClicked(chapter.id) },
                 onDeleteClicked = {
@@ -481,8 +528,9 @@ private fun dateWithScanlationText(chapter: Chapter) =
         "${chapter.daysSinceCreatedString} $pageText · ${chapter.scanlationGroupToId?.first ?: chapter.uploader}"
     }
 
+// TODO(undupe)
 @Composable
-private fun ChapterListItem(
+fun ChapterListItem(
     modifier: Modifier = Modifier,
     showFullTitle: Boolean,
     chapter: Chapter,
@@ -544,35 +592,45 @@ private fun ChapterListItem(
                     ),
             )
         }
-        val status by remember(download) {
-            download?.statusFlow
-                ?: flowOf(
-                    if (chapter.downloaded) QItem.State.COMPLETED else QItem.State.IDLE
-                )
-        }
-            .collectAsState(QItem.State.IDLE)
 
-        val progress by remember(download) {
-            download?.data?.progressFlow ?: flowOf(0)
-        }
-            .collectAsState(0)
+        if (download != null) {
+            val status by download.statusFlow.collectAsStateWithLifecycle(QItem.State.IDLE)
+            val progress by download.data.progressFlow.collectAsStateWithLifecycle(0)
 
-        ChapterDownloadIndicator(
-            enabled = true,
-            downloadStateProvider = { status },
-            downloadProgressProvider = { progress },
-            onClick = { action ->
-                when (action) {
-                    ChapterDownloadAction.START -> onDownloadClicked()
-                    ChapterDownloadAction.START_NOW -> Unit
-                    ChapterDownloadAction.CANCEL -> onCancelClicked(
-                        download?.data ?: return@ChapterDownloadIndicator
-                    )
-
-                    ChapterDownloadAction.DELETE -> onDeleteClicked()
+            ChapterDownloadIndicator(
+                enabled = true,
+                downloadStateProvider = { status },
+                downloadProgressProvider = { progress },
+                onClick = { action ->
+                    when (action) {
+                        ChapterDownloadAction.START -> onDownloadClicked()
+                        ChapterDownloadAction.START_NOW -> Unit
+                        ChapterDownloadAction.CANCEL -> onCancelClicked(download.data)
+                        ChapterDownloadAction.DELETE -> onDeleteClicked()
+                    }
                 }
-            }
-        )
+            )
+        } else {
+            ChapterDownloadIndicator(
+                enabled = true,
+                downloadStateProvider = {
+                    if (chapter.downloaded) {
+                        QItem.State.COMPLETED
+                    } else {
+                        QItem.State.IDLE
+                    }
+                },
+                downloadProgressProvider = { 0 },
+                onClick = { action ->
+                    when (action) {
+                        ChapterDownloadAction.START -> onDownloadClicked()
+                        ChapterDownloadAction.START_NOW -> Unit
+                        ChapterDownloadAction.CANCEL -> Unit
+                        ChapterDownloadAction.DELETE -> onDeleteClicked()
+                    }
+                }
+            )
+        }
     }
 }
 

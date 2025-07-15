@@ -1,5 +1,6 @@
 package io.silv.common.model
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.sample
 
 
+@Immutable
 @Stable
 data class Download(
     val manga: MangaResource,

@@ -85,7 +85,7 @@ class PagerViewer(
         }
     }
 
-    val isHorizontal by derivedStateOf{
+    val isHorizontal by derivedStateOf {
         when (settings.layout) {
             ReaderLayout.PagedRTL, ReaderLayout.PagedLTR -> true
             ReaderLayout.Vertical -> false
@@ -334,14 +334,15 @@ class PagerViewer(
         when (navigator.getAction(offset, size)) {
             NavigationRegion.MENU -> onAction(PagerAction.ToggleMenu)
             NavigationRegion.NEXT -> pagerState.animateScrollToPage(pagerState.currentPage + 1)
-            NavigationRegion.PREV ->  pagerState.animateScrollToPage(pagerState.currentPage - 1)
+            NavigationRegion.PREV -> pagerState.animateScrollToPage(pagerState.currentPage - 1)
 
             NavigationRegion.RIGHT -> if (l2r) {
                 pagerState.animateScrollToPage(pagerState.currentPage + 1)
             } else {
                 pagerState.animateScrollToPage(pagerState.currentPage - 1)
             }
-            NavigationRegion.LEFT ->  if (l2r) {
+
+            NavigationRegion.LEFT -> if (l2r) {
                 pagerState.animateScrollToPage(pagerState.currentPage - 1)
             } else {
                 pagerState.animateScrollToPage(pagerState.currentPage + 1)

@@ -5,7 +5,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
@@ -60,16 +63,22 @@ object NavHost : Screen {
                     },
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    AnimatedContent(
-                        modifier = Modifier.fillMaxSize(),
-                        targetState = tabNavigator.current,
-                        transitionSpec = {
-                            fadeIn() togetherWith fadeOut()
-                        },
-                        label = "tabContent",
-                    ) {
-                        tabNavigator.saveableState(key = "currentTab", it) {
-                            it.Content()
+                    Scaffold(
+                        snackbarHost = {
+                            SnackbarHost(appState.snackbarHostState)
+                        }
+                    ) { paddingValues ->
+                        AnimatedContent(
+                            modifier = Modifier.fillMaxSize().padding(paddingValues),
+                            targetState = tabNavigator.current,
+                            transitionSpec = {
+                                fadeIn() togetherWith fadeOut()
+                            },
+                            label = "tabContent",
+                        ) {
+                            tabNavigator.saveableState(key = "currentTab", it) {
+                                it.Content()
+                            }
                         }
                     }
                 }

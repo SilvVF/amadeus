@@ -28,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -46,13 +47,14 @@ import androidx.compose.ui.unit.LayoutDirection.Ltr
 import androidx.compose.ui.unit.LayoutDirection.Rtl
 import androidx.compose.ui.unit.dp
 import io.silv.ui.theme.LocalSpacing
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 @Composable
 fun MenuPageSlider(
     modifier: Modifier = Modifier,
     fractionProvider: () -> Float,
-    currentPageProvider: () -> Int,
+    page: Int,
     l2r: Boolean,
     pageCountProvider: () -> Int,
     onPrevClick: () -> Unit,
@@ -60,15 +62,14 @@ fun MenuPageSlider(
     onPageChange: (page: Int) -> Unit,
 ) {
     val pageCount = pageCountProvider()
-    val currentPage = currentPageProvider()
 
-    val valid = !(currentPage <= 0 || pageCount <= 0)
+    val valid = !(page <= 0 || pageCount <= 0)
 
-    val sliderState = remember(currentPage) {
+    val sliderState = remember(pageCount, page) {
         SliderState(
-            value = currentPage.toFloat().coerceAtLeast(1f),
-            steps = pageCount.coerceAtLeast(1),
-            valueRange = 1f..pageCount.toFloat()
+            value = page.toFloat().coerceAtLeast(1f),
+            steps = pageCount,
+            valueRange = 1f..pageCount.toFloat().coerceAtLeast(1f)
         ).apply {
             onValueChangeFinished = {
                 onPageChange(value.roundToInt())
@@ -76,13 +77,21 @@ fun MenuPageSlider(
         }
     }
 
-
     val space = LocalSpacing.current
+
     val leftButtonClick = {
-        if (l2r) { onPrevClick() } else { onNextClick() }
+        if (l2r) {
+            onPrevClick()
+        } else {
+            onNextClick()
+        }
     }
     val rightButtonClick = {
-        if (l2r) { onNextClick() } else { onPrevClick() }
+        if (l2r) {
+            onNextClick()
+        } else {
+            onPrevClick()
+        }
     }
 
 

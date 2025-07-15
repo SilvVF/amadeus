@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
@@ -71,6 +73,8 @@ class AppState(
     var navigator by mutableStateOf<Navigator?>(null)
     var tabNavigator by mutableStateOf<TabNavigator?>(null)
 
+    val snackbarHostState = SnackbarHostState()
+
     val bottomBarVisible by derivedStateOf {
         navigator?.lastItemOrNull == baseScreen
     }
@@ -108,8 +112,24 @@ class AppState(
                 initialValue = false,
             )
 
-    fun showSnackBar(message: String, duration: SnackbarDuration = SnackbarDuration.Short) {
-
+    fun showSnackBar(
+        message: String,
+        duration: SnackbarDuration = SnackbarDuration.Short,
+        actionLabel: String = "",
+        onActionPerformed: (() -> Unit)? = null,
+    ) {
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = actionLabel.takeIf { onActionPerformed != null },
+                withDismissAction = true,
+                duration = duration
+            )
+            when (result) {
+                SnackbarResult.Dismissed -> Unit
+                SnackbarResult.ActionPerformed -> onActionPerformed?.invoke()
+            }
+        }
     }
 
     fun onTabSelected(tab: Tab) {

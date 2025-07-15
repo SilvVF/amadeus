@@ -2,6 +2,8 @@
 
 package io.silv.data.download
 
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import io.silv.common.mutablePropertyFrom
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -60,6 +62,8 @@ interface Notifier {
     }
 }
 
+@Immutable
+@Stable
 data class QItem<T>(
     val data: T,
     val maxRetry: Int = 0,

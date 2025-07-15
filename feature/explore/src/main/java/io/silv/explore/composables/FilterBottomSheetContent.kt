@@ -418,9 +418,9 @@ fun DefaultTagsFilter(
         },
         onTagSelected = {
             if (included) {
-                updateFilter(FilterAction.IncludeTag(it))
+                updateFilter(FilterAction.IncludeTag(it.id))
             } else {
-                updateFilter(FilterAction.ExcludeTag(it))
+                updateFilter(FilterAction.ExcludeTag(it.id))
             }
         },
     )
@@ -819,20 +819,22 @@ fun DefaultPublicationDemographicFilter(
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-private fun TagsList(
+fun TagsList(
     categoryToTags: Map<String, List<DomainTag>>,
     selectedTags: List<String>,
-    onTagSelected: (id: String) -> Unit,
+    onTagSelected: (DomainTag) -> Unit,
+    modifier: Modifier = Modifier,
+    startExpanded: Boolean = false,
 ) {
     val space = LocalSpacing.current
 
     Column(
-        Modifier
+        modifier
             .fillMaxWidth()
             .wrapContentHeight(),
     ) {
         for ((group, tags) in categoryToTags) {
-            var expanded by rememberSaveable { mutableStateOf(false) }
+            var expanded by rememberSaveable { mutableStateOf(startExpanded) }
 
             Row(
                 modifier =
@@ -874,7 +876,7 @@ private fun TagsList(
                     tags.fastForEach { tag ->
                         FilterChip(
                             selected = tag.id in selectedTags,
-                            onClick = { onTagSelected(tag.id) },
+                            onClick = { onTagSelected(tag) },
                             label = { Text(tag.name) },
                             modifier = Modifier.padding(horizontal = space.xs),
                         )

@@ -102,16 +102,15 @@ import io.silv.common.DependencyAccessor
 import io.silv.common.model.Download
 import io.silv.common.model.Filters
 import io.silv.data.download.QItem
-import io.silv.data.manga.GetMangaCoverArtById
 import io.silv.di.dataDeps
 import io.silv.manga.composables.MangaDescription
 import io.silv.manga.composables.MangaImageWithTitle
-import io.silv.manga.composables.chapterListItems
 import io.silv.navigation.SharedScreen
 import io.silv.navigation.push
 import io.silv.ui.CenterBox
 import io.silv.ui.LocalAppState
 import io.silv.ui.collectEvents
+import io.silv.ui.design.chapterListItems
 import io.silv.ui.isScrollingUp
 import io.silv.ui.layout.PullRefresh
 import io.silv.ui.layout.ScrollbarLazyColumn
@@ -260,8 +259,10 @@ fun MangaViewScreenContent(
     }
 }
 
-private const val FILTER_BOTTOM_SHEET = 1
-private const val VOLUME_ART_BOTTOM_SHEET = 0
+private sealed interface MangaViewBottomSheet {
+    data object Filter: MangaViewBottomSheet
+    data object VolumeArt: MangaViewBottomSheet
+}
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, DependencyAccessor::class,
@@ -286,7 +287,7 @@ fun MangaViewSuccessScreen(
     )
     val listState = rememberLazyListState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var currentBottomSheet by rememberSaveable { mutableStateOf<Int?>(null) }
+    var currentBottomSheet by rememberSaveable { mutableStateOf<MangaViewBottomSheet?>(null) }
 
     var showSourceTitle by rememberSaveable { mutableStateOf(true) }
 
@@ -368,7 +369,7 @@ fun MangaViewSuccessScreen(
                         )
                     }
                     IconButton(
-                        onClick = { currentBottomSheet = FILTER_BOTTOM_SHEET },
+                        onClick = { currentBottomSheet = MangaViewBottomSheet.Filter },
                     ) {
                         Icon(
                             imageVector = Icons.Filled.FilterList,
@@ -443,7 +444,7 @@ fun MangaViewSuccessScreen(
                         },
                         addToLibrary = mangaActions.addToLibrary,
                         showChapterArt = {
-                            currentBottomSheet = VOLUME_ART_BOTTOM_SHEET
+                            currentBottomSheet = MangaViewBottomSheet.VolumeArt
                         },
                         changeStatus = { mangaActions.changeStatus(it) }
                     )
@@ -484,7 +485,7 @@ fun MangaViewSuccessScreen(
                     }
                 }
                 chapterListItems(
-                    mangaViewState = state,
+                    items = state.filteredChapters,
                     downloads = downloads,
                     onDownloadClicked = chapterActions.download,
                     onDeleteClicked = chapterActions.delete,
@@ -494,7 +495,8 @@ fun MangaViewSuccessScreen(
                     onBookmark = chapterActions.bookmark,
                     onMarkAsRead = chapterActions.read,
                     showFullTitle = showSourceTitle,
-                    downloadActions = downloadActions,
+                    pauseDownload = { downloadActions.pause(it) },
+                    cancelDownload = { downloadActions.cancel(it) }
                 )
                 item(key = "padding-bottom") {
                     // apply both top and bottom padding to raise chapter list above the FAB
@@ -510,7 +512,8 @@ fun MangaViewSuccessScreen(
     }
 
     when (currentBottomSheet) {
-        FILTER_BOTTOM_SHEET ->
+        null -> Unit
+        MangaViewBottomSheet.Filter ->
             FilterBottomSheet(
                 visible = true,
                 filters = filters,
@@ -528,7 +531,7 @@ fun MangaViewSuccessScreen(
                 showSourceTitle = { showSourceTitle = true },
             )
 
-        VOLUME_ART_BOTTOM_SHEET ->
+        MangaViewBottomSheet.VolumeArt ->
             ModalBottomSheet(
                 contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
                 onDismissRequest = { currentBottomSheet = null },

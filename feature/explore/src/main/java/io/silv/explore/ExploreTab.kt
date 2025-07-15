@@ -236,6 +236,9 @@ object ExploreTab : ReselectTab, GlobalSearchTab {
                         showGroupingOptions = {
                             showFiltersBottomSheet = !showFiltersBottomSheet
                         },
+                        showAllTags = {
+                            navigator.push(ViewAllTagsScreen)
+                        },
                         showDisplayOptions = {
                             showDisplayOptionsBottomSheet = !showDisplayOptionsBottomSheet
                         },

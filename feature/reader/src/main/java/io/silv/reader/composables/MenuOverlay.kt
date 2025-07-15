@@ -107,6 +107,7 @@ import io.silv.reader2.ReaderSettingsEvent
 import io.silv.reader2.ReaderSettingsEvent.ChangeLayout
 import io.silv.ui.composables.ChapterDownloadAction
 import io.silv.ui.composables.ChapterDownloadIndicator
+import io.silv.ui.design.chapterListItems
 import io.silv.ui.layout.DragAnchors
 import io.silv.ui.layout.ExpandableInfoLayout
 import io.silv.ui.layout.ExpandableScope
@@ -365,20 +366,6 @@ private fun ReaderTopBar(
     )
 }
 
-@Composable
-fun ToggleItem(
-    modifier: Modifier,
-    text: String,
-    enabled: () -> Boolean,
-) {
-    Row(
-        modifier = modifier
-    ) {
-        Text(text)
-
-    }
-}
-
 @Stable
 data class ChapterActions(
     val delete: (chapterId: String) -> Unit = {},
@@ -406,234 +393,16 @@ private fun ExpandableScope.ChapterList(
             chapters,
             onReadClicked = { actions.loadChapter(it) },
             onDeleteClicked = { actions.delete(it) },
-            downloadsProvider = downloadsProvider,
+            downloads = downloadsProvider,
             showFullTitle = true,
             onMarkAsRead = { actions.markRead(it) },
             onBookmark = { actions.bookmark(it) },
             onDownloadClicked = { actions.download(it) },
-            onCancelClicked = { actions.cancelDownload(it) },
-            onPauseClicked = { actions.pauseDownloads() }
+            cancelDownload = { actions.cancelDownload(it) },
+            pauseDownload = { actions.pauseDownloads() }
         )
     }
 }
-
-
-fun LazyListScope.chapterListItems(
-    chaptersProvider: List<Chapter>,
-    downloadsProvider: List<QItem<Download>>,
-    showFullTitle: Boolean,
-    onMarkAsRead: (id: String) -> Unit,
-    onBookmark: (id: String) -> Unit,
-    onDownloadClicked: (id: String) -> Unit,
-    onCancelClicked: (download: Download) -> Unit,
-    onPauseClicked: (download: Download) -> Unit,
-    onDeleteClicked: (id: String) -> Unit,
-    onReadClicked: (id: String) -> Unit,
-) {
-    items(
-        items = chaptersProvider,
-        key = { c -> c.id }
-    ) { chapter ->
-        val space = LocalSpacing.current
-
-        val archive =
-            SwipeAction(
-                icon =
-                    rememberVectorPainter(
-                        if (chapter.bookmarked) {
-                            Icons.TwoTone.Archive
-                        } else {
-                            Icons.TwoTone.Unarchive
-                        },
-                    ),
-                background = MaterialTheme.colorScheme.primary,
-                isUndo = chapter.bookmarked,
-                onSwipe = {
-                    onBookmark(chapter.id)
-                },
-            )
-
-        val read =
-            SwipeAction(
-                icon =
-                    rememberVectorPainter(
-                        if (chapter.read) {
-                            Icons.Filled.VisibilityOff
-                        } else {
-                            Icons.Filled.VisibilityOff
-                        },
-                    ),
-                background = MaterialTheme.colorScheme.primary,
-                isUndo = chapter.read,
-                onSwipe = {
-                    onMarkAsRead(chapter.id)
-                },
-            )
-
-        val download by remember(downloadsProvider) {
-            derivedStateOf { downloadsProvider.fastFirstOrNull { it.data.chapter.id == chapter.id } }
-        }
-
-        SwipeableActionsBox(
-            startActions = listOf(archive),
-            endActions = listOf(read),
-        ) {
-            ChapterListItem(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { onReadClicked(chapter.id) }
-                        .padding(
-                            vertical = space.med,
-                            horizontal = space.large,
-                        ),
-                chapter = chapter,
-                download = download,
-                showFullTitle = showFullTitle,
-                onDownloadClicked = { onDownloadClicked(chapter.id) },
-                onDeleteClicked = {
-                    onDeleteClicked(chapter.id)
-                },
-                onCancelClicked = onCancelClicked,
-                onPauseClicked = onPauseClicked
-            )
-        }
-    }
-}
-
-@Composable
-private fun chapterTitleWithVolText(chapter: Chapter, showFullTitle: Boolean) =
-    remember(chapter, showFullTitle) {
-        if (showFullTitle) {
-            "Chapter ${chapter.chapter.coerceAtLeast(0.0)}"
-        }
-        val vol =
-            if (chapter.volume >= 0) {
-                "Vol. ${chapter.volume}"
-            } else {
-                ""
-            }
-        "$vol Ch. ${if (chapter.validNumber) chapter.chapter else "extra"} - " + chapter.title
-    }
-
-@Composable
-private fun dateWithScanlationText(chapter: Chapter) =
-    remember(chapter) {
-        val pageText =
-            if ((chapter.lastReadPage ?: 0) > 0 && !chapter.read) {
-                "· Page ${chapter.lastReadPage}"
-            } else {
-                ""
-            }
-        "${chapter.daysSinceCreatedString} $pageText · ${chapter.scanlationGroupToId?.first ?: chapter.uploader}"
-    }
-
-// TODO(undupe)
-@Composable
-fun ChapterListItem(
-    modifier: Modifier = Modifier,
-    showFullTitle: Boolean,
-    chapter: Chapter,
-    download: QItem<Download>?,
-    onDownloadClicked: () -> Unit,
-    onDeleteClicked: () -> Unit,
-    onPauseClicked: (download: Download) -> Unit,
-    onCancelClicked: (download: Download) -> Unit,
-) {
-    val space = LocalSpacing.current
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Column(
-            Modifier
-                .padding(space.med)
-                .weight(1f),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (chapter.bookmarked) {
-                    Icon(
-                        imageVector = Icons.Filled.Bookmark,
-                        contentDescription = "bookmarked",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(end = space.xs),
-                    )
-                }
-                Text(
-                    text = chapterTitleWithVolText(
-                        chapter = chapter,
-                        showFullTitle = showFullTitle
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            color =
-                                if (!chapter.read) {
-                                    MaterialTheme.colorScheme.onBackground
-                                } else {
-                                    Color.DarkGray
-                                },
-                        ),
-                )
-            }
-            Spacer(modifier = Modifier.height(space.small))
-            Text(
-                text = dateWithScanlationText(chapter = chapter),
-                style =
-                    MaterialTheme.typography.labelLarge.copy(
-                        color =
-                            if (!chapter.read) {
-                                MaterialTheme.colorScheme.onBackground
-                            } else {
-                                Color.DarkGray
-                            },
-                    ),
-            )
-        }
-
-        if (download != null) {
-            val status by download.statusFlow.collectAsStateWithLifecycle(QItem.State.IDLE)
-            val progress by download.data.progressFlow.collectAsStateWithLifecycle(0)
-
-            ChapterDownloadIndicator(
-                enabled = true,
-                downloadStateProvider = { status },
-                downloadProgressProvider = { progress },
-                onClick = { action ->
-                    when (action) {
-                        ChapterDownloadAction.START -> onDownloadClicked()
-                        ChapterDownloadAction.START_NOW -> Unit
-                        ChapterDownloadAction.CANCEL -> onCancelClicked(download.data)
-                        ChapterDownloadAction.DELETE -> onDeleteClicked()
-                    }
-                }
-            )
-        } else {
-            ChapterDownloadIndicator(
-                enabled = true,
-                downloadStateProvider = {
-                    if (chapter.downloaded) {
-                        QItem.State.COMPLETED
-                    } else {
-                        QItem.State.IDLE
-                    }
-                },
-                downloadProgressProvider = { 0 },
-                onClick = { action ->
-                    when (action) {
-                        ChapterDownloadAction.START -> onDownloadClicked()
-                        ChapterDownloadAction.START_NOW -> Unit
-                        ChapterDownloadAction.CANCEL -> Unit
-                        ChapterDownloadAction.DELETE -> onDeleteClicked()
-                    }
-                }
-            )
-        }
-    }
-}
-
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable

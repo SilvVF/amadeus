@@ -3,9 +3,6 @@ package io.silv.navigation
 import cafe.adriel.voyager.core.registry.ScreenProvider
 
 sealed class SharedScreen : ScreenProvider {
-    data object Explore : SharedScreen()
-
-    data object Library : SharedScreen()
 
     data class Reader(
         val mangaId: String,
@@ -20,8 +17,6 @@ sealed class SharedScreen : ScreenProvider {
         val tag: String,
         val tagId: String,
     ) : SharedScreen()
-
-    data object MangaSearch : SharedScreen()
 
     data object DownloadQueue: SharedScreen()
 }

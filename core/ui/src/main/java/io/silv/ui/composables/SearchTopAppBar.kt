@@ -50,6 +50,7 @@ fun SearchTopAppBar(
     onNavigationIconClicked: () -> Unit = {},
     navigationIconLabel: String? = null,
     navigationIcon: ImageVector? = null,
+    placeHolderText: String = "Search Manga...",
 ) {
     var alreadyRequestedFocus by rememberSaveable { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -92,7 +93,7 @@ fun SearchTopAppBar(
                         .padding(top = space.small, bottom = space.small, start = space.xlarge)
                         .focusRequester(focusRequester),
                     value = searchText,
-                    placeholder = { Text("Search Manga...") },
+                    placeholder = { Text(placeHolderText) },
                     onValueChange = {
                         onSearchText(it)
                     },

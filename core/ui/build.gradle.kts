@@ -60,4 +60,5 @@ dependencies {
     implementation(libs.androidx.paging.compose)
 
     implementation(libs.bundles.voyager)
+    implementation(libs.swipe)
 }

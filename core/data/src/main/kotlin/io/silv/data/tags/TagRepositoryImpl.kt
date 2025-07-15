@@ -17,7 +17,6 @@ internal class TagRepositoryImpl(
     private val mangaDexApi: MangaDexApi
 ) : TagRepository {
 
-
     override fun allTags(): Flow<List<DomainTag>> {
         return tagDao.getAllTags().map { list ->
             list.map {
@@ -37,7 +36,6 @@ internal class TagRepositoryImpl(
                     .map {
                         it.attributes.version to it
                     }
-
             },
             networkToKey = { tagData -> tagData.id },
             lastUpdatedEpochSeconds = { tags.minByOrNull { it.lastUpdatedEpochSeconds }?.lastUpdatedEpochSeconds ?: 0L },

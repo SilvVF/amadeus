@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.More
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.outlined.Filter
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -151,6 +152,7 @@ fun RecentSearchesPeekContent(
 fun ExpandableInfoLayoutContent(
     modifier: Modifier = Modifier,
     showGroupingOptions: () -> Unit,
+    showAllTags: () -> Unit,
     showDisplayOptions: () -> Unit,
 ) {
     val space = LocalSpacing.current
@@ -174,12 +176,25 @@ fun ExpandableInfoLayoutContent(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Outlined.More,
+                imageVector = Icons.Outlined.Filter,
                 contentDescription = "Filter",
-                modifier = Modifier.graphicsLayer { rotationX = 180f },
             )
             Spacer(modifier = Modifier.width(space.med))
             Text(text = "Filter manga by...")
+        }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable { showAllTags() }
+                .padding(space.med),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector =  Icons.AutoMirrored.Outlined.More,
+                contentDescription = "",
+            )
+            Spacer(modifier = Modifier.width(space.med))
+            Text(text = "View tags")
         }
         Row(
             Modifier

@@ -166,7 +166,6 @@ abstract class DataDependencies {
         TagRepositoryImpl(tagDao, networkDeps.mangaDexApi)
     }
 
-
     val updatesRepository: UpdatesRepository by lazy {
         UpdatesRepositoryImpl(updatesDao)
     }
